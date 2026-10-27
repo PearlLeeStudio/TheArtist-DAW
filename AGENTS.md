@@ -18,8 +18,10 @@ Working repository of TheArtist for the Meta Global AI Developer Hackathon
   timeout, a max-turn count and a cost cap enforced in code, and logs request IDs and token usage.
   Failures are shown as failures, never hidden behind a fallback that looks like success.
 - Licenses stay as released: code MIT; model weights and training data CC BY-NC 4.0 (portfolio, demo and research use).
-- Before claiming done: `npm run build` and `npm run lint` in `frontend/`, `uv run python -c "import app.main"`
-  in `backend/`, plus the tests the task names. Report the actual output; exit code 0 is not proof.
+- Before claiming done (no `cd`): `npm --prefix <repo>/frontend run build` and `run lint`,
+  `uv run --directory <repo>/backend python -c "import app.main"`, plus the tests the task names.
+  Report the actual output; exit code 0 is not proof.
+- Commit trailers: `Co-Authored-By` is fine; never add private session links or tool-internal references.
 
 ## Commands
 - Frontend (from `frontend/`): `npm install`, `npm run dev` (port 5173), `npm run build`, `npm run lint`
