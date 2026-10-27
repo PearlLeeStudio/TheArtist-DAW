@@ -46,3 +46,8 @@ model/**/embedding_extension.pt
 *:Zone.Identifier
 
 .claude/
+
+# Local env files hold API keys; never commit them
+.env
+.env.*
+!.env.example
