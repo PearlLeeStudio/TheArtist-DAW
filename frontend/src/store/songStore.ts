@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import type { Song, Measure, Chord, SlotAddress, SectionType, SongSection } from '../models/types';
 import { calculateRomanNumeral } from '../engine/romanNumeral';
 import { generatePianoVoicing } from '../engine/voicingEngine';
-import { NOTE_VALUES, VALUE_TO_FLAT_NAME } from '../engine/constants';
+import { transposeSongKey } from '../engine/songTranspose';
 import { cancelPendingStart, setLiveBpm, stopPlayback } from '../engine/playback';
 import {
   DEFAULT_SONG_TITLE,
@@ -199,42 +199,10 @@ export const useSongStore = create<SongState>((set, get) => ({
   })),
 
   setKey: (key) => {
-    set((state) => {
-      const interrupt = interruptIfPlaying(state);
-      const oldKeyRoot = state.song.key.split(' ')[0];
-      const newKeyRoot = key.split(' ')[0];
-      const oldSemi = NOTE_VALUES[oldKeyRoot] ?? 0;
-      const newSemi = NOTE_VALUES[newKeyRoot] ?? 0;
-      const semitoneShift = (newSemi - oldSemi + 12) % 12;
-
-      const updatedSong = { ...state.song, key };
-      const measures = updatedSong.measures.map(m => {
-        const newChords = m.chords.map(chord => {
-          if (!chord) return null;
-          let transposedRoot = chord.root;
-          if (semitoneShift !== 0) {
-            const rootSemi = NOTE_VALUES[chord.root];
-            if (rootSemi !== undefined) {
-              transposedRoot = VALUE_TO_FLAT_NAME[(rootSemi + semitoneShift) % 12];
-            }
-          }
-          const transposed = {
-            ...chord,
-            root: transposedRoot,
-            bass: chord.bass
-              ? VALUE_TO_FLAT_NAME[(NOTE_VALUES[chord.bass]! + semitoneShift) % 12]
-              : undefined,
-          };
-          return {
-            ...transposed,
-            romanNumeral: calculateRomanNumeral(transposed, key),
-            voicing: generatePianoVoicing(transposed),
-          };
-        }) as [Chord | null, Chord | null];
-        return { ...m, chords: newChords };
-      });
-      return { ...interrupt, song: { ...updatedSong, measures } };
-    });
+    set((state) => ({
+      ...interruptIfPlaying(state),
+      song: transposeSongKey(state.song, key),
+    }));
   },
 
   setGenre: (genre) => set((state) => ({

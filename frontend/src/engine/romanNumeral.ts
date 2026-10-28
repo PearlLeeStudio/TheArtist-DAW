@@ -2,35 +2,31 @@ import type { Chord } from '../models/types';
 import { NOTE_VALUES, MAJOR_SCALE_INTERVALS, MINOR_SCALE_INTERVALS } from './constants.ts';
 
 const ROMAN_NUMERALS = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'];
+const NOTE_LETTERS = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
 
 const MINOR_QUALITIES = new Set([
   'min', 'm7', 'dim', 'dim7', 'm7b5', 'm6', 'm9', 'm11', 'm13', 'mMaj7',
 ]);
 
-function parseKey(key: string): { root: number; isMinor: boolean } {
+function parseKey(key: string): { root: number; letter: number; isMinor: boolean } {
   const parts = key.split(' ');
   const rootName = parts[0];
   const isMinor = parts[1]?.toLowerCase() === 'minor';
-  return { root: NOTE_VALUES[rootName] ?? 0, isMinor };
+  return { root: NOTE_VALUES[rootName] ?? 0, letter: NOTE_LETTERS.indexOf(rootName[0]), isMinor };
 }
 
 export function calculateRomanNumeral(chord: Chord, key: string): string {
-  const { root: keyRoot, isMinor } = parseKey(key);
+  const { root: keyRoot, letter: keyLetter, isMinor } = parseKey(key);
   const chordRoot = NOTE_VALUES[chord.root];
-  if (chordRoot === undefined) return '?';
+  const chordLetter = NOTE_LETTERS.indexOf(chord.root[0]);
+  if (chordRoot === undefined || chordLetter < 0 || keyLetter < 0) return '?';
 
   const interval = (chordRoot - keyRoot + 12) % 12;
   const scaleIntervals = isMinor ? MINOR_SCALE_INTERVALS : MAJOR_SCALE_INTERVALS;
 
-  let degree = 0;
-  let minDist = 12;
-  for (let i = 0; i < scaleIntervals.length; i++) {
-    const dist = Math.abs(scaleIntervals[i] - interval);
-    if (dist < minDist) {
-      minDist = dist;
-      degree = i;
-    }
-  }
+  // The written note letter determines the degree. Pitch distance alone
+  // cannot distinguish F# (#IV) from Gb (bV), or Bb (bVII) from A# (#VI).
+  const degree = (chordLetter - keyLetter + 7) % 7;
 
   let numeral = ROMAN_NUMERALS[degree];
   if (MINOR_QUALITIES.has(chord.quality)) {
@@ -39,9 +35,8 @@ export function calculateRomanNumeral(chord: Chord, key: string): string {
 
   const expectedInterval = scaleIntervals[degree];
   if (interval !== expectedInterval) {
-    const diff = interval - expectedInterval;
-    if (diff === 1 || diff === -11) numeral = '#' + numeral;
-    else if (diff === -1 || diff === 11) numeral = 'b' + numeral;
+    const diff = ((interval - expectedInterval + 18) % 12) - 6;
+    numeral = (diff > 0 ? '#'.repeat(diff) : 'b'.repeat(-diff)) + numeral;
   }
 
   return numeral + getQualitySuffix(chord.quality);
@@ -89,8 +84,8 @@ function getQualitySuffix(quality: string): string {
     case '6': case 'm6': return '6';
     case '9': case 'm9': return '9';
     case 'maj9': return 'maj9';
-    case '11': return '11';
-    case '13': return '13';
+    case '11': case 'm11': return '11';
+    case '13': case 'm13': return '13';
     case 'mMaj7': return 'maj7';
     case 'add9': return 'add9';
     case '7b9': return '7b9';
