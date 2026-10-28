@@ -13,7 +13,7 @@
  */
 import { Midi } from '@tonejs/midi';
 import type { Song } from '../models/types';
-import { generatePianoVoicing } from './voicingEngine';
+import { resolvePianoVoicing } from './voicingEngine';
 
 /** Sanitize a free-text name into something safe for a filesystem. */
 export function safeMidiFilename(name: string): string {
@@ -46,7 +46,7 @@ export function songToMidiBytes(song: Song): Uint8Array {
     for (const slotIdx of [0, 1] as const) {
       const chord = measure.chords[slotIdx];
       if (chord) {
-        const voicing = chord.voicing.length > 0 ? chord.voicing : generatePianoVoicing(chord);
+        const voicing = resolvePianoVoicing(chord);
         for (const midiNote of voicing) {
           track.addNote({
             midi: midiNote,

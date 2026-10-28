@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useSongStore } from '../../store/songStore';
 import type { Instrument } from '../../store/songStore';
-import { generatePianoVoicing, generateGuitarVoicing } from '../../engine/voicingEngine';
+import { resolvePianoVoicing, generateGuitarVoicing } from '../../engine/voicingEngine';
 import {
   setCurrentInstrument,
   setHarmonyOverride as setHarmonyOverrideEngine,
@@ -156,9 +156,7 @@ export default function VoicingViewer({ midiActiveNotes }: VoicingViewerProps) {
   const pianoNotes = source === 'midi-raw'
     ? (midiActiveNotes ?? [])
     : activeChord
-      ? (activeChord.voicing && activeChord.voicing.length > 0
-          ? activeChord.voicing
-          : generatePianoVoicing(activeChord))
+      ? resolvePianoVoicing(activeChord)
       : [];
 
   const guitarFrets = activeChord

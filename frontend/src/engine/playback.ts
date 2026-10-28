@@ -1,6 +1,6 @@
 import * as Tone from 'tone';
 import type { Song, SlotAddress, Chord, Arrangement } from '../models/types';
-import { generatePianoVoicing, generateGuitarVoicing } from './voicingEngine';
+import { resolvePianoVoicing, generateGuitarVoicing } from './voicingEngine';
 import { scheduleDrumMeasure, clearDrumSchedule } from './drums';
 import { harmonyInstrumentForGenre, playChordOnInstrument, preloadInstruments } from './instruments';
 import { scheduleArrangement, GENRE_HARMONY_RHYTHM, expandPatternPerSlot } from './arrangement';
@@ -236,7 +236,7 @@ export function schedulePlayback(
               .map((f, i) => f >= 0 ? OPEN_STRINGS[i] + f : -1)
               .filter(m => m >= 0);
           } else {
-            voicing = chordRef.voicing.length > 0 ? chordRef.voicing : generatePianoVoicing(chordRef);
+            voicing = resolvePianoVoicing(chordRef);
           }
           const sfInstrument = harmonyOverride ?? harmonyInstrumentForGenre(songGenre);
           if (sfInstrument && playChordOnInstrument(sfInstrument, voicing, t, strikeDur, 0.7)) {

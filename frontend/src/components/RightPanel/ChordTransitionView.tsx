@@ -1,5 +1,5 @@
 import type { Chord } from '../../models/types';
-import { generatePianoVoicing } from '../../engine/voicingEngine';
+import { resolvePianoVoicing } from '../../engine/voicingEngine';
 import { NOTE_VALUES } from '../../engine/constants';
 
 interface ChordTransitionViewProps {
@@ -102,7 +102,7 @@ function intoVisibleOctave(midi: number): number {
  *  uses `intoVisibleOctave` separately. */
 function chordNotes(c: Chord | null): number[] {
   if (!c) return [];
-  return c.voicing && c.voicing.length > 0 ? c.voicing : generatePianoVoicing(c);
+  return resolvePianoVoicing(c);
 }
 
 /** Pitch-classes (visible-range MIDI numbers) for keyboard rendering.

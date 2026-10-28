@@ -1,5 +1,5 @@
 import type { Chord } from '../models/types';
-import { NOTE_VALUES, NOTE_NAMES } from './constants';
+import { NOTE_VALUES, NOTE_NAMES } from './constants.ts';
 
 // Intervals relative to root for each chord quality.
 //
@@ -49,13 +49,64 @@ export const QUALITY_INTERVALS: Record<string, number[]> = {
   '7b13':   [0, 4, 10, 20],
 };
 
-export function generatePianoVoicing(chord: Chord): number[] {
+/** Slash bass as a pitch class, or null when the chord has none (or it is the root). */
+function slashBassPc(chord: Chord): number | null {
+  if (!chord.bass) return null;
+  const bass = NOTE_VALUES[chord.bass];
+  const root = NOTE_VALUES[chord.root];
+  if (bass === undefined || root === undefined || bass === root) return null;
+  return bass;
+}
+
+/** Root-position stack from the root in octave 3 (the voicing before slash basses were honoured). */
+export function rootPositionVoicing(chord: Chord): number[] {
   const rootValue = NOTE_VALUES[chord.root];
   if (rootValue === undefined) return [];
 
   const intervals = QUALITY_INTERVALS[chord.quality] || QUALITY_INTERVALS['maj'];
   const baseMidi = 48 + rootValue;
   return intervals.map(interval => baseMidi + interval);
+}
+
+// Slash chords put the named bass at the bottom. When the bass is a chord
+// tone the chord is inverted (F/C = C F A, C/E = E G C); otherwise the bass
+// goes under the root-position chord (F/G = G | F A C), dropping the 5th of
+// a 4-note chord so the voicing stays within the 4-note cap plus the bass.
+export function generatePianoVoicing(chord: Chord): number[] {
+  const voicing = rootPositionVoicing(chord);
+  const bass = slashBassPc(chord);
+  if (voicing.length === 0 || bass === null) return voicing;
+
+  if (voicing.some(m => m % 12 === bass)) {
+    const inverted = [...voicing];
+    // tensions reach up to a 13th, so a note may need two octave moves
+    for (let i = 0; i < voicing.length * 2 && inverted[0] % 12 !== bass; i++) {
+      inverted.push(inverted.shift()! + 12);
+      inverted.sort((a, b) => a - b);
+    }
+    return inverted[0] >= 60 ? inverted.map(m => m - 12) : inverted;
+  }
+
+  const fifth = voicing[0] + 7;
+  const upper = voicing.length >= 4 && voicing.includes(fifth) ? voicing.filter(m => m !== fifth) : voicing;
+  let bassMidi = upper[0] - 1;
+  while (bassMidi % 12 !== bass) bassMidi--;
+  return [bassMidi, ...upper];
+}
+
+/** The chord's stored voicing, except an empty one or a slash chord still stored in root
+ *  position (saved before slash basses were honoured); those are recomputed. A voicing
+ *  played in from a MIDI keyboard is never root-position-only for a slash chord, so it stays. */
+export function resolvePianoVoicing(chord: Chord): number[] {
+  const stored = chord.voicing ?? [];
+  if (stored.length === 0) return generatePianoVoicing(chord);
+  if (slashBassPc(chord) !== null) {
+    const legacy = rootPositionVoicing(chord);
+    if (legacy.length === stored.length && legacy.every((m, i) => m === stored[i])) {
+      return generatePianoVoicing(chord);
+    }
+  }
+  return stored;
 }
 
 const OPEN_STRINGS = [40, 45, 50, 55, 59, 64]; // E A D G B E
@@ -66,6 +117,27 @@ export function generateGuitarVoicing(chord: Chord): number[] {
 
   const intervals = QUALITY_INTERVALS[chord.quality] || QUALITY_INTERVALS['maj'];
   const chordNotes = new Set(intervals.map(i => (rootValue + i) % 12));
+
+  // Slash chord: the named bass goes on the lowest string that reaches it
+  // within the first five frets (F/C = x33211, C/E = 032010, G/B = x20003);
+  // strings below it are muted and the rest take the lowest-fret chord tone.
+  const bass = slashBassPc(chord);
+  if (bass !== null) {
+    const bassString = OPEN_STRINGS.findIndex(open => {
+      for (let fret = 0; fret <= 5; fret++) if ((open + fret) % 12 === bass) return true;
+      return false;
+    });
+    if (bassString >= 0) {
+      return OPEN_STRINGS.map((open, i) => {
+        if (i < bassString) return -1;
+        for (let fret = 0; fret <= 5; fret++) {
+          const note = (open + fret) % 12;
+          if (i === bassString ? note === bass : chordNotes.has(note)) return fret;
+        }
+        return -1;
+      });
+    }
+  }
 
   const frets: number[] = [];
   for (const openMidi of OPEN_STRINGS) {
