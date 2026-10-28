@@ -49,9 +49,10 @@ remain on the [manual checklist](docs/manual-checks.md).
 - **Sections** preserves explicit versus inferred labels, lets you edit boundaries,
   and selects a region by its staff label. **Original/A/B/C** changes only the chosen
   slots and can restore the exact original voicings.
-- **Projects** saves work in this browser and supports project JSON backup/import.
-  Loading another score first preserves the current work. There is no account or
-  cloud synchronization.
+- **Projects** saves work in this browser. **Edit** returns a saved project to the
+  editor; loading another score first preserves the current work. Select individual
+  projects or **Select all**, then **Delete selected** after confirmation. There is
+  no account or cloud synchronization.
 - **Play** keeps the active chord and its Piano/Guitar display directly below
   transport. The keyboard keeps its natural SVG proportions with compact spacing;
   the small 🎹/🎸 selectors retain English accessible labels and tooltips.
@@ -180,7 +181,7 @@ Drag a metal cap or use the arrow keys to change a value; Home/End reach the
 range limits. Double-click a fader to restore its default.
 Levels change the audio output, including notes already ringing. Harmony and
 Bass remain independent even when they use the same instrument. Save preserves
-the mix for Projects playback, Open and project JSON export/import; old sessions
+the mix for Projects playback and **Edit** in the editor; old sessions
 retain their previous levels.
 
 ### Dark + light themes
@@ -219,7 +220,7 @@ flowchart LR
   Music --> MT["Own Music Transformer"]
   Music --> MIDI["Editable MIDI · local DAW handoff"]
   Editor --> Play["Play · four-part mixer"]
-  Editor --> Files["PDF · local Projects / JSON"]
+  Editor --> Files["PDF · local Projects"]
 ```
 
 The MCP tools wrap implemented services, including score import. Planning and

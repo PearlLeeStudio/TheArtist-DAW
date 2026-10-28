@@ -48,7 +48,7 @@ unimplemented and are not part of the completed-feature checks.
 - [ ] Review C, Am and G7 in C major: I, vi and V7 appear in the score view after
   import. Change the review key to reanalyze fixed symbols; the main Key control
   instead transposes the song. Check Bb/Eb borrowed chords and preserve Roman
-  labels in Projects, JSON backup and PDF. Source proposal metadata stays visible.
+  labels in Projects and PDF. Source proposal metadata stays visible.
 - [ ] Explicit source N.C. produces an empty chord bar labeled N.C. Unresolved
   slots are labeled Unresolved instead. Existing saved user-chosen N.C. metadata
   remains separate from the original reading.
@@ -65,9 +65,24 @@ unimplemented and are not part of the completed-feature checks.
   stopping the server. Regular and Favorite Generate show an error, do not invent
   offline candidates and leave the score unchanged. Restore the connection and
   retry; the old error clears and real suggestions appear.
-- [ ] Import/Open preserves current work in Projects. Save, refresh, Open, export
-  project JSON and import it again. Chords, sections and four mixer levels survive.
-  Invalid JSON and storage errors remain visible without replacing current work.
+
+## Projects
+
+- [ ] Importing a score or editing another project preserves current work in
+  Projects. Save, refresh and choose the card's Edit action to return to the
+  editor. Chords, sections, Roman labels, source evidence and mixer levels survive.
+  Storage errors remain visible without replacing current work. Project-file
+  download and import controls are absent.
+- [ ] Select individual project checkboxes, then Select all; every card can be
+  selected and the all-selected state follows individual changes. Delete selected
+  asks for confirmation of the selection. Cancel keeps the list, selection and
+  playback unchanged. Confirm removes only the selected projects, including all
+  projects when Select all was used; retained projects survive refresh.
+- [ ] Simulate a storage failure before confirming Delete selected. The error
+  stays visible, the full project list and selection remain available, and playback
+  is unchanged. Restore storage and retry successfully.
+- [ ] Deleting the saved project currently playing stops its playback. Deleting
+  other selected projects lets the unselected playing project continue.
 
 ## Play and controller
 

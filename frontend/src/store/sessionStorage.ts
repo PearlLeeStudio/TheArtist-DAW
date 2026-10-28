@@ -40,6 +40,15 @@ export function saveAll(sessions: SavedSession[]): void {
   }
 }
 
+/** Persist one deletion transaction before publishing its replacement list. */
+export function removeSavedSessions(sessions: SavedSession[], ids: readonly string[]): SavedSession[] {
+  const selectedIds = new Set(ids);
+  const remaining = sessions.filter((session) => !selectedIds.has(session.id));
+  if (remaining.length === sessions.length) return sessions;
+  saveAll(remaining);
+  return remaining;
+}
+
 function record(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }

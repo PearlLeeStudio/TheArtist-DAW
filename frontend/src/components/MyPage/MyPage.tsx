@@ -26,6 +26,8 @@ interface SessionRowProps {
   loadingSessionId: string | null;
   exportingId: string | null;
   isPaused: boolean;
+  selected: boolean;
+  onSelect: (id: string) => void;
   onTogglePlay: (session: SavedSession) => void;
   onOpen: (session: SavedSession) => void;
   onDelete: (session: SavedSession) => void;
@@ -34,8 +36,8 @@ interface SessionRowProps {
 }
 
 function SessionRow({
-  session, activeSessionId, loadingSessionId, exportingId, isPaused,
-  onTogglePlay, onOpen, onDelete, onFavorite, onExportMidi,
+  session, activeSessionId, loadingSessionId, exportingId, isPaused, selected,
+  onSelect, onTogglePlay, onOpen, onDelete, onFavorite, onExportMidi,
 }: SessionRowProps) {
   const [previewOpen, setPreviewOpen] = useState(false);
   const isActive = activeSessionId === session.id;
@@ -51,8 +53,12 @@ function SessionRow({
     <article className="p-4 space-y-3" style={{
       background: 'var(--bg-surface)', border: '1px solid var(--border)',
       borderLeft: session.starred ? '3px solid var(--brand-yellow)' : '1px solid var(--border)',
+      outline: selected ? '2px solid var(--text-heading)' : undefined,
+      outlineOffset: selected ? '2px' : undefined,
     }}>
       <div className="flex items-start gap-3 flex-wrap">
+        <input type="checkbox" checked={selected} onChange={() => onSelect(session.id)}
+          className="mt-1.5 h-4 w-4 shrink-0 cursor-pointer" aria-label={`Select ${session.name}`} />
         <button onClick={() => onFavorite(session)} className="text-xl leading-none shrink-0 mt-1"
           style={{ color: session.starred ? 'var(--brand-yellow)' : 'var(--text-muted)', background: 'transparent' }}
           title={session.starred ? 'Remove from favorites' : 'Favorite for future inspiration'}
@@ -102,12 +108,23 @@ export default function MyPage({ onExitToEditor }: MyPageProps) {
   const mountedRef = useRef(true);
   const playSequence = useRef(0);
   const exportController = useRef<AbortController | null>(null);
+  const selectAllRef = useRef<HTMLInputElement>(null);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [loadingSessionId, setLoadingSessionId] = useState<string | null>(null);
   const [isPaused, setIsPaused] = useState(false);
   const [exportingId, setExportingId] = useState<string | null>(null);
   const [notice, setNotice] = useState<Notice | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
   const starredCount = sessions.filter((session) => session.starred).length;
+  const selectedSessions = sessions.filter((session) => selectedIds.has(session.id));
+  const selectedCount = selectedSessions.length;
+  const allSelected = sessions.length > 0 && selectedCount === sessions.length;
+
+  useEffect(() => {
+    if (selectAllRef.current) {
+      selectAllRef.current.indeterminate = selectedCount > 0 && !allSelected;
+    }
+  }, [allSelected, selectedCount]);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -206,11 +223,39 @@ export default function MyPage({ onExitToEditor }: MyPageProps) {
     if (!window.confirm(`Delete "${session.name}" from this browser?`)) return;
     try {
       useSessionStore.getState().remove(session.id);
-      if (activeSessionId === session.id) stopProjectPlayback();
+      if (activeSessionId === session.id || loadingSessionId === session.id) stopProjectPlayback();
+      setSelectedIds((previous) => {
+        const remaining = new Set(previous);
+        remaining.delete(session.id);
+        return remaining;
+      });
       setNotice({ error: false, message: `Deleted “${session.name}” from this browser.` });
     } catch (error) {
       setNotice({ error: true, message: error instanceof Error ? error.message : 'The project could not be deleted. Please try again.' });
     }
+  };
+
+  const handleDeleteSelected = () => {
+    if (!selectedCount) return;
+    const description = `${selectedCount} selected project${selectedCount === 1 ? '' : 's'}`;
+    if (!window.confirm(`Delete ${description} from this browser? This cannot be undone.`)) return;
+    try {
+      const ids = selectedSessions.map((session) => session.id);
+      useSessionStore.getState().removeMany(ids);
+      if (ids.some((id) => id === activeSessionId || id === loadingSessionId)) stopProjectPlayback();
+      setSelectedIds(new Set());
+      setNotice({ error: false, message: `Deleted ${description} from this browser.` });
+    } catch (error) {
+      setNotice({ error: true, message: error instanceof Error ? error.message : 'The selected projects could not be deleted. Please try again.' });
+    }
+  };
+
+  const handleSelect = (id: string) => {
+    setSelectedIds((previous) => {
+      const next = new Set(previous);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
   };
 
   const handleFavorite = (session: SavedSession) => {
@@ -267,10 +312,25 @@ export default function MyPage({ onExitToEditor }: MyPageProps) {
               <span>{sessions.length} saved{starredCount > 0 ? ` · ★ ${starredCount} favorites` : ''}</span>
               <span>Editing a project keeps unsaved editor work here first.</span>
             </div>
+            <div className="flex items-center flex-wrap gap-3 text-xs" style={{ color: 'var(--text-primary)' }}>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input ref={selectAllRef} type="checkbox" checked={allSelected}
+                  aria-checked={selectedCount > 0 && !allSelected ? 'mixed' : allSelected}
+                  onChange={(event) => setSelectedIds(event.target.checked ? new Set(sessions.map((session) => session.id)) : new Set())}
+                  className="h-4 w-4" />
+                Select all saved projects
+              </label>
+              <span aria-live="polite" style={mutedStyle}>{selectedCount} selected</span>
+              <button onClick={() => setSelectedIds(new Set())} disabled={!selectedCount}
+                className="px-3 py-2 disabled:opacity-50" style={buttonStyle}>Clear selection</button>
+              <button onClick={handleDeleteSelected} disabled={!selectedCount}
+                className="px-3 py-2 font-bold disabled:opacity-50" style={buttonStyle}>Delete selected</button>
+            </div>
             <div className="space-y-3">
               {sessions.map((session) => (
                 <SessionRow key={session.id} session={session} activeSessionId={activeSessionId}
                   loadingSessionId={loadingSessionId} exportingId={exportingId} isPaused={isPaused}
+                  selected={selectedIds.has(session.id)} onSelect={handleSelect}
                   onTogglePlay={(item) => void handleTogglePlay(item)} onOpen={handleOpen}
                   onDelete={handleDelete} onFavorite={handleFavorite} onExportMidi={(item) => void handleExportMidi(item)} />
               ))}

@@ -13,7 +13,7 @@
 import { create } from 'zustand';
 import type { SavedSession, SessionGenerationContext, Song } from '../models/types';
 import { computeArrangement } from '../engine/arrangement';
-import { loadAll, saveAll } from './sessionStorage';
+import { loadAll, removeSavedSessions, saveAll } from './sessionStorage';
 
 interface SessionState {
   sessions: SavedSession[];
@@ -22,6 +22,7 @@ interface SessionState {
    *  freshly created entry (caller may want its id for UI feedback). */
   add: (song: Song, generation: SessionGenerationContext, name?: string) => SavedSession;
   remove: (id: string) => void;
+  removeMany: (ids: readonly string[]) => void;
   rename: (id: string, name: string) => void;
   toggleStar: (id: string) => void;
   /** Replace a session's song + generation snapshot (used when the user
@@ -73,8 +74,12 @@ export const useSessionStore = create<SessionState>((set, get) => ({
     return session;
   },
 
-  remove: (id) => {
-    set({ sessions: persist(get().sessions.filter((s) => s.id !== id)) });
+  remove: (id) => get().removeMany([id]),
+
+  removeMany: (ids) => {
+    const current = get().sessions;
+    const remaining = removeSavedSessions(current, ids);
+    if (remaining !== current) set({ sessions: remaining });
   },
 
   rename: (id, name) => {

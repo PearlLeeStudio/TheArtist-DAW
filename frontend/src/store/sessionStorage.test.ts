@@ -2,16 +2,23 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import type { SavedSession } from '../models/types.ts';
 import { DEFAULT_PLAY_SETTINGS, enginePlayConfig, playSettingsFromSession } from '../engine/playSettings.ts';
-import { saveAll, loadAll } from './sessionStorage.ts';
+import { saveAll, loadAll, removeSavedSessions } from './sessionStorage.ts';
 import { readScoreImportResponse, createScoreImportDraft, buildImportedSong, buildScoreImportForEditor } from '../engine/scoreImport.ts';
 
-function withStoredProjects<T>(sessions: unknown[], run: () => T): T {
+interface StorageMemory { stored: string; writes: number; failWrites: boolean }
+
+function withStoredProjects<T>(sessions: unknown[], run: (memory: StorageMemory) => T): T {
   const descriptor = Object.getOwnPropertyDescriptor(globalThis, 'localStorage');
-  let stored = JSON.stringify({ version: 1, sessions });
+  const memory: StorageMemory = { stored: JSON.stringify({ version: 1, sessions }), writes: 0, failWrites: false };
   Object.defineProperty(globalThis, 'localStorage', { configurable: true, value: {
-    setItem(_key: string, value: string) { stored = value; }, getItem() { return stored; },
+    setItem(_key: string, value: string) {
+      memory.writes++;
+      if (memory.failWrites) throw new Error('quota');
+      memory.stored = value;
+    },
+    getItem() { return memory.stored; },
   } });
-  try { return run(); }
+  try { return run(memory); }
   finally {
     if (descriptor) Object.defineProperty(globalThis, 'localStorage', descriptor);
     else Reflect.deleteProperty(globalThis, 'localStorage');
@@ -63,6 +70,56 @@ const importedProject: SavedSession = {
 
 test('browser save and reload retain real chords, uncertain sections, source and a muted part', () => {
   assert.deepEqual(roundTripProjects([importedProject])[0], importedProject);
+});
+
+test('bulk deletion saves once, ignores stale and duplicate selections, and preserves unselected projects', () => {
+  const sessions = [importedProject, { ...structuredClone(importedProject), id: 'second' },
+    { ...structuredClone(importedProject), id: 'third' }];
+  withStoredProjects(sessions, (memory) => {
+    const remaining = removeSavedSessions(sessions, ['second', 'stale-id', 'second']);
+    assert.equal(memory.writes, 1);
+    assert.deepEqual(remaining, [sessions[0], sessions[2]]);
+    assert.equal(remaining[0], sessions[0]);
+    assert.equal(remaining[1], sessions[2]);
+    assert.deepEqual(loadAll(), remaining);
+    assert.equal(sessions.length, 3);
+    assert.deepEqual(sessions[1].song.importSource, importedProject.song.importSource);
+  });
+});
+
+test('selecting every saved id persists an empty list in one write', () => {
+  const sessions = [importedProject, { ...structuredClone(importedProject), id: 'second' }];
+  withStoredProjects(sessions, (memory) => {
+    assert.deepEqual(removeSavedSessions(sessions, sessions.map((session) => session.id)), []);
+    assert.equal(memory.writes, 1);
+    assert.deepEqual(loadAll(), []);
+    assert.deepEqual(JSON.parse(memory.stored), { version: 1, sessions: [] });
+  });
+});
+
+test('empty or entirely stale selections do not write storage or replace the current list', () => {
+  const sessions = [importedProject];
+  withStoredProjects(sessions, (memory) => {
+    assert.equal(removeSavedSessions(sessions, []), sessions);
+    assert.equal(removeSavedSessions(sessions, ['missing-id']), sessions);
+    assert.equal(memory.writes, 0);
+    assert.deepEqual(loadAll(), sessions);
+  });
+});
+
+test('a failed bulk deletion cannot publish a partial list or lose the previous saved projects', () => {
+  const sessions = [importedProject, { ...structuredClone(importedProject), id: 'second' }];
+  withStoredProjects(sessions, (memory) => {
+    const previousStorage = memory.stored;
+    let published = sessions;
+    memory.failWrites = true;
+    assert.throws(() => { published = removeSavedSessions(sessions, [sessions[0].id]); }, /could not save/);
+    assert.equal(published, sessions);
+    assert.equal(memory.writes, 1);
+    assert.equal(memory.stored, previousStorage);
+    assert.deepEqual(loadAll(), sessions);
+    assert.equal(sessions.length, 2);
+  });
 });
 
 test('note-derived source proposals and evidence survive browser save and reload', () => {
