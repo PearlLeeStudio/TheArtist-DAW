@@ -3,9 +3,18 @@
 These checks are pending. Automated validation does not establish visual quality,
 MIDI-device behavior, audible balance, PDF appearance or DAW compatibility.
 
-Restart the backend after installing its updated dependencies, then refresh the
-frontend. New import/export/MCP routes require the new backend process. Safari can
-exercise the score and audio workflow; use Chrome for Web MIDI.
+Refresh the frontend, then check `/api/health` and `/api/capabilities`. Version
+`1.0` with nine tools confirms the running backend includes import/export/MCP;
+restart it only if unreachable or missing those routes, or after further backend
+changes. Safari can exercise the score and audio workflow; use Chrome for Web MIDI.
+An HTTP response establishes availability, not successful generation, audio or
+DAW execution. Logic detection may succeed even while Ableton is not installed.
+
+Follow the sections below in order: import and compare the source, revise a
+passage, audition the original and alternatives, adjust the controller, save and
+reopen, then inspect PDF/MIDI and the actual DAW result. Full-form planning,
+Meta candidate validation/explanations and open-corpus source cards remain
+unimplemented and are not part of the completed-feature checks.
 
 ## Import and revise
 
@@ -20,6 +29,10 @@ exercise the score and audio workflow; use Chrome for Web MIDI.
 - [ ] Drag a passage, Generate, and compare Original/A/B/C audibly with identical
   settings. Restore Original, including voicings and rests. Changes outside the
   selection survive. Replacing a score cannot apply an old in-flight result.
+- [ ] Simulate a failed generation request in browser developer tools without
+  stopping the server. Regular and Favorite Generate show an error, do not invent
+  offline candidates and leave the score unchanged. Restore the connection and
+  retry; the old error clears and real suggestions appear.
 - [ ] Import/Open preserves current work in Projects. Save, refresh, Open, export
   project JSON and import it again. Chords, sections and four mixer levels survive.
   Invalid JSON and storage errors remain visible without replacing current work.
@@ -52,10 +65,12 @@ exercise the score and audio workflow; use Chrome for Web MIDI.
 
 ## Automated evidence
 
-Frontend: 94 tests passed; TypeScript/Vite build and ESLint passed. The build still
+Frontend: 105 tests passed; TypeScript/Vite build and ESLint passed. The build still
 reports the existing large-chunk warning. Backend: 173 tests passed and app import
 passed. These include MIDI parsing, API errors, score-import mocks, real SDK MCP
-round trips and CPU seed isolation. TheVoyager adapter has five mock contract tests;
+round trips and CPU seed isolation. Frontend transport tests cover network/HTTP
+failures, SSE errors, interrupted or malformed streams and real server results.
+TheVoyager adapter has five mock contract tests;
 its live service/complete rendering loop is not verified by those tests.
 
 The real Meta import [record](../experiments/meta/score_import_smoke.json) covers one
