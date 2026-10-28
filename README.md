@@ -213,13 +213,15 @@ TheArtist/
 │   ├── components/
 │   │   ├── ScoreEditor/Staff.tsx              # VexFlow staff
 │   │   └── RightPanel/
-│   │       ├── PlaybackControls / DrumSelector / SongSettings
+│   │       ├── play/                          # Play panel: transport, rail, Visual /
+│   │       │                                  #   Instrument / Rhythm / Drums panes, ui/ keys
+│   │       ├── SongSettings.tsx               # BPM / time / key / genre bar
 │   │       ├── ChordActions.tsx               # AI Generate flow + manual chord
 │   │       ├── GenerateProgress.tsx           # 7-stage SSE progress chips
 │   │       ├── MidiStatus.tsx                 # MIDI input PRESENTER (216 LOC)
 │   │       ├── useMidiCapture.ts              # MIDI state machine HOOK (317 LOC)
 │   │       ├── ChordTransitionView.tsx        # 3-chord voice-leading view
-│   │       ├── PianoKeyboard.tsx / GuitarFretboard.tsx / VoicingViewer.tsx
+│   │       ├── PianoKeyboard.tsx / GuitarFretboard.tsx
 │   │       └── ThemeToggle.tsx
 │   ├── engine/                                # pure music logic, no React deps
 │   │   ├── chordParser.ts · chordDisplay.ts   # symbol parsing + display parts
@@ -229,8 +231,10 @@ TheArtist/
 │   │   ├── midiInput.ts                       # Web MIDI API + chord detection
 │   │   ├── chordGenerator.ts                  # /api/generate/stream client
 │   │   ├── sseStream.ts                       # generic SSE frame reader
-│   │   ├── arrangement.ts                     # per-genre harmony/bass comping rhythm
-│   │   ├── drums.ts                           # 15 drum-pattern presets (sampled + synth fallback)
+│   │   ├── genreTables.ts                     # rhythm presets + per-genre rhythm/instrument tables
+│   │   ├── playSettings.ts                    # Play-panel settings resolved against a genre
+│   │   ├── arrangement.ts                     # bass layer (genre bass rhythm)
+│   │   ├── drumPatterns.ts · drums.ts         # 15 drum patterns · sampled + synth playback
 │   │   ├── instruments.ts                     # smplr GM Soundfont registry
 │   │   ├── midiExport.ts                      # @tonejs/midi export
 │   │   ├── constants.ts                       # note-value / root tables
@@ -524,7 +528,7 @@ Drum voice letters → GM percussion (channel 10) mapping lives in `backend/app/
 | folk | G major | 100 | acoustic_guitar_steel | contrabass | Folk / Ballad |
 | gospel | F major | 90 | drawbar_organ | electric_bass_finger | Gospel |
 
-The full per-genre 1-bar harmony / bass rhythm patterns live in `frontend/src/engine/arrangement.ts:GENRE_HARMONY_RHYTHM` (mirrored in `backend/app/services/genre_tables.py`).
+The full per-genre 1-bar harmony / bass rhythm patterns live in `frontend/src/engine/genreTables.ts` (`HARMONY_RHYTHM_PRESETS`, `GENRE_BASS_RHYTHM`; mirrored in `backend/app/services/genre_tables.py`).
 
 **6) Errors**
 

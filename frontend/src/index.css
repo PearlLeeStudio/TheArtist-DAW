@@ -183,3 +183,153 @@ select::-ms-expand { display: none; }
 code, pre, .mono {
   font-family: "iA Writer Mono S", "JetBrains Mono", "SF Mono", ui-monospace, monospace;
 }
+
+/* ----------------------------------------------------------------
+   Play panel device look (Teenage Engineering OP-1 / EP-133 feel).
+   Tokens for the panel, its keys, LEDs, the LCD screen and the knobs,
+   then the skin and state rules of the primitives in
+   components/RightPanel/play/ui/ (KeyButton, Led, StepRow, Screen,
+   Knob). Geometry (heights, padding, type sizes) stays inline in those
+   components, so every pane's height adds up from its code.
+   The screen stays dark in the light theme, like a real device.
+---------------------------------------------------------------- */
+
+:root {
+  --panel-bg:          #161616;
+  --panel-border:      #2a2a2a;
+
+  --key-bg:            #232323;
+  --key-bg-active:     #303030;
+  --key-border:        #333333;
+  --key-text:          #d6d6d6;
+  --key-text-active:   #ffffff;   /* label of a latched / pressed key */
+  --key-text-dim:      #8f8f8f;   /* sublabels, knob and step-row labels */
+  --key-edge:          rgba(0, 0, 0, 0.6);   /* underside of a knob cap */
+  --key-shadow:        inset 0 -2px 0 rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  --key-shadow-active: inset 0 1px 3px rgba(0, 0, 0, 0.65);
+
+  --led-on:            var(--brand-yellow);
+  --led-alt:           #fb923c;
+  --led-off:           #3b3b3b;
+  --led-ring:          inset 0 0 0 1px rgba(0, 0, 0, 0.25);
+  --led-edge:          transparent;           /* outline under a knob's value arc */
+  --step-playhead:     #f2f2f2;               /* ring around the step playing now */
+
+  --screen-bg:         #050505;
+  --screen-text:       #e9e9e9;
+  --screen-text-dim:   #8a8a8a;
+  --screen-led-off:    #2e2e2e;
+  --screen-shadow:     inset 0 0 0 1px rgba(255, 255, 255, 0.07), inset 0 2px 6px rgba(0, 0, 0, 0.8);
+
+  /* Same in both themes. JetBrains Mono loads with the other faces in index.html. */
+  --font-device:       "JetBrains Mono", "SF Mono", ui-monospace, monospace;
+}
+
+:root.light {
+  --panel-bg:          #e9e9e7;
+  --panel-border:      #d4d4d1;
+
+  --key-bg:            #fafafa;
+  --key-bg-active:     #e1e1df;
+  --key-border:        #c9c9c6;
+  --key-text:          #262626;
+  --key-text-active:   #000000;
+  --key-text-dim:      #5e5e5c;
+  --key-edge:          rgba(0, 0, 0, 0.18);
+  --key-shadow:        inset 0 -2px 0 rgba(0, 0, 0, 0.1);
+  --key-shadow-active: inset 0 1px 3px rgba(0, 0, 0, 0.22);
+
+  --led-on:            var(--brand-yellow);
+  --led-alt:           #f97316;
+  /* Well darker than the yellow (about 2.8:1), so on and off, and a ghost
+     step's dimmer level, differ in lightness and not only in hue. */
+  --led-off:           #7a7a77;
+  /* A faint dark ring (and arc outline) so yellow still reads on a pale key. */
+  --led-ring:          inset 0 0 0 1px rgba(0, 0, 0, 0.3);
+  --led-edge:          rgba(0, 0, 0, 0.3);
+  --step-playhead:     #1f1f1f;
+
+  --screen-bg:         #1c1c1c;
+  --screen-text:       #f0f0f0;
+  --screen-text-dim:   #9a9a9a;
+  --screen-led-off:    #3a3a3a;
+  --screen-shadow:     inset 0 0 0 1px rgba(0, 0, 0, 0.75), inset 0 2px 6px rgba(0, 0, 0, 0.6);
+}
+
+/* KeyButton. Hover dimming and the 1px press come from .btn-hover. */
+.te-key {
+  font-family: var(--font-device);
+  letter-spacing: 0.06em;
+  color: var(--key-text);
+  background: var(--key-bg);
+  border: 1px solid var(--key-border);
+  border-radius: 4px;
+  box-shadow: var(--key-shadow);
+  -webkit-tap-highlight-color: transparent;
+  transition: opacity 0.15s ease, transform 0.08s ease,
+              background-color 0.08s ease, box-shadow 0.08s ease, color 0.08s ease;
+}
+.te-key[data-active],
+.te-key:active:not(:disabled) {
+  color: var(--key-text-active);
+  background: var(--key-bg-active);
+  box-shadow: var(--key-shadow-active);
+}
+.te-key:disabled {
+  opacity: 0.4;
+  cursor: default;
+  transform: none;
+}
+/* The yellow focus ring barely shows on the light panel: use the key text colour. */
+:root.light .te-key:focus-visible,
+:root.light .te-knob:focus-visible {
+  outline-color: var(--key-text);
+}
+/* Forced colours drop the LEDs and key backgrounds: outline the latched keys. */
+@media (forced-colors: active) {
+  .te-key[data-active]:not(:focus-visible) {
+    outline: 2px solid Highlight;
+    outline-offset: -4px;
+  }
+}
+
+/* Screen. LEDs and step rows on it take the dark-glass colours in both themes. */
+.te-screen {
+  font-family: var(--font-device);
+  color: var(--screen-text);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0) 45%), var(--screen-bg);
+  border-radius: 3px;
+  box-shadow: var(--screen-shadow);
+  --led-off: var(--screen-led-off);
+  --led-ring: inset 0 0 0 1px rgba(0, 0, 0, 0.35);
+  --led-edge: transparent;
+  --step-playhead: var(--screen-text);
+  --key-text-dim: var(--screen-text-dim);
+}
+
+/* Knob */
+.te-knob {
+  font-family: var(--font-device);
+  border-radius: 4px;
+  cursor: ns-resize;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.te-knob-cap {
+  fill: var(--key-bg);
+  stroke: var(--key-border);
+  transition: fill 0.1s ease;
+}
+.te-knob:hover .te-knob-cap,
+.te-knob[data-dragging] .te-knob-cap {
+  fill: var(--key-bg-active);
+}
+/* On <html> while a knob is dragged: no text selection, one cursor everywhere. */
+:root.te-knob-drag {
+  -webkit-user-select: none;
+  user-select: none;
+}
+:root.te-knob-drag * {
+  cursor: ns-resize !important;
+}

@@ -11,17 +11,18 @@ import { useRef, useState, useCallback } from 'react';
 import { useSessionStore } from '../../store/sessionStore';
 import { useSongStore } from '../../store/songStore';
 import { useGenerationStore } from '../../store/generationStore';
+import { usePlayStore } from '../../store/playStore';
 import { downloadSongAsMidi } from '../../engine/midiExport';
 import {
+  applyPlayConfig,
   schedulePlayback,
   startPlayback,
   stopPlayback,
   pausePlayback,
   resumePlayback,
-  setHarmonyOverride,
 } from '../../engine/playback';
-import { setCurrentDrumPattern, getDrumPatternForGenre } from '../../engine/drums';
 import { computeArrangement } from '../../engine/arrangement';
+import { enginePlayConfig, playSettingsFromSession, resolveVoicingMode } from '../../engine/playSettings';
 import type { SavedSession } from '../../models/types';
 import SessionStaff from './SessionStaff';
 
@@ -45,8 +46,7 @@ interface SessionRowProps {
 function SessionRow({ session, onAfterLoad, activeSessionId, isPaused, onTogglePlay }: SessionRowProps) {
   const setSong = useSongStore((s) => s.setSong);
   const setModelKey = useGenerationStore((s) => s.setModelKey);
-  const setDrumPatternId = useSongStore((s) => s.setDrumPatternId);
-  const setHarmonyOverrideStore = useSongStore((s) => s.setHarmonyOverride);
+  const replacePlaySettings = usePlayStore((s) => s.replaceSettings);
   const remove = useSessionStore((s) => s.remove);
   const toggleStar = useSessionStore((s) => s.toggleStar);
 
@@ -54,7 +54,7 @@ function SessionRow({ session, onAfterLoad, activeSessionId, isPaused, onToggleP
   // Three states: idle (not active) | playing (active + not paused) | paused (active + paused)
   const buttonLabel = !isActive ? '▶ Play' : isPaused ? '▶ Resume' : '⏸ Pause';
   const buttonTitle = !isActive
-    ? 'Play with full multi-track arrangement (chord + bass + melody + drum)'
+    ? 'Play with the Play-panel settings saved with this session (harmony + bass + drums)'
     : isPaused
       ? 'Resume from paused position'
       : 'Pause (Tone.Transport pause — schedule retained for instant resume)';
@@ -62,12 +62,10 @@ function SessionRow({ session, onAfterLoad, activeSessionId, isPaused, onToggleP
   const handleLoad = () => {
     setSong(session.song);
     setModelKey(session.generation.model);
-    // Pearl 2026-05-09: restore drum selection bundled with the session.
-    // Pearl 2026-05-10: also restore harmony override so the editor
-    // reflects the saved instrument. Melody was dropped — leftover
-    // melodyOverride from old sessions ignored by everything downstream.
-    setDrumPatternId(session.generation.drumPatternId ?? null);
-    setHarmonyOverrideStore(session.generation.harmonyOverride ?? null);
+    // The Play panel comes back as it was at Save (instrument, rhythm,
+    // drums, bass, visual mode). Leftover melodyOverride fields from old
+    // sessions are ignored.
+    replacePlaySettings(playSettingsFromSession(session.generation));
     onAfterLoad();
   };
 
@@ -199,30 +197,19 @@ export default function MyPage({ onExitToEditor }: MyPageProps) {
     stopPlayback();
 
     // Resolve effective genre: prefer the saved generation context, fall
-    // back to the song's own genre tag. Used for drum + instrument routing.
+    // back to the song's own genre tag. Auto instrument, rhythm, voicing
+    // and drums resolve against it.
     const effectiveGenre = session.generation.genre ?? session.song.genre ?? null;
 
-    // Restore the user-picked harmony override saved with the session
-    // so the chord track plays back on the exact GM instrument the user
-    // A/B'd at Save time. null = fall through to genre default. The
-    // playback engine reads song.genre directly (effectiveGenre is
-    // already baked into songForPlay below), so no separate genre setter.
-    setHarmonyOverride(session.generation.harmonyOverride ?? null);
+    // Replay with the Play-panel settings saved with the session, resolved
+    // the same way the editor resolves its own — so the session sounds as
+    // it did in the editor at Save. Sessions saved before the Play panel
+    // keep their drum pick (else the genre's) with the bass on.
+    const playSettings = playSettingsFromSession(session.generation);
+    applyPlayConfig(enginePlayConfig(playSettings, effectiveGenre));
 
-    // Drum: Pearl 2026-05-10 — honour the saved drumPatternId first
-    // (the user's last play-view selection bundled with the session).
-    // Falls through to the genre's signature pattern if the session
-    // predates that field.
-    const savedDrum = session.generation.drumPatternId;
-    if (savedDrum !== undefined && savedDrum !== null) {
-      setCurrentDrumPattern(savedDrum);
-    } else {
-      const genreDrumPattern = effectiveGenre ? getDrumPatternForGenre(effectiveGenre) : null;
-      setCurrentDrumPattern(genreDrumPattern?.id ?? null);
-    }
-
-    // Make sure the song passed to schedulePlayback / arrangement carries
-    // the same effective genre — the bass + melody rhythm tables key on
+    // The song passed to schedulePlayback / arrangement carries the same
+    // effective genre — the harmony and bass rhythm tables key on
     // song.genre, and the arrangement was computed against this same
     // resolution at save time.
     const songForPlay = { ...session.song, genre: effectiveGenre };
@@ -239,9 +226,10 @@ export default function MyPage({ onExitToEditor }: MyPageProps) {
       songForPlay,
       () => {/* no editor highlight on MyPage */},
       undefined,
-      'piano',
+      resolveVoicingMode(playSettings, effectiveGenre),
       () => { setActiveSessionId(null); setIsPaused(false); },  // natural end
       arrangement,
+      false,  // no Loop key here: a session plays once, whatever the editor's Loop says
     );
     void startPlayback();
     setActiveSessionId(session.id);

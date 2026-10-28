@@ -171,7 +171,7 @@ export function useMidiCapture(
     [setMidiCandidates, songKey],
   );
 
-  // Note-state callback: forward live notes for VoicingViewer; on full
+  // Note-state callback: forward live notes to the Play panel's Visual pane; on full
   // release either skip (already auto-committed) or enter Confirm.
   // Partial-release events do NOT touch `committedViaTimerRef` —
   // dropping fingers one at a time would otherwise clear it and the

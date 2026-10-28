@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 
 type InputMode = 'generate' | 'midi' | 'manual';
 // Order matters — Generate is the default and the most-used path, so it
@@ -11,10 +11,8 @@ const INPUT_TABS: { id: InputMode; label: string }[] = [
 ];
 import Staff from './ScoreEditor/Staff';
 import SongFormDialog from './ScoreEditor/SongFormDialog';
-import VoicingViewer from './RightPanel/VoicingViewer';
-import PlaybackControls from './RightPanel/PlaybackControls';
+import PlayPanel from './RightPanel/play/PlayPanel';
 import SongSettings from './RightPanel/SongSettings';
-import DrumSelector from './RightPanel/DrumSelector';
 import ChordActions from './RightPanel/ChordActions';
 import MidiStatus from './RightPanel/MidiStatus';
 import MyPage from './MyPage/MyPage';
@@ -22,6 +20,23 @@ import ThemeToggle from './RightPanel/ThemeToggle';
 import { useSongStore } from '../store/songStore';
 import { useSessionStore } from '../store/sessionStore';
 import { useGenerationStore } from '../store/generationStore';
+import { usePlayStore } from '../store/playStore';
+
+/** The Play panel needs this much width for its rail and one pane. */
+const MIN_PANEL_WIDTH = 300;
+
+/** The MIDI tab. MidiStatus is the only MIDI source, and on unmount it
+ *  disconnects without clearing the notes and chord it last passed on (no
+ *  key release follows), so they are cleared here; otherwise the Play
+ *  panel's Visual pane would keep showing them. */
+function MidiTab({ onMidiNotes }: { onMidiNotes: (notes: number[]) => void }) {
+  const setMidiCandidates = useSongStore((s) => s.setMidiCandidates);
+  useEffect(() => () => {
+    onMidiNotes([]);
+    setMidiCandidates([]);
+  }, [onMidiNotes, setMidiCandidates]);
+  return <MidiStatus onMidiNotes={onMidiNotes} />;
+}
 
 export default function Layout() {
   const song = useSongStore((s) => s.song);
@@ -32,23 +47,19 @@ export default function Layout() {
   const addSession = useSessionStore((s) => s.add);
   const sessionCount = useSessionStore((s) => s.sessions.length);
   const modelKey = useGenerationStore((s) => s.modelKey);
-  const drumPatternId = useSongStore((s) => s.drumPatternId);
-  const harmonyOverride = useSongStore((s) => s.harmonyOverride);
+  const playSettings = usePlayStore((s) => s.settings);
+  const resetPlayback = useSongStore((s) => s.resetPlayback);
 
-  // Pearl 2026-05-09: bundle the right-panel playback config (genre/bpm/drum)
-  // with the saved score, so MyPage's "Generate music" can reproduce the
-  // intended playback faithfully. Note: bpm + genre are already inside `song`
-  // (song.bpm, song.genre); drumPatternId + harmonyOverride live in songStore
-  // separately and snapshot here so a saved session replays with the exact
-  // harmony instrument the user heard at Save time. Melody dropped 2026-05-10.
+  // Bundle the Play-panel settings with the saved score, so MyPage replays
+  // the session the way the editor played it at Save time (bpm + genre are
+  // already inside `song`).
   const handleSaveSession = useCallback(() => {
     addSession(song, {
       model: modelKey,
       genre: song.genre,
-      drumPatternId,
-      harmonyOverride,
+      ...playSettings,
     });
-  }, [addSession, song, modelKey, drumPatternId, harmonyOverride]);
+  }, [addSession, song, modelKey, playSettings]);
 
   const [midiActiveNotes, setMidiActiveNotes] = useState<number[]>([]);
   const [panelOpen, setPanelOpen] = useState(true);
@@ -78,7 +89,7 @@ export default function Layout() {
     const onMove = (ev: MouseEvent) => {
       if (!resizingRef.current) return;
       const next = window.innerWidth - ev.clientX - 20;
-      setPanelWidth(Math.min(640, Math.max(240, next)));
+      setPanelWidth(Math.min(640, Math.max(MIN_PANEL_WIDTH, next)));
     };
     const onUp = () => {
       resizingRef.current = false;
@@ -125,7 +136,11 @@ export default function Layout() {
         <div className="absolute top-3 right-4 flex items-center gap-2">
           <ThemeToggle />
           <button
-            onClick={() => setView(view === 'my' ? 'editor' : 'my')}
+            onClick={() => {
+              // Whatever is playing belongs to the view being left.
+              resetPlayback();
+              setView(view === 'my' ? 'editor' : 'my');
+            }}
             className="px-3 py-1.5 text-sm btn-hover"
             style={{
               background: view === 'my' ? 'var(--text-heading)' : 'var(--btn-bg)',
@@ -245,11 +260,12 @@ export default function Layout() {
           )}
         </div>
 
-        {/* Right Panel — collapsible. Tight spacing so the whole stack
-            fits in a 1080p viewport without scrolling. */}
+        {/* Right Panel — collapsible. A column: the Play/Input tabs, then
+            the mode's content filling the rest. Play never scrolls (one
+            pane at a time); Input scrolls inside its own area. */}
         {panelOpen && (
           <div
-            className="shrink-0 overflow-y-auto p-3 space-y-3"
+            className="shrink-0 flex flex-col min-h-0 p-3 gap-3"
             style={{
               width: `${panelWidth}px`,
               borderLeft: '1px solid var(--border)',
@@ -260,7 +276,7 @@ export default function Layout() {
                 their own full-page route (header "My" button) so they get
                 room to render each session as a real staff. */}
             <div
-              className="flex items-end justify-between"
+              className="shrink-0 flex items-end justify-between"
               style={{ borderBottom: '1px solid var(--border)' }}
             >
               {(['play', 'input'] as const).map((mode) => (
@@ -282,20 +298,13 @@ export default function Layout() {
 
             {/* Mode content */}
             {panelMode === 'play' && (
-              <div className="space-y-3">
-                <PlaybackControls />
-                <DrumSelector />
-                {/* Voicing lives at the bottom of Play mode — the user
-                    naturally wants to see the chord shape while they're
-                    listening back, but it's noise during chord input. */}
-                <div className="pt-3" style={{ borderTop: '1px solid var(--border)' }}>
-                  <VoicingViewer midiActiveNotes={midiActiveNotes} />
-                </div>
+              <div className="flex-1 min-h-0">
+                <PlayPanel midiActiveNotes={midiActiveNotes} />
               </div>
             )}
 
             {panelMode === 'input' && (
-              <div className="space-y-3">
+              <div className="flex-1 min-h-0 overflow-y-auto space-y-3">
                 {/* Sub-tab bar — three input methods. */}
                 <div className="flex" style={{ borderBottom: '1px solid var(--border)' }}>
                   {INPUT_TABS.map((t) => {
@@ -317,7 +326,7 @@ export default function Layout() {
                   })}
                 </div>
 
-                {inputMode === 'midi' && <MidiStatus onMidiNotes={handleMidiNotes} />}
+                {inputMode === 'midi' && <MidiTab onMidiNotes={handleMidiNotes} />}
                 {inputMode === 'generate' && <ChordActions view="generate" />}
                 {inputMode === 'manual' && <ChordActions view="manual" />}
               </div>

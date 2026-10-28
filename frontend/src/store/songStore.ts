@@ -3,8 +3,7 @@ import type { Song, Measure, Chord, SlotAddress, SectionType, SongSection } from
 import { calculateRomanNumeral } from '../engine/romanNumeral';
 import { generatePianoVoicing } from '../engine/voicingEngine';
 import { NOTE_VALUES, VALUE_TO_FLAT_NAME } from '../engine/constants';
-import { stopPlayback } from '../engine/playback';
-import { setCurrentDrumPattern } from '../engine/drums';
+import { cancelPendingStart, setLiveBpm, stopPlayback } from '../engine/playback';
 import {
   DEFAULT_SONG_TITLE,
   MAX_SECTION_BARS,
@@ -18,11 +17,13 @@ import {
  * If playback is active, stop it and return state patches that clear the
  * playback flags. Used to halt audio whenever the user edits the score or
  * any setting — the running music would no longer reflect what's on screen.
+ * A play still loading its samples is called off too, for the same reason.
  */
 function interruptIfPlaying(state: { isPlaying: boolean }): {
   isPlaying: false;
   playbackPosition: null;
 } | Record<string, never> {
+  cancelPendingStart();
   if (!state.isPlaying) return {};
   stopPlayback();
   return { isPlaying: false, playbackPosition: null };
@@ -107,15 +108,6 @@ export function isSlotInList(slot: SlotAddress, list: SlotAddress[]): boolean {
   return list.some(s => s.measureIndex === slot.measureIndex && s.slotIndex === slot.slotIndex);
 }
 
-export type Instrument = 'piano' | 'guitar';
-
-/** Display-mode tag for the voicing card (keyboard vs fretboard).
- * Auto-derived in VoicingViewer from the active harmony instrument's
- * family (`acoustic_guitar_*`/`electric_guitar_*` → 'guitar', otherwise
- * → 'piano'). The playback engine consults this to pick voicing math
- * (guitar fretboard mapping vs piano voicing). 'vocal' was removed
- * 2026-05-10 along with the melody track. */
-
 interface SongState {
   song: Song;
   /** Bumped by every song replacement (clearSong, setSong). A loaded
@@ -125,22 +117,15 @@ interface SongState {
   selectedSlots: SlotAddress[];
   playbackPosition: { measureIndex: number; slotIndex: 0 | 1 } | null;
   isPlaying: boolean;
-  instrument: Instrument;
   midiCandidates: Chord[];
-  drumPatternId: number | null;  // null = no drums; 1..6 = pattern id
-  /** User-picked override for the genre's auto-resolved harmony GM
-   *  instrument name. `null` means "use the genre default" (table in
-   *  instruments.ts). Pearl 2026-05-10 — surfaced in VoicingViewer's
-   *  override grid so the user can A/B different timbres without changing
-   *  the genre. Bass intentionally has no override (Pearl: "let me pick
-   *  bass for you"). Melody layer dropped — variety lives here now via
-   *  per-instrument harmony swap. Voyager API never reads this. */
-  harmonyOverride: string | null;
 
   // Actions
   /** A user edit — also turns the automatic (section-derived) title off. */
   setTitle: (title: string) => void;
   setBpm: (bpm: number) => void;
+  /** Change the tempo without stopping playback (the Play panel's BPM
+   *  knob): the running Transport speeds up or slows down in place. */
+  setBpmLive: (bpm: number) => void;
   setKey: (key: string) => void;
   setTimeSignature: (ts: [number, number]) => void;
   setGenre: (genre: string | null) => void;
@@ -171,24 +156,7 @@ interface SongState {
   setIsPlaying: (playing: boolean) => void;
   resetPlayback: () => void;
   recalculateRomanNumerals: () => void;
-  setInstrument: (instrument: Instrument) => void;
   setMidiCandidates: (chords: Chord[]) => void;
-  setDrumPatternId: (id: number | null) => void;
-  setHarmonyOverride: (name: string | null) => void;
-}
-
-const DRUM_STORAGE_KEY = 'theartist-drum-pattern';
-
-function loadDrumPattern(): number | null {
-  try {
-    const raw = localStorage.getItem(DRUM_STORAGE_KEY);
-    if (raw === null) return null;
-    if (raw === 'null') return null;
-    const n = Number(raw);
-    return Number.isFinite(n) ? n : null;
-  } catch {
-    return null;
-  }
 }
 
 export const useSongStore = create<SongState>((set, get) => ({
@@ -197,14 +165,7 @@ export const useSongStore = create<SongState>((set, get) => ({
   selectedSlots: [],
   playbackPosition: null,
   isPlaying: false,
-  instrument: 'piano' as Instrument,
   midiCandidates: [],
-  drumPatternId: (() => {
-    const id = loadDrumPattern();
-    setCurrentDrumPattern(id);
-    return id;
-  })(),
-  harmonyOverride: null,
 
   setTitle: (title) => set((state) => ({
     song: { ...state.song, title, autoTitle: false },
@@ -216,6 +177,14 @@ export const useSongStore = create<SongState>((set, get) => ({
       ...interruptIfPlaying(state),
       song: { ...state.song, bpm: clamped },
     }));
+  },
+
+  setBpmLive: (bpm) => {
+    const clamped = Math.max(20, Math.min(300, Math.round(bpm)));
+    // Transport events sit at musical positions, so retiming them in place
+    // keeps a running (or paused) playback in step with the new tempo.
+    setLiveBpm(clamped);
+    set((state) => ({ song: { ...state.song, bpm: clamped } }));
   },
 
   setTimeSignature: (ts) => set((state) => ({
@@ -265,8 +234,8 @@ export const useSongStore = create<SongState>((set, get) => ({
   setGenre: (genre) => set((state) => ({
     ...interruptIfPlaying(state),
     song: { ...state.song, genre },
-    // VoicingViewer auto-derives `instrument` (piano vs guitar) from the
-    // genre's harmony Soundfont family — leave it alone here. Pearl 2026-05-10.
+    // playStore re-resolves the genre's Auto instrument, rhythm, voicing
+    // and drums for the engine on this change.
   })),
 
   selectSlot: (slot) => set({ selectedSlots: slot ? [slot] : [] }),
@@ -419,29 +388,7 @@ export const useSongStore = create<SongState>((set, get) => ({
     set({ isPlaying: false, playbackPosition: null });
   },
 
-  setInstrument: (instrument) => set(() => ({
-    // Live instrument swap during playback is supported — the playback engine
-    // reads `currentInstrument` global at note-trigger time (see playback.ts
-    // ~line 204). VoicingViewer mirrors the new instrument into the engine
-    // via setCurrentInstrument(), so the next scheduled note picks it up.
-    // No interruptIfPlaying — Pearl 2026-05-09: switching piano/guitar/vocal
-    // mid-playback should swap timbre, not stop the song.
-    instrument,
-  })),
-
   setMidiCandidates: (chords) => set({ midiCandidates: chords }),
-
-  setDrumPatternId: (id) => {
-    setCurrentDrumPattern(id);
-    try {
-      localStorage.setItem(DRUM_STORAGE_KEY, id === null ? 'null' : String(id));
-    } catch {
-      // ignore
-    }
-    set({ drumPatternId: id });
-  },
-
-  setHarmonyOverride: (name) => set({ harmonyOverride: name }),
 
   recalculateRomanNumerals: () => set((state) => {
     const measures = state.song.measures.map(m => {
