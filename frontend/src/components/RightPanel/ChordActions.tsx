@@ -168,6 +168,7 @@ export default function ChordActions({ view = 'all' }: ChordActionsProps) {
   const suggestions = useGenerationStore((s) => s.suggestions);
   const loading = useGenerationStore((s) => s.loading);
   const phase = useGenerationStore((s) => s.phase);
+  const generationError = useGenerationStore((s) => s.error);
   const showSuggestions = useGenerationStore((s) => s.showSuggestions);
   const activeSuggestionIdx = useGenerationStore((s) => s.activeSuggestionIdx);
   const source = useGenerationStore((s) => s.source);
@@ -293,7 +294,7 @@ export default function ChordActions({ view = 'all' }: ChordActionsProps) {
     ? `M${firstSlot!.measureIndex + 1} Beat ${firstSlot!.slotIndex === 0 ? 1 : 3}`
     : selectedSlots.length > 0 ? `${selectedSlots.length} slots` : 'no selection';
 
-  if (!firstSlot && !loading && !(view !== 'manual' && showSuggestions && suggestions.length > 0)) {
+  if (!firstSlot && !loading && !generationError && !(view !== 'manual' && showSuggestions && suggestions.length > 0)) {
     return (
       <div className="space-y-2">
         <h3 className="text-xs uppercase tracking-wide font-semibold" style={{ color: 'var(--text-heading)' }}>Chords</h3>
@@ -409,6 +410,7 @@ export default function ChordActions({ view = 'all' }: ChordActionsProps) {
           Only shown for regular Generate; Favorite Generate runs N parallel
           calls and the chip flow would race across them. */}
       {loading && phase && <GenerateProgress phase={phase} />}
+      {generationError && <p role="alert" className="text-xs px-3 py-2" style={{ background: 'var(--btn-bg)', color: 'var(--text-primary)', borderLeft: '2px solid var(--brand-yellow)' }}>{generationError}</p>}
 
       {/* AI Suggestions */}
       {showSuggestions && suggestions.length > 0 && (

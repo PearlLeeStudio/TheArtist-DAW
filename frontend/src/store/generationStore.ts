@@ -61,6 +61,7 @@ interface GenerationState {
   // Ephemeral: in-flight generation state
   loading: boolean;
   phase: GeneratePhase | null;
+  error: string | null;
   suggestions: Suggestion[];
   /** Slots the current suggestions were generated for. */
   targetSlots: SlotAddress[];
@@ -175,6 +176,7 @@ export const useGenerationStore = create<GenerationState>((set, get) => {
       requestId,
       loading: true,
       phase: null,
+      error: null,
       showSuggestions: false,
       activeSuggestionIdx: null,
       appliedSnapshot: null,
@@ -187,6 +189,14 @@ export const useGenerationStore = create<GenerationState>((set, get) => {
   };
   const finish = (requestId: number) => {
     if (isCurrent(requestId)) set({ loading: false, phase: null });
+  };
+  const fail = (requestId: number, error: unknown) => {
+    if (!isCurrent(requestId)) return;
+    set({
+      error: `Generation failed. ${error instanceof Error ? error.message : 'Please try again.'} Your score has not changed.`,
+      suggestions: [], targetSlots: [], comparison: null, appliedSnapshot: null,
+      source: null, modelUsed: null, showSuggestions: false, activeSuggestionIdx: null,
+    });
   };
   /** After a section run that did not land, show the A/B/C list it hid
    *  again, unless those suggestions were replaced meanwhile. */
@@ -215,6 +225,7 @@ export const useGenerationStore = create<GenerationState>((set, get) => {
 
     loading: false,
     phase: null,
+    error: null,
     suggestions: [],
     targetSlots: [],
     comparison: null,
@@ -230,6 +241,7 @@ export const useGenerationStore = create<GenerationState>((set, get) => {
     setActiveSuggestionIdx: (activeSuggestionIdx) => set({ activeSuggestionIdx }),
     clearSuggestions: () =>
       set({
+        error: null,
         suggestions: [],
         targetSlots: [],
         comparison: null,
@@ -288,6 +300,8 @@ export const useGenerationStore = create<GenerationState>((set, get) => {
         const current = useSongStore.getState();
         if (!isCurrent(requestId) || !canApplyComparison(comparison, current.song, current.songEpoch)) return;
         set({ suggestions, source, modelUsed: null, targetSlots, comparison, appliedSnapshot: null, showSuggestions: true });
+      } catch (error) {
+        fail(requestId, error);
       } finally {
         finish(requestId);
       }
@@ -327,6 +341,8 @@ export const useGenerationStore = create<GenerationState>((set, get) => {
           appliedSnapshot: null,
           showSuggestions: true,
         });
+      } catch (error) {
+        fail(requestId, error);
       } finally {
         finish(requestId);
       }
@@ -455,6 +471,7 @@ useSongStore.subscribe((state, prev) => {
     requestId: s.requestId + 1,
     loading: false,
     phase: null,
+    error: null,
     suggestions: [],
     targetSlots: [],
     comparison: null,

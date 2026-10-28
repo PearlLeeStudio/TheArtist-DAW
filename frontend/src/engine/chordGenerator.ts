@@ -1,7 +1,6 @@
 import type { Chord, Measure, Song, SlotAddress, SectionType } from '../models/types';
-import { NOTE_VALUES, VALUE_TO_FLAT_NAME, MAJOR_SCALE_INTERVALS, MINOR_SCALE_INTERVALS } from './constants';
-import { parseChordName, chordToString } from './chordParser';
-import { readSSEFrames } from './sseStream';
+import { parseChordName, chordToString } from './chordParser.ts';
+import { readSSEFrames } from './sseStream.ts';
 
 export interface TheoryExplanation {
   chord_a: string;
@@ -21,9 +20,8 @@ export interface Suggestion {
 }
 
 /** Who answered: 'rules' = the model was unavailable and the backend's
- *  rule-based generator answered; 'offline' = the backend could not be
- *  used and the local random fallback answered. */
-export type SuggestionSource = 'ai' | 'rules' | 'ai+rules' | 'offline';
+ *  explicitly identified rule-based generator answered. */
+export type SuggestionSource = 'ai' | 'rules' | 'ai+rules';
 
 export interface GenerateResult {
   suggestions: Suggestion[];
@@ -53,51 +51,6 @@ export interface SectionGenerateResponse {
   source: 'ai' | 'rules';
   modelUsed: string | null;
   elapsed_ms?: number;
-}
-
-const GENRE_QUALITIES: Record<string, string[]> = {
-  jazz:         ['maj7', 'm7', '7', 'm7b5', 'dim7', '9', 'm9', '13', '6', 'mMaj7', 'sus4', '11'],
-  pop:          ['maj', 'min', '7', 'sus4', 'sus2', 'add9', 'maj7', 'm7'],
-  blues:        ['7', '9', 'm7', '13', 'dim', 'maj'],
-  bossa:        ['maj7', 'm7', '7', '6', 'm6', 'dim7', '9', 'maj9'],
-  'bossa nova': ['maj7', 'm7', '7', '6', 'm6', 'dim7', '9', 'maj9'],
-  default:      ['maj', 'min', '7', 'maj7', 'm7', 'dim', 'aug', 'sus4'],
-};
-
-function pickRandom<T>(arr: T[]): T {
-  return arr[Math.floor(Math.random() * arr.length)];
-}
-
-function getDiatonicRoots(keyRoot: string, isMinor: boolean): string[] {
-  const rootVal = NOTE_VALUES[keyRoot] ?? 0;
-  const intervals = isMinor ? MINOR_SCALE_INTERVALS : MAJOR_SCALE_INTERVALS;
-  return intervals.map(i => VALUE_TO_FLAT_NAME[(rootVal + i) % 12]);
-}
-
-/**
- * Local random fallback — used when backend is unreachable.
- */
-export function generateRandomChords(
-  slots: SlotAddress[],
-  key: string,
-  genre: string | null,
-): Map<string, Chord> {
-  const qualities = GENRE_QUALITIES[genre ?? ''] ?? GENRE_QUALITIES.default;
-  const keyRoot = key.split(' ')[0];
-  const diatonicRoots = getDiatonicRoots(keyRoot, key.includes('minor'));
-
-  const result = new Map<string, Chord>();
-  for (const slot of slots) {
-    const root = Math.random() < 0.7 ? pickRandom(diatonicRoots) : pickRandom(VALUE_TO_FLAT_NAME);
-    result.set(`${slot.measureIndex}-${slot.slotIndex}`, {
-      root,
-      quality: pickRandom(qualities),
-      romanNumeral: '',
-      voicing: [],
-      extensions: [],
-    });
-  }
-  return result;
 }
 
 /** Live progress update from the streaming generate endpoint. */
@@ -181,26 +134,20 @@ async function _describeHttpError(res: Response): Promise<string> {
     : `Request failed (HTTP ${res.status})`;
 }
 
-function _offlineFallback(song: Song, selectedSlots: SlotAddress[]): Suggestion[] {
-  const selectedMeasures = [...new Set(selectedSlots.map(s => s.measureIndex))];
-  const fallback = generateRandomChords(selectedSlots, song.key, song.genre);
-  const chords: Record<string, [string, string]> = {};
-  for (const mIdx of selectedMeasures) {
-    const s0 = fallback.get(`${mIdx}-0`);
-    const s1 = fallback.get(`${mIdx}-1`);
-    chords[String(mIdx)] = [
-      s0 ? chordToString(s0) : 'Cmaj7',
-      s1 ? chordToString(s1) : 'Cmaj7',
-    ];
-  }
-  return [{ label: 'Random (offline)', chords }];
+function _isSuggestion(value: unknown): value is Suggestion {
+  if (!value || typeof value !== 'object') return false;
+  const { label, chords } = value as Partial<Suggestion>;
+  return typeof label === 'string' && label.trim() !== '' && !!chords && typeof chords === 'object' &&
+    !Array.isArray(chords) && Object.keys(chords).length > 0 &&
+    Object.entries(chords).every(([measure, pair]) => /^\d+$/.test(measure) &&
+      Array.isArray(pair) && pair.length === 2 && pair.every((symbol) => typeof symbol === 'string' && symbol.trim() !== ''));
 }
 
 /**
  * Call backend /api/generate/stream and stream progress events to `onPhase`
- * while yielding the final suggestions. Falls back to local random generation
- * on network / parse error. When `onPhase` is omitted, behaves identically
- * to the non-streaming path (just discards events).
+ * while yielding the final suggestions. HTTP, network and invalid/incomplete
+ * stream responses reject so the caller can show the failure and keep the score.
+ * When `onPhase` is omitted, progress events are discarded.
  *
  * `sectionType` is sent as given — null means no song-form rules.
  */
@@ -212,33 +159,35 @@ export async function generateChords(
   onPhase?: (phase: GeneratePhase) => void,
 ): Promise<GenerateResult> {
   const body = _buildBody(song, selectedSlots, sectionType, modelKey);
+  let res: Response;
   try {
-    const res = await fetch('/api/generate/stream', {
+    res = await fetch('/api/generate/stream', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     });
-    if (!res.ok) throw new Error(`API error: ${res.status}`);
-
-    let final: GenerateResult | null = null;
-    for await (const { event, data } of readSSEFrames<Record<string, unknown>>(res)) {
-      if (event === 'result') {
-        const sugs = (data as { suggestions?: unknown }).suggestions;
-        if (!Array.isArray(sugs)) throw new Error('Invalid result payload');
-        final = { suggestions: sugs as Suggestion[], source: _toSource(data.source) };
-      } else if (event === 'error') {
-        throw new Error(_formatErrorDetail(data.detail) || 'stream error');
-      } else if (onPhase) {
-        onPhase({ name: event, ...data } as GeneratePhase);
-      }
-    }
-
-    if (!final) throw new Error('Stream closed without result event');
-    return final;
   } catch (err) {
-    console.warn('Chord generation failed, using fallback:', err);
-    return { suggestions: _offlineFallback(song, selectedSlots), source: 'offline' };
+    throw new Error('Could not reach the server. Check the backend connection and try again.', { cause: err });
   }
+  if (!res.ok) throw new Error(await _describeHttpError(res));
+
+  let final: GenerateResult | null = null;
+  for await (const { event, data } of readSSEFrames<Record<string, unknown>>(res)) {
+    if (event === 'result') {
+      const sugs = data?.suggestions;
+      if (!Array.isArray(sugs) || sugs.length === 0 || !sugs.every(_isSuggestion)) {
+        throw new Error('The server sent an invalid generation result');
+      }
+      final = { suggestions: sugs, source: _toSource(data.source) };
+    } else if (event === 'error') {
+      throw new Error(_formatErrorDetail(data?.detail) || 'The server reported a generation error');
+    } else if (onPhase) {
+      onPhase({ name: event, ...data } as GeneratePhase);
+    }
+  }
+
+  if (!final) throw new Error('The generation stream ended without a result. Please try again.');
+  return final;
 }
 
 /**
