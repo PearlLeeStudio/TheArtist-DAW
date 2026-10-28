@@ -17,8 +17,8 @@
 ## Hackathon workflow
 
 **Import Score → review chords and song form → select a passage → Original/A/B/C
-→ arrange in Play → export MIDI or PDF.** Meta Muse Spark reads chord symbols
-from a PDF or image; the author's Music Transformer generates chord candidates.
+→ arrange in Play → export MIDI or PDF.** Meta Muse Spark reads printed chord symbols
+or proposes harmony from visible notation in a separate opt-in mode; the author's Music Transformer generates chord candidates.
 The musician corrects the import, chooses the passage and keeps the version they want.
 
 The [hackathon work log](HACKATHON.md) separates these additions from the existing
@@ -28,9 +28,17 @@ Automated checks pass; browser/audio checks, PDF appearance and actual DAW impor
 remain on the [manual checklist](docs/manual-checks.md).
 
 - **Import Score**, immediately left of **New from Song Form**, accepts one
-  chord-symbol PDF, PNG, JPEG or WebP up to 8 MiB. Review the source alongside its
-  extracted chords, meter, key and sections. Unknown values and unsupported chord
-  counts must be corrected before loading. This is not notes-only harmonization.
+  PDF, PNG, JPEG or WebP up to 8 MiB. Choose **Read chord symbols** for a chord chart
+  or **Analyze notes (no chords)** for a harmony draft from notation. Review the
+  source alongside chords, evidence, uncertainty, meter, key and sections. Inferred
+  chords are interpretations, not verified original harmony; melody notes and their
+  durations are not imported. Correct highlighted fields and tick the visible footer
+  review checkbox to enable **Import reviewed score**. The footer explains any blocker.
+- **Roman-numeral analysis** follows the review key: in C major, C → I, Am → vi,
+  G7 → V7. Changing the review key reanalyzes the same symbols. The editor's main Key
+  control retains its existing behavior of transposing the score. Source proposals
+  remain available after importing, saving and reopening a project.
+
 - **Sections** preserves explicit versus inferred labels, lets you edit boundaries,
   and selects a region by its staff label. **Original/A/B/C** changes only the chosen
   slots and can restore the exact original voicings.
@@ -45,6 +53,10 @@ remain on the [manual checklist](docs/manual-checks.md).
   use the local backend; hosted clients can download MIDI.
 - The same service is available through [REST and MCP](docs/mcp.md). TheVoyager has
   a thin MCP adapter; a native DAW plugin is a future separate client.
+
+Notes-based reading is experimental. The retained [synthetic-score trials](experiments/meta/note_harmony_first_attempt.json) contain
+pitch and chord errors, including a missed seventh. It is not validated optical
+music recognition; source comparison and correction remain essential.
 
 The [real Meta smoke record](experiments/meta/score_import_smoke.json) matched all
 eight symbols and both explicit sections in an original four-bar PNG fixture:

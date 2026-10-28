@@ -4,11 +4,13 @@ import base64
 import copy
 import json
 import unittest
+from types import SimpleNamespace
 from unittest import mock
 
 from fastapi.testclient import TestClient
 
 import app.main
+from app.models.score_import import ScoreExtraction, ScoreImportRequest, ScoreImportResponse
 from app.services import score_import
 from app.services.llm import BudgetExceeded, Ledger, LLMClient, LLMConfig, LLMConfigError
 
@@ -25,8 +27,11 @@ GOOD = {
     ],
     "sections": [{"section": "verse", "label": "Verse", "startMeasure": 0, "length": 4,
                   "basis": "explicit", "note": "Printed heading"}],
-    "warnings": [], "complete": True, "hasRepeats": False,
+    "warnings": [], "complete": True, "hasRepeats": False, "keyBasis": "printed",
 }
+for measure in GOOD["measures"]:
+    measure.update(chordBasis="printed" if measure["chords"] else "unreadable",
+                   confidence="high" if measure["chords"] else "low")
 
 
 def body(raw=PDF, **overrides):
@@ -62,7 +67,8 @@ class ScoreImportTest(unittest.TestCase):
         response = CLIENT.post(ROUTE, json=body())
         self.assertEqual(response.status_code, 200, response.text)
         data = response.json()
-        self.assertEqual(set(data), {"title", "key", "timeSignature", "measures", "sections", "warnings", "model", "requestId"})
+        self.assertEqual(set(data), {"title", "key", "timeSignature", "measures", "sections", "warnings", "model", "requestId", "mode"})
+        self.assertEqual(data["mode"], "chord_symbols")
         self.assertEqual([m["chords"] for m in data["measures"]], [m["chords"] for m in GOOD["measures"]])
         self.assertEqual(data["sections"], GOOD["sections"])
         self.assertEqual(data["requestId"], "req-score")
@@ -96,6 +102,200 @@ class ScoreImportTest(unittest.TestCase):
                 media = self.requests[-1]["messages"][-1]["content"][-1]
                 self.assertEqual(media["type"], "image_url")
                 self.assertTrue(media["image_url"]["url"].startswith(f"data:{mime};base64,"))
+
+    def test_modes_have_separate_prompts_and_identical_bounded_one_turn_calls(self):
+        for mode in ("chord_symbols", "infer_harmony"):
+            with self.subTest(mode=mode):
+                response = CLIENT.post(ROUTE, json=body(mode=mode))
+                self.assertEqual(response.status_code, 200, response.text)
+                self.assertEqual(response.json()["mode"], mode)
+                request = self.requests[-1]
+                system = request["messages"][0]["content"]
+                self.assertIn("untrusted source material", system)
+                self.assertIn("'<root> major' or '<root> minor'", system)
+                if mode == "chord_symbols":
+                    self.assertIn("never infer chords from staff notes", system)
+                    self.assertNotIn("The user explicitly opted into", system)
+                else:
+                    self.assertIn("The user explicitly opted into", system)
+                    self.assertIn("all relevant staves", system)
+                    self.assertIn("melody-only suggestion", system)
+                    self.assertIn("Do not guess a time signature", system)
+                    self.assertIn("clef and staff line or space", system)
+                    self.assertIn("preserve visible sevenths and extensions", system)
+                self.assertEqual(request["timeout"], 75.0)
+                self.assertEqual(request["max_completion_tokens"], 8192)
+                schema = request["response_format"]["json_schema"]
+                self.assertTrue(schema["strict"])
+                fields = schema["schema"]["properties"]["measures"]["items"]
+                self.assertIn("chordBasis", fields["required"])
+                self.assertIn("confidence", fields["required"])
+        self.assertEqual(len(self.requests), 2)
+        self.assertTrue(all(call.kwargs["reserved_usd"] == 1.345536
+                            for call in self.ledger.reserve.call_args_list))
+
+    def test_note_only_harmony_is_a_reviewable_proposal_with_evidence(self):
+        self.draft["timeSignature"] = None
+        self.draft["keyBasis"] = "inferred"
+        for index, measure in enumerate(self.draft["measures"]):
+            measure.update(chords=["Cmaj7" if index % 2 == 0 else "G7"], chordBasis="inferred",
+                           confidence="high", needsReview=False,
+                           note="Visible bass C with E-G-B in upper staves supports a Cmaj7 interpretation.")
+        response = CLIENT.post(ROUTE, json=body(mode="infer_harmony"))
+        self.assertEqual(response.status_code, 200, response.text)
+        data = response.json()
+        self.assertEqual(data["mode"], "infer_harmony")
+        self.assertIsNone(data["timeSignature"])
+        for measure in data["measures"]:
+            self.assertEqual(measure["chordBasis"], "inferred")
+            self.assertTrue(measure["needsReview"])
+            self.assertTrue(measure["note"].strip())
+        self.assertTrue(any("key is inferred" in warning for warning in data["warnings"]))
+        self.assertTrue(any("not a transcription" in warning for warning in data["warnings"]))
+        self.assertNotIn("keyBasis", data)
+        self.assertEqual(len(self.requests), 1)
+
+    def test_harmony_mode_keeps_printed_chords_and_uncertainty_distinct(self):
+        self.draft["keyBasis"] = "unreadable"
+        self.draft["measures"][0].update(confidence="low", needsReview=False)
+        self.draft["measures"][1].update(chordBasis="inferred", needsReview=False,
+                                            note="Melody-only suggestion: D-F-A then B-F supports possible ii-V.")
+        response = CLIENT.post(ROUTE, json=body(mode="infer_harmony"))
+        self.assertEqual(response.status_code, 200, response.text)
+        data = response.json()
+        self.assertEqual(data["measures"][0]["chordBasis"], "printed")
+        self.assertTrue(data["measures"][0]["needsReview"])
+        self.assertEqual(data["measures"][1]["chordBasis"], "inferred")
+        self.assertTrue(data["measures"][1]["needsReview"])
+        self.assertEqual(data["measures"][3]["chordBasis"], "unreadable")
+        self.assertEqual(data["measures"][3]["confidence"], "low")
+        self.assertIsNone(data["key"])
+
+    def test_harmony_requires_evidence_and_does_not_fill_unreadable_notation(self):
+        for note in ("", "   "):
+            with self.subTest(note=note):
+                self.draft = copy.deepcopy(GOOD)
+                self.draft["measures"][0].update(chordBasis="inferred", note=note)
+                response = CLIENT.post(ROUTE, json=body(mode="infer_harmony"))
+                self.assertEqual(response.status_code, 502, response.text)
+        self.draft = copy.deepcopy(GOOD)
+        for measure in self.draft["measures"]:
+            measure.update(chords=[], chordBasis="unreadable", confidence="low",
+                           needsReview=False, note="Notation is too blurred to read.")
+        response = CLIENT.post(ROUTE, json=body(mode="infer_harmony"))
+        self.assertEqual(response.status_code, 422, response.text)
+        self.assertIn("No supported harmony", response.json()["detail"])
+        self.assertNotIn("measures", response.json())
+
+    def test_unknown_modes_are_rejected_before_any_model_call(self):
+        for mode in ("auto", "infer", "", None, 1):
+            with self.subTest(mode=mode):
+                self.assertEqual(CLIENT.post(ROUTE, json=body(mode=mode)).status_code, 422)
+        self.get_client.assert_not_called()
+        self.assertEqual(self.requests, [])
+
+    def test_legacy_contract_defaults_do_not_relabel_explicit_inference(self):
+        self.assertEqual(ScoreImportRequest.model_validate(body()).mode, "chord_symbols")
+        legacy = copy.deepcopy(GOOD)
+        legacy.pop("keyBasis")
+        for measure in legacy["measures"]:
+            measure.pop("chordBasis")
+            measure.pop("confidence")
+        draft = ScoreExtraction.model_validate(legacy)
+        response = ScoreImportResponse(**draft.model_dump(exclude={"complete", "hasRepeats", "keyBasis"}),
+                                       model="muse-spark-1.3", requestId=None)
+        self.assertEqual(response.mode, "chord_symbols")
+        self.assertEqual(response.measures[0].chordBasis, "printed")
+        self.assertEqual(response.measures[3].chordBasis, "unreadable")
+        legacy_result = SimpleNamespace(data=legacy, model="muse-spark-1.3", request_id="req-legacy")
+        with mock.patch.object(self.client, "chat_json", return_value=legacy_result):
+            response = CLIENT.post(ROUTE, json=body())
+        self.assertEqual(response.status_code, 200, response.text)
+        self.assertEqual(response.json()["measures"][0]["chordBasis"], "printed")
+        self.assertEqual(response.json()["measures"][3]["chordBasis"], "unreadable")
+        self.draft["measures"][0].update(chordBasis="inferred", note="Visible C-E-G supports C.")
+        response = CLIENT.post(ROUTE, json=body())
+        self.assertEqual(response.status_code, 502, response.text)
+        self.assertNotIn("measures", response.json())
+
+    def test_harmony_service_rejects_missing_provenance_before_defaults(self):
+        # Exercise the service even when a test/custom transport bypasses strict JSON checks.
+        for field in ("keyBasis", "chordBasis", "confidence"):
+            for index in (0, 3):
+                with self.subTest(field=field, measure=index):
+                    draft = copy.deepcopy(GOOD)
+                    if field == "keyBasis":
+                        draft.pop(field)
+                    else:
+                        draft["measures"][index].pop(field)
+                    result = SimpleNamespace(data=draft, model="muse-spark-1.3", request_id="req-provenance")
+                    with mock.patch.object(self.client, "chat_json", return_value=result):
+                        response = CLIENT.post(ROUTE, json=body(mode="infer_harmony"))
+                    self.assertEqual(response.status_code, 502, response.text)
+                    self.assertNotIn("measures", response.json())
+
+    def test_malformed_measure_structures_fail_validation_without_server_errors(self):
+        for measures in (None, "not a measure list", {}, [None], ["Cmaj7"], [3], [[]]):
+            for mode in ("chord_symbols", "infer_harmony"):
+                with self.subTest(measures=measures, mode=mode):
+                    draft = {**copy.deepcopy(GOOD), "measures": measures}
+                    result = SimpleNamespace(data=draft, model="muse-spark-1.3", request_id="req-malformed")
+                    with mock.patch.object(self.client, "chat_json", return_value=result):
+                        response = CLIENT.post(ROUTE, json=body(mode=mode))
+                    self.assertEqual(response.status_code, 502, response.text)
+                    self.assertIn("req-malformed", response.json()["detail"])
+                    self.assertNotIn("measures", response.json())
+
+    def test_transcription_rejects_an_inferred_key(self):
+        self.draft["keyBasis"] = "inferred"
+        response = CLIENT.post(ROUTE, json=body())
+        self.assertEqual(response.status_code, 502, response.text)
+        self.assertIn("req-score", response.json()["detail"])
+
+    def test_harmony_rejects_chords_claimed_as_unreadable(self):
+        self.draft["measures"][0]["chordBasis"] = "unreadable"
+        response = CLIENT.post(ROUTE, json=body(mode="infer_harmony"))
+        self.assertEqual(response.status_code, 502, response.text)
+
+    def test_each_mode_enforces_the_per_request_cost_cap_before_transport(self):
+        with mock.patch.object(score_import, "SCORE_MAX_REQUEST_USD", 1.34):
+            for mode in ("chord_symbols", "infer_harmony"):
+                with self.subTest(mode=mode):
+                    response = CLIENT.post(ROUTE, json=body(mode=mode))
+                    self.assertEqual(response.status_code, 429, response.text)
+        self.assertEqual(self.requests, [])
+        self.ledger.reserve.assert_not_called()
+
+    def test_all_analysis_warnings_fit_the_response_bound(self):
+        for key in ("C major", "unknown tonality"):
+            with self.subTest(key=key):
+                self.draft.update(key=key, keyBasis="inferred", hasRepeats=True, warnings=["Source warning"] * 28)
+                response = CLIENT.post(ROUTE, json=body(mode="infer_harmony"))
+                self.assertEqual(response.status_code, 200, response.text)
+                self.assertEqual(len(response.json()["warnings"]), 32)
+
+    def test_key_aliases_are_canonicalized_in_both_modes(self):
+        cases = [("C", "C major"), ("Am", "A minor"), ("Amin", "A minor"),
+                 ("A minor", "A minor"), ("Eb major", "Eb major"), ("B♭maj", "Bb major"),
+                 ("f♯m", "F# minor"), ("CM", "C major")]
+        for mode in ("chord_symbols", "infer_harmony"):
+            for key, expected in cases:
+                with self.subTest(mode=mode, key=key):
+                    self.draft["key"] = key
+                    response = CLIENT.post(ROUTE, json=body(mode=mode))
+                    self.assertEqual(response.status_code, 200, response.text)
+                    self.assertEqual(response.json()["key"], expected)
+
+    def test_unknown_key_labels_require_manual_key_review(self):
+        for mode in ("chord_symbols", "infer_harmony"):
+            for key in ("Unknown", "Cmaj7", "Am7", "D dorian", "H major", ""):
+                with self.subTest(mode=mode, key=key):
+                    self.draft["key"] = key
+                    response = CLIENT.post(ROUTE, json=body(mode=mode))
+                    self.assertEqual(response.status_code, 200, response.text)
+                    self.assertIsNone(response.json()["key"])
+                    self.assertTrue(any("confirm the key manually" in warning
+                                        for warning in response.json()["warnings"]))
 
     def test_invalid_uploads_never_reach_the_model(self):
         cases = [(body(mimeType="image/gif"), 415), (body(filename="score.png"), 415),
@@ -155,6 +355,8 @@ class ScoreImportTest(unittest.TestCase):
                 self.assertEqual(response.status_code, 422)
                 self.assertIsInstance(response.json()["detail"], str)
                 self.assertNotIn("measures", response.json())
+                if not partial:
+                    self.assertIn("Analyze notes", response.json()["detail"])
 
     def test_bad_model_output_ranges_bounds_and_types_fail(self):
         cases = []
@@ -174,6 +376,8 @@ class ScoreImportTest(unittest.TestCase):
         bad(lambda d: d.update(timeSignature=[4, 3]))
         bad(lambda d: d.update(timeSignature=[True, 4]))
         bad(lambda d: d.update(title="a" * 121))
+        bad(lambda d: d["measures"][0].update(confidence="certain"))
+        bad(lambda d: d["measures"][0].update(chordBasis="guessed"))
         bad(lambda d: d.update(extra="unexpected"))
         for index, draft in enumerate(cases):
             with self.subTest(case=index):

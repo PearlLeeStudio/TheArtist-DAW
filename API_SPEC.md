@@ -636,13 +636,14 @@ A strike at beat `p` plays the chord of the slot `p` falls in (slot 0 = beats `[
 
 ### POST `/api/import/score` — Meta score transcription for review
 
-Accepts one explicitly chosen PDF, PNG, JPEG or WebP containing printed chord symbols. The server makes one bounded `muse-spark-1.3` Standard call. It does not infer harmony from melody, fetch a URL, read a supplied filesystem path, or store the uploaded bytes.
+Accepts one explicitly chosen PDF, PNG, JPEG or WebP. `mode: "chord_symbols"` (the default) transcribes printed chord symbols; `mode: "infer_harmony"` explicitly opts into harmony proposals from visible notation, including melody-only harmonization suggestions. The server makes one bounded `muse-spark-1.3` Standard call. Inference is reviewable interpretation, not verified original harmony. The endpoint does not fetch a URL, read a supplied filesystem path, store uploaded bytes, or import melody notes/durations.
 
 ```json
 {
   "filename": "score.png",
   "mimeType": "image/png",
-  "dataBase64": "<base64 file bytes, without a data-URL prefix>"
+  "dataBase64": "<base64 file bytes, without a data-URL prefix>",
+  "mode": "chord_symbols"
 }
 ```
 
@@ -653,14 +654,17 @@ The JSON response is a **review draft**, not a ready-to-replace editor song:
 | Field | Shape and meaning |
 |---|---|
 | `title` | Printed title or an empty string; at most 120 characters |
-| `key` | Printed key string or `null` when unreadable/absent |
+| `mode` | Echoes `chord_symbols` or `infer_harmony`; unknown request modes are rejected |
+| `key` | Canonical `<root> major/minor` or `null`; aliases such as C/Am normalize to C major/A minor. An inferred or unrecognized key produces a review warning |
 | `timeSignature` | `[numerator, denominator]` or `null`; playback BPM is chosen by the user, not extracted |
-| `measures` | `[{chords: string[], sourceLabel: string, needsReview: boolean, note: string}]`, in written order |
+| `measures` | `[{chords: string[], sourceLabel, needsReview, note, chordBasis, confidence}]`, in written order; `chordBasis` is `printed`, `inferred` or `unreadable`; `confidence` is `high`, `medium` or `low` |
 | `sections` | `[{section, label, startMeasure, length, basis, note}]`; `section` is a supported section id or `null`, indices are zero based, `basis` is `explicit` or `inferred` |
 | `warnings` | Review notes, including any repeat/ending limitations |
 | `model`, `requestId` | Actual provider model and request identifier (`requestId` may be `null`) |
 
 Raw measure chord counts are preserved: empty bars and bars with more than two symbols require correction. The frontend reviews supported chord spellings, key, meter and section ranges, then requires explicit confirmation. It converts one chord into two equal slots and two chords into one slot each; it never silently drops a third symbol. Repeats, D.C./D.S. and endings remain in written order. A wholly unreadable score or a declared incomplete transcription is rejected instead of returned as a successful partial import.
+
+Inferred chords require nonempty visible-note/bass evidence or an explicit melody-only rationale in `note`, and always have `needsReview: true`. Low confidence and unreadable measures also require review. Missing inference provenance is rejected; the printed-symbol mode rejects a provider result that claims inferred chords. The review screen shows key-relative Roman numerals before loading and retains source proposals in project metadata. It never stores uploaded file bytes.
 
 Service errors use `{"detail": "..."}`; request-schema errors use FastAPI's validation-error list. Statuses are 400 for invalid filename/base64; 413 attachment too large; 415 unsupported/mismatched format; 422 invalid request or incomplete/no-readable-chord extraction; 429 API budget limit; 502 invalid provider response; 503 missing/invalid configuration or ledger; 504 Meta timeout. Provider-output validation errors do not echo extracted score text.
 

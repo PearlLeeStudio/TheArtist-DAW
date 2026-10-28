@@ -5,6 +5,7 @@ import {
   buildImportedSong,
   checkScoreFile,
   createScoreImportDraft,
+  importMeasureRomanPreview,
   parseImportedChord,
   readScoreImportResponse,
   validateScoreImportDraft,
@@ -87,7 +88,13 @@ test('single chords fill both slots, two chords stay distinct and imports get fr
   assert.equal(song.measures[1].chords[0]?.root, 'D');
   assert.equal(song.measures[1].chords[1]?.root, 'G');
   assert.equal(new Set([song.id, ...song.measures.map((m) => m.id), ...song.sections!.map((s) => s.id)]).size, 4);
-  assert.deepEqual(song.importSource, { filename: 'chart.pdf', model: 'muse-spark-1.3', requestId: 'request-test' });
+  assert.deepEqual(song.importSource, {
+    filename: 'chart.pdf', model: 'muse-spark-1.3', requestId: 'request-test', mode: 'chord_symbols',
+    measures: [
+      { chordBasis: 'printed', confidence: 'high', evidence: '', originalChords: ['Cmaj7'] },
+      { chordBasis: 'printed', confidence: 'high', evidence: '', originalChords: ['Dm7', 'G7'] },
+    ],
+  });
   assert.equal(JSON.stringify(song).includes('dataBase64'), false);
   assert.equal(JSON.stringify(song).includes('previewUrl'), false);
 });
@@ -139,4 +146,81 @@ test('section overlaps, reversed ranges and out-of-score bars block import', () 
   draft.sections[0].startBar = '0';
   draft.sections[0].endBar = '3';
   assert.equal(validateScoreImportDraft(draft).valid, false);
+});
+
+test('legacy symbol responses default to printed high confidence without changing their source text', () => {
+  const parsed = readScoreImportResponse(response());
+  assert.equal(parsed.mode, 'chord_symbols');
+  assert.equal(parsed.measures[0].chordBasis, 'printed');
+  assert.equal(parsed.measures[0].confidence, 'high');
+  const draft = createScoreImportDraft(parsed, 'legacy.png');
+  assert.equal(draft.mode, 'chord_symbols');
+  assert.deepEqual(draft.measures[0].originalChords, ['Cmaj7']);
+});
+
+test('note analysis requires the requested mode to match and keeps the inferred draft evidence after correction', () => {
+  const raw = response({ mode: 'infer_harmony', measures: [
+    { chords: ['Am', 'E7'], sourceLabel: 'Bass staff, bar 1', needsReview: true, note: 'Visible bass A then E; C natural supports minor.', chordBasis: 'inferred', confidence: 'medium' },
+  ], sections: [] });
+  assert.throws(() => readScoreImportResponse(raw));
+  assert.throws(() => readScoreImportResponse(response(), 'infer_harmony'));
+  const draft = createScoreImportDraft(readScoreImportResponse(raw, 'infer_harmony'), 'notes.pdf');
+  assert.equal(draft.mode, 'infer_harmony');
+  assert.equal(draft.measures[0].needsReview, true);
+  assert.equal(draft.measures[0].chordBasis, 'inferred');
+  assert.equal(draft.measures[0].confidence, 'medium');
+  draft.key = 'A minor';
+  draft.measures[0].chordText = 'Am Dm';
+  const song = buildImportedSong(draft);
+  assert.deepEqual(song.measures[0].chords.map((chord) => chord?.romanNumeral), ['i', 'iv']);
+  assert.deepEqual(song.importSource?.measures?.[0], {
+    chordBasis: 'inferred', confidence: 'medium', evidence: raw.measures[0].note, originalChords: ['Am', 'E7'],
+  });
+  draft.measures[0].originalChords[0] = 'C';
+  assert.equal(song.importSource?.measures?.[0].originalChords[0], 'Am');
+});
+
+test('invalid note-analysis provenance cannot silently become a reviewed chord score', () => {
+  const base = { chords: ['C'], sourceLabel: '', needsReview: true, note: 'C E G notes visible.', chordBasis: 'inferred', confidence: 'medium' };
+  for (const patch of [
+    { chordBasis: 'guessed' }, { confidence: 'certain' }, { needsReview: false }, { note: '' },
+    { chordBasis: 'unreadable', confidence: 'low' },
+    { chordBasis: 'printed', confidence: 'low', needsReview: false },
+  ]) {
+    assert.throws(() => readScoreImportResponse({ ...response(), mode: 'infer_harmony', measures: [{ ...base, ...patch }] }, 'infer_harmony'));
+  }
+  assert.throws(() => readScoreImportResponse({ ...response(), mode: 'chord_symbols', measures: [base] }));
+  assert.throws(() => readScoreImportResponse({ ...response(), mode: 'other' }));
+  assert.throws(() => readScoreImportResponse({ ...response(), mode: 'infer_harmony' }, 'infer_harmony'));
+});
+
+test('unreadable note bars stay empty and block import until the user supplies a chord', () => {
+  const draft = createScoreImportDraft(readScoreImportResponse(response({ mode: 'infer_harmony', measures: [
+    { chords: [], sourceLabel: 'Bar 1', needsReview: true, note: 'Bass notes are obscured.', chordBasis: 'unreadable', confidence: 'low' },
+  ], sections: [] }), 'infer_harmony'), 'blurred.png');
+  assert.equal(validateScoreImportDraft(draft).valid, false);
+  assert.throws(() => buildImportedSong(draft));
+  draft.measures[0].chordText = 'C';
+  assert.equal(validateScoreImportDraft(draft).valid, true);
+  assert.equal(buildImportedSong(draft).importSource?.measures?.[0].chordBasis, 'unreadable');
+});
+
+test('review key changes reanalyze fixed symbols, and both printed and inferred imports use the same Roman engine', () => {
+  assert.equal(importMeasureRomanPreview('C Am', 'C major'), 'I · vi');
+  assert.equal(importMeasureRomanPreview('G7', 'C major'), 'V7');
+  assert.equal(importMeasureRomanPreview('C Am', 'G major'), 'IV · ii');
+  assert.equal(importMeasureRomanPreview('Am E7', 'A minor'), 'i · V7');
+  assert.equal(importMeasureRomanPreview('C7alt', 'C major'), null);
+  assert.equal(importMeasureRomanPreview('C', ''), null);
+  for (const mode of ['chord_symbols', 'infer_harmony'] as const) {
+    const draft = createScoreImportDraft(response({ mode, measures: [
+      { chords: ['C', 'Am'], sourceLabel: '', needsReview: mode === 'infer_harmony', note: 'C E G and A C E visible.', chordBasis: mode === 'infer_harmony' ? 'inferred' : 'printed', confidence: 'high' },
+      { chords: ['G7'], sourceLabel: '', needsReview: mode === 'infer_harmony', note: 'G B D F visible.', chordBasis: mode === 'infer_harmony' ? 'inferred' : 'printed', confidence: 'high' },
+    ] }), 'roman.png');
+    const original = JSON.stringify(draft.measures.map((measure) => measure.originalChords));
+    assert.deepEqual(buildImportedSong(draft).measures.flatMap((measure) => measure.chords.map((chord) => chord?.romanNumeral)), ['I', 'vi', 'V7', 'V7']);
+    draft.key = 'G major';
+    assert.deepEqual(buildImportedSong(draft).measures[0].chords.map((chord) => chord?.romanNumeral), ['IV', 'ii']);
+    assert.equal(JSON.stringify(draft.measures.map((measure) => measure.originalChords)), original);
+  }
 });

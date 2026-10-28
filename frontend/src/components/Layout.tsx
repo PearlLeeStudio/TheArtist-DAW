@@ -259,6 +259,16 @@ export default function Layout() {
             <SongSettings />
           </div>
 
+          {song.importSource && <details className="mb-3 text-xs" style={{ color: 'var(--text-muted)' }}>
+            <summary className="cursor-pointer break-words">Imported from {song.importSource.filename} · {song.importSource.mode === 'infer_harmony' ? 'reviewed harmony draft from notes' : 'reviewed chord symbols'}</summary>
+            <div className="mt-2 space-y-1">
+              <p>Original import analysis is kept below. Later chord or key edits do not rewrite these source proposals.</p>
+              {song.importSource.measures?.map((measure, index) => <p key={index} className="break-words">
+                Bar {index + 1} · {measure.chordBasis === 'inferred' ? 'Inferred' : measure.chordBasis === 'unreadable' ? 'Unreadable' : 'Printed'} · {measure.confidence} confidence · {measure.chordBasis === 'inferred' ? 'Proposed' : 'Read'}: {measure.originalChords.join(' · ') || '[None]'}{measure.evidence ? ` · ${measure.evidence}` : ''}
+              </p>)}
+            </div>
+          </details>}
+
           <div className="flex flex-wrap items-center justify-between gap-2 mb-2 text-xs" style={{ color: 'var(--text-muted)' }}>
             <span>{song.sections?.length ? 'Click a section name or drag across chords to select a range.' : 'Drag across chords to generate a variation.'}</span>
             <div className="flex gap-2">

@@ -32,6 +32,12 @@ Limits are 1 MiB of music JSON, 4 MiB of MIDI bytes, a 6 MiB result envelope, an
 
 The import tool requires `attachmentConfirmed: true`. This asserts that the user explicitly attached this score for reading by Meta. It accepts inline bytes, never filesystem paths or remote URLs. Do not gather journals, photographs, or other private files to supply it. The existing Meta timeout, one-turn policy, cost reservation, request ID and token logging apply unchanged.
 
+The same import request supports `mode: "chord_symbols"` (default, printed transcription)
+and explicit `mode: "infer_harmony"` (notes-based interpretation). Preserve the echoed
+mode and every measure's `chordBasis`, `confidence`, `note` evidence and `needsReview`.
+Inferred harmony is a proposal for human review, not verified original chords, and
+does not import melody note durations. These are two modes of the existing tool.
+
 `export_daw` writes a unique MIDI under `backend/.exports/` and opens Logic Pro or reveals the file for Ableton. It is annotated as a side effect and requires all three gates: server environment `THEARTIST_MCP_ALLOW_DAW=1`, per-call `confirmed: true` after the user's explicit request, and a direct loopback connection. Remote addresses and forwarded/proxied requests are rejected. Downloading MIDI has no such side effect and needs no opt-in.
 
 ## Thin clients

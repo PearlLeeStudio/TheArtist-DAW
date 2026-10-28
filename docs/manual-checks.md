@@ -24,6 +24,18 @@ unimplemented and are not part of the completed-feature checks.
 - [ ] Verify one-chord expansion, unknown key/meter, unsupported chord names and
   zero or three-plus symbols in a bar. A correction is required rather than silently
   discarding symbols. Cancel, close and replace files while a request is running.
+- [ ] Choose Read chord symbols for a chord chart and Analyze notes (no chords)
+  for a notes-only score. Check Printed/Inferred/Unreadable, note evidence and
+  confidence against the original. All inferred chords require review. Switch
+  modes during recognition; an earlier result must not populate the new mode.
+- [ ] The footer always shows the review checkbox and why Import reviewed score
+  is disabled. Correct missing key/meter or highlighted bars using the footer
+  links, tick review and import. Check on a narrow mobile window as well as desktop.
+  Readable C/Am key aliases normalize to C major/A minor.
+- [ ] Review C, Am and G7 in C major: I, vi and V7 appear in review and after
+  import. Change the review key to reanalyze fixed symbols; the main Key control
+  instead transposes the song. Check Bb/Eb borrowed chords and preserve Roman
+  labels in Projects, JSON backup and PDF. Source proposal metadata stays visible.
 - [ ] Explicit and inferred sections remain distinguishable. Edit labels, types and
   boundaries; reject overlaps and invalid ranges. Clicking a section label selects it.
 - [ ] Drag a passage, Generate, and compare Original/A/B/C audibly with identical
@@ -65,14 +77,20 @@ unimplemented and are not part of the completed-feature checks.
 
 ## Automated evidence
 
-Frontend: 105 tests passed; TypeScript/Vite build and ESLint passed. The build still
-reports the existing large-chunk warning. Backend: 173 tests passed and app import
+Frontend: 122 tests passed; TypeScript/Vite build and ESLint passed. The build still
+reports the existing large-chunk warning. Backend: 187 tests passed and app import
 passed. These include MIDI parsing, API errors, score-import mocks, real SDK MCP
 round trips and CPU seed isolation. Frontend transport tests cover network/HTTP
 failures, SSE errors, interrupted or malformed streams and real server results.
 TheVoyager adapter has five mock contract tests;
 its live service/complete rendering loop is not verified by those tests.
 
-The real Meta import [record](../experiments/meta/score_import_smoke.json) covers one
-synthetic PNG, not a PDF or a representative score collection. Actual browser,
-MIDI hardware and Logic/Ableton checks above remain unchecked.
+The real printed-score [review record](../experiments/meta/printed_import_review_smoke.json)
+matched all eight symbols; that exact response also passes frontend review conversion
+with key-relative Roman numerals. It covers one synthetic PNG, not a PDF or a
+representative score collection. The notes-only [first](../experiments/meta/note_harmony_first_attempt.json),
+[second](../experiments/meta/note_harmony_second_attempt.json) and
+[detail-view](../experiments/meta/note_harmony_smoke.json) trials all contain chord/pitch
+errors. The ineffective detail-view runtime was removed. Notes-only reading remains
+experimental; those trials do not establish accuracy. Actual browser confirmation,
+user-score comparison, MIDI hardware and Logic/Ableton checks remain unchecked.

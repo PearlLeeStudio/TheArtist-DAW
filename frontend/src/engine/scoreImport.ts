@@ -1,4 +1,4 @@
-import type { Chord, SectionType, Song } from '../models/types.ts';
+import type { Chord, SectionType, Song, ScoreImportMode, ImportedChordBasis, ImportConfidence } from '../models/types.ts';
 import { parseChordName } from './chordParser.ts';
 import { ROOTS } from './constants.ts';
 import { calculateRomanNumeral } from './romanNumeral.ts';
@@ -11,10 +11,11 @@ export const IMPORT_TIME_SIGNATURES = ['4/4', '3/4', '6/8', '2/4', '5/4', '7/8']
 export type ScoreMime = 'image/png' | 'image/jpeg' | 'image/webp' | 'application/pdf';
 
 export interface ScoreImportResponse {
+  mode?: ScoreImportMode;
   title: string;
   key: string | null;
   timeSignature: [number, number] | null;
-  measures: Array<{ chords: string[]; sourceLabel: string; needsReview: boolean; note: string }>;
+  measures: Array<{ chords: string[]; sourceLabel: string; needsReview: boolean; note: string; chordBasis?: ImportedChordBasis; confidence?: ImportConfidence }>;
   sections: Array<{
     section: SectionType | null;
     label: string;
@@ -35,6 +36,8 @@ export interface ImportMeasureDraft {
   sourceLabel: string;
   needsReview: boolean;
   note: string;
+  chordBasis: ImportedChordBasis;
+  confidence: ImportConfidence;
 }
 
 export interface ImportSectionDraft {
@@ -48,6 +51,7 @@ export interface ImportSectionDraft {
 }
 
 export interface ScoreImportDraft {
+  mode: ScoreImportMode;
   filename: string;
   title: string;
   key: string;
@@ -92,9 +96,11 @@ const object = (value: unknown): value is Record<string, unknown> => typeof valu
 const text = (value: unknown, max: number): value is string => typeof value === 'string' && value.length <= max;
 
 /** An unexpected API response is an error, never a partly successful import. */
-export function readScoreImportResponse(raw: unknown): ScoreImportResponse {
+export function readScoreImportResponse(raw: unknown, expectedMode: ScoreImportMode = 'chord_symbols'): ScoreImportResponse {
   const invalid = () => { throw new Error('The recognition response was incomplete or invalid. Please try again.'); };
   if (!object(raw)) return invalid();
+  const mode = raw.mode ?? 'chord_symbols';
+  if (!['chord_symbols', 'infer_harmony'].includes(mode as string) || mode !== expectedMode) return invalid();
   const meter = raw.timeSignature;
   const validMeter = meter === null || (Array.isArray(meter) && meter.length === 2 &&
     Number.isInteger(meter[0]) && meter[0] >= 1 && meter[0] <= 32 && [1, 2, 4, 8, 16, 32].includes(meter[1]));
@@ -103,10 +109,20 @@ export function readScoreImportResponse(raw: unknown): ScoreImportResponse {
       !Array.isArray(raw.measures) || raw.measures.length > MAX_SCORE_IMPORT_MEASURES ||
       !Array.isArray(raw.sections) || raw.sections.length > 64 ||
       !Array.isArray(raw.warnings) || raw.warnings.length > 32 || !raw.warnings.every((v) => text(v, 400))) return invalid();
+  const measures: ScoreImportResponse['measures'] = [];
   for (const measure of raw.measures) {
     if (!object(measure) || !Array.isArray(measure.chords) || measure.chords.length > 16 ||
         !measure.chords.every((v) => text(v, 120)) || !text(measure.sourceLabel, 80) ||
         typeof measure.needsReview !== 'boolean' || !text(measure.note, 400)) return invalid();
+    const chordBasis = measure.chordBasis ?? 'printed';
+    const confidence = measure.confidence ?? 'high';
+    if ((mode === 'infer_harmony' && (measure.chordBasis === undefined || measure.confidence === undefined)) ||
+        !['printed', 'inferred', 'unreadable'].includes(chordBasis as string) ||
+        !['high', 'medium', 'low'].includes(confidence as string) ||
+        (chordBasis === 'inferred' && (mode !== 'infer_harmony' || !measure.needsReview || !measure.note.trim())) ||
+        (confidence === 'low' && !measure.needsReview) ||
+        (chordBasis === 'unreadable' && (measure.chords.length !== 0 || confidence !== 'low' || !measure.needsReview))) return invalid();
+    measures.push({ ...measure, chordBasis, confidence } as ScoreImportResponse['measures'][number]);
   }
   for (const section of raw.sections) {
     if (!object(section) || !(section.section === null || isSectionType(section.section)) ||
@@ -114,11 +130,12 @@ export function readScoreImportResponse(raw: unknown): ScoreImportResponse {
         !Number.isInteger(section.startMeasure) || !Number.isInteger(section.length) ||
         !['explicit', 'inferred'].includes(section.basis as string)) return invalid();
   }
-  return raw as unknown as ScoreImportResponse;
+  return { ...raw, mode, measures } as unknown as ScoreImportResponse;
 }
 
 export function createScoreImportDraft(response: ScoreImportResponse, filename: string): ScoreImportDraft {
   return {
+    mode: response.mode ?? 'chord_symbols',
     filename,
     title: response.title || filename.replace(/\.[^.]+$/, ''),
     key: response.key ?? '',
@@ -126,6 +143,8 @@ export function createScoreImportDraft(response: ScoreImportResponse, filename: 
     bpm: '80',
     measures: response.measures.map((measure) => ({
       ...measure,
+      chordBasis: measure.chordBasis ?? 'printed',
+      confidence: measure.confidence ?? 'high',
       originalChords: [...measure.chords],
       chordText: measure.chords.join(' '),
     })),
@@ -159,6 +178,17 @@ function normalizedKey(value: string): string | null {
   if (!match) return null;
   const root = match[1][0].toUpperCase() + match[1].slice(1);
   return ROOTS.includes(root) ? `${root} ${match[2].toLowerCase()}` : null;
+}
+
+/** Analyze the edited symbols against the selected review key, without transposing them. */
+export function importMeasureRomanPreview(chordText: string, keyText: string): string | null {
+  const key = normalizedKey(keyText);
+  if (!key) return null;
+  const symbols = chordText.trim().split(/\s+/).filter(Boolean);
+  if (symbols.length < 1 || symbols.length > 2) return null;
+  const chords = symbols.map((symbol) => parseImportedChord(symbol, key));
+  if (chords.some((chord) => chord === null)) return null;
+  return chords.map((chord) => chord!.romanNumeral).join(' · ');
 }
 
 export interface ScoreImportValidation {
@@ -243,6 +273,12 @@ export function buildImportedSong(draft: ScoreImportDraft, makeId: () => string 
       length: Number(section.endBar) - Number(section.startBar) + 1,
       origin: section.origin,
     })).sort((a, b) => a.startMeasure - b.startMeasure),
-    importSource: { filename: draft.filename, model: draft.model, requestId: draft.requestId },
+    importSource: {
+      filename: draft.filename, model: draft.model, requestId: draft.requestId, mode: draft.mode,
+      measures: draft.measures.map((measure) => ({
+        chordBasis: measure.chordBasis, confidence: measure.confidence,
+        evidence: measure.note, originalChords: [...measure.originalChords],
+      })),
+    },
   };
 }

@@ -1,0 +1,101 @@
+{
+  "fixture": "backend/tests/fixtures/notes-only.png",
+  "synthetic_fixture": true,
+  "expected_chords": [
+    [
+      "C"
+    ],
+    [
+      "Am"
+    ],
+    [
+      "Dm"
+    ],
+    [
+      "G7"
+    ]
+  ],
+  "chords_match": false,
+  "supplemental_detail_views": 3,
+  "result": {
+    "title": "Original notation fixture",
+    "key": "C major",
+    "timeSignature": [
+      4,
+      4
+    ],
+    "measures": [
+      {
+        "chords": [
+          "C"
+        ],
+        "sourceLabel": "m1",
+        "needsReview": true,
+        "note": "Readable multi-voice bass-clef triad in stacked thirds, bass around E/C area with G and C above; interpreted as C major. No printed symbol.",
+        "chordBasis": "inferred",
+        "confidence": "medium"
+      },
+      {
+        "chords": [
+          "F"
+        ],
+        "sourceLabel": "m2",
+        "needsReview": true,
+        "note": "Readable multi-voice bass-clef triad lower than m1, stacked thirds F-A-C; interpreted as F major. No printed symbol.",
+        "chordBasis": "inferred",
+        "confidence": "medium"
+      },
+      {
+        "chords": [
+          "G"
+        ],
+        "sourceLabel": "m3",
+        "needsReview": true,
+        "note": "Readable multi-voice bass-clef triad higher than m1-m2, stacked thirds G-B-D; interpreted as G major. No printed symbol.",
+        "chordBasis": "inferred",
+        "confidence": "medium"
+      },
+      {
+        "chords": [
+          "Cmaj7"
+        ],
+        "sourceLabel": "m4",
+        "needsReview": true,
+        "note": "Readable 4-note bass-clef stack in thirds C-E-G-B low to high with low C below staff; preserves visible major 7th B. Interpreted as Cmaj7. No printed symbol.",
+        "chordBasis": "inferred",
+        "confidence": "medium"
+      }
+    ],
+    "sections": [
+      {
+        "section": null,
+        "label": "Phrase 1",
+        "startMeasure": 0,
+        "length": 4,
+        "basis": "inferred",
+        "note": "No printed section heading; single continuous 4-bar phrase grouped for review."
+      }
+    ],
+    "warnings": [
+      "No printed chord symbols; all harmonies inferred from readable bass-clef vertical sonorities for human review.",
+      "Key read as printed text 'Key: C major' with no sharps/flats visible; no key signature to verify.",
+      "No repeat signs, D.C., D.S., codas or endings observed in written order.",
+      "Harmony analysis is an interpretation, not a transcription of the original chords. Review every inferred chord, its note evidence, and the key before importing."
+    ],
+    "model": "muse-spark-1.3",
+    "requestId": "042e5be8-f718-4a1d-ae42-79f86b78d81d",
+    "mode": "infer_harmony"
+  },
+  "latency_ms": 23670,
+  "usage": {
+    "prompt_tokens": 3808,
+    "cached_tokens": 0,
+    "completion_tokens": 3828,
+    "reasoning_tokens": 3347
+  },
+  "cost_usd": 0.021029,
+  "limitations": [
+    "One simple synthetic bass-staff PNG; not proof of accuracy on complex scores, melody-only sheets or PDFs.",
+    "Two earlier failed interpretations are retained in note_harmony_first_attempt.json and note_harmony_second_attempt.json."
+  ]
+}

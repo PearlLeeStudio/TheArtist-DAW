@@ -63,9 +63,10 @@ def capabilities() -> ContractEnvelope:
                    "scoreFileBytes": MAX_SCORE_BYTES, "scoreMeasures": MAX_SCORE_MEASURES,
                    "exportMeasures": MAX_EXPORT_MEASURES, "generatedBars": 64},
         "sourceFields": {"generate_section": ["source", "modelUsed"], "build_song": ["model_used", "tracks.*.source", "seed"],
-                         "import_score": ["model", "requestId"]},
+                         "import_score": ["model", "requestId", "mode", "measures.*.chordBasis", "measures.*.confidence", "measures.*.note"]},
         "limitations": ["build_song returns one arrangement; candidate fan-out is not implemented.",
                         "Score import requires an explicitly attached PDF/image and may incur Meta API cost.",
+                        "Note-based harmony analysis is opt-in and returns reviewable interpretations, not verified original chords or imported melody notes.",
                         "export_daw requires a loopback request, server opt-in, and explicit per-call confirmation.",
                         "Song planning and theory explanation are not MCP tools yet."],
     })

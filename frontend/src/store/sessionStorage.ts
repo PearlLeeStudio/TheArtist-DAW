@@ -47,10 +47,28 @@ function record(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
+function validImportSource(value: unknown): boolean {
+  if (!record(value) || typeof value.filename !== 'string' || value.filename.length > 512 ||
+      typeof value.model !== 'string' || value.model.length > 200 ||
+      !(value.requestId === null || (typeof value.requestId === 'string' && value.requestId.length <= 200)) ||
+      (value.mode !== undefined && !['chord_symbols', 'infer_harmony'].includes(value.mode as string))) return false;
+  if (value.measures === undefined) return value.mode !== 'infer_harmony';
+  if (!Array.isArray(value.measures) || value.measures.length > 128) return false;
+  return value.measures.every((measure) => record(measure) &&
+    ['printed', 'inferred', 'unreadable'].includes(measure.chordBasis as string) &&
+    ['high', 'medium', 'low'].includes(measure.confidence as string) &&
+    typeof measure.evidence === 'string' && measure.evidence.length <= 400 &&
+    Array.isArray(measure.originalChords) && measure.originalChords.length <= 16 &&
+    measure.originalChords.every((symbol) => typeof symbol === 'string' && symbol.length <= 120) &&
+    (measure.chordBasis !== 'inferred' || (value.mode === 'infer_harmony' && measure.evidence.trim() !== '')) &&
+    (measure.chordBasis !== 'unreadable' || (measure.confidence === 'low' && measure.originalChords.length === 0)));
+}
+
 function validSong(value: unknown): boolean {
   if (!record(value) || typeof value.id !== 'string' || typeof value.title !== 'string' ||
       typeof value.key !== 'string' || !(value.genre === null || typeof value.genre === 'string') ||
       typeof value.bpm !== 'number' || !Number.isFinite(value.bpm) || value.bpm < 20 || value.bpm > 300) return false;
+  if (value.importSource !== undefined && !validImportSource(value.importSource)) return false;
   const ts = value.timeSignature;
   if (!Array.isArray(ts) || ts.length !== 2 || !Number.isInteger(ts[0]) || ts[0] < 1 || ts[0] > 32 ||
       ![1, 2, 4, 8, 16, 32].includes(ts[1])) return false;

@@ -1,0 +1,110 @@
+{
+  "fixture": "backend/tests/fixtures/score-import.png",
+  "synthetic_fixture": true,
+  "expected_chords": [
+    [
+      "Cmaj7",
+      "Am7"
+    ],
+    [
+      "Dm7",
+      "G7"
+    ],
+    [
+      "Fmaj7",
+      "G7"
+    ],
+    [
+      "Em7",
+      "Am7"
+    ]
+  ],
+  "chords_match": true,
+  "result": {
+    "title": "Synthetic chord chart",
+    "key": "C major",
+    "timeSignature": [
+      4,
+      4
+    ],
+    "measures": [
+      {
+        "chords": [
+          "Cmaj7",
+          "Am7"
+        ],
+        "sourceLabel": "Bar 1",
+        "needsReview": false,
+        "note": "",
+        "chordBasis": "printed",
+        "confidence": "high"
+      },
+      {
+        "chords": [
+          "Dm7",
+          "G7"
+        ],
+        "sourceLabel": "Bar 2",
+        "needsReview": false,
+        "note": "",
+        "chordBasis": "printed",
+        "confidence": "high"
+      },
+      {
+        "chords": [
+          "Fmaj7",
+          "G7"
+        ],
+        "sourceLabel": "Bar 3",
+        "needsReview": false,
+        "note": "",
+        "chordBasis": "printed",
+        "confidence": "high"
+      },
+      {
+        "chords": [
+          "Em7",
+          "Am7"
+        ],
+        "sourceLabel": "Bar 4",
+        "needsReview": false,
+        "note": "",
+        "chordBasis": "printed",
+        "confidence": "high"
+      }
+    ],
+    "sections": [
+      {
+        "section": "verse",
+        "label": "Verse",
+        "startMeasure": 0,
+        "length": 2,
+        "basis": "explicit",
+        "note": ""
+      },
+      {
+        "section": "chorus",
+        "label": "Chorus",
+        "startMeasure": 2,
+        "length": 2,
+        "basis": "explicit",
+        "note": ""
+      }
+    ],
+    "warnings": [],
+    "model": "muse-spark-1.3",
+    "requestId": "4a07b641-3934-44ce-b67d-dcf4634a59f4",
+    "mode": "chord_symbols"
+  },
+  "latency_ms": 2545,
+  "usage": {
+    "prompt_tokens": 2904,
+    "cached_tokens": 0,
+    "completion_tokens": 612,
+    "reasoning_tokens": 293
+  },
+  "cost_usd": 0.006231,
+  "limitations": [
+    "One synthetic printed-chord PNG; actual user scores and browser confirmation still require separate checks."
+  ]
+}

@@ -13,6 +13,17 @@ export interface Measure {
   chords: [Chord | null, Chord | null];
 }
 
+export type ScoreImportMode = 'chord_symbols' | 'infer_harmony';
+export type ImportedChordBasis = 'printed' | 'inferred' | 'unreadable';
+export type ImportConfidence = 'high' | 'medium' | 'low';
+export interface ImportMeasureSource {
+  chordBasis: ImportedChordBasis;
+  confidence: ImportConfidence;
+  evidence: string;
+  /** Initial recognition/proposal, retained after the user edits the score. */
+  originalChords: string[];
+}
+
 /** Song-form section ids. Mirrors backend/app/models/sections.py; labels,
  *  dropdown groups and default chord counts live in engine/songForm.ts. */
 export type SectionType =
@@ -52,7 +63,14 @@ export interface Song {
    *  where a title of '' or 'Untitled' counts as automatic. */
   autoTitle?: boolean;
   /** Source metadata only; uploaded file bytes are never autosaved. */
-  importSource?: { filename: string; model: string; requestId: string | null };
+  importSource?: {
+    filename: string;
+    model: string;
+    requestId: string | null;
+    mode?: ScoreImportMode;
+    /** Source-bar order at import time; later score edits do not rewrite it. */
+    measures?: ImportMeasureSource[];
+  };
 }
 
 export interface SlotAddress {

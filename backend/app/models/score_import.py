@@ -12,6 +12,9 @@ MAX_SCORE_MEASURES = 128
 MAX_SCORE_SECTIONS = 64
 MAX_CHORDS_PER_MEASURE = 16
 ScoreMime = Literal["application/pdf", "image/png", "image/jpeg", "image/webp"]
+ScoreImportMode = Literal["chord_symbols", "infer_harmony"]
+ChordBasis = Literal["printed", "inferred", "unreadable"]
+Confidence = Literal["high", "medium", "low"]
 ShortText = Annotated[str, Field(max_length=80)]
 Note = Annotated[str, Field(max_length=400)]
 ChordSymbol = Annotated[str, Field(min_length=1, max_length=80)]
@@ -25,6 +28,7 @@ class ScoreImportRequest(StrictModel):
     filename: str = Field(min_length=1, max_length=180)
     mimeType: str
     dataBase64: str
+    mode: ScoreImportMode = "chord_symbols"
 
 
 class ImportedMeasure(StrictModel):
@@ -32,6 +36,8 @@ class ImportedMeasure(StrictModel):
     sourceLabel: ShortText
     needsReview: bool
     note: Note
+    chordBasis: ChordBasis = "printed"
+    confidence: Confidence = "high"
 
     @field_validator("chords")
     @classmethod
@@ -39,6 +45,19 @@ class ImportedMeasure(StrictModel):
         if any(not chord.strip() for chord in value):
             raise ValueError("a chord symbol cannot be blank")
         return value
+
+    @model_validator(mode="after")
+    def require_review_and_evidence(self) -> "ImportedMeasure":
+        if not self.chords:
+            self.chordBasis = "unreadable"
+            self.confidence = "low"
+        elif self.chordBasis == "unreadable":
+            raise ValueError("unreadable measures cannot contain proposed chords")
+        if self.chordBasis == "inferred" and not self.note.strip():
+            raise ValueError("inferred chords need visible-note evidence or a harmonization rationale")
+        if self.chordBasis != "printed" or self.confidence == "low":
+            self.needsReview = True
+        return self
 
 
 class ImportedSection(StrictModel):
@@ -83,8 +102,10 @@ class ScoreExtraction(ScoreDraft):
     # Internal evidence flags are not part of the UI contract.
     complete: bool
     hasRepeats: bool
+    keyBasis: ChordBasis = "printed"
 
 
 class ScoreImportResponse(ScoreDraft):
     model: str
     requestId: str | None
+    mode: ScoreImportMode = "chord_symbols"

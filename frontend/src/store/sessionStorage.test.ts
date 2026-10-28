@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import type { SavedSession } from '../models/types.ts';
 import { DEFAULT_PLAY_SETTINGS, enginePlayConfig, playSettingsFromSession } from '../engine/playSettings.ts';
-import { mergeImport, serializeForExport, saveAll } from './sessionStorage.ts';
+import { mergeImport, serializeForExport, saveAll, loadAll } from './sessionStorage.ts';
 
 test('bad project files cannot replace valid working data or crash the score renderer', () => {
   const malformed = {
@@ -41,6 +41,45 @@ const importedProject: SavedSession = {
 test('project file roundtrip retains real chords, uncertain sections, source and a muted part', () => {
   const result = mergeImport([], serializeForExport([importedProject]));
   assert.deepEqual(result.merged[0], importedProject);
+});
+
+test('note-derived source proposals and evidence survive browser save/reload and project file roundtrip', () => {
+  const project = structuredClone(importedProject);
+  project.song.importSource = {
+    filename: 'notes.pdf', model: 'muse-spark-1.3', requestId: 'notes-request', mode: 'infer_harmony',
+    measures: [{ chordBasis: 'inferred', confidence: 'medium', evidence: 'Bass C and notes E G visible.', originalChords: ['C'] }],
+  };
+  const descriptor = Object.getOwnPropertyDescriptor(globalThis, 'localStorage');
+  let stored = '';
+  Object.defineProperty(globalThis, 'localStorage', { configurable: true, value: {
+    setItem(_key: string, value: string) { stored = value; }, getItem() { return stored; },
+  } });
+  try {
+    saveAll([project]);
+    assert.deepEqual(loadAll()[0].song.importSource, project.song.importSource);
+    assert.deepEqual(mergeImport([], serializeForExport(loadAll())).merged[0].song.importSource, project.song.importSource);
+  } finally {
+    if (descriptor) Object.defineProperty(globalThis, 'localStorage', descriptor);
+    else Reflect.deleteProperty(globalThis, 'localStorage');
+  }
+});
+
+test('foreign projects with invalid or disguised inferred provenance are skipped', () => {
+  const validSource = {
+    filename: 'notes.pdf', model: 'muse-spark-1.3', requestId: null, mode: 'infer_harmony',
+    measures: [{ chordBasis: 'inferred', confidence: 'medium', evidence: 'A C E visible.', originalChords: ['Am'] }],
+  };
+  for (const source of [
+    { ...validSource, mode: 'unknown' }, { ...validSource, measures: undefined },
+    { ...validSource, mode: 'chord_symbols' }, { ...validSource, measures: [{ ...validSource.measures[0], evidence: '' }] },
+    { ...validSource, measures: [{ ...validSource.measures[0], confidence: 'certain' }] },
+    { ...validSource, measures: [{ ...validSource.measures[0], originalChords: [3] }] },
+  ]) {
+    const project = { ...importedProject, song: { ...importedProject.song, importSource: source } };
+    const { result, merged } = mergeImport([], JSON.stringify({ version: 1, sessions: [project] }));
+    assert.equal(result.skipped, 1);
+    assert.deepEqual(merged, []);
+  }
 });
 
 test('an invalid arrangement cache is discarded while the score and settings survive', () => {

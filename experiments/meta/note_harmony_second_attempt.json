@@ -1,0 +1,99 @@
+{
+  "fixture": "backend/tests/fixtures/notes-only.png",
+  "synthetic_fixture": true,
+  "expected_chords": [
+    [
+      "C"
+    ],
+    [
+      "Am"
+    ],
+    [
+      "Dm"
+    ],
+    [
+      "G7"
+    ]
+  ],
+  "chords_match": false,
+  "result": {
+    "title": "Original notation fixture",
+    "key": "C major",
+    "timeSignature": [
+      4,
+      4
+    ],
+    "measures": [
+      {
+        "chords": [
+          "C/E"
+        ],
+        "sourceLabel": "p1/s1/b1",
+        "needsReview": true,
+        "note": "Bass clef whole-note stack, low to high ~E-G-C. Interpreted as C major first inversion, not Em because top tone reads as C. Melody-only no, multi-voice texture.",
+        "chordBasis": "inferred",
+        "confidence": "medium"
+      },
+      {
+        "chords": [
+          "F/A"
+        ],
+        "sourceLabel": "p1/s1/b2",
+        "needsReview": true,
+        "note": "Bass clef whole-note stack, low to high ~A-C-F. Interpreted as F major first inversion. Vertical spacing uncertain due to image resolution.",
+        "chordBasis": "inferred",
+        "confidence": "low"
+      },
+      {
+        "chords": [
+          "C/G"
+        ],
+        "sourceLabel": "p1/s1/b3",
+        "needsReview": true,
+        "note": "Bass clef whole-note stack, low to high ~G-C-E. Interpreted as C major second inversion. Top tone highest in phrase, above staff.",
+        "chordBasis": "inferred",
+        "confidence": "medium"
+      },
+      {
+        "chords": [
+          "C"
+        ],
+        "sourceLabel": "p1/s1/b4",
+        "needsReview": true,
+        "note": "Bass clef 4-note whole-note stack, low to high ~C-E-G-C. Interpreted as C major root position with octave. Clear C-major sonority.",
+        "chordBasis": "inferred",
+        "confidence": "high"
+      }
+    ],
+    "sections": [
+      {
+        "section": null,
+        "label": "Phrase 1-4",
+        "startMeasure": 0,
+        "length": 4,
+        "basis": "inferred",
+        "note": "No printed section heading; grouped 4 continuous whole-note bars as one neutral phrase."
+      }
+    ],
+    "warnings": [
+      "No printed chord symbols; all chords inferred from bass-clef vertical sonorities for review.",
+      "Image resolution limits precise ledger-line reading; intervallic interpretation needs review.",
+      "Harmony analysis is an interpretation, not a transcription of the original chords. Review every inferred chord, its note evidence, and the key before importing."
+    ],
+    "model": "muse-spark-1.3",
+    "requestId": "e1d3c5a1-1ad6-44e2-9898-ce66f46ef47e",
+    "mode": "infer_harmony"
+  },
+  "latency_ms": 18790,
+  "usage": {
+    "prompt_tokens": 2330,
+    "cached_tokens": 0,
+    "completion_tokens": 3672,
+    "reasoning_tokens": 3194
+  },
+  "cost_usd": 0.0185185,
+  "limitations": [
+    "One simple synthetic bass-staff PNG; not proof of accuracy on complex scores, melody-only sheets or PDFs.",
+    "An earlier attempt missed the seventh in bar four; retained in note_harmony_first_attempt.json."
+  ]
+}
