@@ -60,12 +60,12 @@ remain on the [manual checklist](docs/manual-checks.md).
   and CD through the chord, drawing and selector surroundings to Rhythm/Drums.
   Subtle inset grooves distinguish the black playback keys; display labels
   contrast against the same black surface in both app themes.
-  Play uses bright Apple-style silver in the light theme and space gray in the
-  dark theme, with light labels on its darker panel, fader bays and gray keys.
+  Play uses bright Apple-style silver in the light theme and near-black charcoal
+  in the dark theme, with light labels on its black panel, fader bays and keys.
   Selection, tab and emoji-selector keys have recessed faces, dark upper grooves
   and soft lower highlights;
   selected keys light up with a warm amber face. Bass off
-  keeps its gray face and explicit off label.
+  keeps its unlit face and explicit off label.
   Play uses a system Futura-first stack when available, with Avenir Next and
   sans-serif fallbacks. Full-width Rhythm and Drums status windows remain underneath,
   above the selection tabs, each 60 px tall with flat black/green step cells.

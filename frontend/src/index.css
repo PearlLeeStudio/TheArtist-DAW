@@ -330,22 +330,22 @@ code, pre, .mono {
               0 4px 9px var(--panel-shadow);
 }
 :root:not(.light) .te-device {
-  --panel-bg: #484a4f;
-  --panel-border: #62656b;
-  --panel-glint: rgba(255, 255, 255, 0.14);
-  --panel-shadow: rgba(0, 0, 0, 0.35);
-  --panel-sheen: #ffffff0a;
-  --channel-bg: #3f4146;
-  --fader-panel-bg: #3f4146;
-  --fader-label: #daddE2;
-  --fader-groove-edge: #27292e;
-  --key-bg: #54575d;
-  --key-bg-active: #62656b;
-  --key-border: #34363b;
-  --key-text: #e9ebef;
-  --key-text-dim: #b9bdc5;
-  --selection-face: linear-gradient(180deg, #51545a, #5c5f65);
-  --selection-shadow: inset 0 2px 3px #00000066, inset 0 -1px 0 #ffffff26, 0 1px 0 #ffffff0d;
+  --panel-bg: #17191b;
+  --panel-border: #33373b;
+  --panel-glint: rgba(255, 255, 255, 0.06);
+  --panel-shadow: rgba(0, 0, 0, 0.5);
+  --panel-sheen: #ffffff04;
+  --channel-bg: #111315;
+  --fader-panel-bg: #111315;
+  --fader-label: #c5c9cf;
+  --fader-groove-edge: #070809;
+  --key-bg: #222527;
+  --key-bg-active: #2a2d30;
+  --key-border: #101214;
+  --key-text: #d8dadd;
+  --key-text-dim: #a1a6ae;
+  --selection-face: linear-gradient(180deg, #202325, #282b2e);
+  --selection-shadow: inset 0 2px 3px #00000099, inset 0 -1px 0 #ffffff14, 0 1px 0 #ffffff05;
 }
 .te-step-meter {
   padding: 0;

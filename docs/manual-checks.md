@@ -91,7 +91,7 @@ unimplemented and are not part of the completed-feature checks.
   accessible labels and tooltips still say Piano/Guitar in English. The piano
   keeps its natural SVG proportions with compact surrounding space. Switch only
   the drawing and confirm the sound does not change. Check the bright Apple-style
-  silver hardware panel in the light theme and space-gray panel, fader bays and
+  silver hardware panel in the light theme and near-black panel, fader bays and
   keys with light labels in the dark theme, with no green cast. Keep the upper
   housing black and selected faces warm amber in both themes. At viewport
   heights of at least 900 px, check that the
@@ -136,12 +136,12 @@ unimplemented and are not part of the completed-feature checks.
   while enabled; Off is the top button state. Arrow/Home/End includes Auto and
   presets without moving the On/Off button. No extra status windows appear inside
   the selection tabs.
-- [ ] Selection buttons, tab keys and the small emoji selector have gray faces
+- [ ] Selection buttons, tab keys and the small emoji selector have unlit faces
   when unselected and a warm amber illuminated face when selected. Each uses a
   recessed face with a dark upper groove and soft lower highlight, without a
   decorative outline ring. Hover feedback ends when the pointer leaves.
   Check pointer and keyboard selection, one selected preset per group, and Bass
-  off's gray face and explicit off label. The separate status LEDs remain flat
+  off's unlit face and explicit off label. The separate status LEDs remain flat
   green without shadows.
 - [ ] First Play works in Safari. Adjust Master/Harmony/Bass/Drums while notes ring;
   each part at zero mutes independently, and Master at zero mutes everything.
