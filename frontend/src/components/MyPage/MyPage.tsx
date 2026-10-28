@@ -1,342 +1,345 @@
-/**
- * MyPage — full-page view of saved sessions.
- *
- * Each session renders as a read-only staff (SessionStaff) so the user
- * sees the actual progression at a glance, not just metadata. Per-session
- * actions: Play (full multi-track arrangement), Load (back to editor),
- * MIDI export (DAW handoff), Delete. Top bar: bulk JSON export/import for
- * cross-device transfer.
- */
-import { useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useSessionStore } from '../../store/sessionStore';
 import { useSongStore } from '../../store/songStore';
 import { useGenerationStore } from '../../store/generationStore';
 import { usePlayStore } from '../../store/playStore';
-import { downloadSongAsMidi } from '../../engine/midiExport';
 import {
-  applyPlayConfig,
-  schedulePlayback,
-  startPlayback,
-  stopPlayback,
-  pausePlayback,
-  resumePlayback,
+  buildExportSpec, downloadExportBlob, requestMidiExport, safeExportFilename,
+} from '../../engine/exportSpec';
+import {
+  applyPlayConfig, schedulePlayback, startPlayback, stopPlayback, pausePlayback, resumePlayback,
 } from '../../engine/playback';
 import { computeArrangement } from '../../engine/arrangement';
 import { enginePlayConfig, playSettingsFromSession, resolveVoicingMode } from '../../engine/playSettings';
 import type { SavedSession } from '../../models/types';
 import SessionStaff from './SessionStaff';
 
-function formatRelativeDate(ts: number): string {
-  return new Date(ts).toLocaleString(undefined, {
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-}
+const buttonStyle = {
+  background: 'var(--btn-bg)', color: 'var(--text-primary)', border: '1px solid var(--border)',
+};
+const primaryButtonStyle = { background: 'var(--text-heading)', color: 'var(--bg-primary)' };
+const mutedStyle = { color: 'var(--text-muted)' };
 
 interface SessionRowProps {
   session: SavedSession;
-  onAfterLoad: () => void;
   activeSessionId: string | null;
+  loadingSessionId: string | null;
+  exportingId: string | null;
   isPaused: boolean;
   onTogglePlay: (session: SavedSession) => void;
+  onOpen: (session: SavedSession) => void;
+  onDelete: (session: SavedSession) => void;
+  onFavorite: (session: SavedSession) => void;
+  onExportMidi: (session: SavedSession) => void;
 }
 
-function SessionRow({ session, onAfterLoad, activeSessionId, isPaused, onTogglePlay }: SessionRowProps) {
-  const setSong = useSongStore((s) => s.setSong);
-  const setModelKey = useGenerationStore((s) => s.setModelKey);
-  const replacePlaySettings = usePlayStore((s) => s.replaceSettings);
-  const remove = useSessionStore((s) => s.remove);
-  const toggleStar = useSessionStore((s) => s.toggleStar);
-
+function SessionRow({
+  session, activeSessionId, loadingSessionId, exportingId, isPaused,
+  onTogglePlay, onOpen, onDelete, onFavorite, onExportMidi,
+}: SessionRowProps) {
+  const [previewOpen, setPreviewOpen] = useState(false);
   const isActive = activeSessionId === session.id;
-  // Three states: idle (not active) | playing (active + not paused) | paused (active + paused)
-  const buttonLabel = !isActive ? '▶ Play' : isPaused ? '▶ Resume' : '⏸ Pause';
-  const buttonTitle = !isActive
-    ? 'Play with the Play-panel settings saved with this session (harmony + bass + drums)'
-    : isPaused
-      ? 'Resume from paused position'
-      : 'Pause (Tone.Transport pause — schedule retained for instant resume)';
-
-  const handleLoad = () => {
-    setSong(session.song);
-    setModelKey(session.generation.model);
-    // The Play panel comes back as it was at Save (instrument, rhythm,
-    // drums, bass, visual mode). Leftover melodyOverride fields from old
-    // sessions are ignored.
-    replacePlaySettings(playSettingsFromSession(session.generation));
-    onAfterLoad();
-  };
-
-  const handleDelete = () => {
-    if (window.confirm(`Delete "${session.name}"?`)) {
-      remove(session.id);
-    }
-  };
-
+  const isLoading = loadingSessionId === session.id;
+  const buttonLabel = isLoading ? 'Loading…' : !isActive ? '▶ Play' : isPaused ? '▶ Resume' : '⏸ Pause';
+  const effectiveGenre = session.generation.genre ?? session.song.genre;
   const meta = [
-    session.song.key,
-    session.generation.genre,
-    session.generation.model,
-  ]
-    .filter(Boolean)
-    .join(' · ');
+    session.song.key, effectiveGenre?.replaceAll('_', ' '), `${session.song.bpm} BPM`,
+    session.song.timeSignature.join('/'), `${session.song.measures.length} bars`,
+  ].filter(Boolean).join(' · ');
 
   return (
-    <div
-      className="p-4 space-y-3"
-      style={{
-        background: 'var(--bg-surface)',
-        border: '1px solid var(--border)',
-        borderLeft: session.starred
-          ? '3px solid var(--brand-yellow)'
-          : '1px solid var(--border)',
-      }}
-    >
-      <div className="flex items-start gap-3">
-        <button
-          onClick={() => toggleStar(session.id)}
-          className="text-lg leading-none shrink-0 mt-0.5"
-          style={{
-            color: session.starred ? 'var(--brand-yellow)' : 'var(--text-muted)',
-            background: 'transparent',
-          }}
-          title={session.starred ? 'Unstar' : 'Star (add to Favorite Generate pool)'}
-        >
+    <article className="p-4 space-y-3" style={{
+      background: 'var(--bg-surface)', border: '1px solid var(--border)',
+      borderLeft: session.starred ? '3px solid var(--brand-yellow)' : '1px solid var(--border)',
+    }}>
+      <div className="flex items-start gap-3 flex-wrap">
+        <button onClick={() => onFavorite(session)} className="text-xl leading-none shrink-0 mt-1"
+          style={{ color: session.starred ? 'var(--brand-yellow)' : 'var(--text-muted)', background: 'transparent' }}
+          title={session.starred ? 'Remove from favorites' : 'Favorite for future inspiration'}
+          aria-label={`${session.starred ? 'Unfavorite' : 'Favorite'} ${session.name}`} aria-pressed={session.starred}>
           {session.starred ? '★' : '☆'}
         </button>
-
-        <div className="flex-1 min-w-0">
-          <div className="font-display text-xl truncate" style={{ color: 'var(--text-heading)', fontWeight: 600 }}>
+        <div className="flex-1 min-w-40">
+          <h3 className="font-display text-xl break-words" style={{ color: 'var(--text-heading)', fontWeight: 600 }}>
             {session.name}
-          </div>
-          <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
-            {meta} · {formatRelativeDate(session.createdAt)}
-          </div>
+          </h3>
+          <div className="text-xs mt-1" style={mutedStyle}>{meta}</div>
         </div>
-
-        <div className="flex gap-2 shrink-0">
-          <button
-            onClick={() => onTogglePlay(session)}
-            className="px-3 py-1.5 text-xs font-bold"
-            style={{
-              background: isActive ? 'var(--text-heading)' : 'var(--btn-bg)',
-              color: isActive ? 'var(--bg-primary)' : 'var(--text-primary)',
-              border: '1px solid var(--border)',
-            }}
-            title={buttonTitle}
-          >
+        <div className="flex flex-wrap gap-2">
+          <button onClick={() => onTogglePlay(session)} disabled={loadingSessionId !== null}
+            className="px-3 py-2 text-xs font-bold disabled:opacity-50"
+            style={isActive ? primaryButtonStyle : buttonStyle}
+            title={!isActive ? 'Play with the instruments and levels saved in this project' : isPaused ? 'Resume playback' : 'Pause playback'}>
             {buttonLabel}
           </button>
-          <button
-            onClick={handleLoad}
-            className="px-3 py-1.5 text-xs font-bold"
-            style={{ background: 'var(--text-heading)', color: 'var(--bg-primary)' }}
-            title="Replace the current song with this saved session and return to the editor"
-          >
-            Load
+          <button onClick={() => onOpen(session)} className="px-3 py-2 text-xs font-bold" style={primaryButtonStyle}
+            title="Open in the editor; unsaved work is kept in Projects first">Open</button>
+          <button onClick={() => onExportMidi(session)} disabled={exportingId !== null}
+            className="px-3 py-2 text-xs disabled:opacity-50" style={buttonStyle}
+            title="Download harmony, bass and drums as a MIDI file for your DAW">
+            {exportingId === session.id ? 'Exporting…' : 'MIDI'}
           </button>
-          <button
-            onClick={() => downloadSongAsMidi(session.song, session.name)}
-            className="px-3 py-1.5 text-xs"
-            style={{ background: 'var(--btn-bg)', color: 'var(--text-primary)' }}
-            title="Export to MIDI (.mid) — drag into Logic Pro or any DAW"
-          >
-            MIDI
-          </button>
-          <button
-            onClick={handleDelete}
-            className="px-3 py-1.5 text-xs"
-            style={{ background: 'var(--btn-bg)', color: 'var(--text-muted)' }}
-          >
-            Delete
-          </button>
+          <button onClick={() => onDelete(session)} className="px-3 py-2 text-xs" style={buttonStyle}>Delete</button>
         </div>
       </div>
-
-      <div style={{ background: 'var(--bg-primary)', border: '1px solid var(--border)' }}>
-        <SessionStaff song={session.song} />
-      </div>
-    </div>
+      <details onToggle={(event) => setPreviewOpen(event.currentTarget.open)}>
+        <summary className="text-xs cursor-pointer select-none" style={mutedStyle}>Preview score</summary>
+        {previewOpen && (
+          <div className="mt-3 overflow-x-auto" style={{ background: 'var(--bg-primary)', border: '1px solid var(--border)' }}>
+            <SessionStaff song={session.song} />
+          </div>
+        )}
+      </details>
+    </article>
   );
 }
 
-interface MyPageProps {
-  onExitToEditor: () => void;
-}
+interface MyPageProps { onExitToEditor: () => void }
+interface Notice { error: boolean; message: string }
 
 export default function MyPage({ onExitToEditor }: MyPageProps) {
-  const sessions = useSessionStore((s) => s.sessions);
-  const exportAll = useSessionStore((s) => s.exportAll);
-  const importJson = useSessionStore((s) => s.importJson);
-  const starredCount = sessions.filter((s) => s.starred).length;
+  const sessions = useSessionStore((state) => state.sessions);
+  const exportAll = useSessionStore((state) => state.exportAll);
+  const importJson = useSessionStore((state) => state.importJson);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  /** Track which session (if any) is currently the *active* playback —
-   *  could be playing or paused. Pearl 2026-05-10 round 2: replaced
-   *  the simple play/stop with a 3-state play/pause/resume toggle. */
+  const mountedRef = useRef(true);
+  const playSequence = useRef(0);
+  const exportController = useRef<AbortController | null>(null);
+  const importingRef = useRef(false);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
+  const [loadingSessionId, setLoadingSessionId] = useState<string | null>(null);
   const [isPaused, setIsPaused] = useState(false);
+  const [exportingId, setExportingId] = useState<string | null>(null);
+  const [importing, setImporting] = useState(false);
+  const [notice, setNotice] = useState<Notice | null>(null);
+  const starredCount = sessions.filter((session) => session.starred).length;
 
-  const handleTogglePlay = useCallback((session: SavedSession) => {
-    // Same session is currently active → toggle pause/resume (Tone.Transport
-    // pause/start, schedule retained for instant resume).
-    if (activeSessionId === session.id) {
-      if (isPaused) {
-        resumePlayback();
-        setIsPaused(false);
-      } else {
-        pausePlayback();
-        setIsPaused(true);
+  useEffect(() => {
+    mountedRef.current = true;
+    playSequence.current++;
+    return () => {
+      mountedRef.current = false;
+      exportController.current?.abort();
+      stopPlayback();
+    };
+  }, []);
+
+  const stopProjectPlayback = () => {
+    playSequence.current++;
+    stopPlayback();
+    setActiveSessionId(null);
+    setLoadingSessionId(null);
+    setIsPaused(false);
+  };
+
+  const handleTogglePlay = async (session: SavedSession) => {
+    setNotice(null);
+    if (activeSessionId === session.id && !loadingSessionId) {
+      try {
+        if (isPaused) resumePlayback(); else pausePlayback();
+        setIsPaused(!isPaused);
+      } catch (error) {
+        stopProjectPlayback();
+        setNotice({ error: true, message: error instanceof Error ? error.message : 'Playback could not start. Please try again.' });
       }
       return;
     }
-
-    // Different session (or first play) → full swap. stopPlayback is idempotent.
+    const sequence = ++playSequence.current;
     stopPlayback();
-
-    // Resolve effective genre: prefer the saved generation context, fall
-    // back to the song's own genre tag. Auto instrument, rhythm, voicing
-    // and drums resolve against it.
-    const effectiveGenre = session.generation.genre ?? session.song.genre ?? null;
-
-    // Replay with the Play-panel settings saved with the session, resolved
-    // the same way the editor resolves its own — so the session sounds as
-    // it did in the editor at Save. Sessions saved before the Play panel
-    // keep their drum pick (else the genre's) with the bass on.
-    const playSettings = playSettingsFromSession(session.generation);
-    applyPlayConfig(enginePlayConfig(playSettings, effectiveGenre));
-
-    // The song passed to schedulePlayback / arrangement carries the same
-    // effective genre — the harmony and bass rhythm tables key on
-    // song.genre, and the arrangement was computed against this same
-    // resolution at save time.
-    const songForPlay = { ...session.song, genre: effectiveGenre };
-    // Round 3 (2026-05-10) reshaped Arrangement from ArrangementEvent[] to
-    // a 1-bar pattern object. Detect legacy array-format and ignore so old
-    // sessions saved between rounds 2 and 3 fall back to live compute
-    // rather than crashing on `.bassPattern` access.
-    const stored = session.arrangement;
-    const arrangement = (stored && !Array.isArray(stored) && 'bassPattern' in stored)
-      ? stored
-      : computeArrangement(songForPlay);
-
-    schedulePlayback(
-      songForPlay,
-      () => {/* no editor highlight on MyPage */},
-      undefined,
-      resolveVoicingMode(playSettings, effectiveGenre),
-      () => { setActiveSessionId(null); setIsPaused(false); },  // natural end
-      arrangement,
-      false,  // no Loop key here: a session plays once, whatever the editor's Loop says
-    );
-    void startPlayback();
     setActiveSessionId(session.id);
+    setLoadingSessionId(session.id);
     setIsPaused(false);
-  }, [activeSessionId, isPaused]);
+    try {
+      const effectiveGenre = session.generation.genre ?? session.song.genre ?? null;
+      const settings = playSettingsFromSession(session.generation);
+      const songForPlay = { ...session.song, genre: effectiveGenre };
+      const stored = session.arrangement;
+      const arrangement = stored && !Array.isArray(stored) && 'bassPattern' in stored
+        ? stored : computeArrangement(songForPlay);
+      applyPlayConfig(enginePlayConfig(settings, effectiveGenre));
+      schedulePlayback(songForPlay, () => {}, undefined, resolveVoicingMode(settings, effectiveGenre), () => {
+        if (mountedRef.current && sequence === playSequence.current) {
+          setActiveSessionId(null);
+          setIsPaused(false);
+        }
+      }, arrangement, false);
+      const started = await startPlayback();
+      if (mountedRef.current && sequence === playSequence.current && !started) {
+        setActiveSessionId(null);
+        setNotice({ error: true, message: 'Playback could not start. Press Play to try again.' });
+      }
+    } catch (error) {
+      if (mountedRef.current && sequence === playSequence.current) {
+        stopPlayback();
+        setActiveSessionId(null);
+        setNotice({ error: true, message: error instanceof Error ? error.message : 'Playback could not start. Please try again.' });
+      }
+    } finally {
+      if (mountedRef.current && sequence === playSequence.current) setLoadingSessionId(null);
+    }
+  };
+
+  const handleOpen = (session: SavedSession) => {
+    // Keep the editor snapshot before replacing it. A failed browser save
+    // throws before setSong, so the current score remains available.
+    const current = useSongStore.getState().song;
+    const model = useGenerationStore.getState().modelKey;
+    const settings = usePlayStore.getState().settings;
+    const currentJson = JSON.stringify(current);
+    const settingsJson = JSON.stringify(settings);
+    const alreadyKept = useSessionStore.getState().sessions.some((saved) =>
+      JSON.stringify(saved.song) === currentJson && saved.generation.model === model &&
+      JSON.stringify(playSettingsFromSession(saved.generation)) === settingsJson);
+    try {
+      if (!alreadyKept) {
+        useSessionStore.getState().add(current, { model, genre: current.genre, ...settings }, current.title.trim() || 'Untitled');
+      }
+    } catch (error) {
+      setNotice({ error: true, message: `Your current work could not be saved, so this project was not opened. ${
+        error instanceof Error ? error.message : 'Download a project file to make room, then try again.'
+      }` });
+      return;
+    }
+    stopProjectPlayback();
+    useSongStore.getState().setSong({ ...session.song, genre: session.generation.genre ?? session.song.genre ?? null });
+    useGenerationStore.getState().setModelKey(session.generation.model);
+    usePlayStore.getState().replaceSettings(playSettingsFromSession(session.generation));
+    onExitToEditor();
+  };
+
+  const handleDelete = (session: SavedSession) => {
+    if (!window.confirm(`Delete "${session.name}" from this browser?`)) return;
+    try {
+      useSessionStore.getState().remove(session.id);
+      if (activeSessionId === session.id) stopProjectPlayback();
+      setNotice({ error: false, message: `Deleted “${session.name}” from this browser.` });
+    } catch (error) {
+      setNotice({ error: true, message: error instanceof Error ? error.message : 'The project could not be deleted. Please try again.' });
+    }
+  };
+
+  const handleFavorite = (session: SavedSession) => {
+    try {
+      useSessionStore.getState().toggleStar(session.id);
+      setNotice(null);
+    } catch (error) {
+      setNotice({ error: true, message: error instanceof Error ? error.message : 'This change could not be saved. Please try again.' });
+    }
+  };
+
+  const handleExportMidi = async (session: SavedSession) => {
+    if (exportController.current) return;
+    const controller = new AbortController();
+    exportController.current = controller;
+    setExportingId(session.id);
+    setNotice(null);
+    try {
+      const song = { ...session.song, genre: session.generation.genre ?? session.song.genre ?? null };
+      const spec = buildExportSpec(song, playSettingsFromSession(session.generation));
+      const blob = await requestMidiExport(spec, controller.signal);
+      if (!mountedRef.current || controller.signal.aborted) return;
+      downloadExportBlob(blob, safeExportFilename(session.name, 'mid'));
+      setNotice({ error: false, message: `MIDI download started for “${session.name}”.` });
+    } catch (error) {
+      if (mountedRef.current && !controller.signal.aborted) {
+        setNotice({ error: true, message: error instanceof Error ? error.message : 'MIDI export failed. Please try again.' });
+      }
+    } finally {
+      if (exportController.current === controller) exportController.current = null;
+      if (mountedRef.current) setExportingId(null);
+    }
+  };
 
   const handleExport = () => {
-    const json = exportAll();
-    const blob = new Blob([json], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement('a');
-    const dateTag = new Date().toISOString().slice(0, 10);
-    anchor.href = url;
-    anchor.download = `theartist-sessions-${dateTag}.json`;
-    document.body.appendChild(anchor);
-    anchor.click();
-    document.body.removeChild(anchor);
-    setTimeout(() => URL.revokeObjectURL(url), 0);
+    try {
+      downloadExportBlob(new Blob([exportAll()], { type: 'application/json' }), 'theartist-projects.json');
+      setNotice({ error: false, message: 'Project file download started. It contains all projects saved in this browser.' });
+    } catch (error) {
+      setNotice({ error: true, message: error instanceof Error ? error.message : 'Your project file could not be downloaded. Please try again.' });
+    }
   };
 
   const handleImportFile = async (file: File) => {
+    if (importingRef.current) return;
+    importingRef.current = true;
+    setImporting(true);
+    setNotice(null);
     try {
-      const text = await file.text();
-      const result = importJson(text);
+      const contents = await file.text();
+      if (!mountedRef.current) return;
+      const result = importJson(contents);
+      const total = result.added + result.renamed;
       const parts = [
-        result.added > 0 ? `${result.added} added` : null,
-        result.renamed > 0 ? `${result.renamed} re-keyed (id collision)` : null,
-        result.skipped > 0 ? `${result.skipped} skipped (invalid)` : null,
+        total ? `${total} project${total === 1 ? '' : 's'} added` : 'No projects added',
+        result.renamed ? `${result.renamed} kept as separate ${result.renamed === 1 ? 'copy' : 'copies'}` : null,
+        result.skipped ? `${result.skipped} could not be read` : null,
       ].filter(Boolean);
-      window.alert(parts.length > 0 ? `Import complete: ${parts.join(', ')}.` : 'No sessions imported.');
-    } catch (err) {
-      window.alert(`Import failed: ${err instanceof Error ? err.message : 'unknown error'}`);
+      setNotice({ error: result.skipped > 0, message: `${parts.join(' · ')}.` });
+    } catch (error) {
+      if (mountedRef.current) {
+        const message = error instanceof SyntaxError || error instanceof Error && error.message.includes('Unsupported')
+          ? 'Choose a TheArtist project file downloaded from Projects.'
+          : error instanceof Error ? error.message : 'This project file could not be imported.';
+        setNotice({ error: true, message });
+      }
+    } finally {
+      importingRef.current = false;
+      if (mountedRef.current) setImporting(false);
     }
   };
 
   return (
     <div className="flex-1 overflow-y-auto">
-      <div className="max-w-5xl mx-auto p-6 space-y-4">
-        <div className="flex items-baseline justify-between flex-wrap gap-2">
-          <div>
-            <h2 className="font-display text-3xl" style={{ color: 'var(--text-heading)', fontWeight: 700 }}>
-              My Sessions
-            </h2>
-            {sessions.length > 0 && (
-              <div className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
-                {starredCount > 0 ? `★ ${starredCount} starred · ${sessions.length} total` : `${sessions.length} saved`}
-              </div>
-            )}
+      <div className="max-w-5xl mx-auto p-6 space-y-5">
+        <div className="flex items-start justify-between flex-wrap gap-4">
+          <div className="max-w-xl">
+            <h2 className="font-display text-3xl" style={{ color: 'var(--text-heading)', fontWeight: 700 }}>Projects</h2>
+            <p className="text-sm mt-1" style={mutedStyle}>Recent work saved in this browser.</p>
+            <p className="text-xs mt-2 leading-relaxed" style={mutedStyle}>
+              Download a project file to keep a backup or move your work to another device. Files do not sync automatically.
+            </p>
           </div>
-
-          <div className="flex gap-2">
-            <button
-              onClick={handleExport}
-              disabled={sessions.length === 0}
-              className="px-3 py-1.5 text-xs"
-              style={{
-                background: 'var(--btn-bg)',
-                color: 'var(--text-primary)',
-                border: '1px solid var(--border)',
-                opacity: sessions.length === 0 ? 0.5 : 1,
-              }}
-              title="Download all sessions as a JSON file"
-            >
-              Export JSON…
+          <div className="flex flex-wrap gap-2">
+            <button onClick={handleExport} disabled={!sessions.length} className="px-3 py-2 text-xs font-bold disabled:opacity-50"
+              style={buttonStyle} title="Download every saved project in one JSON file">Download project file</button>
+            <button onClick={() => fileInputRef.current?.click()} disabled={importing}
+              className="px-3 py-2 text-xs font-bold disabled:opacity-50" style={buttonStyle}>
+              {importing ? 'Importing…' : 'Import project file'}
             </button>
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              className="px-3 py-1.5 text-xs"
-              style={{
-                background: 'var(--btn-bg)',
-                color: 'var(--text-primary)',
-                border: '1px solid var(--border)',
-              }}
-              title="Import sessions from a previously-exported JSON file"
-            >
-              Import JSON…
-            </button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="application/json,.json"
-              className="hidden"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) void handleImportFile(file);
-                e.target.value = '';
-              }}
-            />
+            <input ref={fileInputRef} type="file" accept=".json,application/json" className="hidden" onChange={(event) => {
+              const file = event.target.files?.[0];
+              event.target.value = '';
+              if (file) void handleImportFile(file);
+            }} />
           </div>
         </div>
-
-        {sessions.length === 0 ? (
-          <p className="text-sm italic py-12 text-center" style={{ color: 'var(--text-muted)' }}>
-            No saved sessions yet. From the editor, press Save (top right of the staff) to capture the current song and generation settings.
-          </p>
+        {notice && (
+          <p role={notice.error ? 'alert' : 'status'} className="text-sm px-3 py-2" style={{
+            color: 'var(--text-primary)',
+            background: 'var(--bg-surface)', border: '1px solid var(--border)',
+            borderLeft: notice.error ? '3px solid var(--brand-yellow)' : undefined,
+          }}>{notice.message}</p>
+        )}
+        {sessions.length > 0 ? (
+          <>
+            <div className="flex justify-between flex-wrap gap-2 text-xs" style={mutedStyle}>
+              <span>{sessions.length} saved{starredCount > 0 ? ` · ★ ${starredCount} favorites` : ''}</span>
+              <span>Opening a project keeps unsaved editor work here first.</span>
+            </div>
+            <div className="space-y-3">
+              {sessions.map((session) => (
+                <SessionRow key={session.id} session={session} activeSessionId={activeSessionId}
+                  loadingSessionId={loadingSessionId} exportingId={exportingId} isPaused={isPaused}
+                  onTogglePlay={(item) => void handleTogglePlay(item)} onOpen={handleOpen}
+                  onDelete={handleDelete} onFavorite={handleFavorite} onExportMidi={(item) => void handleExportMidi(item)} />
+              ))}
+            </div>
+          </>
         ) : (
-          <div className="space-y-4">
-            {sessions.map((s) => (
-              <SessionRow
-                key={s.id}
-                session={s}
-                onAfterLoad={onExitToEditor}
-                activeSessionId={activeSessionId}
-                isPaused={isPaused}
-                onTogglePlay={handleTogglePlay}
-              />
-            ))}
+          <div className="py-16 text-center space-y-3" style={mutedStyle}>
+            <p className="font-display text-2xl" style={{ color: 'var(--text-heading)' }}>Your next idea starts here.</p>
+            <p className="text-sm">Save a sketch from the editor, or import a project file.</p>
+            <button onClick={onExitToEditor} className="px-4 py-2 text-xs font-bold" style={primaryButtonStyle}>Back to editor</button>
           </div>
         )}
       </div>

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useMemo, useState } from 'react';
 import { Renderer, Stave } from 'vexflow';
 import { getChordDisplayParts } from '../../engine/chordDisplay';
+import { scoreMeasureLayout, SCORE_MEASURES_PER_ROW, SCORE_ROW_HEIGHT, SCORE_TOP } from '../../engine/scoreLayout';
 import type { Song } from '../../models/types';
 
 const KEY_SIG_MAP: Record<string, string> = {
@@ -12,12 +13,6 @@ const KEY_SIG_MAP: Record<string, string> = {
   'C# minor': 'C#m', 'G# minor': 'G#m', 'Eb minor': 'Ebm', 'Bb minor': 'Bbm',
   'F minor': 'Fm', 'C minor': 'Cm', 'G minor': 'Gm', 'D minor': 'Dm',
 };
-
-const MEASURES_PER_ROW = 4;
-const CHORD_AREA_HEIGHT = 8;
-const STAVE_HEIGHT = 170;
-const PADDING_Y = 10;
-const PADDING_X = 10;
 
 interface StaveLayout {
   x: number;
@@ -60,23 +55,13 @@ export default function SessionStaff({ song }: SessionStaffProps) {
     return () => ro.disconnect();
   }, []);
 
-  const staveWidth = Math.max(120, (containerWidth - PADDING_X * 2) / MEASURES_PER_ROW);
-
   const baseLayouts = useMemo((): Omit<StaveLayout, 'midLineY'>[] => {
-    return song.measures.map((_, i) => {
-      const row = Math.floor(i / MEASURES_PER_ROW);
-      const col = i % MEASURES_PER_ROW;
-      const x = PADDING_X + col * staveWidth;
-      const y = PADDING_Y + CHORD_AREA_HEIGHT + row * STAVE_HEIGHT;
-      const isFirstInRow = col === 0;
-      const contentX = x + (isFirstInRow ? 70 : 10);
-      return { x, y, width: staveWidth, isFirstInRow, contentX };
-    });
-  }, [song.measures.length, staveWidth]);
+    return Array.from({ length: song.measures.length }, (_, i) => scoreMeasureLayout(i, containerWidth));
+  }, [song.measures.length, containerWidth]);
 
-  const rows = Math.ceil(song.measures.length / MEASURES_PER_ROW);
+  const rows = Math.ceil(song.measures.length / SCORE_MEASURES_PER_ROW);
   const totalWidth = containerWidth;
-  const totalHeight = rows * STAVE_HEIGHT + PADDING_Y * 2 + CHORD_AREA_HEIGHT;
+  const totalHeight = rows * SCORE_ROW_HEIGHT + SCORE_TOP + 10;
 
   useEffect(() => {
     if (!containerRef.current) return;
