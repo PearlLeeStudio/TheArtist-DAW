@@ -59,10 +59,10 @@ export default function PlayPanel({ midiActiveNotes }: PlayPanelProps) {
       }}
     >
       <Transport />
-      <div className="shrink-0">
+      <div className="te-live-display shrink-0 flex flex-col gap-2">
         <VisualPane midiActiveNotes={midiActiveNotes} compact />
+        <PlaybackStatus />
       </div>
-      <PlaybackStatus />
 
       <div className="shrink-0 flex items-end gap-2">
           <div

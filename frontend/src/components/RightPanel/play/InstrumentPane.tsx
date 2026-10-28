@@ -89,7 +89,9 @@ export default function InstrumentPane() {
           <span style={{ fontSize: 10, lineHeight: '12px' }}>{family.id === 'woodwinds' ? 'Winds' : family.label}</span>
         </button>)}
       </div>
-      <div className="grid grid-cols-4 content-start gap-[3px]" role="group" aria-label={`${group.label} instruments`}>
+      <div className="grid min-h-0 grid-cols-4 gap-[3px]"
+        style={{ gridTemplateRows: `repeat(${Math.ceil(instruments.length / 4)}, minmax(28px, 1fr))` }}
+        role="group" aria-label={`${group.label} instruments`}>
             {instruments.map((instrument) => {
               const selected = override === instrument.name;
               const label = NAMES[instrument.name] ?? instrument.label;

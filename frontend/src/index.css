@@ -330,6 +330,18 @@ code, pre, .mono {
   background: #080d06;
   box-shadow: none;
 }
+.te-live-display {
+  --screen-bg: #0b110d;
+  width: calc(100% + 16px);
+  margin-inline: -8px;
+  padding: 8px 12px 6px;
+  background: var(--screen-bg);
+}
+.te-live-display .te-screen {
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
 .te-status-window {
   --key-text-dim: var(--screen-text-dim);
   min-width: 0;
@@ -345,11 +357,9 @@ code, pre, .mono {
 }
 .te-playback-status {
   gap: 6px;
-  width: calc(100% + 16px);
-  margin-inline: -8px;
-  padding: 6px 12px;
-  border-block: 1px solid #020402;
-  background: #0b110d;
+  width: 100%;
+  padding: 6px 0;
+  background: transparent;
   box-shadow: none;
 }
 .te-status-window + .te-status-window {
@@ -457,19 +467,18 @@ code, pre, .mono {
 }
 /* Console-style selection keys: a dark frame, gray unlit face and amber lamp. */
 .te-device .te-key:not(.te-transport__key) {
-  border: 2px solid #444447;
+  border: 1px solid #8f8f94;
   border-radius: 3px;
   background: linear-gradient(180deg, #d8d8dc, #ccccd0 70%, #bcbcc1);
   color: #343437;
-  box-shadow: inset 0 1px 2px #ffffff70, inset 0 0 3px #26262850,
-              0 0 0 1px #85858a, 0 1px 1px #00000030;
+  box-shadow: inset 0 1px 1px #ffffff70, 0 1px 1px #00000020;
 }
 .te-device .te-key:not(.te-transport__key)[data-active],
 .te-device .te-key:not(.te-transport__key):active:not(:disabled) {
   background: radial-gradient(ellipse at 50% 42%, #fff0bb, #ebca8f 72%, #c39b62);
+  border-color: #9b8763;
   color: #3b3122;
-  box-shadow: inset 0 0 4px #fff6cfb3, inset 0 -1px 2px #a4743b4d,
-              0 0 0 1px #6b655c, 0 0 5px #edc47f66;
+  box-shadow: inset 0 0 4px #fff6cfb3, 0 0 4px #edc47f4d;
 }
 .te-device .te-key:not(.te-transport__key):hover {
   filter: brightness(1.04);

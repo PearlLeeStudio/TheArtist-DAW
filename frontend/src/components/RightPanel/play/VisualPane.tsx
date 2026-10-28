@@ -193,9 +193,7 @@ export default function VisualPane({ midiActiveNotes, compact = false }: { midiA
           padding: compact ? 4 : 6,
           gridColumn: compact ? 1 : undefined,
           gridRow: compact ? 1 : undefined,
-          border: '1px solid #020402',
-          background: '#0b110d',
-          borderRadius: 3,
+          background: 'transparent',
         }}
       >
         {shape === 'guitar' ? (

@@ -29,7 +29,7 @@ import './Transport.css';
 
 /** Measures the back and forward keys move. */
 const JUMP = 4;
-const COLUMNS = 'repeat(2, minmax(0, 1fr)) minmax(0, 1.35fr) repeat(3, minmax(0, 1fr))';
+const COLUMNS = 'repeat(2, minmax(0, 1fr)) minmax(0, 1.65fr) repeat(3, minmax(0, 1fr))';
 const KEY_STYLE = { height: 42 };
 
 // Monochrome 16×16 glyphs in currentColor; play/pause draws a little larger.
@@ -290,9 +290,7 @@ export default function Transport() {
           {PLAY_FULL_ICON}
         </KeyButton>
       </div>
-      <div className="te-transport__disc" aria-hidden="true">
-        <span className="te-transport__disc-core" />
-      </div>
+      <div className="te-transport__disc" aria-hidden="true">💿</div>
     </div>
   );
 }

@@ -84,13 +84,17 @@ unimplemented and are not part of the completed-feature checks.
   changing tabs.
 - [ ] Piano and guitar drawings use a black background in both app themes. Check
   note labels, muted text and guitar fret labels remain readable against it.
-- [ ] All six black transport keys stay in one row beside the disc. The disc
+  The black housing continues from the chord through the drawing and selector
+  surroundings to Rhythm/Drums, with no silver separators in the margins or gaps.
+- [ ] All six black transport keys stay in one row beside the 27 px 💿 disc. The
+  main Play key is about 1.65 times the width of the neighboring keys. The disc
   rotates only while actual playback runs, pauses at its current angle and respects
   reduced-motion preferences. Play uses a system Futura-first stack when installed,
   falling back to Avenir Next and then sans-serif.
 - [ ] Instrument exposes Auto and emoji family selectors for keyboard, guitar,
   strings, woodwind and brass. The current family shows 4–8 readable sound buttons
-  without scrolling; reach all 31 sounds with pointer and keyboard and verify the
+  without scrolling. Its four-column grid uses equal rows to fill the available
+  pane height, like Rhythm/Drums; reach all 31 sounds with pointer and keyboard and verify the
   selected highlight and saved sound.
 - [ ] Below the keyboard/guitar drawing, Rhythm and Drums each have a full-width
   black status window 60 px tall. Names such as Bossa and Samba use 12 px regular
@@ -102,8 +106,9 @@ unimplemented and are not part of the completed-feature checks.
   exactly one preset per group is highlighted, including Auto/Off. Bass has an
   independent on/off text button. Arrow/Home/End selection still works. No extra
   status windows appear inside the selection tabs.
-- [ ] Selection buttons, tab keys and the small emoji selector have gray faces in
-  dark frames when unselected and a warm amber illuminated face when selected.
+- [ ] Selection buttons, tab keys and the small emoji selector have gray faces
+  when unselected and a warm amber illuminated face when selected. Each uses a
+  single thin 1 px border without a decorative outer ring.
   Check pointer and keyboard selection, one selected preset per group, and Bass
   off's gray face and explicit off label. The separate status LEDs remain flat
   green without shadows.
