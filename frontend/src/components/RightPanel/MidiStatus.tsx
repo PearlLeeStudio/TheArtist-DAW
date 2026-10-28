@@ -5,6 +5,7 @@ import { useMidiCapture, PROGRESS_TICK_MS } from './useMidiCapture';
 
 interface MidiStatusProps {
   onMidiNotes: (notes: number[]) => void;
+  captureActive: boolean;
 }
 
 const PITCH_CLASS_NAMES = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B'];
@@ -23,10 +24,13 @@ const PITCH_CLASS_NAMES = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A',
  * The state machine lives in `useMidiCapture` — this component is a
  * thin presenter that wires the hook's output to UI.
  */
-export default function MidiStatus({ onMidiNotes }: MidiStatusProps) {
+export default function MidiStatus({ onMidiNotes, captureActive }: MidiStatusProps) {
   const {
     enabled,
     connected,
+    connecting,
+    error,
+    awaitingRelease,
     holdProgress,
     canEnable,
     view,
@@ -39,7 +43,7 @@ export default function MidiStatus({ onMidiNotes }: MidiStatusProps) {
     setConfirmActiveIdx,
     handleConfirm,
     handleCancel,
-  } = useMidiCapture(onMidiNotes);
+  } = useMidiCapture(onMidiNotes, captureActive);
 
   const activeRoman = active
     ? calculateRomanNumeral({ ...active, romanNumeral: '' }, songKey)
@@ -71,14 +75,19 @@ export default function MidiStatus({ onMidiNotes }: MidiStatusProps) {
         }
         title={!enabled && !canEnable ? 'Select exactly one slot on the staff first' : undefined}
       >
-        {enabled ? 'Disable MIDI' : 'Enable MIDI'}
+        {connecting ? 'Cancel MIDI connection' : enabled ? 'Disable MIDI' : 'Enable MIDI'}
       </button>
 
       <p className="text-[11px] italic leading-snug" style={{ color: 'var(--text-muted)' }}>
         {!canEnable
-          ? 'Select one slot on the staff to enable MIDI input.'
+          ? 'Select one slot on the staff to enter chords. Connected MIDI continues to appear in Play → Visual.'
+          : awaitingRelease
+          ? 'Release the held notes, then play a new chord to enter it.'
           : 'Hold a chord for 3 s to commit, or release early to review and pick the root. The selection auto-advances — build chords one slot at a time.'}
       </p>
+
+      {error && <p role="alert" className="text-xs leading-snug" style={{ color: 'var(--text-heading)' }}>{error}</p>}
+      {enabled && <p className="text-[11px] leading-snug" style={{ color: 'var(--text-muted)' }}>MIDI stays connected in Play → Visual. Chords are entered only while this input tab is open.</p>}
 
       {enabled && (
         <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
@@ -95,10 +104,10 @@ export default function MidiStatus({ onMidiNotes }: MidiStatusProps) {
         <div className="p-3 space-y-2" style={{ background: 'var(--btn-bg)', border: '1px solid var(--border)' }}>
           <div className="flex items-baseline justify-between">
             <span className="text-[10px] uppercase tracking-wide font-semibold" style={{ color: 'var(--text-muted)' }}>
-              {view.source === 'confirm' ? 'Review chord' : 'Detected'}
+              {view.source === 'confirm' ? 'Review chord' : !canEnable ? 'Monitoring' : 'Detected'}
             </span>
             <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
-              {view.source === 'confirm' ? 'pick root, then confirm' : 'hold 3s or release to review'}
+              {view.source === 'confirm' ? 'pick root, then confirm' : !canEnable ? 'select one slot to enter' : awaitingRelease ? 'release notes to begin' : 'hold 3s or release to review'}
             </span>
           </div>
 
@@ -117,7 +126,7 @@ export default function MidiStatus({ onMidiNotes }: MidiStatusProps) {
           </div>
 
           {/* Hold progress bar — only visible in 'live' mode */}
-          {view.source === 'live' && (
+          {view.source === 'live' && canEnable && !awaitingRelease && (
             <div className="h-1.5" style={{ background: 'var(--bg-surface)', overflow: 'hidden', borderRadius: 1 }}>
               <div
                 className="h-full"

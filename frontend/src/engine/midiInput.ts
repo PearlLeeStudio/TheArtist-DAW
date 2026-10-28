@@ -1,5 +1,5 @@
 import type { Chord } from '../models/types';
-import { NOTE_NAMES } from './constants';
+import { NOTE_NAMES } from './constants.ts';
 
 const heldNotes = new Set<number>();
 
@@ -9,7 +9,8 @@ type ChordCallback = (chords: Chord[]) => void;
 let noteCallback: MidiCallback | null = null;
 let chordCallback: ChordCallback | null = null;
 let midiAccess: MIDIAccess | null = null;
-let connected = false;
+let requestGeneration = 0;
+const attachedInputs = new Set<MIDIInput>();
 
 function onMidiMessage(event: MIDIMessageEvent) {
   const data = event.data;
@@ -23,14 +24,14 @@ function onMidiMessage(event: MIDIMessageEvent) {
     heldNotes.add(note);
   } else if (status === 0x80 || (status === 0x90 && velocity === 0)) {
     heldNotes.delete(note);
-  }
+  } else return;
 
   const notes = Array.from(heldNotes).sort((a, b) => a - b);
   noteCallback?.(notes);
 
   if (notes.length >= 3) {
     const candidates = detectChordCandidates(notes);
-    if (candidates.length > 0) chordCallback?.(candidates);
+    chordCallback?.(candidates);
   }
 }
 
@@ -120,41 +121,73 @@ export function detectChord(midiNotes: number[]): Chord | null {
 export async function initMidi(
   onNotes: MidiCallback,
   onChord: ChordCallback,
+  onConnection?: (connected: boolean) => void,
 ): Promise<boolean> {
-  noteCallback = onNotes;
-  chordCallback = onChord;
+  const request = ++requestGeneration;
+  detachAccess();
+  resetMidiNotes();
+  noteCallback = null;
+  chordCallback = null;
 
   if (!navigator.requestMIDIAccess) {
-    console.warn('Web MIDI API not supported');
-    return false;
+    throw new Error('This browser does not support MIDI input. Use a browser with Web MIDI support.');
   }
 
   try {
-    midiAccess = await navigator.requestMIDIAccess();
+    const access = await navigator.requestMIDIAccess();
+    // A cancelled permission request must never reconnect after the user
+    // leaves the editor or starts a newer connection request.
+    if (request !== requestGeneration) return false;
+    midiAccess = access;
+    noteCallback = onNotes;
+    chordCallback = onChord;
+    let connected = false;
     const connectInputs = () => {
-      if (!midiAccess) return;
-      for (const input of midiAccess.inputs.values()) {
-        input.onmidimessage = onMidiMessage;
+      if (request !== requestGeneration || midiAccess !== access) return;
+      for (const input of attachedInputs) input.onmidimessage = null;
+      attachedInputs.clear();
+      for (const input of access.inputs.values()) {
+        if (input.state === 'connected') {
+          input.onmidimessage = (event) => {
+            if (request === requestGeneration && midiAccess === access) onMidiMessage(event);
+          };
+          attachedInputs.add(input);
+        }
       }
-      connected = midiAccess.inputs.size > 0;
+      connected = attachedInputs.size > 0;
+      onConnection?.(connected);
     };
     connectInputs();
-    midiAccess.onstatechange = () => connectInputs();
+    access.onstatechange = () => {
+      if (request !== requestGeneration) return;
+      resetMidiNotes();
+      noteCallback?.([]);
+      connectInputs();
+    };
     return connected;
-  } catch (err) {
-    console.warn('MIDI access denied:', err);
-    return false;
+  } catch {
+    if (request !== requestGeneration) return false;
+    disconnectMidi();
+    throw new Error('MIDI access was not granted. Check browser permissions, then try again.');
   }
 }
 
-export function disconnectMidi(): void {
-  if (midiAccess) {
-    for (const input of midiAccess.inputs.values()) {
-      input.onmidimessage = null;
-    }
-  }
+function detachAccess(): void {
+  for (const input of attachedInputs) input.onmidimessage = null;
+  attachedInputs.clear();
+  if (midiAccess) midiAccess.onstatechange = null;
+  midiAccess = null;
+}
+
+/** Drop notes from the previous song while keeping the controller connected. */
+export function resetMidiNotes(): void {
   heldNotes.clear();
+}
+
+export function disconnectMidi(): void {
+  requestGeneration++;
+  detachAccess();
+  resetMidiNotes();
   noteCallback = null;
   chordCallback = null;
-  connected = false;
 }

@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useRef } from 'react';
 
 type InputMode = 'generate' | 'midi' | 'manual';
 // Order matters — Generate is the default and the most-used path, so it
@@ -29,19 +29,6 @@ import type { Song } from '../models/types';
 
 /** The Play panel needs this much width for its rail and one pane. */
 const MIN_PANEL_WIDTH = 300;
-
-/** The MIDI tab. MidiStatus is the only MIDI source, and on unmount it
- *  disconnects without clearing the notes and chord it last passed on (no
- *  key release follows), so they are cleared here; otherwise the Play
- *  panel's Visual pane would keep showing them. */
-function MidiTab({ onMidiNotes }: { onMidiNotes: (notes: number[]) => void }) {
-  const setMidiCandidates = useSongStore((s) => s.setMidiCandidates);
-  useEffect(() => () => {
-    onMidiNotes([]);
-    setMidiCandidates([]);
-  }, [onMidiNotes, setMidiCandidates]);
-  return <MidiStatus onMidiNotes={onMidiNotes} />;
-}
 
 export default function Layout() {
   const song = useSongStore((s) => s.song);
@@ -316,13 +303,13 @@ export default function Layout() {
         {/* Right Panel — collapsible. A column: the Play/Input tabs, then
             the mode's content filling the rest. Play never scrolls (one
             pane at a time); Input scrolls inside its own area. */}
-        {panelOpen && (
           <div
             className="shrink-0 flex flex-col min-h-0 p-3 gap-3"
             style={{
               width: `${panelWidth}px`,
               borderLeft: '1px solid var(--border)',
               background: 'var(--bg-surface)',
+              display: panelOpen ? undefined : 'none',
             }}
           >
             {/* Top-level mode tabs — Play / Input. Saved sessions live on
@@ -350,14 +337,13 @@ export default function Layout() {
             </div>
 
             {/* Mode content */}
-            {panelMode === 'play' && (
+            {panelOpen && panelMode === 'play' && (
               <div className="flex-1 min-h-0">
                 <PlayPanel midiActiveNotes={midiActiveNotes} />
               </div>
             )}
 
-            {panelMode === 'input' && (
-              <div className="flex-1 min-h-0 overflow-y-auto space-y-3">
+              <div className="flex-1 min-h-0 overflow-y-auto space-y-3" style={{ display: panelMode === 'input' ? undefined : 'none' }}>
                 {/* Sub-tab bar — three input methods. */}
                 <div className="flex" style={{ borderBottom: '1px solid var(--border)' }}>
                   {INPUT_TABS.map((t) => {
@@ -379,13 +365,14 @@ export default function Layout() {
                   })}
                 </div>
 
-                {inputMode === 'midi' && <MidiTab onMidiNotes={handleMidiNotes} />}
-                {inputMode === 'generate' && <ChordActions view="generate" />}
-                {inputMode === 'manual' && <ChordActions view="manual" />}
+                <div hidden={inputMode !== 'midi'}>
+                  <MidiStatus onMidiNotes={handleMidiNotes}
+                    captureActive={panelOpen && panelMode === 'input' && inputMode === 'midi' && !songFormOpen && !importOpen && !sectionsOpen} />
+                </div>
+                {panelOpen && panelMode === 'input' && inputMode === 'generate' && <ChordActions view="generate" />}
+                {panelOpen && panelMode === 'input' && inputMode === 'manual' && <ChordActions view="manual" />}
               </div>
-            )}
           </div>
-        )}
 
       </div>
       )}

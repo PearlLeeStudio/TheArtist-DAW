@@ -1,17 +1,14 @@
-import { useEffect, useCallback, useRef, useState } from 'react';
-import { initMidi, disconnectMidi } from '../../engine/midiInput';
+import { useEffect, useLayoutEffect, useCallback, useRef, useState, useSyncExternalStore } from 'react';
+import { initMidi, disconnectMidi, resetMidiNotes } from '../../engine/midiInput';
+import { createMidiCaptureState } from '../../engine/midiCaptureState';
+import type { ConfirmState } from '../../engine/midiCaptureState';
 import { useSongStore } from '../../store/songStore';
 import { rankCandidatesByContext } from '../../engine/romanNumeral';
 import { nextSlotAfter, chordAtPrevSlot, chordAtNextSlot } from '../../engine/slotNav';
-import type { Chord } from '../../models/types';
+import type { Chord, SlotAddress } from '../../models/types';
 
-const HOLD_MS = 3000;
-const TICK_MS = 50;
-
-export interface ConfirmState {
-  candidates: Chord[];
-  activeIdx: number;
-}
+export { HOLD_DURATION_MS, PROGRESS_TICK_MS } from '../../engine/midiCaptureState';
+export type { ConfirmState } from '../../engine/midiCaptureState';
 
 export type ChordView =
   | { source: 'live'; candidates: Chord[]; activeIdx: number }
@@ -19,12 +16,13 @@ export type ChordView =
   | null;
 
 export interface UseMidiCaptureResult {
-  // Live state
   enabled: boolean;
   connected: boolean;
+  connecting: boolean;
+  error: string | null;
   holdProgress: number;
   confirming: ConfirmState | null;
-  // Derived
+  awaitingRelease: boolean;
   canEnable: boolean;
   view: ChordView;
   active: Chord | null;
@@ -32,7 +30,6 @@ export interface UseMidiCaptureResult {
   nextSlotChord: Chord | null;
   songKey: string;
   songMeasureCount: number;
-  // Actions
   toggleMidi: () => Promise<void>;
   setActiveIdx: (i: number) => void;
   setConfirmActiveIdx: (i: number) => void;
@@ -40,278 +37,150 @@ export interface UseMidiCaptureResult {
   handleCancel: () => void;
 }
 
-/**
- * MIDI capture state machine — the entire chord-detect / hold-timer /
- * confirm-flow logic for the MIDI input panel, lifted out of the
- * presenter component so each piece is independently legible.
- *
- * Two paths drive the state:
- *
- *   Fast path (≥3 s hold)   — `autoCommit` fires and writes the
- *                             active interpretation to the selected
- *                             slot, then advances selection.
- *   Slow path (release < 3s) — full release transitions into Confirm
- *                              mode, where the user can swap root
- *                              interpretations on the chip row before
- *                              clicking Confirm / Cancel.
- *
- * Two refs guard against MIDI's real-world physics:
- *
- *   `lastCandidatesRef`  — most recent non-empty candidates. Read by
- *                          the auto-commit timer at the moment it
- *                          fires.
- *   `peakCandidatesRef`  — candidates from the moment with the *most*
- *                          held notes during the press cycle. Humans
- *                          don't strike or release 4 keys
- *                          simultaneously; without this, the last
- *                          state before the release event would always
- *                          be smaller than the chord the user
- *                          intended. The Confirm flow reads peak.
- */
-export function useMidiCapture(
-  onMidiNotes: (notes: number[]) => void,
-): UseMidiCaptureResult {
-  const [enabled, setEnabled] = useState(false);
-  const [connected, setConnected] = useState(false);
-  const [activeIdx, setActiveIdx] = useState(0);
-  const [holdProgress, setHoldProgress] = useState(0);
-  const [confirming, setConfirming] = useState<ConfirmState | null>(null);
-
-  const candidates = useSongStore((s) => s.midiCandidates);
-  const setMidiCandidates = useSongStore((s) => s.setMidiCandidates);
-  const songKey = useSongStore((s) => s.song.key);
-  const selectedSlots = useSongStore((s) => s.selectedSlots);
-  const setChord = useSongStore((s) => s.setChord);
-  const selectSlot = useSongStore((s) => s.selectSlot);
-  const song = useSongStore((s) => s.song);
-
-  const canEnable = selectedSlots.length === 1;
-
-  // Refs the once-registered MIDI callbacks read through.
-  const slotsRef = useRef(selectedSlots);
-  useEffect(() => { slotsRef.current = selectedSlots; }, [selectedSlots]);
-  const songRef = useRef(song);
-  useEffect(() => { songRef.current = song; }, [song]);
-  const onMidiNotesRef = useRef(onMidiNotes);
-  useEffect(() => { onMidiNotesRef.current = onMidiNotes; }, [onMidiNotes]);
-  const activeIdxRef = useRef(0);
-  useEffect(() => { activeIdxRef.current = activeIdx; }, [activeIdx]);
-
-  const lastCandidatesRef = useRef<Chord[]>([]);
-  const peakCandidatesRef = useRef<Chord[]>([]);
-  useEffect(() => {
-    if (candidates.length === 0) return;
-    lastCandidatesRef.current = candidates;
-    const newSize = candidates[0]?.voicing?.length ?? 0;
-    const peakSize = peakCandidatesRef.current[0]?.voicing?.length ?? 0;
-    if (newSize >= peakSize) {
-      peakCandidatesRef.current = candidates;
-    }
-  }, [candidates]);
-  // Set when the 3 s hold timer fires; tells the release handler to
-  // skip Confirm because commit already happened.
-  const committedViaTimerRef = useRef(false);
-
-  /** Reset all chord-press transient refs (after commit / song change /
-   *  MIDI disable). */
-  const resetCaptureRefs = () => {
-    lastCandidatesRef.current = [];
-    peakCandidatesRef.current = [];
-    committedViaTimerRef.current = false;
-  };
-
-  // Drop transient state when the song is replaced (Initialize / Clear).
-  useEffect(() => {
-    setActiveIdx(0);
-    setHoldProgress(0);
-    setConfirming(null);
-    resetCaptureRefs();
-  }, [song.id]);
-
-  /** Write `chord` into the currently selected slot and advance. */
-  const commitChord = useCallback(
-    (chord: Chord) => {
-      const slots = slotsRef.current;
-      if (slots.length !== 1) return;
-      setChord(slots[0], chord);
-      const next = nextSlotAfter(slots[0], songRef.current.measures.length);
-      if (next) selectSlot(next);
-    },
-    [setChord, selectSlot],
-  );
-
-  // Auto-commit when the 3 s hold timer fires. Uses peak candidates
-  // (largest-cardinality reading during the hold).
-  const autoCommit = useCallback(() => {
-    const cands = peakCandidatesRef.current.length > 0
-      ? peakCandidatesRef.current
-      : lastCandidatesRef.current;
-    if (cands.length === 0) return;
-    const idx = activeIdxRef.current;
-    const chord = cands[Math.min(idx, cands.length - 1)] ?? cands[0];
-    commitChord(chord);
-    setMidiCandidates([]);
-    setActiveIdx(0);
-    setHoldProgress(0);
-    lastCandidatesRef.current = [];
-    peakCandidatesRef.current = [];
-    committedViaTimerRef.current = true;
-  }, [commitChord, setMidiCandidates]);
-
-  // Detected-chord callback: rank by context and reset hold timer for
-  // a fresh 3 s window. Implicitly cancels Confirm if active.
-  const handleChordDetected = useCallback(
-    (chords: Chord[]) => {
-      if (chords.length === 0) return;
-      setMidiCandidates(rankCandidatesByContext(chords, songKey));
-      setActiveIdx(0);
-      setConfirming(null);
-      committedViaTimerRef.current = false;
-    },
-    [setMidiCandidates, songKey],
-  );
-
-  // Note-state callback: forward live notes to the Play panel's Visual pane; on full
-  // release either skip (already auto-committed) or enter Confirm.
-  // Partial-release events do NOT touch `committedViaTimerRef` —
-  // dropping fingers one at a time would otherwise clear it and the
-  // Confirm card would pop after a 3 s hold.
-  const handleNotes = useCallback(
-    (notes: number[]) => {
-      onMidiNotesRef.current(notes);
-      if (notes.length > 0) return;
-      if (committedViaTimerRef.current) {
-        committedViaTimerRef.current = false;
-        peakCandidatesRef.current = [];
-        lastCandidatesRef.current = [];
-        return;
-      }
-      const cands = peakCandidatesRef.current;
-      if (cands.length > 0) {
-        setConfirming({ candidates: cands, activeIdx: activeIdxRef.current });
-      }
-      setMidiCandidates([]);
-      setActiveIdx(0);
-      setHoldProgress(0);
-      lastCandidatesRef.current = [];
-      peakCandidatesRef.current = [];
-    },
-    [setMidiCandidates],
-  );
-
-  const toggleMidi = useCallback(async () => {
-    if (enabled) {
-      disconnectMidi();
-      setEnabled(false);
-      setConnected(false);
-      onMidiNotesRef.current([]);
-      setMidiCandidates([]);
-      setActiveIdx(0);
-      setHoldProgress(0);
-      setConfirming(null);
-      resetCaptureRefs();
-    } else {
-      const success = await initMidi(handleNotes, handleChordDetected);
-      setConnected(success);
-      setEnabled(true);
-    }
-  }, [enabled, handleNotes, handleChordDetected, setMidiCandidates]);
-
-  useEffect(() => () => disconnectMidi(), []);
-
-  // Auto-disable MIDI when the slot count breaks the 1-slot invariant
-  // (commit-on-release needs exactly one target slot).
-  useEffect(() => {
-    if (enabled && !canEnable) {
-      disconnectMidi();
-      setEnabled(false);
-      setConnected(false);
-      onMidiNotesRef.current([]);
-      setMidiCandidates([]);
-      setActiveIdx(0);
-      setHoldProgress(0);
-      setConfirming(null);
-      resetCaptureRefs();
-    }
-  }, [enabled, canEnable, setMidiCandidates]);
-
-  // Hold timer: while a chord is held, fill 0→1 over HOLD_MS, then
-  // auto-commit. Resets on chord change or Confirm-mode entry.
-  const holdStartRef = useRef<number | null>(null);
-  const primarySig = candidates[0]
-    ? `${candidates[0].root}${candidates[0].quality}`
-    : '';
-  useEffect(() => {
-    if (!enabled || !canEnable || !primarySig || confirming) {
-      holdStartRef.current = null;
-      setHoldProgress(0);
-      return;
-    }
-    holdStartRef.current = Date.now();
-    setHoldProgress(0);
-
-    const tickId = window.setInterval(() => {
-      if (holdStartRef.current === null) return;
-      const elapsed = Date.now() - holdStartRef.current;
-      const p = Math.min(1, elapsed / HOLD_MS);
-      setHoldProgress(p);
-      if (p >= 1) {
-        window.clearInterval(tickId);
-        autoCommit();
-      }
-    }, TICK_MS);
-    return () => window.clearInterval(tickId);
-  }, [primarySig, enabled, canEnable, confirming, autoCommit]);
-
-  // ─── Confirm actions ────────────────────────────────────────────────
-
-  const handleConfirm = () => {
-    if (!confirming) return;
-    const chord = confirming.candidates[confirming.activeIdx]
-      ?? confirming.candidates[0];
-    if (chord) commitChord(chord);
-    setConfirming(null);
-  };
-
-  const handleCancel = () => setConfirming(null);
-
-  const setConfirmActiveIdx = (i: number) => {
-    if (!confirming) return;
-    setConfirming({ ...confirming, activeIdx: i });
-  };
-
-  // ─── Derived view state ─────────────────────────────────────────────
-
-  const view: ChordView = confirming
-    ? { source: 'confirm', candidates: confirming.candidates, activeIdx: confirming.activeIdx }
-    : candidates.length > 0
-      ? { source: 'live', candidates, activeIdx }
-      : null;
-
-  const active = view ? (view.candidates[view.activeIdx] ?? view.candidates[0] ?? null) : null;
-  const sel = selectedSlots[0] ?? null;
-  const prevSlotChord = chordAtPrevSlot(song.measures, sel);
-  const nextSlotChord = chordAtNextSlot(song.measures, sel);
-
-  return {
-    enabled,
-    connected,
-    holdProgress,
-    confirming,
-    canEnable,
-    view,
-    active,
-    prevSlotChord,
-    nextSlotChord,
-    songKey,
-    songMeasureCount: song.measures.length,
-    toggleMidi,
-    setActiveIdx,
-    setConfirmActiveIdx,
-    handleConfirm,
-    handleCancel,
-  };
+function targetKey(slots: SlotAddress[]): string | null {
+  return slots.length === 1 ? `${slots[0].measureIndex}:${slots[0].slotIndex}` : null;
 }
 
-export const HOLD_DURATION_MS = HOLD_MS;
-export const PROGRESS_TICK_MS = TICK_MS;
+/** The connection belongs to the editor. Capture is only armed while the
+ *  MIDI input tab is visible; every other editor view only monitors notes. */
+export function useMidiCapture(onMidiNotes: (notes: number[]) => void, captureActive: boolean): UseMidiCaptureResult {
+  const [connection, setConnection] = useState({ enabled: false, connected: false, connecting: false, error: null as string | null });
+  const mountedRef = useRef(false);
+  const enabledRef = useRef(false);
+  const connectingRef = useRef(false);
+  const requestRef = useRef(0);
+  const captureActiveRef = useRef(captureActive);
+  const onMidiNotesRef = useRef(onMidiNotes);
+  const song = useSongStore((state) => state.song);
+  const selectedSlots = useSongStore((state) => state.selectedSlots);
+
+  const [capture] = useState(() => createMidiCaptureState({
+    clock: {
+      now: () => performance.now(),
+      setInterval: (callback, delay) => window.setInterval(callback, delay),
+      clearInterval: (id) => window.clearInterval(id),
+    },
+    onCandidates: (chords) => useSongStore.getState().setMidiCandidates(chords),
+    onCommit: (chord) => {
+      const state = useSongStore.getState();
+      if (!mountedRef.current || !enabledRef.current || !captureActiveRef.current || state.selectedSlots.length !== 1) return false;
+      const target = state.selectedSlots[0];
+      state.setChord(target, chord);
+      const next = nextSlotAfter(target, state.song.measures.length);
+      if (next) state.selectSlot(next);
+      return true;
+    },
+  }));
+  const snapshot = useSyncExternalStore(capture.subscribe, capture.getSnapshot, capture.getSnapshot);
+
+  useLayoutEffect(() => {
+    onMidiNotesRef.current = onMidiNotes;
+    captureActiveRef.current = captureActive;
+    capture.setContext(captureActive && enabledRef.current, targetKey(useSongStore.getState().selectedSlots));
+  }, [captureActive, onMidiNotes, capture]);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    requestRef.current++;
+    const unsubscribe = useSongStore.subscribe((state, previous) => {
+      if (state.songEpoch !== previous.songEpoch) {
+        capture.reset();
+        resetMidiNotes();
+        onMidiNotesRef.current([]);
+      }
+      if (state.songEpoch !== previous.songEpoch || targetKey(state.selectedSlots) !== targetKey(previous.selectedSlots)) {
+        capture.setContext(captureActiveRef.current && enabledRef.current, targetKey(state.selectedSlots));
+      }
+    });
+    return () => {
+      mountedRef.current = false;
+      enabledRef.current = false;
+      connectingRef.current = false;
+      unsubscribe();
+      disconnectMidi();
+      capture.dispose();
+      useSongStore.getState().setMidiCandidates([]);
+      onMidiNotesRef.current([]);
+    };
+  }, [capture]);
+
+  const handleNotes = useCallback((notes: number[]) => {
+    if (!mountedRef.current || !enabledRef.current) return;
+    onMidiNotesRef.current(notes);
+    capture.notes(notes);
+  }, [capture]);
+
+  const handleDetected = useCallback((chords: Chord[]) => {
+    if (!mountedRef.current || !enabledRef.current) return;
+    capture.detected(rankCandidatesByContext(chords, useSongStore.getState().song.key));
+  }, [capture]);
+
+  const toggleMidi = useCallback(async () => {
+    const request = ++requestRef.current;
+    if (enabledRef.current || connectingRef.current) {
+      enabledRef.current = false;
+      connectingRef.current = false;
+      disconnectMidi();
+      capture.setContext(false, null);
+      capture.reset();
+      onMidiNotesRef.current([]);
+      setConnection({ enabled: false, connected: false, connecting: false, error: null });
+      return;
+    }
+    const target = targetKey(useSongStore.getState().selectedSlots);
+    if (captureActiveRef.current && target === null) return;
+    enabledRef.current = true;
+    connectingRef.current = true;
+    capture.setContext(captureActiveRef.current, target);
+    setConnection({ enabled: true, connected: false, connecting: true, error: null });
+    try {
+      const connected = await initMidi(handleNotes, handleDetected, (value) => {
+        if (mountedRef.current && request === requestRef.current) {
+          // Port changes can lose note-off events. Discard that press
+          // cycle instead of offering it as a released chord to confirm.
+          capture.reset();
+          onMidiNotesRef.current([]);
+          setConnection((state) => ({ ...state, connected: value }));
+        }
+      });
+      if (!mountedRef.current || request !== requestRef.current) return;
+      connectingRef.current = false;
+      setConnection({ enabled: true, connected, connecting: false, error: null });
+    } catch (error) {
+      if (!mountedRef.current || request !== requestRef.current) return;
+      enabledRef.current = false;
+      connectingRef.current = false;
+      disconnectMidi();
+      capture.setContext(false, null);
+      capture.reset();
+      onMidiNotesRef.current([]);
+      setConnection({ enabled: false, connected: false, connecting: false,
+        error: error instanceof Error ? error.message : 'MIDI could not connect. Please try again.' });
+    }
+  }, [capture, handleNotes, handleDetected]);
+
+  const { candidates, activeIdx, confirming } = snapshot;
+  const view: ChordView = confirming
+    ? { source: 'confirm', candidates: confirming.candidates, activeIdx: confirming.activeIdx }
+    : candidates.length ? { source: 'live', candidates, activeIdx } : null;
+  const active = view ? view.candidates[view.activeIdx] ?? view.candidates[0] ?? null : null;
+  const selection = selectedSlots[0] ?? null;
+
+  return {
+    ...connection,
+    holdProgress: snapshot.holdProgress,
+    confirming,
+    awaitingRelease: snapshot.awaitingRelease,
+    canEnable: !captureActive || selectedSlots.length === 1,
+    view, active,
+    prevSlotChord: chordAtPrevSlot(song.measures, selection),
+    nextSlotChord: chordAtNextSlot(song.measures, selection),
+    songKey: song.key,
+    songMeasureCount: song.measures.length,
+    toggleMidi,
+    setActiveIdx: capture.choose,
+    setConfirmActiveIdx: capture.chooseConfirm,
+    handleConfirm: capture.confirm,
+    handleCancel: capture.cancel,
+  };
+}
