@@ -144,6 +144,18 @@ class MidiExportTest(unittest.TestCase):
             body["play"]["harmonyRhythmId"] = None
             self.assert_valid_note_pairs(self.render(body))
 
+    def test_bass_ends_at_chord_boundaries_and_swing_keeps_original_release(self):
+        body = spec(timeSignature=[3, 4])
+        midi = self.render(body)
+        self.assertIn((720, 36), [(tick, message.note) for tick, message in absolute(midi.tracks[2])
+                                 if message.type == "note_off"])
+        body = spec(genre="funk")
+        body["play"].update(drumMode="manual", drumPatternId=4)
+        bass = self.render(body).tracks[2]
+        self.assertIn((320, 36, 76), ons(bass))
+        self.assertIn((672, 36), [(tick, message.note) for tick, message in absolute(bass)
+                                 if message.type == "note_off"])
+
     def test_invalid_generated_note_data_is_refused(self):
         invalid = [Note(-1, 1, 60, 0.5), Note(0, 0, 60, 0.5), Note(0, 1, 128, 0.5),
                    Note(0, 1, True, 0.5), Note(True, 2, 60, 0.5), Note(0, 1, 60, True),

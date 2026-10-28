@@ -133,13 +133,16 @@ def render_midi(spec: ExportSpec) -> bytes:
             for pitch in sorted(set(chord.voicing)):
                 harmony_notes.append(Note(start, end, pitch, 0.7))
         if play.bassEnabled:
-            for position in bass_rhythm:
-                if not 0 <= position < numerator:
-                    continue
+            bass_positions = sorted({position for position in bass_rhythm if 0 <= position < numerator})
+            for index, position in enumerate(bass_positions):
                 chord = first if position < half else second
                 if chord is not None:
                     start = (bar * numerator + position + _swing(position, swing)) * factor
-                    bass_notes.append(Note(start, min(song_quarters, start + 0.9 * factor), chord.bass_pitch, 0.6))
+                    next_position = bass_positions[index + 1] if index + 1 < len(bass_positions) else numerator
+                    slot_end = half if position < half else numerator
+                    duration = min(0.9, next_position - position, slot_end - position)
+                    end = (bar * numerator + position + duration) * factor
+                    bass_notes.append(Note(start, end, chord.bass_pitch, 0.6))
         if drums:
             for voice, hits in drums["voices"].items():
                 for step, velocity in hits:
