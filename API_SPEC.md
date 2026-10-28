@@ -1,6 +1,6 @@
 # TheArtist — API Specification
 
-> Contract between `frontend/` and `backend/`
+> Shared contracts for the editor, TheVoyager, and future plugin clients
 
 ---
 
@@ -38,7 +38,7 @@ flowchart LR
     MI -.-> RB
 ```
 
-(`POST /api/export` is planned, not implemented — no route exists in the backend yet.)
+Score import, MIDI export, local DAW handoff, and MCP use the same backend services. Their implemented contracts are described below; there is no generic `POST /api/export` endpoint.
 
 ## Base URL
 
@@ -52,6 +52,17 @@ Vite dev server proxies `/api` → `http://localhost:8000/api` (configured in `v
 ---
 
 ## Endpoints
+
+| Endpoint | Contract |
+|---|---|
+| `POST /api/import/score` | Explicitly attached score → Meta transcription draft for human review |
+| `POST /api/export/midi` | Edited `ExportSpec` → `audio/midi` bytes |
+| `GET /api/daw/targets` | Installed Logic/Ableton availability on the backend machine |
+| `POST /api/daw/open` | Explicit local file output and Logic open / Ableton reveal |
+| `GET /api/capabilities` | Versioned service/tool discovery |
+| `/mcp/` | Streamable HTTP MCP; shared generation, import and export services ([MCP contract](docs/mcp.md)) |
+
+These complement the existing generation and model endpoints below. PDF export is rendered in the browser; it has no REST endpoint.
 
 ### GET `/api/health`
 
@@ -449,13 +460,15 @@ Generate a full **3-track** song (harmony + bass + drum) in one call. Internally
 |---|---|---|
 | `genre` | `string` | One of 13 vocab: `jazz, pop, rock, blues, bossa, classical, country, rnb_soul, hip_hop, electronic, funk, folk, gospel`. Required. |
 | `length_bars` | `int` | 1-64. Default 8. |
-| `n_candidates` | `int` | 1-3. Default 1. (Reserved — current build always returns 1.) |
-| `seed` | `int \| null` | Optional. Reserved for deterministic sampling. |
+| `n_candidates` | `int` | Only `1` is supported; default `1`. Other values are 422. This endpoint returns one arrangement; use `/api/generate/chords` for multiple chord candidates. |
+| `seed` | `int \| null` | Optional strict integer `0..4294967295`; default `null`. Controls request-local neural sampling and rule fallback. The response echoes it. |
 | `harmony_rhythm` | `string \| null` | Optional. A [harmony rhythm preset](#harmony-rhythm-presets) id. Default `null` = the genre's preset. |
 | `drum_pattern` | `int \| "off" \| null` | Optional. A [drum pattern](#drum-patterns) id `1`-`15`, or `"off"` for no drum events. Default `null` = the genre's pattern. |
 | `harmony_instrument` | `string \| null` | Optional. One of the 31 [harmony instruments](#harmony-instruments). Default `null` = the genre's harmony instrument. Sets `tracks.harmony.instrument` and the MIDI harmony program. |
 
 An unknown `harmony_rhythm`, `drum_pattern` or `harmony_instrument` is a 422 whose message lists the valid values. `drum_pattern` takes a JSON integer or the string `"off"` only (`true`, `"3"` or `3.0` are 422). The bass layer always follows the genre (no override).
+
+`seed` and `n_candidates` also require JSON integers: booleans, numeric strings and fractional numbers are rejected. A seeded request owns its Torch sampling generator or Python rule generator; it does not reseed process-wide Torch/Python/NumPy state or consume another seeded request's stream. Reproduction requires the same checkpoint, runtime, device and request parameters. It is not a promise of identical results across devices or library versions. `null` keeps stochastic generation, and `model_used: "rules"` still identifies a rule fallback.
 
 #### Harmony rhythm presets
 
@@ -475,9 +488,9 @@ An unknown `harmony_rhythm`, `drum_pattern` or `harmony_instrument` is a 422 who
 | `sidechain_offbeat` | Sidechain offbeat | 0.5, 1.5, 2.5, 3.5 | electronic |
 | `funky_drummer` | Funky drummer | 0, 0.5, 2, 2.5 | funk |
 | `block` | Block | 0, 2 | — (pick only) |
-| `half` | Half time | 0 | — (pick only; a bar's second chord is not struck) |
+| `half` | Half time | 0 | — (pick only) |
 
-A strike at beat `p` plays the chord of the slot `p` falls in (slot 0 = beats `[0, beats_per_measure/2)`); a slot with no strike position is not struck. A strike lasts `0.85 × min(average spacing, gap to the next strike)` beats, where the average spacing is `beats_per_measure / strikes per bar` and the last strike's gap runs to the next bar's first strike, so a chord never runs into its own re-strike (Charleston: 1.275 at beat 0, 1.7 at beat 1.5). Same formula as the editor's `harmonyStrikes`.
+A strike at beat `p` plays the chord of the slot `p` falls in (slot 0 = beats `[0, beats_per_measure/2)`). When the second chord differs and the preset has no strike in its half, a strike is added at the half-bar boundary. Repeating the same chord in both slots keeps the original rhythm. A strike lasts `0.85 × min(average spacing, gap to the next strike)` beats and ends at a changed chord's boundary if that comes first. For a changed second chord in 4/4, Charleston strikes at `0, 1.5, 2`, with lengths approximately `1.1333, 0.425, 1.1333`; Half time strikes at `0, 2`.
 
 #### Drum patterns
 
@@ -514,7 +527,7 @@ A strike at beat `p` plays the chord of the slot `p` falls in (slot 0 = beats `[
 | Reeds | `soprano_sax`, `alto_sax`, `tenor_sax`, `baritone_sax` |
 | Brass | `trumpet`, `trombone`, `french_horn`, `tuba`, `brass_section`, `muted_trumpet` |
 
-**Response (n_candidates=1):**
+**Response (n_candidates=1; excerpt, ellipses omit repeated bars/events):**
 
 ```json
 {
@@ -531,10 +544,12 @@ A strike at beat `p` plays the chord of the slot `p` falls in (slot 0 = beats `[
   "tracks": {
     "harmony": {
       "events": [
-        {"bar": 0, "beat": 0.0, "pitch": 65, "duration": 1.275, "velocity": 0.7},
-        {"bar": 0, "beat": 0.0, "pitch": 69, "duration": 1.275, "velocity": 0.7},
+        {"bar": 0, "beat": 0.0, "pitch": 65, "duration": 1.1333333333333333, "velocity": 0.7},
+        {"bar": 0, "beat": 0.0, "pitch": 69, "duration": 1.1333333333333333, "velocity": 0.7},
         ...
-        {"bar": 0, "beat": 1.5, "pitch": 65, "duration": 1.7, "velocity": 0.7},
+        {"bar": 0, "beat": 1.5, "pitch": 65, "duration": 0.425, "velocity": 0.7},
+        ...
+        {"bar": 0, "beat": 2.0, "pitch": 62, "duration": 1.1333333333333333, "velocity": 0.7},
         ...
       ],
       "instrument": "electric_piano_1",
@@ -559,7 +574,8 @@ A strike at beat `p` plays the chord of the slot `p` falls in (slot 0 = beats `[
     }
   },
   "midi_b64": "TVRoZAAAAAYAAQAEAeBNVHJrAAAAEgD/UQMHQUkA/1gEBAIYCAD/LwBNVHJrAA...",
-  "model_used": "ft_f4"
+  "model_used": "ft_f4",
+  "seed": null
 }
 ```
 
@@ -581,6 +597,7 @@ A strike at beat `p` plays the chord of the slot `p` falls in (slot 0 = beats `[
 | `tracks.<name>.source` | `"rule"` | All three layers are deterministic-rule in v1. Reserved for `"learned"` if a learned bass/melody Transformer ships in v2. |
 | `midi_b64` | `str` | Multi-track MIDI binary (base64). 4 tracks: meta (tempo + time-sig), harmony (channel 0, General MIDI program of the harmony instrument), bass (channel 1), drum (channel 9; no notes when drums are off). A MIDI note ends no later than the next strike of its pitch on its channel, so funk's bass, which re-strikes its root after 0.5 beats, is 0.5 there instead of the event's 0.9. Convenience render — voyager can ignore and re-render from event JSON if it has its own pipeline. |
 | `model_used` | `str` | The chord-generation checkpoint key (e.g. `ft_f4`, `ft_f1_lora_country`, or `rules` for the rule fallback path). |
+| `seed` | `int \| null` | The request-local sampling seed used on either generation path. `null` means stochastic sampling. |
 
 **Genre defaults table** (`backend/app/services/genre_tables.py:GENRE_DEFAULTS`):
 
@@ -604,7 +621,7 @@ A strike at beat `p` plays the chord of the slot `p` falls in (slot 0 = beats `[
 1. `dispatch_model_for_genre(genre)` → checkpoint (jazz→F4, pop→F1, others→matching LoRA, fallback to F1 base if a LoRA dir is absent).
 2. `genre_defaults(genre)` → `key` / `bpm` / `time_signature`.
 3. Resolve the Play-panel choices: `harmony_rhythm` preset, else `genre_rhythm_preset(genre)`; `drum_pattern` id, else `GENRE_TO_DRUM_PATTERN_ID[genre]` (`"off"` → none); `harmony_instrument`, else `GENRE_HARMONY_INSTRUMENT[genre]`.
-4. Run chord generation (AI when `TORCH_AVAILABLE` and the checkpoint loads, else rule fallback) → `bars`, fitted to `length_bars` bars of two chords (`_bars_to_chord_map`); a model pass with no bars falls back to the rules. All three tracks span these bars.
+4. Run chord generation with the optional request-local seed (AI when `TORCH_AVAILABLE` and the checkpoint loads, else rule fallback) → `bars`, fitted to `length_bars` bars of two chords (`_bars_to_chord_map`); a model pass with no bars falls back to the rules. All three tracks span these bars.
 5. `song_builder.build_harmony_events(…, pattern=…)` / `build_bass_events` / `build_drum_events(…, pattern=…, enabled=…)` → 3 layered events.
 6. `song_builder.render_midi(…, harmony_instrument=…)` → base64 MIDI.
 
@@ -613,7 +630,112 @@ A strike at beat `p` plays the chord of the slot `p` falls in (slot 0 = beats `[
 | Status | Body | When |
 |---|---|---|
 | 400 | `{"detail": "Unsupported genre '<x>'. Expected one of: ..."}` | Genre not in the 13-vocab. |
-| 422 | Pydantic validation | `length_bars` out of `[1, 64]`, `n_candidates` out of `[1, 3]`, missing `genre`, or an unknown `harmony_rhythm` / `drum_pattern` / `harmony_instrument` — the message lists the valid values, e.g. `"Value error, unknown drum_pattern 99; expected a pattern id 1-15 or 'off'"`. Checked before the genre, so a request with both problems is a 422. |
+| 422 | Pydantic validation | `length_bars` out of `[1, 64]`, `n_candidates` other than integer `1`, `seed` other than `null` or an integer in `[0, 4294967295]`, missing `genre`, or an unknown `harmony_rhythm` / `drum_pattern` / `harmony_instrument`. Checked before the genre, so a request with both problems is a 422. |
+
+---
+
+### POST `/api/import/score` — Meta score transcription for review
+
+Accepts one explicitly chosen PDF, PNG, JPEG or WebP containing printed chord symbols. The server makes one bounded `muse-spark-1.3` Standard call. It does not infer harmony from melody, fetch a URL, read a supplied filesystem path, or store the uploaded bytes.
+
+```json
+{
+  "filename": "score.png",
+  "mimeType": "image/png",
+  "dataBase64": "<base64 file bytes, without a data-URL prefix>"
+}
+```
+
+The filename must be a plain filename matching the MIME type and file signature. The decoded file limit is 8 MiB. Recognition allows at most 128 written measures, 16 symbols per measure, and 64 non-overlapping sections. The Meta timeout is 75 seconds; output tokens and request/deployment spending are capped by the shared client and ledger.
+
+The JSON response is a **review draft**, not a ready-to-replace editor song:
+
+| Field | Shape and meaning |
+|---|---|
+| `title` | Printed title or an empty string; at most 120 characters |
+| `key` | Printed key string or `null` when unreadable/absent |
+| `timeSignature` | `[numerator, denominator]` or `null`; playback BPM is chosen by the user, not extracted |
+| `measures` | `[{chords: string[], sourceLabel: string, needsReview: boolean, note: string}]`, in written order |
+| `sections` | `[{section, label, startMeasure, length, basis, note}]`; `section` is a supported section id or `null`, indices are zero based, `basis` is `explicit` or `inferred` |
+| `warnings` | Review notes, including any repeat/ending limitations |
+| `model`, `requestId` | Actual provider model and request identifier (`requestId` may be `null`) |
+
+Raw measure chord counts are preserved: empty bars and bars with more than two symbols require correction. The frontend reviews supported chord spellings, key, meter and section ranges, then requires explicit confirmation. It converts one chord into two equal slots and two chords into one slot each; it never silently drops a third symbol. Repeats, D.C./D.S. and endings remain in written order. A wholly unreadable score or a declared incomplete transcription is rejected instead of returned as a successful partial import.
+
+Service errors use `{"detail": "..."}`; request-schema errors use FastAPI's validation-error list. Statuses are 400 for invalid filename/base64; 413 attachment too large; 415 unsupported/mismatched format; 422 invalid request or incomplete/no-readable-chord extraction; 429 API budget limit; 502 invalid provider response; 503 missing/invalid configuration or ledger; 504 Meta timeout. Provider-output validation errors do not echo extracted score text.
+
+### POST `/api/export/midi` — Edited arrangement to MIDI
+
+This endpoint renders the current musical state, without generating new chords. The editor and external clients share the strict `ExportSpec` model:
+
+```json
+{
+  "title": "Sketch",
+  "bpm": 96,
+  "key": "C major",
+  "timeSignature": [4, 4],
+  "genre": "pop",
+  "measures": [
+    {"chords": [{"symbol": "C/E", "voicing": [52, 55, 60]}, null]}
+  ],
+  "sections": [{"label": "A", "startMeasure": 0, "length": 1}],
+  "play": {
+    "harmonyOverride": null,
+    "harmonyRhythmId": "block",
+    "bassEnabled": true,
+    "drumMode": "auto",
+    "drumPatternId": null,
+    "masterVolume": 1,
+    "harmonyVolume": 1,
+    "bassVolume": 1,
+    "drumVolume": 0.6
+  }
+}
+```
+
+All displayed fields are required. Unknown fields and invalid types are rejected; clients send numeric values as JSON numbers, not strings.
+
+| Field | Constraints |
+|---|---|
+| `title`, `bpm`, `key` | Title at most 120 characters; integer BPM 20–300; key is a note name followed by `major` or `minor` |
+| `timeSignature` | Numerator 1–32; denominator one of 1, 2, 4, 8, 16, 32. MIDI tempo uses quarter notes; timing scales to the actual denominator. |
+| `genre` | String up to 40 characters or `null`; supplies Auto instrument/rhythm/drum defaults |
+| `measures` | 1–512 measures, each with exactly two chord slots; `null` is an empty slot |
+| Non-null chord | `symbol` of 1–80 characters with a valid root/slash bass; `voicing` of 1–16 integer MIDI pitches, each 0–127 |
+| `sections` | At most 128 ranges, non-overlapping and contained in the measures; positive length, zero-based start; labels of 1–80 characters |
+| `harmonyOverride`, `harmonyRhythmId` | Known instrument/preset or `null` for Auto |
+| `bassEnabled` | Boolean; `false` omits the bass track |
+| `drumMode`, `drumPatternId` | `auto` uses the genre; `manual` uses a known pattern id or `null` for drums off |
+| Four volume fields | Finite numbers in 0–1; `0` is preserved as a mute |
+
+`voicing` contains the notes the editor actually plays after its piano/guitar resolver. `visualMode` is not part of this wire format. This preserves selected voicings and slash basses without asking the backend to reconstruct them from a chord label.
+
+Success returns **binary** `audio/midi`, with an attachment filename and `Cache-Control: no-store`. The type-1 SMF uses 480 PPQ: metadata track (title, tempo, time signature, key, section markers), Harmony channel 0, optional Bass channel 1, and optional Drums channel 9. Notes follow the selected rhythm, two-chord boundaries and swing, and are cut before another note of the same pitch/channel starts. Mixer levels become per-part CC7 values multiplied by Master; a muted enabled part still has a track with CC7=0. A DAW's selected sound library and treatment of MIDI controls can change the audible result.
+
+The render is limited to 100,000 notes and 4 MiB. Invalid export data returns 422 with a field location; excessive render size returns 413. This route writes no server-side file. PDF export is a separate browser-rendered score document and does not use this endpoint.
+
+### GET `/api/daw/targets` and POST `/api/daw/open` — Local handoff
+
+`GET /api/daw/targets` returns the backend machine's installed applications:
+
+```json
+{"targets":[
+  {"id":"logic","name":"Logic Pro","available":true,"action":"open"},
+  {"id":"ableton","name":"Ableton Live","available":false,"action":"reveal"}
+]}
+```
+
+On non-macOS both targets are unavailable. `POST /api/daw/open` takes `{"target":"logic"|"ableton","spec":<ExportSpec>}` and returns `{"action":"open"|"reveal","path":"<saved MIDI path>"}`. It writes a uniquely named MIDI under `backend/.exports/`, then opens it in Logic or reveals it in Finder for dragging into Ableton. It does not insert tracks directly into an existing DAW project.
+
+This is an explicit side effect on the **backend computer**. The browser enables automatic handoff only from a loopback hostname; hosted users download `.mid` instead. Keep this local backend bound to loopback. Errors are 409 for a missing application, 501 on non-macOS, and 500 for file/open failures (an already saved file remains available). Export validation/size errors remain 422/413.
+
+### GET `/api/capabilities` and `/mcp/` — Shared contract discovery
+
+`GET /api/capabilities` returns `{"schemaVersion":"1.0","data":{...}}`, including implemented tools, contract names, payload limits, source/model fields and known limitations. The MCP `capabilities` tool returns the same envelope. Other REST responses keep their existing shapes; they are not wrapped in this envelope.
+
+The Streamable HTTP endpoint is `/mcp/` on the backend, outside the `/api` prefix. It currently exposes `capabilities`, `list_models`, `list_genres`, `get_genre_preset`, `generate_section`, `build_song`, `render_midi`, `import_score` and `export_daw`. REST and MCP call the same generation/import/export implementations. There is no MCP song planner or theory explanation tool yet.
+
+Successful MCP results put the versioned envelope in `structuredContent`. Clients must check `isError`, `schemaVersion` and documented size limits, and preserve `source`/`model_used` fields. `import_score` additionally requires explicit attachment confirmation. MCP DAW handoff requires a direct loopback request, server opt-in and explicit per-call confirmation. See [the MCP contract and thin-client example](docs/mcp.md) for exact arguments, safeguards and transport setup.
 
 ---
 
