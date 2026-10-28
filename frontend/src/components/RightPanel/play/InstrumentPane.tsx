@@ -76,8 +76,7 @@ export default function InstrumentPane() {
       <button type="button" aria-pressed={override === null} data-instrument-choice
         data-active={override === null ? '' : undefined} onClick={() => setHarmonyOverride(null)} title={autoTitle}
         className="te-key btn-hover flex w-full items-center justify-between gap-2 px-2 text-left"
-        style={{ fontSize: 12, lineHeight: '14px', letterSpacing: 'normal', fontWeight: override === null ? 700 : 400,
-          borderColor: override === null ? 'var(--key-text)' : 'var(--key-border)' }}>
+        style={{ fontSize: 12, lineHeight: '14px', letterSpacing: 'normal', fontWeight: override === null ? 700 : 400 }}>
         <span>Auto</span>
         <span style={{ color: 'var(--key-text-dim)', fontWeight: 400 }}>Genre default</span>
       </button>
@@ -100,8 +99,7 @@ export default function InstrumentPane() {
                   data-active={selected ? '' : undefined} onClick={() => setHarmonyOverride(instrument.name)}
                   title={`${group.label} · ${label}`} className="te-key btn-hover min-w-0 px-1 py-1 text-left"
                   style={{ minHeight: 28, fontSize: 11, lineHeight: '12px', letterSpacing: 'normal',
-                    whiteSpace: 'normal', overflowWrap: 'anywhere', fontWeight: selected ? 700 : 400,
-                    borderColor: selected ? 'var(--key-text)' : 'var(--key-border)' }}>
+                    whiteSpace: 'normal', overflowWrap: 'anywhere', fontWeight: selected ? 700 : 400 }}>
                   {label}
                 </button>
               );

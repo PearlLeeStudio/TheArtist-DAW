@@ -71,8 +71,7 @@ export default function DrumsPane() {
               data-active={choice.checked ? '' : undefined} onClick={choice.onSelect} title={choice.title}
               className="te-key btn-hover min-w-0"
               style={{ minHeight: 26, padding: '0 3px', fontSize: 12, lineHeight: '12px', letterSpacing: 'normal',
-                whiteSpace: 'normal', overflowWrap: 'anywhere', fontWeight: choice.checked ? 700 : 400,
-                borderColor: choice.checked ? 'var(--key-text)' : 'var(--key-border)' }}>
+                whiteSpace: 'normal', overflowWrap: 'anywhere', fontWeight: choice.checked ? 700 : 400 }}>
               {choice.label}
             </button>
           ))}

@@ -83,8 +83,7 @@ export default function RhythmPane() {
             onClick={choice.onSelect} title={choice.title}
             className="te-key btn-hover min-w-0"
             style={{ minHeight: 26, padding: '0 3px', fontSize: 12, lineHeight: '12px', letterSpacing: 'normal',
-              whiteSpace: 'normal', overflowWrap: 'anywhere', fontWeight: choice.checked ? 700 : 400,
-              borderColor: choice.checked ? 'var(--key-text)' : 'var(--key-border)' }}>
+              whiteSpace: 'normal', overflowWrap: 'anywhere', fontWeight: choice.checked ? 700 : 400 }}>
             {choice.label}
           </button>
         ))}
@@ -94,8 +93,7 @@ export default function RhythmPane() {
         onClick={() => setBassEnabled(!bassOn)}
         className="te-key btn-hover w-full shrink-0 px-2"
         style={{ minHeight: 26, fontSize: 12, lineHeight: '14px', letterSpacing: 'normal',
-          whiteSpace: 'normal', fontWeight: bassOn ? 700 : 400,
-          borderColor: bassOn ? 'var(--key-text)' : 'var(--key-border)' }}
+          whiteSpace: 'normal', fontWeight: bassOn ? 700 : 400 }}
         title={`Bass ${bassOn ? 'on' : 'off'}: ${bassName} plays each chord's root on the ${hasGenre ? tag : 'default'} bass rhythm`}
       >
         Bass {bassOn ? 'on' : 'off'} · {bassName}
