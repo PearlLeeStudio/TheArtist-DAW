@@ -28,7 +28,7 @@ export function loadAll(): SavedSession[] {
     if (!parsed || parsed.version !== SCHEMA_VERSION || !Array.isArray(parsed.sessions)) {
       return [];
     }
-    return parsed.sessions.filter(isValidSession);
+    return parsed.sessions.filter(isValidSession).map(withValidArrangement);
   } catch {
     return [];
   }
@@ -89,6 +89,18 @@ function validSong(value: unknown): boolean {
   return true;
 }
 
+/** Arrangement is a derived cache; a foreign/stale cache must not break a valid score. */
+function withValidArrangement(session: SavedSession): SavedSession {
+  const value: unknown = session.arrangement;
+  if (value === undefined || (record(value) && Array.isArray(value.bassPattern) &&
+      value.bassPattern.every((beat) => typeof beat === 'number' && Number.isFinite(beat) && beat >= 0 && beat < 32) &&
+      typeof value.bassInstrument === 'string' && typeof value.beatsPerMeasure === 'number' &&
+      Number.isInteger(value.beatsPerMeasure) && value.beatsPerMeasure > 0 && value.beatsPerMeasure <= 32)) return session;
+  const repaired = { ...session };
+  delete repaired.arrangement;
+  return repaired;
+}
+
 /** Validate a parsed object as a SavedSession. Reject silently rather
  *  than throwing — bad entries from a foreign export are skipped, not
  *  fatal. */
@@ -145,14 +157,15 @@ export function mergeImport(
       result.skipped += 1;
       continue;
     }
-    if (existingIds.has(raw.id)) {
+    const session = withValidArrangement(raw);
+    if (existingIds.has(session.id)) {
       const id = crypto.randomUUID();
-      incoming.push({ ...raw, id });
+      incoming.push({ ...session, id });
       existingIds.add(id);
       result.renamed += 1;
     } else {
-      incoming.push(raw);
-      existingIds.add(raw.id);
+      incoming.push(session);
+      existingIds.add(session.id);
       result.added += 1;
     }
   }

@@ -24,6 +24,40 @@ test('storage failure is reported to the caller instead of pretending the projec
   }
 });
 
+const importedProject: SavedSession = {
+  id: 'imported-project', name: '봄의 변형', createdAt: 0, starred: true,
+  song: {
+    id: 'imported-score', title: '봄의 변형', key: 'C major', genre: 'jazz', bpm: 90, timeSignature: [6, 8], autoTitle: false,
+    measures: [{ id: 'bar-1', index: 0, chords: [
+      { root: 'F', quality: 'maj', bass: 'C', romanNumeral: 'IV', voicing: [48, 53, 57], extensions: [] }, null,
+    ] }],
+    sections: [{ id: 'region-1', type: null, label: 'Repeated region', origin: 'inferred', startMeasure: 0, length: 1 }],
+    importSource: { filename: 'score.pdf', model: 'muse-spark-1.3', requestId: 'sample-request' },
+  },
+  generation: { model: 'ft_f1', genre: 'jazz', ...DEFAULT_PLAY_SETTINGS, bassVolume: 0 },
+  arrangement: { bassPattern: [0, 2], bassInstrument: 'contrabass', beatsPerMeasure: 6 },
+};
+
+test('project file roundtrip retains real chords, uncertain sections, source and a muted part', () => {
+  const result = mergeImport([], serializeForExport([importedProject]));
+  assert.deepEqual(result.merged[0], importedProject);
+});
+
+test('an invalid arrangement cache is discarded while the score and settings survive', () => {
+  const result = mergeImport([], JSON.stringify({ version: 1, sessions: [
+    { ...importedProject, arrangement: { bassPattern: null } },
+  ] }));
+  assert.equal(result.result.added, 1);
+  assert.equal(result.merged[0].arrangement, undefined);
+  assert.deepEqual(result.merged[0].song, importedProject.song);
+});
+
+test('duplicate IDs inside one project file receive independent identities', () => {
+  const result = mergeImport([], serializeForExport([importedProject, importedProject]));
+  assert.deepEqual(result.result, { added: 1, renamed: 1, skipped: 0 });
+  assert.notEqual(result.merged[0].id, result.merged[1].id);
+});
+
 test('session export/import keeps independent controller levels, including a muted part', () => {
   const session: SavedSession = {
     id: 'controller-session',
