@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import {
   MAX_SCORE_IMPORT_BYTES,
   buildImportedSong,
+  buildScoreImportForEditor,
   checkScoreFile,
   createScoreImportDraft,
   importMeasureRomanPreview,
@@ -11,6 +12,7 @@ import {
   parseImportedChord,
   readScoreImportResponse,
   validateScoreImportDraft,
+  validateScoreImportForEditor,
 } from './scoreImport.ts';
 import type { ScoreImportResponse } from './scoreImport.ts';
 
@@ -110,6 +112,51 @@ test('zero, three and unreadable chords block load until corrected without erasi
     assert.equal(validateScoreImportDraft(draft).valid, true);
     assert.deepEqual(draft.measures[0].originalChords, chords);
   }
+});
+
+test('opening a score draft preserves unresolved, unsupported and longer source bars for later editing', () => {
+  const draft = createScoreImportDraft(response({ sections: [], measures: [
+    { chords: ['Cmaj7'], sourceLabel: 'bar 1', needsReview: false, note: '' },
+    { chords: [], sourceLabel: 'bar 2', needsReview: true, note: 'Unreadable notes.', chordBasis: 'unreadable', confidence: 'low' },
+    { chords: ['C7alt', 'G7'], sourceLabel: 'bar 3', needsReview: true, note: 'Correct the first symbol.' },
+    { chords: ['C', 'F', 'G7'], sourceLabel: 'bar 4', needsReview: true, note: 'Three changes.' },
+    { chords: [], noChord: true, sourceLabel: 'bar 5', needsReview: false, note: '' },
+  ] }), 'draft.pdf');
+  assert.equal(validateScoreImportDraft(draft).valid, false);
+  assert.equal(validateScoreImportForEditor(draft).valid, true);
+  const song = buildScoreImportForEditor(draft);
+  assert.equal(song.measures.length, 5);
+  assert.equal(song.measures[0].chords[0]?.romanNumeral, 'Imaj7');
+  assert.deepEqual(song.measures[1].chords, [null, null]);
+  assert.equal(song.measures[2].chords[0], null);
+  assert.equal(song.measures[2].chords[1]?.root, 'G');
+  assert.deepEqual(song.measures[3].chords, [null, null]);
+  assert.deepEqual(song.measures[4].chords, [null, null]);
+  const source = song.importSource!.measures!;
+  assert.equal(source[1].originalNoChord, false);
+  assert.equal(source[1].userNoChord, false);
+  assert.match(source[1].editorReview!, /No chord was determined/);
+  assert.match(source[2].editorReview!, /need correction/);
+  assert.deepEqual(source[3].originalChords, ['C', 'F', 'G7']);
+  assert.match(source[3].editorReview!, /3 source changes are preserved/);
+  assert.equal(source[4].originalNoChord, true);
+  assert.equal(source[4].editorReview, undefined);
+  assert.deepEqual(JSON.parse(JSON.stringify(song)).importSource, song.importSource);
+});
+
+test('opening unresolved score drafts still requires usable project metadata and section bounds', () => {
+  const draft = createScoreImportDraft(response({ sections: [], measures: [{ chords: [], sourceLabel: '', needsReview: true, note: '' }] }), 'draft.pdf');
+  for (const patch of [{ key: '' }, { timeSignature: '' }, { bpm: '0' }, { title: '' }, { sections: [{ type: null, label: 'Part', startBar: '1', endBar: '2', origin: 'manual' as const, note: '' }] }]) {
+    const invalid = { ...draft, ...patch };
+    assert.equal(validateScoreImportForEditor(invalid).valid, false);
+    assert.throws(() => buildScoreImportForEditor(invalid));
+  }
+});
+
+test('opening a valid score in the editor preserves the strict import result exactly', () => {
+  const draft = createScoreImportDraft(response(), 'chart.pdf');
+  const ids = () => { let next = 0; return () => `id-${next++}`; };
+  assert.deepEqual(buildScoreImportForEditor(draft, ids()), buildImportedSong(draft, ids()));
 });
 
 test('unknown key or unsupported meter requires an explicit correction', () => {

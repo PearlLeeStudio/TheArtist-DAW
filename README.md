@@ -32,10 +32,12 @@ remain on the [manual checklist](docs/manual-checks.md).
 - **Import Score**, immediately left of **New from Song Form**, accepts one
   PDF score up to 8 MiB. Selecting a file starts local analysis
   automatically, with a progress indicator. Printed chords are preserved; only
-  passages without chords receive note-based harmony proposals. Review the
-  source alongside read notes, bass, chords, evidence, uncertainty, meter, key and sections. Inferred
+  passages without chords receive note-based harmony proposals. Confirm the
+  title, key and meter, then open the score view to check and edit chords. Inferred
   chords are interpretations, not verified original harmony; melody notes and their
-  durations are not imported. Correct highlighted fields, then click
+  durations are not imported. Unresolved or unsupported chords stay editable
+  without blocking import; their original symbols and evidence are retained.
+  Correct highlighted project fields, then click
   **Import reviewed score** to confirm. The footer explains any blocker.
   The import screen uses local reading only; the bounded Meta capability remains
   available in the API for future work, without a screen option or automatic call.

@@ -97,7 +97,7 @@ export default function Layout() {
     importSong(imported);
     setPanelOpen(true);
     setPanelMode('input');
-    setInputMode('generate');
+    setInputMode('manual');
   }, [importSong]);
 
   const startResize = useCallback((e: React.MouseEvent) => {
@@ -259,15 +259,7 @@ export default function Layout() {
             <SongSettings />
           </div>
 
-          {song.importSource && <details className="mb-3 text-xs" style={{ color: 'var(--text-muted)' }}>
-            <summary className="cursor-pointer break-words">Imported from {song.importSource.filename} · {song.importSource.analysisSource === 'local' ? 'local code' : song.importSource.analysisSource === 'mixed' ? 'local reading + Meta interpretation' : 'Meta'} · {song.importSource.mode === 'infer_harmony' ? 'reviewed harmony draft from notes' : 'reviewed chord symbols'}</summary>
-            <div className="mt-2 space-y-1">
-              <p>Original import analysis is kept below. Later chord or key edits do not rewrite these source proposals.</p>
-              {song.importSource.measures?.map((measure, index) => <p key={index} className="break-words">
-                Source bar {(measure.sourceMeasureIndex ?? index) + 1} · {measure.analysisSource === 'local' ? 'Local code' : measure.analysisSource === 'meta' ? 'Meta' : 'Original import'} · {measure.originalNoChord ? 'Source rest / N.C.' : measure.chordBasis === 'inferred' ? 'Inferred' : measure.chordBasis === 'unreadable' ? 'Unresolved' : 'Printed'} · {measure.confidence} confidence · {measure.chordBasis === 'inferred' ? 'Proposed' : 'Read'}: {measure.originalChords.join(' · ') || (measure.originalNoChord ? 'N.C.' : '[None]')}{measure.writtenNotes?.length && JSON.stringify(measure.writtenNotes) !== JSON.stringify(measure.notes) ? ` · Written notes: ${measure.writtenNotes.join(' · ')}` : ''}{measure.notes?.length ? ` · ${measure.writtenNotes?.length && JSON.stringify(measure.writtenNotes) !== JSON.stringify(measure.notes) ? 'Sounding notes' : 'Notes'}: ${measure.notes.join(' · ')}` : ''}{measure.bassNotes?.length ? ` · Bass: ${measure.bassNotes.join(' · ')}` : ''}{measure.timeSignature ? ` · Source meter: ${measure.timeSignature.join('/')}` : ''}{measure.userNoChord ? ' · User chose to leave this bar without harmony at import.' : ''}{measure.evidence ? ` · ${measure.evidence}` : ''}
-              </p>)}
-            </div>
-          </details>}
+          {song.importSource && <p className="mb-3 break-words text-xs" style={{ color: 'var(--text-muted)' }}>Imported from {song.importSource.filename}</p>}
 
           <div className="flex flex-wrap items-center justify-between gap-2 mb-2 text-xs" style={{ color: 'var(--text-muted)' }}>
             <span>{song.sections?.length ? 'Click a section name or drag across chords to select a range.' : 'Drag across chords to generate a variation.'}</span>

@@ -24,33 +24,38 @@ unimplemented and are not part of the completed-feature checks.
   are small notes-only starter cases. The file chooser offers PDFs; image import
   remains an API capability rather than a screen option.
 - [ ] Verify one-chord expansion, unknown key/meter, unsupported chord names and
-  zero or three-plus symbols in a bar. A correction is required rather than silently
-  discarding symbols. Cancel, close and replace files while a request is running.
+  zero or three-plus symbols in a bar. Unknown key/meter still requires correction;
+  unfinished chord reading can open in the score view. Missing/unsupported slots
+  stay unassigned with the source preserved. Longer bars retain all source symbols
+  for placement rather than silently selecting two. Cancel, close and replace files
+  while a request is running.
 - [ ] Selecting a file starts local analysis automatically with an indeterminate
   progress bar. There are no mode controls, Meta checkbox or separate review
   checkbox. Printed chords stay unchanged; chordless passages receive proposals.
-  Check Printed/Inferred/Unreadable, note evidence and confidence against the
-  original. Replace a file during analysis; an earlier result must not populate
+  The Review score dialog has no chord-analysis list. After import, select a bar
+  to check its chords, Roman numerals and retained source against the original.
+  Replace a file during analysis; an earlier result must not populate
   the replacement. Cancel and retry without choosing the file again.
 - [ ] Import the original vector-score C/F
   fixtures without a model key: verify read pitches, bass, local source and Roman I.
   An unsupported scan reports that local reading cannot handle it, without
   suggesting a missing screen control or making an external model request.
 - [ ] The footer always shows why Import reviewed score
-  is disabled. Correct missing key/meter or highlighted bars using the footer
-  links, then click Import reviewed score to confirm. A valid draft enables the
+  is disabled. Correct missing key/meter or highlighted project fields using the footer
+  links, then click Import reviewed score to confirm. Valid project metadata enables the
   button immediately. Check on a narrow mobile window as well as desktop.
   Readable C/Am key aliases normalize to C major/A minor.
-- [ ] Review C, Am and G7 in C major: I, vi and V7 appear in review and after
+- [ ] Review C, Am and G7 in C major: I, vi and V7 appear in the score view after
   import. Change the review key to reanalyze fixed symbols; the main Key control
   instead transposes the song. Check Bb/Eb borrowed chords and preserve Roman
   labels in Projects, JSON backup and PDF. Source proposal metadata stays visible.
-- [ ] Explicit N.C. produces an empty chord bar. Typing N.C. for an unresolved bar
-  is an explicit editing choice, preserved separately from the original reading.
+- [ ] Explicit source N.C. produces an empty chord bar labeled N.C. Unresolved
+  slots are labeled Unresolved instead. Existing saved user-chosen N.C. metadata
+  remains separate from the original reading.
   A repeat-measure sign copies the immediately preceding harmony and its origin,
   including an unresolved/N.C. state; it cannot upgrade an inference to printed.
-  More than two changes show all Roman numerals and require choosing the editor's
-  two slots. Nothing is silently truncated.
+  More than two changes retain all original symbols in the selected bar's source
+  and require placing the editor's two slots there. Nothing is silently truncated.
 - [ ] Explicit and inferred sections remain distinguishable. Edit labels, types and
   boundaries; reject overlaps and invalid ranges. Clicking a section label selects it.
 - [ ] Drag a passage, Generate, and compare Original/A/B/C audibly with identical
@@ -92,7 +97,7 @@ unimplemented and are not part of the completed-feature checks.
 
 ## Automated evidence
 
-Frontend: 136 tests passed; TypeScript/Vite build and ESLint passed. The build still
+Frontend: 140 tests passed; TypeScript/Vite build and ESLint passed. The build still
 reports the existing large-chunk warning. Backend: 282 tests passed and app import
 passed. These include MIDI parsing, API errors, score-import mocks, real SDK MCP
 round trips and CPU seed isolation. Frontend transport tests cover network/HTTP

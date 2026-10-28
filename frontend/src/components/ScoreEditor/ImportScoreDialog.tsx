@@ -4,15 +4,14 @@ import type { Song } from '../../models/types';
 import { STANDARD_KEYS } from '../../engine/keySignatures';
 import { SECTION_GROUPS, isSectionType, sectionLabel, sectionsInGroup } from '../../engine/songForm';
 import {
-  buildImportedSong,
+  buildScoreImportForEditor,
   checkScoreFile,
   createScoreImportDraft,
   IMPORT_TIME_SIGNATURES,
-  importMeasureRomanPreview,
   MAX_SCORE_IMPORT_BYTES,
   readScoreImportResponse,
   scoreImportRequestBody,
-  validateScoreImportDraft,
+  validateScoreImportForEditor,
 } from '../../engine/scoreImport';
 import type { ScoreImportDraft, ScoreMime } from '../../engine/scoreImport';
 
@@ -88,14 +87,13 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
     };
   }, []);
 
-  const validation = draft ? validateScoreImportDraft(draft) : null;
+  const validation = draft ? validateScoreImportForEditor(draft) : null;
   const canImport = !!draft && !!validation?.valid && !running && !reading;
-  const correctionCount = validation ? validation.errors.length + validation.measureErrors.filter(Boolean).length + validation.sectionErrors.filter(Boolean).length : 0;
+  const correctionCount = validation ? validation.errors.length + validation.sectionErrors.filter(Boolean).length : 0;
   const importBlockReason = reading ? 'Wait for the file check to finish.' : running ? 'Wait for the score analysis to finish.'
     : !draft ? 'Choose a score to analyze.'
       : !validation?.valid ? `Fix ${correctionCount} highlighted ${correctionCount === 1 ? 'field' : 'fields'} to enable import.`
         : '';
-  const firstChordError = validation?.measureErrors.findIndex(Boolean) ?? -1;
   const firstSectionError = validation?.sectionErrors.findIndex(Boolean) ?? -1;
   const sourceMeters = draft ? [...new Set(draft.measures.flatMap((measure) => measure.timeSignature ? [measure.timeSignature.join('/')] : []))] : [];
   const changesMeter = !!draft && sourceMeters.some((meter) => meter !== draft.timeSignature);
@@ -215,7 +213,7 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
   const apply = () => {
     if (!canImport || !draft) return;
     try {
-      const imported = buildImportedSong(draft);
+      const imported = buildScoreImportForEditor(draft);
       onImported(imported);
       dialogRef.current?.close();
     } catch (caught) {
@@ -276,12 +274,8 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
                 <div className="min-w-0 space-y-4">
                   <div className="space-y-2">
                     <h3 className="font-display text-xl font-semibold" style={{ color: 'var(--text-heading)' }}>Review score</h3>
-                    <p className="text-xs" style={mutedStyle}>Check the chords, key and meter, then import.</p>
+                    <p className="text-xs" style={mutedStyle}>Check the key and meter. Chords can be reviewed in the score view.</p>
                     {changesMeter && <p className="text-xs" style={mutedStyle}>The original uses {sourceMeters.join(', ')}. The editor uses {draft.timeSignature || 'one chosen meter'} throughout.</p>}
-                    {draft.warnings.length > 0 && <details className="text-xs" style={mutedStyle}>
-                      <summary className="cursor-pointer">Reading notes · {draft.warnings.length}</summary>
-                      <ul className="mt-1 list-disc space-y-1 pl-4" aria-label="Reading notes">{draft.warnings.map((warning, index) => <li key={index}>{warning}</li>)}</ul>
-                    </details>}
                   </div>
 
                   <div id={`${id}-score-fields`} tabIndex={-1} className="grid grid-cols-2 gap-3">
@@ -296,35 +290,6 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
                     <label className="col-span-2 flex items-center gap-2 text-xs">Playback tempo<input type="text" inputMode="numeric" value={draft.bpm} onChange={(e) => edit((d) => ({ ...d, bpm: e.target.value }))} className="w-16 px-2 py-1.5 text-center text-sm" style={fieldStyle} /> BPM <span style={mutedStyle}>(set here, not read from the score)</span></label>
                   </div>
                   {validation.errors.length > 0 && <ul className="list-disc space-y-1 pl-4 text-xs" aria-label="Score fields to correct">{validation.errors.map((message) => <li key={message}>{message}</li>)}</ul>}
-
-                  <details open style={{ border: '1px solid var(--border)' }}>
-                    <summary className="cursor-pointer px-3 py-2 text-sm font-semibold">Chords · {draft.measures.length} bars</summary>
-                    <div className="space-y-2 px-3 pb-3">
-                      <p className="text-xs" style={mutedStyle}>One or two equal chord slots per bar. Use N.C. to leave a bar without harmony.</p>
-                      {draft.measures.map((measure, index) => (
-                        <div key={index} className="space-y-1 py-2" style={{ borderTop: '1px solid var(--border)' }}>
-                          <div className="flex items-center gap-2">
-                            <label htmlFor={`${id}-bar-${index}`} className="w-10 shrink-0 text-xs font-semibold">{index + 1}</label>
-                            <input id={`${id}-bar-${index}`} aria-label={`Bar ${index + 1} chords`} aria-invalid={!!validation.measureErrors[index]} aria-describedby={validation.measureErrors[index] ? `${id}-bar-error-${index}` : undefined} value={measure.chordText} placeholder="Cmaj7 Am7 or N.C." onChange={(e) => edit((d) => ({ ...d, measures: d.measures.map((m, i) => i === index ? { ...m, chordText: e.target.value } : m) }))} className="min-w-0 flex-1 px-2 py-1.5 text-sm" style={fieldStyle} />
-                          </div>
-                          <p className="text-xs" style={mutedStyle}>{measure.originalNoChord ? 'Rest / N.C.' : measure.chordBasis === 'inferred' ? 'Analyzed from notes' : measure.chordBasis === 'unreadable' ? 'Needs a chord or N.C.' : 'Written on score'}</p>
-                          <p className="text-xs" style={mutedStyle}>Roman numerals in {draft.key || 'the selected key'}: {importMeasureRomanPreview(measure.chordText, draft.key) ?? 'correct the key and chords to preview'}</p>
-                          <details className="text-xs" style={mutedStyle}>
-                          <summary className="cursor-pointer">Notes and source</summary>
-                          <div className="mt-1 space-y-1">
-                          {measure.writtenNotes.length > 0 && JSON.stringify(measure.writtenNotes) !== JSON.stringify(measure.notes) && <p className="break-words">Written notes: {measure.writtenNotes.join(' · ')}</p>}
-                          {(measure.notes.length > 0 || measure.bassNotes.length > 0) && <p className="break-words">{measure.writtenNotes.length > 0 && JSON.stringify(measure.writtenNotes) !== JSON.stringify(measure.notes) ? 'Sounding notes' : 'Read notes'}: {measure.notes.join(' · ') || '[None]'} → Bass: {measure.bassNotes.join(' · ') || '[None]'}</p>}
-                          <p className="break-words text-xs" style={mutedStyle}>{measure.chordBasis === 'inferred' ? 'Proposed' : 'Read'}: {measure.originalChords.length ? measure.originalChords.join(' · ') : measure.originalNoChord ? 'N.C.' : '[No chord determined]'}{measure.sourceLabel ? ` — ${measure.sourceLabel}` : ''}</p>
-                          {measure.originalChords.length > 0 && <p className="text-xs" style={mutedStyle}>Full source analysis in {draft.key || 'the selected key'}: {importMeasureRomanPreview(measure.originalChords.join(' '), draft.key) ?? 'some source symbols need correction'}</p>}
-                          {(measure.needsReview || measure.note) && <p className="text-xs" style={mutedStyle}>{measure.needsReview ? 'Check against original. ' : ''}{measure.note ? `Evidence: ${measure.note}` : ''}</p>}
-                          {measure.timeSignature && <p>Original meter: {measure.timeSignature.join('/')}</p>}
-                          </div>
-                          </details>
-                          {validation.measureErrors[index] && <p id={`${id}-bar-error-${index}`} className="text-xs">{validation.measureErrors[index]}</p>}
-                        </div>
-                      ))}
-                    </div>
-                  </details>
 
                   <details style={{ border: '1px solid var(--border)' }}>
                     <summary className="cursor-pointer px-3 py-2 text-sm font-semibold">Song form · {draft.sections.length} sections</summary>
@@ -367,7 +332,6 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
               {error && <p role="alert" className="border-l-2 px-2 py-1" style={{ background: 'var(--btn-bg)', borderColor: 'var(--brand-yellow)', color: 'var(--text-primary)' }}>{error}</p>}
               {validation && !validation.valid && <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
               {validation.errors.length > 0 && <button type="button" className="text-left underline" onClick={() => focusReviewField(`${id}-score-fields`)}>{validation.errors.join(' ')}</button>}
-              {firstChordError >= 0 && <button type="button" className="text-left underline" onClick={() => focusReviewField(`${id}-bar-${firstChordError}`)}>Fix bar {firstChordError + 1}: {validation.measureErrors[firstChordError]}</button>}
               {firstSectionError >= 0 && <button type="button" className="text-left underline" onClick={() => focusReviewField(`${id}-section-${firstSectionError}`)}>Fix section {firstSectionError + 1}: {validation.sectionErrors[firstSectionError]}</button>}
               </div>}
             </div>}

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import type { SavedSession } from '../models/types.ts';
 import { DEFAULT_PLAY_SETTINGS, enginePlayConfig, playSettingsFromSession } from '../engine/playSettings.ts';
 import { mergeImport, serializeForExport, saveAll, loadAll } from './sessionStorage.ts';
-import { readScoreImportResponse, createScoreImportDraft, buildImportedSong } from '../engine/scoreImport.ts';
+import { readScoreImportResponse, createScoreImportDraft, buildImportedSong, buildScoreImportForEditor } from '../engine/scoreImport.ts';
 
 test('bad project files cannot replace valid working data or crash the score renderer', () => {
   const malformed = {
@@ -98,6 +98,48 @@ test('local and mixed source evidence including rests and explicit empty choices
   project.song.importSource.requestId = null;
   project.song.importSource.measures = [project.song.importSource.measures![0]];
   assert.deepEqual(mergeImport([], serializeForExport([project])).merged[0].song.importSource, project.song.importSource);
+});
+
+test('unresolved editor imports retain every source symbol and their review reason through project roundtrip', () => {
+  const response = readScoreImportResponse({
+    title: 'Unfinished import', key: 'C major', timeSignature: [4, 4], sections: [], warnings: [],
+    analysisSource: 'local', model: null, requestId: null, mode: 'chord_symbols',
+    measures: [
+      { chords: [], sourceLabel: 'Bar 1', needsReview: true, chordBasis: 'unreadable', confidence: 'low',
+        note: 'No supported chord was read.', noChord: false },
+      { chords: ['C', 'F', 'G7'], sourceLabel: 'Bar 2', needsReview: true, chordBasis: 'printed', confidence: 'high',
+        note: 'Three printed changes in one measure.', noChord: false },
+    ],
+  }, 'chord_symbols', 'local');
+  const song = buildScoreImportForEditor(createScoreImportDraft(response, 'unfinished.pdf'));
+  const project = { ...structuredClone(importedProject), song };
+  const source = song.importSource!;
+  assert.ok(source.measures!.every((measure) => measure.editorReview));
+  const descriptor = Object.getOwnPropertyDescriptor(globalThis, 'localStorage');
+  let stored = '';
+  Object.defineProperty(globalThis, 'localStorage', { configurable: true, value: {
+    setItem(_key: string, value: string) { stored = value; }, getItem() { return stored; },
+  } });
+  try {
+    saveAll([project]);
+    const reloaded = loadAll();
+    const restored = mergeImport([], serializeForExport(reloaded)).merged[0];
+    assert.deepEqual(restored.song.importSource, source);
+    assert.deepEqual(restored.song.measures.map((measure) => measure.chords), [[null, null], [null, null]]);
+    assert.deepEqual(restored.song.importSource!.measures!.map((measure) => measure.originalChords), [[], ['C', 'F', 'G7']]);
+    assert.ok(restored.song.importSource!.measures!.every((measure) => measure.originalNoChord === false && measure.userNoChord === false));
+  } finally {
+    if (descriptor) Object.defineProperty(globalThis, 'localStorage', descriptor);
+    else Reflect.deleteProperty(globalThis, 'localStorage');
+  }
+  for (const editorReview of [7, 'x'.repeat(401)]) {
+    const invalid = { ...project, song: { ...project.song, importSource: {
+      ...source, measures: [{ ...source.measures![0], editorReview }],
+    } } };
+    const result = mergeImport([], JSON.stringify({ version: 1, sessions: [invalid] }));
+    assert.equal(result.result.skipped, 1);
+    assert.deepEqual(result.merged, []);
+  }
 });
 
 test('ottava written and sounding pitches remain distinct through import and browser save/load', () => {

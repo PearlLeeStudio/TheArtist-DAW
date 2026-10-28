@@ -253,7 +253,7 @@ export interface ScoreImportValidation {
   singleChordBars: number;
 }
 
-export function validateScoreImportDraft(draft: ScoreImportDraft): ScoreImportValidation {
+function validateScoreImport(draft: ScoreImportDraft, reviewChords: boolean): ScoreImportValidation {
   const errors: string[] = [];
   if (!draft.title.trim() || draft.title.trim().length > 120) errors.push('Enter a title of 1–120 characters.');
   const key = normalizeKeySignature(draft.key);
@@ -264,7 +264,7 @@ export function validateScoreImportDraft(draft: ScoreImportDraft): ScoreImportVa
   if (draft.sections.length > 64) errors.push('The score can contain at most 64 sections.');
 
   let singleChordBars = 0;
-  const measureErrors = draft.measures.map((measure) => {
+  const measureErrors = reviewChords ? draft.measures.map((measure) => {
     if (isNoChordText(measure.chordText)) return '';
     const symbols = measure.chordText.trim().split(/\s+/).filter(Boolean);
     if (symbols.length > 2) return `${symbols.length} changes were kept in the analysis. Choose at most two chords for the editor's equal slots; no changes are dropped automatically.`;
@@ -273,7 +273,7 @@ export function validateScoreImportDraft(draft: ScoreImportDraft): ScoreImportVa
     if (unsupported.length) return `Unsupported or unreadable chord: ${unsupported.join(', ')}. Correct it before importing.`;
     if (symbols.length === 1) singleChordBars++;
     return '';
-  });
+  }) : [];
 
   const sectionErrors = draft.sections.map((section) => {
     if (!section.label.trim() || section.label.trim().length > 80) return 'Enter a section name of 1–80 characters.';
@@ -298,11 +298,49 @@ export function validateScoreImportDraft(draft: ScoreImportDraft): ScoreImportVa
   return { valid: errors.length === 0 && !measureErrors.some(Boolean) && !sectionErrors.some(Boolean), errors, measureErrors, sectionErrors, singleChordBars };
 }
 
-/** Called only after review and explicit confirmation. Source bytes and
- *  preview URLs are never included in the Song or its saved session. */
+/** Chord correction belongs to the score view. Only project metadata blocks
+ *  opening a draft there; unresolved source material remains attached. */
+export function validateScoreImportForEditor(draft: ScoreImportDraft): ScoreImportValidation {
+  return validateScoreImport(draft, false);
+}
+
+export function validateScoreImportDraft(draft: ScoreImportDraft): ScoreImportValidation {
+  return validateScoreImport(draft, true);
+}
+
+function pendingMeasureReview(measure: ImportMeasureDraft, key: string): string | undefined {
+  if (isNoChordText(measure.chordText)) return undefined;
+  const symbols = measure.chordText.trim().split(/\s+/).filter(Boolean);
+  if (!symbols.length) return 'No chord was determined. Choose a chord in the score view.';
+  if (symbols.length > 2) return `${symbols.length} source changes are preserved. Place the desired changes in the editor's two chord slots.`;
+  if (symbols.some((symbol) => !parseImportedChord(symbol, key))) return 'Some source chord symbols need correction in the score view.';
+  return undefined;
+}
+
+function importedMeasureChords(measure: ImportMeasureDraft, key: string): [Chord | null, Chord | null] {
+  const symbols = measure.chordText.trim().split(/\s+/).filter(Boolean);
+  // Do not turn an unresolved bar into N.C., invent a chord, or silently choose
+  // two out of a longer progression. All source symbols stay in importSource.
+  if (isNoChordText(measure.chordText) || symbols.length === 0 || symbols.length > 2) return [null, null];
+  return [parseImportedChord(symbols[0], key), parseImportedChord(symbols[1] ?? symbols[0], key)];
+}
+
+/** Strict conversion remains available for callers that finish chord review. */
 export function buildImportedSong(draft: ScoreImportDraft, makeId: () => string = () => crypto.randomUUID()): Song {
-  const validation = validateScoreImportDraft(draft);
-  if (!validation.valid) throw new Error('Correct the highlighted measures and sections before importing.');
+  return buildScoreImport(draft, makeId, false);
+}
+
+/** Open the analysis as an editable score, retaining unfinished chord reading. */
+export function buildScoreImportForEditor(draft: ScoreImportDraft, makeId: () => string = () => crypto.randomUUID()): Song {
+  return buildScoreImport(draft, makeId, true);
+}
+
+/** Source bytes and preview URLs are never included in the saved Song. */
+function buildScoreImport(draft: ScoreImportDraft, makeId: () => string, deferChordReview: boolean): Song {
+  const validation = deferChordReview ? validateScoreImportForEditor(draft) : validateScoreImportDraft(draft);
+  if (!validation.valid) throw new Error(deferChordReview
+    ? 'Correct the highlighted project fields and sections before importing.'
+    : 'Correct the highlighted measures and sections before importing.');
   const key = normalizeKeySignature(draft.key)!;
   const meter = draft.timeSignature.split('/').map(Number) as [number, number];
   return {
@@ -314,11 +352,10 @@ export function buildImportedSong(draft: ScoreImportDraft, makeId: () => string 
     timeSignature: meter,
     autoTitle: false,
     measures: draft.measures.map((measure, index) => {
-      const symbols = measure.chordText.trim().split(/\s+/);
       return {
         id: makeId(),
         index,
-        chords: isNoChordText(measure.chordText) ? [null, null] : [parseImportedChord(symbols[0], key)!, parseImportedChord(symbols[1] ?? symbols[0], key)!],
+        chords: importedMeasureChords(measure, key),
       };
     }),
     sections: draft.sections.map((section) => ({
@@ -339,6 +376,7 @@ export function buildImportedSong(draft: ScoreImportDraft, makeId: () => string 
         notes: [...measure.notes], writtenNotes: [...measure.writtenNotes], bassNotes: [...measure.bassNotes], originalNoChord: measure.originalNoChord,
         userNoChord: isNoChordText(measure.chordText) && !measure.originalNoChord,
         timeSignature: measure.timeSignature ? [...measure.timeSignature] as [number, number] : null,
+        ...(deferChordReview && pendingMeasureReview(measure, key) ? { editorReview: pendingMeasureReview(measure, key) } : {}),
       })),
     },
   };

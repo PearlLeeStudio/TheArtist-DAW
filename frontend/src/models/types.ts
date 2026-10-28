@@ -23,6 +23,8 @@ export interface ImportMeasureSource {
   evidence: string;
   /** Initial recognition/proposal, retained after the user edits the score. */
   originalChords: string[];
+  /** Initial import issue to finish in the score editor; source text stays intact. */
+  editorReview?: string;
   sourceMeasureIndex?: number;
   analysisSource?: 'local' | 'meta';
   model?: string | null;

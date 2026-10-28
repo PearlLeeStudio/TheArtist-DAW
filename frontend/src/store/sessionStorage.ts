@@ -60,6 +60,7 @@ function validImportSource(value: unknown): boolean {
     ['printed', 'inferred', 'unreadable'].includes(measure.chordBasis as string) &&
     ['high', 'medium', 'low'].includes(measure.confidence as string) &&
     typeof measure.evidence === 'string' && measure.evidence.length <= 400 &&
+    (measure.editorReview === undefined || (typeof measure.editorReview === 'string' && measure.editorReview.length <= 400)) &&
     Array.isArray(measure.originalChords) && measure.originalChords.length <= 16 &&
     measure.originalChords.every((symbol) => typeof symbol === 'string' && symbol.length <= 120) &&
     (measure.sourceMeasureIndex === undefined || (typeof measure.sourceMeasureIndex === 'number' && Number.isInteger(measure.sourceMeasureIndex) && measure.sourceMeasureIndex >= 0 && measure.sourceMeasureIndex < 512)) &&

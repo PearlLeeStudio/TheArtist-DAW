@@ -6,6 +6,7 @@ import { sectionColor, sectionDisplayLabel } from '../../engine/songForm';
 import type { SlotAddress } from '../../models/types';
 import { scoreMeasureLayout } from '../../engine/scoreLayout';
 import { keySignatureFor } from '../../engine/keySignatures';
+import ImportedMeasureReview from './ImportedMeasureReview';
 
 const MEASURES_PER_ROW = 4;
 const CHORD_AREA_HEIGHT = 8;
@@ -143,6 +144,8 @@ export default function Staff() {
   if (!keySignatureFor(song.key)) return <div ref={wrapperRef} role="alert" className="p-3 text-sm">Unsupported key signature: {song.key}. Choose a standard key in the Key control to display the score.</div>;
 
   return (
+    <>
+    <ImportedMeasureReview song={song} selectedSlots={selectedSlots} />
     <div ref={wrapperRef} className="relative select-none w-full">
       {/* SVG overlay for chord labels + click/drag zones + add button */}
       <svg
@@ -171,6 +174,9 @@ export default function Staff() {
 
           const contentWidth = layout.x + layout.width - layout.contentX;
           const slotWidth = contentWidth / 2;
+          const importSource = song.importSource?.measures?.[mi];
+          const explicitNoChord = !!importSource && measure.chords.every((chord) => chord === null) &&
+            !!(importSource.originalNoChord || importSource.userNoChord);
 
           return ([0, 1] as const).map((si) => {
             const chord = measure.chords[si];
@@ -212,6 +218,33 @@ export default function Staff() {
                     fill={isPlaying ? 'var(--playback-bar)' : 'var(--selection-bar)'}
                     rx={1}
                   />
+                )}
+
+                {!chord && importSource && (!explicitNoChord || si === 0) && (
+                  <>
+                  <rect
+                    x={explicitNoChord ? layout.contentX + contentWidth * .05 : slotX + slotWidth * .05}
+                    y={layout.midLineY - 12}
+                    width={(explicitNoChord ? contentWidth : slotWidth) * .9}
+                    height={24}
+                    rx={3}
+                    fill="var(--bg-primary)"
+                    opacity={.85}
+                    className="pointer-events-none"
+                  />
+                  <text
+                    x={explicitNoChord ? layout.contentX + contentWidth / 2 : slotX + slotWidth / 2}
+                    y={layout.midLineY}
+                    textAnchor="middle"
+                    dominantBaseline="central"
+                    fill="var(--text-soft)"
+                    fontSize={explicitNoChord ? 14 : 10}
+                    fontFamily="system-ui, sans-serif"
+                    className="pointer-events-none"
+                  >
+                    {explicitNoChord ? 'N.C.' : 'Unresolved'}
+                  </text>
+                  </>
                 )}
 
                 {chord && (() => {
@@ -321,6 +354,33 @@ export default function Staff() {
           });
         })}
 
+        {/* Imported uncertainty is visible on the score, without blocking edits. */}
+        {song.importSource?.measures?.map((source, index) => {
+          const measure = song.measures[index];
+          const layout = staveLayouts[index];
+          if (!measure || !layout) return null;
+          const explicitNoChord = measure.chords.every((chord) => chord === null) && (source.originalNoChord || source.userNoChord);
+          if (explicitNoChord) return null;
+          const pending = measure.chords.some((chord) => chord === null);
+          const review = !!source.editorReview || source.chordBasis !== 'printed' || source.confidence !== 'high';
+          if (!pending && !review) return null;
+          const select = () => selectSlot({ measureIndex: index, slotIndex: measure.chords[0] === null ? 0 : measure.chords[1] === null ? 1 : 0 });
+          return (
+            <text key={`import-review-${index}`} x={layout.x + layout.width - 8} y={layout.y + 127}
+              textAnchor="end" fill="var(--text-soft)" fontSize={10} fontWeight={600}
+              fontFamily="system-ui, sans-serif" className="pointer-events-auto cursor-pointer"
+              role="button" tabIndex={0} aria-label={`Review imported bar ${index + 1}${pending ? ', unresolved chord slots' : ''}`}
+              onClick={select} onKeyDown={(event) => {
+                if (event.key !== 'Enter' && event.key !== ' ') return;
+                event.preventDefault();
+                select();
+              }}>
+              <title>{source.editorReview || (pending ? 'Choose the unresolved chord slots in the editor.' : 'Compare the imported harmony with its source.')}</title>
+              {pending ? 'Unresolved' : 'Review'}
+            </text>
+          );
+        })}
+
         {/* Labels select the whole region; drag zones still select individual chords. */}
         {(song.sections ?? []).map((section) => {
           const layout = staveLayouts[section.startMeasure];
@@ -387,5 +447,6 @@ export default function Staff() {
       {/* VexFlow renders here */}
       <div ref={containerRef} className="w-full" />
     </div>
+    </>
   );
 }

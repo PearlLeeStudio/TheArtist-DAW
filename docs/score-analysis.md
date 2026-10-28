@@ -3,8 +3,9 @@
 Selecting a file in Import Score automatically starts local code analysis, with
 an indeterminate progress indicator until the response arrives. Printed chord
 symbols take priority; note-based harmony is proposed only where symbols are
-absent. A valid draft enables Import reviewed score without a separate checkbox;
-clicking it confirms the replacement. Reading a supported vector PDF and analyzing
+absent. Valid project metadata enables Import reviewed score without a separate
+checkbox; clicking it opens the editable score, including unresolved chord bars.
+The dialog contains no chord-analysis list. Reading a supported vector PDF and analyzing
 its notes requires no model key, API call, file upload or network connection.
 There is no song-name lookup or stored answer for a particular score.
 
@@ -85,9 +86,13 @@ page objects/glyphs and 20,000 analyzed note events. Raster scans and unsupporte
 font encodings need a different reader; they are not presented as locally read.
 
 The analysis can contain more changes than the editor's two equal chord slots.
-Review preserves all proposals and shows their Roman numerals; the musician
-chooses the two slots before loading. Explicit N.C. leaves a bar unharmonized.
-Unresolved bars are never silently converted to a rest or a C-major chord.
+The score view preserves the source proposals for the selected measure alongside
+the editable chord slots and Roman numerals. A bar with more than two source
+changes opens with unassigned slots instead of silently dropping changes; all
+source symbols remain available for placement. Unsupported symbols leave their
+slots unassigned while supported neighboring symbols are retained. These cases
+do not block opening the score. Explicit N.C. remains distinct from an unresolved
+bar; neither a rest nor a C-major chord is invented for missing evidence.
 
 Source meters remain in the evidence. The current editor uses one global meter;
 mixed-meter playback/export is a harmonic sketch and does not reproduce the
