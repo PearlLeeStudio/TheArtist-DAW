@@ -17,6 +17,15 @@ import {
 } from '../engine/playSettings';
 import { applyPlayConfig } from '../engine/playback';
 import { useSongStore } from './songStore';
+import {
+  playResumeState,
+  setDrumAutoState,
+  setDrumPatternState,
+  setDrumsEnabledState,
+  setHarmonyEnabledState,
+  setHarmonyVolumeState,
+} from './playMuteState';
+import type { PlayResumeState } from './playMuteState';
 
 export type PlayPane = 'instrument' | 'rhythm' | 'drums';
 export type VisualDisplayMode = 'piano' | 'guitar';
@@ -26,7 +35,7 @@ const STORAGE_KEY = 'theartist-play';
 /** The drum pick saved before the Play panel existed: an id, or 'null' (off). */
 const LEGACY_DRUM_KEY = 'theartist-drum-pattern';
 
-interface Persisted {
+interface Persisted extends PlayResumeState {
   settings: PlaySettings;
   pane: PlayPane;
   displayMode: VisualDisplayMode;
@@ -40,6 +49,7 @@ function load(): Persisted {
       const settings = sanitizePlaySettings(parsed.settings);
       return {
         settings,
+        ...playResumeState(settings, parsed),
         pane: PANES.includes(parsed.pane as PlayPane) ? (parsed.pane as PlayPane) : 'instrument',
         displayMode: parsed.displayMode === 'piano' || parsed.displayMode === 'guitar'
           ? parsed.displayMode : settings.visualMode === 'guitar' ? 'guitar' : 'piano',
@@ -48,12 +58,14 @@ function load(): Persisted {
     // First load with the Play panel: keep a drum pick made before it.
     const legacy = localStorage.getItem(LEGACY_DRUM_KEY);
     if (legacy !== null) {
+      const settings = sanitizePlaySettings({
+        ...DEFAULT_PLAY_SETTINGS,
+        drumMode: 'manual',
+        drumPatternId: legacy === 'null' ? null : Number(legacy),
+      });
       return {
-        settings: sanitizePlaySettings({
-          ...DEFAULT_PLAY_SETTINGS,
-          drumMode: 'manual',
-          drumPatternId: legacy === 'null' ? null : Number(legacy),
-        }),
+        settings,
+        ...playResumeState(settings),
         pane: 'instrument',
         displayMode: 'piano',
       };
@@ -61,10 +73,10 @@ function load(): Persisted {
   } catch {
     // storage unavailable or corrupt — start from the defaults
   }
-  return { settings: DEFAULT_PLAY_SETTINGS, pane: 'instrument', displayMode: 'piano' };
+  return { settings: DEFAULT_PLAY_SETTINGS, ...playResumeState(DEFAULT_PLAY_SETTINGS), pane: 'instrument', displayMode: 'piano' };
 }
 
-interface PlayState {
+interface PlayState extends PlayResumeState {
   settings: PlaySettings;
   pane: PlayPane;
   displayMode: VisualDisplayMode;
@@ -78,9 +90,13 @@ interface PlayState {
   setHarmonyRhythmId: (id: string | null) => void;
   /** Drums follow the song's genre. */
   setDrumAuto: () => void;
+  /** Explicit off pauses drum scheduling; on restores its previous Auto/pattern. */
+  setDrumsEnabled: (on: boolean) => void;
   /** A fixed drum pattern, or null for no drums; kept across genre changes. */
   setDrumPattern: (id: number | null) => void;
   setBassEnabled: (on: boolean) => void;
+  /** Gain mute only; the instrument and rhythm choices stay intact. */
+  setHarmonyEnabled: (on: boolean) => void;
   setVisualMode: (mode: VisualMode) => void;
   /** Live mixer gains, clamped to 0..1. */
   setMasterVolume: (volume: number) => void;
@@ -98,6 +114,8 @@ export const usePlayStore = create<PlayState>((set) => {
     set((state) => ({ settings: { ...state.settings, ...patch } }));
   return {
     settings: initial.settings,
+    lastHarmonyVolume: initial.lastHarmonyVolume,
+    resumeDrum: initial.resumeDrum,
     pane: initial.pane,
     displayMode: initial.displayMode,
 
@@ -105,21 +123,29 @@ export const usePlayStore = create<PlayState>((set) => {
     setDisplayMode: (displayMode) => set({ displayMode }),
     setHarmonyOverride: (harmonyOverride) => update({ harmonyOverride }),
     setHarmonyRhythmId: (harmonyRhythmId) => update({ harmonyRhythmId }),
-    setDrumAuto: () => update({ drumMode: 'auto' }),
-    setDrumPattern: (drumPatternId) => update({ drumMode: 'manual', drumPatternId }),
+    setDrumAuto: () => set(setDrumAutoState),
+    setDrumsEnabled: (on) => set((state) => setDrumsEnabledState(state, on)),
+    setDrumPattern: (id) => set((state) => setDrumPatternState(state, id)),
     setBassEnabled: (bassEnabled) => update({ bassEnabled }),
+    setHarmonyEnabled: (on) => set((state) => setHarmonyEnabledState(state, on)),
     setVisualMode: (visualMode) => update({ visualMode }),
     setMasterVolume: (volume) => update({ masterVolume: sanitizeVolume(volume, DEFAULT_PLAY_SETTINGS.masterVolume) }),
-    setHarmonyVolume: (volume) => update({ harmonyVolume: sanitizeVolume(volume, DEFAULT_PLAY_SETTINGS.harmonyVolume) }),
+    setHarmonyVolume: (volume) => set((state) => setHarmonyVolumeState(state, volume)),
     setBassVolume: (volume) => update({ bassVolume: sanitizeVolume(volume, DEFAULT_PLAY_SETTINGS.bassVolume) }),
     setDrumVolume: (volume) => update({ drumVolume: sanitizeVolume(volume, DEFAULT_PLAY_SETTINGS.drumVolume) }),
-    replaceSettings: (settings) => set({ settings: sanitizePlaySettings(settings) }),
+    replaceSettings: (raw) => {
+      const settings = sanitizePlaySettings(raw);
+      set({ settings, ...playResumeState(settings) });
+    },
   };
 });
 
 function persist(state: Persisted): void {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ settings: state.settings, pane: state.pane, displayMode: state.displayMode }));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      settings: state.settings, pane: state.pane, displayMode: state.displayMode,
+      lastHarmonyVolume: state.lastHarmonyVolume, resumeDrum: state.resumeDrum,
+    }));
   } catch {
     // quota or disabled storage — the in-memory settings still apply
   }
@@ -136,7 +162,8 @@ export function applyEditorPlayConfig(): void {
 }
 
 usePlayStore.subscribe((state, prev) => {
-  if (state.settings !== prev.settings || state.pane !== prev.pane || state.displayMode !== prev.displayMode) persist(state);
+  if (state.settings !== prev.settings || state.pane !== prev.pane || state.displayMode !== prev.displayMode
+    || state.lastHarmonyVolume !== prev.lastHarmonyVolume || state.resumeDrum !== prev.resumeDrum) persist(state);
   if (state.settings !== prev.settings) applyEditorPlayConfig();
 });
 

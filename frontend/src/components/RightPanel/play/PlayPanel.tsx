@@ -58,10 +58,12 @@ export default function PlayPanel({ midiActiveNotes }: PlayPanelProps) {
         fontFamily: 'var(--font-device)',
       }}
     >
-      <Transport />
-      <div className="te-live-display shrink-0 flex flex-col gap-2">
-        <VisualPane midiActiveNotes={midiActiveNotes} compact />
-        <PlaybackStatus />
+      <div className="te-performance-panel shrink-0">
+        <Transport />
+        <div className="te-live-display flex flex-col gap-2">
+          <VisualPane midiActiveNotes={midiActiveNotes} compact />
+          <PlaybackStatus />
+        </div>
       </div>
 
       <div className="shrink-0 flex items-end gap-2">

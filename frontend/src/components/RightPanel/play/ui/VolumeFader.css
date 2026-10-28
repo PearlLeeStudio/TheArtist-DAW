@@ -10,7 +10,7 @@
   padding: 8px 6px;
   border: 0;
   border-radius: 0;
-  background: #d9d9dc;
+  background: var(--fader-panel-bg, #d9d9dc);
   box-shadow: none;
 }
 
@@ -48,7 +48,7 @@
   bottom: calc(var(--te-volume-thumb-size) / 2);
   left: calc(50% - 3.5px);
   width: 7px;
-  border: 1px solid #888888;
+  border: 1px solid var(--fader-groove-edge, #888888);
   border-radius: 4px;
   background: linear-gradient(90deg, #080808, #202020 55%, #101010);
   box-shadow: inset 2px 0 3px rgb(0 0 0 / 65%),
@@ -127,7 +127,7 @@
 }
 
 .te-volume-fader-input:focus-visible ~ .te-volume-fader-thumb {
-  outline: 1px solid #333333;
+  outline: 1px solid var(--fader-label, #333333);
   outline-offset: 3px;
 }
 
@@ -140,7 +140,7 @@
   display: block;
   flex: none;
   max-width: 100%;
-  color: #333333;
+  color: var(--fader-label, #333333);
   font-family: var(--font-device);
   font-size: 12px;
   font-weight: 500;

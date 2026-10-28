@@ -290,7 +290,11 @@ code, pre, .mono {
   --panel-border: #b8b8bc;
   --panel-glint: rgba(255, 255, 255, 0.72);
   --panel-shadow: rgba(28, 28, 30, 0.22);
+  --panel-sheen: #ffffff66;
   --channel-bg: #d9d9dc;
+  --fader-panel-bg: #d9d9dc;
+  --fader-label: #333333;
+  --fader-groove-edge: #888888;
   --key-bg: #ededf0;
   --key-bg-active: #d0d0d4;
   --key-border: #bdbdc1;
@@ -300,6 +304,8 @@ code, pre, .mono {
   --key-edge: rgba(29, 29, 31, 0.3);
   --key-shadow: 0 2px 2px rgba(29, 29, 31, 0.2), inset 0 1px 0 #ffffffc7, inset 0 -1px 0 #9a9a9e;
   --key-shadow-active: inset 0 1px 3px #63636766, inset 0 -1px 0 #f0f0f2;
+  --selection-face: linear-gradient(180deg, #c8c8cd, #d6d6da);
+  --selection-shadow: inset 0 2px 3px #5252564d, inset 0 -1px 0 #ffffffb3, 0 1px 0 #ffffff80;
   --knob-face-top: #f2f2f4;
   --knob-face-mid: #c8c8cb;
   --knob-face-bottom: #a0a0a4;
@@ -316,12 +322,30 @@ code, pre, .mono {
   --screen-text-dim: #8d9b80;
   --screen-led-off: #26301e;
   --screen-shadow: inset 0 1px 5px #000000bd, 0 1px 0 #ffffff96;
-  background: linear-gradient(135deg, #ffffff66, transparent 42%),
+  background: linear-gradient(135deg, var(--panel-sheen), transparent 42%),
               repeating-linear-gradient(0deg, #33333304 0 1px, transparent 1px 3px), var(--panel-bg);
   border: 1px solid var(--panel-border);
   border-radius: 12px;
   box-shadow: inset 0 1px 0 var(--panel-glint), inset 0 -1px 2px var(--panel-shadow),
               0 4px 9px var(--panel-shadow);
+}
+:root:not(.light) .te-device {
+  --panel-bg: #484a4f;
+  --panel-border: #62656b;
+  --panel-glint: rgba(255, 255, 255, 0.14);
+  --panel-shadow: rgba(0, 0, 0, 0.35);
+  --panel-sheen: #ffffff0a;
+  --channel-bg: #3f4146;
+  --fader-panel-bg: #3f4146;
+  --fader-label: #daddE2;
+  --fader-groove-edge: #27292e;
+  --key-bg: #54575d;
+  --key-bg-active: #62656b;
+  --key-border: #34363b;
+  --key-text: #e9ebef;
+  --key-text-dim: #b9bdc5;
+  --selection-face: linear-gradient(180deg, #51545a, #5c5f65);
+  --selection-shadow: inset 0 2px 3px #00000066, inset 0 -1px 0 #ffffff26, 0 1px 0 #ffffff0d;
 }
 .te-step-meter {
   padding: 0;
@@ -330,12 +354,22 @@ code, pre, .mono {
   background: #080d06;
   box-shadow: none;
 }
-.te-live-display {
+.te-performance-panel {
   --screen-bg: #0b110d;
   width: calc(100% + 16px);
   margin-inline: -8px;
-  padding: 8px 12px 6px;
+  margin-top: -8px;
+  padding-top: 8px;
+  overflow: hidden;
+  border-radius: 11px 11px 0 0;
   background: var(--screen-bg);
+}
+.te-performance-panel .te-transport {
+  padding: 0 8px 6px;
+}
+.te-live-display {
+  width: 100%;
+  padding: 8px 12px 6px;
 }
 .te-live-display .te-screen {
   border-radius: 0;
@@ -395,8 +429,8 @@ code, pre, .mono {
   text-transform: uppercase;
 }
 .te-selection-pane {
-  height: 160px;
-  min-height: 160px;
+  height: 190px;
+  min-height: 190px;
   overflow: visible;
 }
 .te-device .te-pane-tab {
@@ -430,8 +464,8 @@ code, pre, .mono {
   }
   .te-device .te-selection-pane {
     height: auto;
-    min-height: 156px;
-    flex: 1 1 156px;
+    min-height: 186px;
+    flex: 1 1 186px;
   }
 }
 .te-channel {
@@ -465,20 +499,21 @@ code, pre, .mono {
   cursor: default;
   transform: none;
 }
-/* Console-style selection keys: a dark frame, gray unlit face and amber lamp. */
+/* Recessed selection faces, with an amber lamp for the selected state. */
 .te-device .te-key:not(.te-transport__key) {
-  border: 1px solid #8f8f94;
+  border: 1px solid transparent;
   border-radius: 3px;
-  background: linear-gradient(180deg, #d8d8dc, #ccccd0 70%, #bcbcc1);
-  color: #343437;
-  box-shadow: inset 0 1px 1px #ffffff70, 0 1px 1px #00000020;
+  background: var(--selection-face);
+  color: var(--key-text);
+  box-shadow: var(--selection-shadow);
 }
 .te-device .te-key:not(.te-transport__key)[data-active],
 .te-device .te-key:not(.te-transport__key):active:not(:disabled) {
+  --key-text-dim: #6b5a3e;
   background: radial-gradient(ellipse at 50% 42%, #fff0bb, #ebca8f 72%, #c39b62);
-  border-color: #9b8763;
   color: #3b3122;
-  box-shadow: inset 0 0 4px #fff6cfb3, 0 0 4px #edc47f4d;
+  box-shadow: inset 0 2px 4px #76542e55, inset 0 -1px 0 #fff6cfb3,
+              0 0 4px #edc47f33;
 }
 .te-device .te-key:not(.te-transport__key):hover {
   filter: brightness(1.04);

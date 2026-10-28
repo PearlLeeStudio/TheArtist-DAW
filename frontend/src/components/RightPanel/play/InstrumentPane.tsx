@@ -39,6 +39,8 @@ const NAMES: Record<string, string> = {
 /** Every harmony sound remains available through its family. The bass follows the genre. */
 export default function InstrumentPane() {
   const override = usePlayStore((s) => s.settings.harmonyOverride);
+  const harmonyOn = usePlayStore((s) => s.settings.harmonyVolume > 0);
+  const setHarmonyEnabled = usePlayStore((s) => s.setHarmonyEnabled);
   const setHarmonyOverride = usePlayStore((s) => s.setHarmonyOverride);
   const genre = useSongStore((s) => s.song.genre);
 
@@ -72,7 +74,14 @@ export default function InstrumentPane() {
 
   return (
     <div className="te-instrument-list min-w-0 h-full p-[3px]"
-      style={{ display: 'grid', gridTemplateRows: '26px 36px 1fr', gap: 4 }} role="group" aria-label="Harmony instrument" onKeyDown={handleKey}>
+      style={{ display: 'grid', gridTemplateRows: '26px 26px 36px 1fr', gap: 4 }} role="group" aria-label="Harmony instrument" onKeyDown={handleKey}>
+      <button type="button" aria-pressed={harmonyOn} data-active={harmonyOn ? '' : undefined}
+        onClick={() => setHarmonyEnabled(!harmonyOn)}
+        className="te-key btn-hover w-full px-2"
+        style={{ fontSize: 12, lineHeight: '14px', letterSpacing: 'normal', fontWeight: harmonyOn ? 700 : 400 }}
+        title="Turn the harmony part on or off without changing the selected instrument">
+        Instrument {harmonyOn ? 'on' : 'off'}
+      </button>
       <button type="button" aria-pressed={override === null} data-instrument-choice
         data-active={override === null ? '' : undefined} onClick={() => setHarmonyOverride(null)} title={autoTitle}
         className="te-key btn-hover flex w-full items-center justify-between gap-2 px-2 text-left"
@@ -89,8 +98,8 @@ export default function InstrumentPane() {
           <span style={{ fontSize: 10, lineHeight: '12px' }}>{family.id === 'woodwinds' ? 'Winds' : family.label}</span>
         </button>)}
       </div>
-      <div className="grid min-h-0 grid-cols-4 gap-[3px]"
-        style={{ gridTemplateRows: `repeat(${Math.ceil(instruments.length / 4)}, minmax(28px, 1fr))` }}
+      <div className="grid min-h-0 grid-cols-5 content-start gap-[3px]"
+        style={{ gridAutoRows: 36 }}
         role="group" aria-label={`${group.label} instruments`}>
             {instruments.map((instrument) => {
               const selected = override === instrument.name;

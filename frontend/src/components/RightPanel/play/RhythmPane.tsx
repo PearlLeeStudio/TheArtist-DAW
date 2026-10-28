@@ -37,26 +37,20 @@ export default function RhythmPane() {
   const bassName = instrumentLabel(bassInstrumentFor(genre));
   const hasGenre = normalizeGenre(genre) !== null;
   const tag = genreTag(genre);
-  const choices = [
-    {
-      id: 'auto', label: 'Auto', checked: isAuto,
-      onSelect: () => setHarmonyRhythmId(null),
-      title: hasGenre
-        ? `Auto: the ${tag} comping rhythm (${auto.label})`
-        : `Auto: no genre set, so ${auto.label}`,
-    },
-    ...HARMONY_RHYTHM_PRESETS.map((preset) => {
-      const autoPlays = isAuto && preset.id === auto.id;
-      const counts = harmonyStrikes(meterRhythm(preset.pattern, beats), beats).map((s) => countLabel(s.pos)).join(', ');
-      return {
-        id: preset.id,
-        label: preset.label,
-        checked: settings.harmonyRhythmId === preset.id,
-        onSelect: () => setHarmonyRhythmId(preset.id),
-        title: `${preset.label}: strikes on ${counts}${autoPlays ? ` · Auto plays this for ${tag}` : ''}`,
-      };
-    }),
-  ];
+  const autoTitle = hasGenre
+    ? `Auto: the ${tag} comping rhythm (${auto.label})`
+    : `Auto: no genre set, so ${auto.label}`;
+  const choices = HARMONY_RHYTHM_PRESETS.map((preset) => {
+    const autoPlays = isAuto && preset.id === auto.id;
+    const counts = harmonyStrikes(meterRhythm(preset.pattern, beats), beats).map((s) => countLabel(s.pos)).join(', ');
+    return {
+      id: preset.id,
+      label: preset.label,
+      checked: settings.harmonyRhythmId === preset.id,
+      onSelect: () => setHarmonyRhythmId(preset.id),
+      title: `${preset.label}: strikes on ${counts}${autoPlays ? ` · Auto plays this for ${tag}` : ''}`,
+    };
+  });
   const handleKey = (event: KeyboardEvent<HTMLDivElement>) => {
     const radios = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="radio"]'));
     const index = radios.indexOf(event.target as HTMLButtonElement);
@@ -74,30 +68,37 @@ export default function RhythmPane() {
 
   return (
     <div className="te-choice-grid flex h-full min-h-0 min-w-0 flex-col gap-1 p-[3px]">
-      <div className="grid min-h-0 flex-1 gap-[3px]"
-        style={{ gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gridTemplateRows: `repeat(${Math.ceil(choices.length / 4)}, minmax(26px, 1fr))` }}
-        role="radiogroup" aria-label="Harmony rhythm" onKeyDown={handleKey}>
-        {choices.map((choice) => (
-          <button key={choice.id} type="button" role="radio" aria-checked={choice.checked}
-            tabIndex={choice.checked ? 0 : -1} data-active={choice.checked ? '' : undefined}
-            onClick={choice.onSelect} title={choice.title}
-            className="te-key btn-hover min-w-0"
-            style={{ minHeight: 26, padding: '0 3px', fontSize: 12, lineHeight: '12px', letterSpacing: 'normal',
-              whiteSpace: 'normal', overflowWrap: 'anywhere', fontWeight: choice.checked ? 700 : 400 }}>
-            {choice.label}
-          </button>
-        ))}
-      </div>
-
       <button type="button" aria-pressed={bassOn} data-active={bassOn ? '' : undefined}
         onClick={() => setBassEnabled(!bassOn)}
         className="te-key btn-hover w-full shrink-0 px-2"
-        style={{ minHeight: 26, fontSize: 12, lineHeight: '14px', letterSpacing: 'normal',
-          whiteSpace: 'normal', fontWeight: bassOn ? 700 : 400 }}
+        style={{ height: 26, minHeight: 26, fontSize: 12, lineHeight: '14px', letterSpacing: 'normal',
+          whiteSpace: 'nowrap', fontWeight: bassOn ? 700 : 400 }}
         title={`Bass ${bassOn ? 'on' : 'off'}: ${bassName} plays each chord's root on the ${hasGenre ? tag : 'default'} bass rhythm`}
       >
         Bass {bassOn ? 'on' : 'off'} · {bassName}
       </button>
+
+      <div className="flex min-h-0 flex-1 flex-col gap-1" role="radiogroup" aria-label="Harmony rhythm" onKeyDown={handleKey}>
+        <button type="button" role="radio" aria-checked={isAuto} tabIndex={isAuto ? 0 : -1}
+          data-active={isAuto ? '' : undefined} onClick={() => setHarmonyRhythmId(null)} title={autoTitle}
+          className="te-key btn-hover w-full shrink-0 px-2"
+          style={{ height: 26, minHeight: 26, fontSize: 12, lineHeight: '14px', letterSpacing: 'normal', fontWeight: isAuto ? 700 : 400 }}>
+          Auto
+        </button>
+        <div className="grid min-h-0 flex-1 gap-[3px]"
+          style={{ gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gridTemplateRows: `repeat(${Math.ceil(choices.length / 4)}, minmax(26px, 1fr))` }}>
+          {choices.map((choice) => (
+            <button key={choice.id} type="button" role="radio" aria-checked={choice.checked}
+              tabIndex={choice.checked ? 0 : -1} data-active={choice.checked ? '' : undefined}
+              onClick={choice.onSelect} title={choice.title}
+              className="te-key btn-hover h-full min-w-0"
+              style={{ minHeight: 26, padding: '0 3px', fontSize: 12, lineHeight: '12px', letterSpacing: 'normal',
+                whiteSpace: 'normal', overflowWrap: 'anywhere', fontWeight: choice.checked ? 700 : 400 }}>
+              {choice.label}
+            </button>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

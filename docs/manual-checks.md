@@ -75,17 +75,24 @@ unimplemented and are not part of the completed-feature checks.
   compact 🎹/🎸 selector remain below transport on every Play tab. Confirm its
   accessible labels and tooltips still say Piano/Guitar in English. The piano
   keeps its natural SVG proportions with compact surrounding space. Switch only
-  the drawing and confirm the sound does not change. Check the neutral Apple-style
-  silver hardware panel against both app themes, with no green cast. At viewport
+  the drawing and confirm the sound does not change. Check the bright Apple-style
+  silver hardware panel in the light theme and space-gray panel, fader bays and
+  keys with light labels in the dark theme, with no green cast. Keep the upper
+  housing black and selected faces warm amber in both themes. At viewport
   heights of at least 900 px, check that the
   responsive panel fits without an outer vertical scrollbar. Shorter windows
   retain an outer scrolling fallback. Instrument, Rhythm and Drums each fit their
   available area without internal scrolling; the bottom faders stay in place when
   changing tabs.
+- [ ] The header theme emoji is 8 px inside the unchanged 32×28 px button area.
+  Confirm its accessible label and pointer/keyboard operation remain available.
 - [ ] Piano and guitar drawings use a black background in both app themes. Check
   note labels, muted text and guitar fret labels remain readable against it.
-  The black housing continues from the chord through the drawing and selector
-  surroundings to Rhythm/Drums, with no silver separators in the margins or gaps.
+  The black housing continues from the playback keys and CD through the chord,
+  drawing and selector surroundings to Rhythm/Drums, with no silver separators in
+  the margins or gaps. Its top corners are rounded, including the space above the
+  playback keys; subtle inset grooves distinguish the black keys without an
+  outlined frame.
 - [ ] All six black transport keys stay in one row beside the 27 px 💿 disc. The
   main Play key is about 1.65 times the width of the neighboring keys. The disc
   rotates only while actual playback runs, pauses at its current angle and respects
@@ -93,8 +100,9 @@ unimplemented and are not part of the completed-feature checks.
   falling back to Avenir Next and then sans-serif.
 - [ ] Instrument exposes Auto and emoji family selectors for keyboard, guitar,
   strings, woodwind and brass. The current family shows 4–8 readable sound buttons
-  without scrolling. Its four-column grid uses equal rows to fill the available
-  pane height, like Rhythm/Drums; reach all 31 sounds with pointer and keyboard and verify the
+  without scrolling. Its family selectors and sound grid both use five columns;
+  the sound buttons stay 36 px tall, matching the family keys even when a family
+  has only one row. Extra pane height stays empty; reach all 31 sounds with pointer and keyboard and verify the
   selected highlight and saved sound.
 - [ ] Below the keyboard/guitar drawing, Rhythm and Drums each have a full-width
   black status window 60 px tall. Names such as Bossa and Samba use 12 px regular
@@ -102,13 +110,21 @@ unimplemented and are not part of the completed-feature checks.
   raised bevels or shadows. Rhythm HARM/BASS
   and drum K/S/H steps remain visible when any selection tab is open. Tabs sit
   below both windows. Muted rows remain distinguishable.
-- [ ] Rhythm and drum choices use compact text radio buttons with wrapped labels;
-  exactly one preset per group is highlighted, including Auto/Off. Bass has an
-  independent on/off text button. Arrow/Home/End selection still works. No extra
-  status windows appear inside the selection tabs.
+- [ ] Each pane starts with a full-width On/Off button and a separate full-width
+  Auto choice. Instrument controls harmony mute, Rhythm controls Bass on/off, and
+  Drums restores its previous Auto/manual pattern when switched back on. Muting
+  harmony restores the prior audible level without changing the chosen instrument.
+  Check mute, change tabs, unmute and reload, and check that loading a different
+  project does not restore the previous project's instrument or pattern.
+- [ ] Rhythm and drum presets use four-column text radio buttons with wrapped
+  labels and fill the remaining height. Exactly one preset or Auto is selected
+  while enabled; Off is the top button state. Arrow/Home/End includes Auto and
+  presets without moving the On/Off button. No extra status windows appear inside
+  the selection tabs.
 - [ ] Selection buttons, tab keys and the small emoji selector have gray faces
   when unselected and a warm amber illuminated face when selected. Each uses a
-  single thin 1 px border without a decorative outer ring.
+  recessed face with a dark upper groove and soft lower highlight, without a
+  decorative outline ring. Hover feedback ends when the pointer leaves.
   Check pointer and keyboard selection, one selected preset per group, and Bass
   off's gray face and explicit off label. The separate status LEDs remain flat
   green without shadows.

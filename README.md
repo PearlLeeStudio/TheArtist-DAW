@@ -55,10 +55,15 @@ remain on the [manual checklist](docs/manual-checks.md).
 - **Play** keeps the active chord and its Piano/Guitar display directly below
   transport. The keyboard keeps its natural SVG proportions with compact spacing;
   the small 🎹/🎸 selectors retain English accessible labels and tooltips.
-  One continuous black live-display housing runs from the chord through the drawing
-  and selector surroundings to Rhythm/Drums, with contrasting labels in both app themes.
-  The neutral Apple-style silver panel uses gray selection, tab and emoji-selector
-  keys with a single thin 1 px border; selected keys light up with a warm amber face. Bass off
+  One continuous black housing with rounded top corners runs from the playback keys
+  and CD through the chord, drawing and selector surroundings to Rhythm/Drums.
+  Subtle inset grooves distinguish the black playback keys; display labels
+  contrast against the same black surface in both app themes.
+  Play uses bright Apple-style silver in the light theme and space gray in the
+  dark theme, with light labels on its darker panel, fader bays and gray keys.
+  Selection, tab and emoji-selector keys have recessed faces, dark upper grooves
+  and soft lower highlights;
+  selected keys light up with a warm amber face. Bass off
   keeps its gray face and explicit off label.
   Play uses a system Futura-first stack when available, with Avenir Next and
   sans-serif fallbacks. Full-width Rhythm and Drums status windows remain underneath,
@@ -68,9 +73,12 @@ remain on the [manual checklist](docs/manual-checks.md).
   fit; shorter windows keep vertical scrolling. All three selection panes fit
   their controls without internal scrolling. Instrument uses five emoji family
   selectors and shows the current family's 4–8 sound buttons to reach all 31 sounds.
-  Its four-column grid fills the available height with equal rows, like Rhythm/Drums.
-  Rhythm and Drums use compact text buttons with one highlighted preset; Bass has
-  a separate on/off text button.
+  Its family selectors and sound grid both use five columns; sound buttons keep
+  the same 36 px height as family keys rather than stretching into empty space.
+  Each pane starts with a full-width On/Off button for its part
+  (harmony, bass or drums), followed by a separate full-width Auto choice.
+  Rhythm and Drums use four-column preset grids. Harmony mute restores the previous
+  audible level, and drum On restores its previous Auto/manual pattern.
   Their green step meters remain visible across every tab. The bottom controls stay
   present without a tab: BPM plus Master, Harmony, Bass and Drums use five vertical
   faders with photo-inspired slim black tracks, 10 px round metal caps and names
@@ -189,8 +197,9 @@ retain their previous levels.
 </table>
 
 Both modes use `--brand-yellow` (#facc15) for active Play/Input tabs, the panel
-toggle, focus rings and voicing highlights. The Play panel combines shallow key
-relief, flat black/green step cells and slim faders while the staff keeps its
+toggle, focus rings and voicing highlights. The header's 8 px theme emoji retains
+its 32×28 px button area and accessible label. The Play panel combines subtle inset
+key grooves, flat black/green step cells and slim faders while the staff keeps its
 classical styling.
 
 ## Architecture
