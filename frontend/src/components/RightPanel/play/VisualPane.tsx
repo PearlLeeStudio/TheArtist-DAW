@@ -1,15 +1,16 @@
-// ~163px tall at 200px wide (keyboard), ~214px (fretboard), at most 277px: screen 56 + 8 + mode keys 30 + 8 + frame 14 + drawing (≤ 306px wide).
+// Compact mode: 28px chord display + 4px gap + 100px drawing / shape switch.
 import { usePlayStore } from '../../../store/playStore';
+import type { KeyboardEvent } from 'react';
 import { useSongStore } from '../../../store/songStore';
-import { resolveHarmonyInstrument, resolveVoicingMode } from '../../../engine/playSettings';
-import type { VoicingMode } from '../../../engine/playSettings';
+import { resolveHarmonyInstrument } from '../../../engine/playSettings';
+import type { VisualDisplayMode } from '../../../store/playStore';
 import { instrumentLabel } from '../../../engine/genreTables';
 import { generateGuitarVoicing, midiToNoteName, resolvePianoVoicing } from '../../../engine/voicingEngine';
 import { chordToString } from '../../../engine/chordParser';
-import type { Chord, Measure, SlotAddress, VisualMode } from '../../../models/types';
+import type { Chord, Measure, SlotAddress } from '../../../models/types';
 import PianoKeyboard from '../PianoKeyboard';
 import GuitarFretboard from '../GuitarFretboard';
-import KeyButton from './ui/KeyButton';
+import ToggleSwitch from './ui/ToggleSwitch';
 import Screen from './ui/Screen';
 
 const SCREEN_HEIGHT = 56;
@@ -18,13 +19,14 @@ const DRAWING_MAX_WIDTH = 320;
 const MUTED_FRETS = [-1, -1, -1, -1, -1, -1];
 
 /** Where the drawn chord comes from, highest priority first. */
-type Source = 'midi-chord' | 'midi-raw' | 'playback' | 'selection';
+type Source = 'midi-chord' | 'midi-raw' | 'playback' | 'selection' | 'score';
 
 const SOURCE_TAG: Record<Source, string> = {
   'midi-chord': 'MIDI',
   'midi-raw': 'MIDI',
   playback: 'PLAY',
   selection: 'SEL',
+  score: 'CHORD',
 };
 
 /** Key highlight per source: green for MIDI, the playback yellow, the selection yellow. */
@@ -33,21 +35,19 @@ const SOURCE_COLOR: Record<Source, string> = {
   'midi-raw': 'var(--text-accent)',
   playback: 'var(--playback-bar)',
   selection: 'var(--brand-yellow)',
+  score: 'var(--brand-yellow)',
 };
 
-const MODES: { mode: VisualMode; label: string }[] = [
-  { mode: 'auto', label: 'Auto' },
+const MODES: { mode: VisualDisplayMode; label: string }[] = [
   { mode: 'piano', label: 'Piano' },
   { mode: 'guitar', label: 'Guitar' },
 ];
-
-const SHAPE_LABEL: Record<VoicingMode, string> = { piano: 'Piano', guitar: 'Guitar' };
 
 function chordAt(measures: Measure[], slot: SlotAddress): Chord | null {
   return measures[slot.measureIndex]?.chords[slot.slotIndex] ?? null;
 }
 
-/** MIDI-detected chord > raw MIDI notes > playback position > first selected slot. */
+/** MIDI > playback > selected slot > the score's first readable chord. */
 function pickSource(
   midiChord: Chord | null,
   midiNotes: number[],
@@ -59,6 +59,11 @@ function pickSource(
   if (midiNotes.length > 0) return { source: 'midi-raw', chord: null };
   if (playing) return { source: 'playback', chord: chordAt(measures, playing) };
   if (selected) return { source: 'selection', chord: chordAt(measures, selected) };
+  for (const measure of measures) {
+    for (const chord of measure.chords) {
+      if (chord) return { source: 'score', chord };
+    }
+  }
   return { source: null, chord: null };
 }
 
@@ -66,26 +71,22 @@ function noteNames(notes: number[]): string {
   return [...new Set(notes)].sort((a, b) => a - b).map(midiToNoteName).join(' ');
 }
 
-function modeTitle(mode: VisualMode, autoShape: string): string {
-  const same = 'playback voices chords the same way';
-  if (mode === 'auto') return `Auto: follows the harmony instrument (now ${autoShape}); ${same}`;
-  if (mode === 'piano') return `Piano: keyboard voicings; ${same}`;
-  return `Guitar: guitar shapes; ${same}`;
+function modeTitle(mode: VisualDisplayMode): string {
+  return mode === 'piano' ? 'Show the chord on a piano keyboard' : 'Show the chord on a guitar fretboard';
 }
 
 /** The active chord on a keyboard or fretboard, and the shape it is voiced in. */
-export default function VisualPane({ midiActiveNotes }: { midiActiveNotes: number[] }) {
+export default function VisualPane({ midiActiveNotes, compact = false }: { midiActiveNotes: number[]; compact?: boolean }) {
   const measures = useSongStore((s) => s.song.measures);
   const genre = useSongStore((s) => s.song.genre);
   const selectedSlots = useSongStore((s) => s.selectedSlots);
   const playbackPosition = useSongStore((s) => s.playbackPosition);
   const midiCandidates = useSongStore((s) => s.midiCandidates);
   const settings = usePlayStore((s) => s.settings);
-  const setVisualMode = usePlayStore((s) => s.setVisualMode);
+  const shape = usePlayStore((s) => s.displayMode);
+  const setDisplayMode = usePlayStore((s) => s.setDisplayMode);
 
-  // The shape decides both the drawing and how the harmony layer voices chords.
-  const shape = resolveVoicingMode(settings, genre);
-  const autoShape = resolveVoicingMode({ ...settings, visualMode: 'auto' }, genre);
+  // This switch chooses the drawing independently of the playback sound.
   const instrument = resolveHarmonyInstrument(settings, genre);
   const instrumentName = instrument ? instrumentLabel(instrument) : 'Built-in piano';
 
@@ -103,11 +104,23 @@ export default function VisualPane({ midiActiveNotes }: { midiActiveNotes: numbe
   const pianoNotes = source === 'midi-raw' ? midiActiveNotes : chord ? resolvePianoVoicing(chord) : [];
   const guitarFrets = chord ? generateGuitarVoicing(chord) : MUTED_FRETS;
 
+  const handleDisplayKey = (event: KeyboardEvent<HTMLDivElement>) => {
+    const radios = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="radio"]'));
+    if (!radios.includes(event.target as HTMLButtonElement)) return;
+    let next: number;
+    if (event.key === 'ArrowDown' || event.key === 'ArrowRight' || event.key === 'End') next = 1;
+    else if (event.key === 'ArrowUp' || event.key === 'ArrowLeft' || event.key === 'Home') next = 0;
+    else return;
+    event.preventDefault();
+    radios[next]?.click();
+    radios[next]?.focus();
+  };
+
   return (
-    <div className="flex flex-col gap-2 min-w-0">
-      <Screen style={{ height: SCREEN_HEIGHT }}>
+    <div role="group" aria-label="Visual voicing" className="flex flex-col min-w-0" style={{ gap: compact ? 4 : 8, height: compact ? 132 : undefined }}>
+      <Screen style={{ height: compact ? 28 : SCREEN_HEIGHT, padding: compact ? '4px 6px' : undefined }}>
         {/* Header in the look of Screen's label row: source (or the pane name), rule, instrument. */}
-        <div
+        {!compact && <div
           className="flex items-center uppercase"
           style={{
             height: 12,
@@ -132,37 +145,36 @@ export default function VisualPane({ midiActiveNotes }: { midiActiveNotes: numbe
           )}
           <span className="flex-1" style={{ height: 1, background: 'currentColor', opacity: 0.3 }} />
           <span className="min-w-0 truncate" title="Harmony instrument">{instrumentName}</span>
-        </div>
-        <div className="flex items-center" style={{ height: 28 }}>
+        </div>}
+        <div className="flex items-center gap-1.5" style={{ height: compact ? 20 : 28 }}>
+          {compact && <span className="shrink-0 text-[9px] uppercase" style={{ color: highlight }}>{source ? SOURCE_TAG[source] : 'Visual'}</span>}
           {showHint ? (
             <span style={{ color: 'var(--screen-text-dim)' }}>Select a chord</span>
           ) : source === 'midi-raw' ? (
-            <span className="min-w-0 truncate" style={{ fontSize: 13 }}>{noteNames(midiActiveNotes)}</span>
+            <span className="min-w-0 flex-1 truncate" style={{ fontSize: 13 }}>{noteNames(midiActiveNotes)}</span>
           ) : chordName ? (
-            <span className="min-w-0 truncate" style={{ fontSize: 22, lineHeight: '28px', fontWeight: 600 }}>
+            <span className="min-w-0 flex-1 truncate" style={{ fontSize: compact ? 17 : 22, lineHeight: compact ? '20px' : '28px', fontWeight: 600 }}>
               {chordName}
             </span>
           ) : (
             // an empty slot under the playhead
             <span style={{ fontSize: 22, lineHeight: '28px', color: 'var(--screen-text-dim)' }}>—</span>
           )}
+          {compact && <span className="min-w-0 ml-auto truncate text-[8px] uppercase" style={{ maxWidth: 72, color: 'var(--screen-text-dim)' }} title={instrumentName}>{instrumentName}</span>}
         </div>
       </Screen>
 
-      <div className="grid grid-cols-3 gap-[4px]" role="group" aria-label="Voicing shape">
+      <div className={compact ? 'grid min-w-0 items-center gap-2' : 'flex min-w-0 flex-col gap-2'} style={compact ? { gridTemplateColumns: 'minmax(0, 1fr) 58px', height: 100 } : undefined}>
+      <div className={`grid gap-[4px] ${compact ? 'grid-cols-1' : 'grid-cols-2'}`} role="radiogroup" aria-label="Piano or guitar display" onKeyDown={handleDisplayKey} style={compact ? { gridColumn: 2, gridRow: 1 } : undefined}>
         {MODES.map(({ mode, label }) => {
-          const chosen = settings.visualMode === mode;
-          const autoPlays = settings.visualMode === 'auto' && mode === shape;
+          const chosen = shape === mode;
           return (
-            <KeyButton
+            <ToggleSwitch
               key={mode}
-              size="md"
               label={label}
-              sublabel={mode === 'auto' ? `→ ${SHAPE_LABEL[autoShape]}` : undefined}
-              active={chosen}
-              led={chosen ? 'on' : autoPlays ? 'alt' : 'off'}
-              onClick={() => setVisualMode(mode)}
-              title={modeTitle(mode, autoShape)}
+              checked={chosen}
+              onSelect={() => setDisplayMode(mode)}
+              title={modeTitle(mode)}
             />
           );
         })}
@@ -173,8 +185,10 @@ export default function VisualPane({ midiActiveNotes }: { midiActiveNotes: numbe
         role="img"
         aria-label={`${shape === 'guitar' ? 'Guitar shape' : 'Keyboard voicing'}${chordName ? ` of ${chordName}` : ''}`}
         style={{
-          maxWidth: DRAWING_MAX_WIDTH,
-          padding: 6,
+          maxWidth: compact && shape === 'guitar' ? 180 : DRAWING_MAX_WIDTH,
+          padding: compact ? 4 : 6,
+          gridColumn: compact ? 1 : undefined,
+          gridRow: compact ? 1 : undefined,
           border: '1px solid var(--key-border)',
           borderRadius: 3,
         }}
@@ -184,6 +198,7 @@ export default function VisualPane({ midiActiveNotes }: { midiActiveNotes: numbe
         ) : (
           <PianoKeyboard activeNotes={pianoNotes} highlightColor={highlight} />
         )}
+      </div>
       </div>
     </div>
   );

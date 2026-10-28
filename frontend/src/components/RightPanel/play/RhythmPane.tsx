@@ -1,5 +1,4 @@
-// Height: screen 56 + 8 + HARM/BASS rows 28 + 8 + 5 key rows 146 + 8 + bass key 30 = 284px at any width.
-import type { CSSProperties } from 'react';
+// Beat rows and preset keys stay visible without a duplicate selected-preset readout.
 import { HARMONY_RHYTHM_PRESETS, instrumentLabel } from '../../../engine/genreTables';
 import {
   autoRhythmPreset,
@@ -14,17 +13,12 @@ import {
 import { usePlayStore } from '../../../store/playStore';
 import { useSongStore } from '../../../store/songStore';
 import KeyButton from './ui/KeyButton';
-import Screen from './ui/Screen';
 import StepRow from './ui/StepRow';
 import LedLegend from './LedLegend';
 import { genreTag } from './genreTag';
 import { usePlayStep } from './usePlayStep';
 
-/** 56px like the other panes' screens: 12 padding + 14 header + two 14px lines = 54. */
-const SCREEN_HEIGHT = 56;
 const ROW_HEIGHT = 12;
-const SCREEN_TEXT: CSSProperties = { letterSpacing: '0.04em' };
-const LINE: CSSProperties = { height: 14 };
 
 const SUBDIVISIONS: [number, string][] = [
   [0, ''], [0.25, 'e'], [1 / 3, '⅓'], [0.5, '&'], [2 / 3, '⅔'], [0.75, 'a'],
@@ -51,7 +45,6 @@ export default function RhythmPane() {
   const playing = resolveHarmonyRhythm(settings, genre);
   // As the engine lays them on this meter.
   const harmPattern = meterRhythm(playing.pattern, beats);
-  const strikes = harmonyStrikes(harmPattern, beats).length;
   const harmCells = patternSteps(harmPattern, beats).map((on) => ({ level: on ? 1 : 0 }));
   const bassCells = patternSteps(meterRhythm(bassPatternFor(genre), beats), beats).map((on) => ({ level: on ? 1 : 0 }));
   const bassOn = settings.bassEnabled;
@@ -61,27 +54,6 @@ export default function RhythmPane() {
 
   return (
     <div className="flex flex-col gap-2 min-w-0">
-      <Screen label="RHYTHM" style={{ height: SCREEN_HEIGHT }}>
-        <div className="flex flex-col uppercase" style={SCREEN_TEXT}>
-          <div className="flex items-center gap-1.5" style={LINE}>
-            <span className="flex-1 min-w-0 truncate">{playing.label}</span>
-            <span className="shrink-0" style={{ opacity: 0.5 }} title="Chord strikes per bar">
-              {strikes}/bar
-            </span>
-          </div>
-          <div className="flex items-center gap-1.5" style={LINE}>
-            {isAuto ? (
-              <>
-                <span className="shrink-0" style={{ color: 'var(--led-alt)' }}>auto</span>
-                <span className="min-w-0 truncate" style={{ opacity: 0.5 }}>· {tag}</span>
-              </>
-            ) : (
-              <span style={{ color: 'var(--led-on)' }}>pick</span>
-            )}
-          </div>
-        </div>
-      </Screen>
-
       <div className="flex flex-col gap-1">
         <StepRow label="HARM" cells={harmCells} playhead={step} height={ROW_HEIGHT} />
         <StepRow label="BASS" cells={bassCells} playhead={step} height={ROW_HEIGHT} dim={!bassOn} />

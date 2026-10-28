@@ -71,15 +71,25 @@ unimplemented and are not part of the completed-feature checks.
 
 ## Play and controller
 
-- [ ] At 1366×768 and 1366×660, with panel width 300–320 px, all five panes and four
-  48px mixer knobs fit. Check dark/light contrast, labels and readable values.
+- [ ] At 1366×768 and 1366×660, with panel width 300–320 px, the active chord and
+  Piano/Guitar switch remain below transport on every Play tab. Switch only the
+  drawing and confirm the sound does not change. Check the matte hardware panel
+  against both app themes. Short screens scroll only the lower control area.
+- [ ] Instrument exposes Auto and all 31 sounds as mechanical switches. Exactly
+  one is up; selecting a new sound lowers the previous one. Reach the whole list,
+  including its last row, with pointer and keyboard. The selected sound is saved.
+- [ ] Rhythm has no duplicate selected-preset readout; its preset keys and Bass
+  toggle remain. Rhythm and Drums show their live green steps in recessed black
+  meters above the pattern controls. Muted rows stay distinguishable.
 - [ ] First Play works in Safari. Adjust Master/Harmony/Bass/Drums while notes ring;
   each part at zero mutes independently, and Master at zero mutes everything.
-  Check drag, Shift-drag, wheel, arrow keys and double-click defaults.
+  All four volume controls are vertical faders with names below and no visible
+  numbers, percent values or scales. Check pointer/touch drag, Up/Down, Home/End
+  and double-click defaults. Saving and reopening retains the actual levels.
 - [ ] Compare all 13 harmony rhythms using different first/second chords, especially
   Charleston and Half. Check slash bass, second-slot-only preview, 3/4 and 6/8 tempo,
   swing, live preset changes, pause/resume, seek, stop and loop.
-- [ ] In Chrome, enable MIDI, switch to Play → Visual and keep seeing incoming notes
+- [ ] In Chrome, enable MIDI, switch to Play and keep seeing incoming notes above every tab
   without writing chords. Return to Input → MIDI for capture. Test early release,
   a changed held voicing, fewer than three held notes, device unplug/reconnect,
   panel collapse, a modal and a new song while notes are held.

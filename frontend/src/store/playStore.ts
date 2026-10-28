@@ -3,6 +3,7 @@
  * visual mode and master/part levels, plus which pane is open. Persisted under
  * `theartist-play` and mirrored into the playback engine on every change —
  * whichever pane is mounted — so the next note that fires already uses it.
+ * The separate Piano/Guitar display preference is saved without updating audio.
  * The engine resolves Auto against the editor song's genre, and re-syncs
  * when that genre changes.
  */
@@ -17,8 +18,9 @@ import {
 import { applyPlayConfig } from '../engine/playback';
 import { useSongStore } from './songStore';
 
-export type PlayPane = 'visual' | 'instrument' | 'rhythm' | 'drums' | 'controller';
-const PANES: PlayPane[] = ['visual', 'instrument', 'rhythm', 'drums', 'controller'];
+export type PlayPane = 'instrument' | 'rhythm' | 'drums' | 'controller';
+export type VisualDisplayMode = 'piano' | 'guitar';
+const PANES: PlayPane[] = ['instrument', 'rhythm', 'drums', 'controller'];
 
 const STORAGE_KEY = 'theartist-play';
 /** The drum pick saved before the Play panel existed: an id, or 'null' (off). */
@@ -27,16 +29,20 @@ const LEGACY_DRUM_KEY = 'theartist-drum-pattern';
 interface Persisted {
   settings: PlaySettings;
   pane: PlayPane;
+  displayMode: VisualDisplayMode;
 }
 
 function load(): Persisted {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
-      const parsed = JSON.parse(raw) as { settings?: unknown; pane?: unknown };
+      const parsed = JSON.parse(raw) as { settings?: unknown; pane?: unknown; displayMode?: unknown };
+      const settings = sanitizePlaySettings(parsed.settings);
       return {
-        settings: sanitizePlaySettings(parsed.settings),
-        pane: PANES.includes(parsed.pane as PlayPane) ? (parsed.pane as PlayPane) : 'visual',
+        settings,
+        pane: PANES.includes(parsed.pane as PlayPane) ? (parsed.pane as PlayPane) : 'instrument',
+        displayMode: parsed.displayMode === 'piano' || parsed.displayMode === 'guitar'
+          ? parsed.displayMode : settings.visualMode === 'guitar' ? 'guitar' : 'piano',
       };
     }
     // First load with the Play panel: keep a drum pick made before it.
@@ -48,20 +54,24 @@ function load(): Persisted {
           drumMode: 'manual',
           drumPatternId: legacy === 'null' ? null : Number(legacy),
         }),
-        pane: 'visual',
+        pane: 'instrument',
+        displayMode: 'piano',
       };
     }
   } catch {
     // storage unavailable or corrupt — start from the defaults
   }
-  return { settings: DEFAULT_PLAY_SETTINGS, pane: 'visual' };
+  return { settings: DEFAULT_PLAY_SETTINGS, pane: 'instrument', displayMode: 'piano' };
 }
 
 interface PlayState {
   settings: PlaySettings;
   pane: PlayPane;
+  displayMode: VisualDisplayMode;
 
   setPane: (pane: PlayPane) => void;
+  /** Drawing preference only; changing it does not reconfigure playback. */
+  setDisplayMode: (mode: VisualDisplayMode) => void;
   /** A GM name from HARMONY_INSTRUMENTS; null = the genre default. */
   setHarmonyOverride: (name: string | null) => void;
   /** A HARMONY_RHYTHM_PRESETS id; null = Auto (the genre's rhythm). */
@@ -89,8 +99,10 @@ export const usePlayStore = create<PlayState>((set) => {
   return {
     settings: initial.settings,
     pane: initial.pane,
+    displayMode: initial.displayMode,
 
     setPane: (pane) => set({ pane }),
+    setDisplayMode: (displayMode) => set({ displayMode }),
     setHarmonyOverride: (harmonyOverride) => update({ harmonyOverride }),
     setHarmonyRhythmId: (harmonyRhythmId) => update({ harmonyRhythmId }),
     setDrumAuto: () => update({ drumMode: 'auto' }),
@@ -107,7 +119,7 @@ export const usePlayStore = create<PlayState>((set) => {
 
 function persist(state: Persisted): void {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ settings: state.settings, pane: state.pane }));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ settings: state.settings, pane: state.pane, displayMode: state.displayMode }));
   } catch {
     // quota or disabled storage — the in-memory settings still apply
   }
@@ -124,7 +136,7 @@ export function applyEditorPlayConfig(): void {
 }
 
 usePlayStore.subscribe((state, prev) => {
-  if (state.settings !== prev.settings || state.pane !== prev.pane) persist(state);
+  if (state.settings !== prev.settings || state.pane !== prev.pane || state.displayMode !== prev.displayMode) persist(state);
   if (state.settings !== prev.settings) applyEditorPlayConfig();
 });
 

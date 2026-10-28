@@ -1,0 +1,63 @@
+.te-toggle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-width: 0;
+  height: 40px;
+  padding: 0 1px;
+  border: 0;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--key-text-dim);
+  font: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.te-toggle:focus-visible {
+  outline: 1.5px solid var(--key-text);
+  outline-offset: 1px;
+}
+
+.te-toggle__mechanism {
+  display: block;
+  flex-shrink: 0;
+  overflow: visible;
+}
+
+.te-toggle__lever {
+  transform-origin: 22px 18px;
+  transform: rotate(180deg);
+  transition: transform 140ms ease-out;
+}
+
+.te-toggle[aria-checked='true'] .te-toggle__lever {
+  transform: rotate(0deg);
+}
+
+.te-toggle__label {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  font-size: 8.5px;
+  line-height: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.te-toggle[aria-checked='true'] .te-toggle__label {
+  color: var(--key-text);
+  font-weight: 700;
+}
+
+.te-toggle:hover .te-toggle__mount {
+  filter: brightness(1.04);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .te-toggle__lever {
+    transition: none;
+  }
+}

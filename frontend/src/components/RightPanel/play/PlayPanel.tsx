@@ -1,12 +1,10 @@
 /**
- * Play mode as one device panel: the transport on top, a rail of pane keys
- * with the BPM knob on the left, and the open pane on the
- * right. Every part has a fixed height, so nothing here scrolls.
+ * Transport, always-visible voicing, then the four arrangement controls.
+ * The compact visual leaves the existing controls their full height.
  */
-// Needs 340px: frame 18 + transport 30 + 8 + tallest pane 284.
-// The rail needs 262px (five keys 196 + spacer ≥ 8 + BPM 58). The pane (≤ 284px
-// tall) gets the rest of the row: ~197px wide at the 300px minimum panel
-// width, ~217px at the default 320px.
+// Frame 18 + transport 30 + two 8px gaps + visual 132 + up to 280px controls.
+// At 300px panel width the controls keep ~197px; shorter viewports can scroll
+// the controls while transport and the chord display remain in place.
 import { useId } from 'react';
 import type { KeyboardEvent } from 'react';
 import { useSongStore } from '../../../store/songStore';
@@ -23,7 +21,6 @@ import ControllerPane from './ControllerPane';
 
 /** Rail keys: `label` on the key cap, `name` for screen readers. */
 const PANES: { id: PlayPane; label: string; name: string; title: string }[] = [
-  { id: 'visual', label: 'VISUAL', name: 'Visual', title: 'Visual: keyboard or fretboard voicing' },
   { id: 'instrument', label: 'INSTR', name: 'Instrument', title: 'Instrument: the harmony sound' },
   { id: 'rhythm', label: 'RHYTHM', name: 'Rhythm', title: 'Rhythm: comping rhythm and bass' },
   { id: 'drums', label: 'DRUMS', name: 'Drums', title: 'Drums: drum pattern' },
@@ -82,6 +79,9 @@ export default function PlayPanel({ midiActiveNotes }: PlayPanelProps) {
       }}
     >
       <Transport />
+      <div className="shrink-0">
+        <VisualPane midiActiveNotes={midiActiveNotes} compact />
+      </div>
 
       <div className="flex-1 min-h-0 flex gap-2">
         {/* Rail: pane keys on top, tempo always within reach at the bottom. */}
@@ -128,10 +128,7 @@ export default function PlayPanel({ midiActiveNotes }: PlayPanelProps) {
           </div>
         </div>
 
-        {/* No clip here: the panel frame clips, and keys on the pane's
-            edges keep their whole focus ring. */}
-        <div role="tabpanel" id={panelId} aria-labelledby={tabId(open.id)} className="flex-1 min-w-0 min-h-0">
-          {pane === 'visual' && <VisualPane midiActiveNotes={midiActiveNotes} />}
+        <div role="tabpanel" id={panelId} aria-labelledby={tabId(open.id)} className="flex-1 min-w-0 min-h-0 overflow-y-auto overscroll-contain">
           {pane === 'instrument' && <InstrumentPane />}
           {pane === 'rhythm' && <RhythmPane />}
           {pane === 'drums' && <DrumsPane />}

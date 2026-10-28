@@ -1,4 +1,4 @@
-// Height: screen 56 + 8 + AUTO/OFF keys 30 + 8 + 4 key rows 116 + 8 + K/S/H rows 44 = 270px at any width.
+// The live K/S/H beat rows sit above the pattern controls.
 import type { CSSProperties } from 'react';
 import { DRUM_PATTERNS, drumGrid, drumPatternById } from '../../../engine/drumPatterns';
 import { genreDrumPatternId, resolveDrumPatternId } from '../../../engine/playSettings';
@@ -61,6 +61,19 @@ export default function DrumsPane() {
         </div>
       </Screen>
 
+      <div className="flex flex-col gap-1">
+        {rows.map((row) => (
+          <StepRow
+            key={row.label}
+            label={row.label}
+            cells={row.cells}
+            playhead={playing ? step : null}
+            dim={!playing}
+            height={ROW_HEIGHT}
+          />
+        ))}
+      </div>
+
       <div className="grid grid-cols-2 gap-1">
         <KeyButton
           size="md"
@@ -102,18 +115,6 @@ export default function DrumsPane() {
         <LedLegend />
       </div>
 
-      <div className="flex flex-col gap-1">
-        {rows.map((row) => (
-          <StepRow
-            key={row.label}
-            label={row.label}
-            cells={row.cells}
-            playhead={playing ? step : null}
-            dim={!playing}
-            height={ROW_HEIGHT}
-          />
-        ))}
-      </div>
     </div>
   );
 }

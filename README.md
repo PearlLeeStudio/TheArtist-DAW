@@ -52,9 +52,11 @@ remain on the [manual checklist](docs/manual-checks.md).
 - **Projects** saves work in this browser and supports project JSON backup/import.
   Loading another score first preserves the current work. There is no account or
   cloud synchronization.
-- **Play → CTRL** balances Master, Harmony, Bass and Drums independently, alongside
-  13 harmony rhythms and 15 drum patterns. Sparse rhythms still play a different
-  second chord in the bar.
+- **Play** keeps the active chord and its Piano/Guitar display directly below
+  transport. Instrument offers all 31 sounds with mechanical switches; Rhythm and
+  Drums show live green steps in black recessed meters. **CTRL** balances Master,
+  Harmony, Bass and Drums with four vertical faders labeled below, without numeric
+  readouts. The 13 harmony rhythms and 15 drum patterns retain their playback behavior.
 - **Export** downloads editable, three-part MIDI with tempo, meter, section markers
   and mixer levels, or an A4 score PDF. Local Logic opening and Ableton file reveal
   use the local backend; hosted clients can download MIDI.
@@ -314,8 +316,8 @@ TheArtist/
 │   ├── components/
 │   │   ├── ScoreEditor/Staff.tsx              # VexFlow staff
 │   │   └── RightPanel/
-│   │       ├── play/                          # Play panel: transport, rail, Visual /
-│   │       │                                  #   Instrument / Rhythm / Drums / Controller panes
+│   │       ├── play/                          # Transport + always-visible chord display;
+│   │       │                                  #   Instrument / Rhythm / Drums / Controller tabs
 │   │       ├── SongSettings.tsx               # BPM / time / key / genre bar
 │   │       ├── ChordActions.tsx               # AI Generate flow + manual chord
 │   │       ├── GenerateProgress.tsx           # 7-stage SSE progress chips

@@ -284,11 +284,50 @@ code, pre, .mono {
 
 /* Bevelled enclosure and recessed control bays stay within the Play panel. */
 .te-device {
-  background: linear-gradient(145deg, var(--panel-glint), transparent 32%), var(--panel-bg);
+  --brand-yellow: #ec7737;
+  --panel-bg: #c9ccca;
+  --panel-border: #9ea59f;
+  --panel-glint: rgba(255, 255, 255, 0.72);
+  --panel-shadow: rgba(35, 39, 30, 0.26);
+  --channel-bg: #bdc0b7;
+  --key-bg: #d8dad3;
+  --key-bg-active: #b9bdb2;
+  --key-border: #a0a49a;
+  --key-text: #30362b;
+  --key-text-active: #161d11;
+  --key-text-dim: #5e6855;
+  --key-edge: rgba(33, 39, 26, 0.3);
+  --key-shadow: 0 2px 2px rgba(31, 37, 24, 0.24), inset 0 1px 0 #ffffffc7, inset 0 -1px 0 #92988a;
+  --key-shadow-active: inset 0 1px 3px #59644a66, inset 0 -1px 0 #eff4e8;
+  --knob-face-top: #f0f2ec;
+  --knob-face-mid: #c4c9bc;
+  --knob-face-bottom: #9da590;
+  --knob-side: #7f8972;
+  --knob-shadow: rgba(28, 36, 19, 0.32);
+  --knob-border: #7d8770;
+  --knob-glint: rgba(255, 255, 255, 0.85);
+  --led-on: #91ef49;
+  --led-alt: #f7823c;
+  --led-off: #5b6450;
+  --led-ring: inset 0 0 0 1px #18260d66;
+  --screen-bg: #11150e;
+  --screen-text: #e0ebd8;
+  --screen-text-dim: #8d9b80;
+  --screen-led-off: #26301e;
+  --screen-shadow: inset 0 1px 5px #000000bd, 0 1px 0 #ffffff96;
+  background: linear-gradient(135deg, #ffffff66, transparent 42%),
+              repeating-linear-gradient(0deg, #5a674904 0 1px, transparent 1px 3px), var(--panel-bg);
   border: 1px solid var(--panel-border);
-  border-radius: 7px;
-  box-shadow: inset 0 1px 0 var(--panel-glint), inset 0 -2px 2px var(--panel-shadow),
-              0 3px 5px var(--panel-shadow);
+  border-radius: 12px;
+  box-shadow: inset 0 1px 0 var(--panel-glint), inset 0 -1px 2px var(--panel-shadow),
+              0 4px 9px var(--panel-shadow);
+}
+.te-step-meter {
+  padding: 2px;
+  border: 1px solid #22291d;
+  border-radius: 3px;
+  background: #080d06;
+  box-shadow: inset 0 2px 4px #000000, 0 1px 0 #ffffff8c;
 }
 .te-channel {
   background: linear-gradient(180deg, rgba(0, 0, 0, 0.07), transparent 50%), var(--channel-bg);

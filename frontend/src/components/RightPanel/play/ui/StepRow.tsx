@@ -3,7 +3,7 @@ import type { CSSProperties } from 'react';
 interface StepCell {
   /** 0 = off; 0..1 = on at that brightness (ghost notes dim but visible). */
   level: number;
-  /** Lit in the alternate (orange) colour. */
+  /** Alternate articulation, shown in a lighter green. */
   alt?: boolean;
 }
 
@@ -17,7 +17,7 @@ interface StepRowProps {
   dim?: boolean;
   /** Extra gap every n cells (default 4; 0 = none). */
   group?: number;
-  /** Cell height in px (default 10); the row is exactly this tall. */
+  /** LED cell height in px; the recessed frame adds six pixels. */
   height?: number;
 }
 
@@ -38,23 +38,23 @@ function cellStyle(cell: StepCell, here: boolean, groupStart: boolean, radius: n
   const level = Math.min(1, Math.max(0, cell.level || 0));
   if (level === 0) {
     style.background = here
-      ? 'color-mix(in srgb, var(--led-off) 50%, var(--step-playhead))'
-      : 'var(--led-off)';
-    if (here) style.boxShadow = '0 0 0 1px var(--step-playhead)';
+      ? 'linear-gradient(180deg, #405935, #24341e)'
+      : 'linear-gradient(180deg, #20271d, #141a12)';
+    style.boxShadow = here ? 'inset 0 0 0 1px #b5ff7d, 0 0 4px #76ef48' : 'inset 0 1px 1px #080c07';
     return style;
   }
-  const color = cell.alt ? 'var(--led-alt)' : 'var(--led-on)';
+  const color = cell.alt ? '#c8ff67' : '#8bff4c';
   // The playing step flashes at full brightness whatever its level.
   style.background = here || level >= 1
     ? color
-    : `color-mix(in srgb, ${color} ${Math.round(25 + 75 * level)}%, var(--led-off))`;
+    : `color-mix(in srgb, ${color} ${Math.round(25 + 75 * level)}%, #172211)`;
   style.boxShadow = here
-    ? `var(--led-ring), 0 0 0 1px var(--step-playhead), 0 0 6px color-mix(in srgb, ${color} 70%, transparent)`
-    : 'var(--led-ring)';
+    ? `inset 0 1px 0 #e4ffd2, 0 0 0 1px #d6ffbc, 0 0 6px ${color}`
+    : 'inset 0 1px 0 #d1ffa566, inset 0 -1px 0 #27571a';
   return style;
 }
 
-/** One row of step LEDs; cells share the row's width. Exactly `height` px tall. */
+/** Horizontal green LEDs in a black recessed meter, with the live beat marked. */
 export default function StepRow({ cells, playhead = null, label, dim = false, group = 4, height = 10 }: StepRowProps) {
   const radius = Math.min(2, height / 4);
   const onSteps = cells.flatMap((cell, i) => (cell.level > 0 ? [i + 1] : []));
@@ -66,7 +66,7 @@ export default function StepRow({ cells, playhead = null, label, dim = false, gr
       aria-label={name}
       className="flex w-full min-w-0 items-center"
       style={{
-        height,
+        height: height + 6,
         opacity: dim ? 0.35 : 1,
         filter: dim ? 'saturate(0.4)' : undefined,
         transition: 'opacity 0.15s ease',
@@ -88,7 +88,7 @@ export default function StepRow({ cells, playhead = null, label, dim = false, gr
           {label}
         </span>
       )}
-      <div className="flex min-w-0 flex-1 self-stretch" style={{ gap: CELL_GAP }}>
+      <div className="te-step-meter flex min-w-0 flex-1 self-stretch" style={{ gap: CELL_GAP }}>
         {cells.map((cell, i) => (
           <span
             key={i}

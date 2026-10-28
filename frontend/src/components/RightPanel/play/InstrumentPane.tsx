@@ -1,165 +1,66 @@
-// 208px tall at any width: screen 56 + 8 + family keys 56 + 8 + caption 12 + 4 + instrument keys 64.
-import { useState } from 'react';
-import type { CSSProperties } from 'react';
+// All choices share the space left by the permanent visual. Only this grid scrolls.
+import type { KeyboardEvent } from 'react';
 import { usePlayStore } from '../../../store/playStore';
 import { useSongStore } from '../../../store/songStore';
-import {
-  bassInstrumentFor,
-  genreHarmonyInstrument,
-  resolveHarmonyInstrument,
-} from '../../../engine/playSettings';
+import { genreHarmonyInstrument } from '../../../engine/playSettings';
 import { HARMONY_INSTRUMENTS, INSTRUMENT_FAMILIES, instrumentLabel } from '../../../engine/genreTables';
-import type { InstrumentFamily } from '../../../engine/genreTables';
-import KeyButton from './ui/KeyButton';
-import Screen from './ui/Screen';
-import LedLegend from './LedLegend';
+import ToggleSwitch from './ui/ToggleSwitch';
 import { genreTag } from './genreTag';
 
-const SCREEN_HEIGHT = 56;
-const LINE: CSSProperties = { height: 14, lineHeight: '14px' };
-
-/** Key-cap labels; INSTRUMENT_FAMILIES has the full names. */
-const FAMILY_KEY_LABELS: Record<InstrumentFamily, string> = {
-  keys: 'Keys',
-  guitar: 'Guitar',
-  strings: 'String',
-  winds: 'Winds',
-  reeds: 'Reeds',
-  brass: 'Brass',
-};
-
-function familyOf(name: string | null): InstrumentFamily | null {
-  return HARMONY_INSTRUMENTS.find((i) => i.name === name)?.family ?? null;
-}
-
-/** One screen line: layer tag, instrument, status. */
-function ScreenLine({ tag, name, status, nameStyle, title }: {
-  tag: string;
-  name: string;
-  status: string;
-  nameStyle: CSSProperties;
-  title: string;
-}) {
-  return (
-    <div className="flex items-baseline gap-[6px] overflow-hidden" style={LINE} title={title}>
-      <span className="shrink-0 uppercase" style={{ width: 30, opacity: 0.65 }}>{tag}</span>
-      <span className="min-w-0 flex-1 truncate" style={nameStyle}>{name}</span>
-      <span className="shrink-0 uppercase" style={{ opacity: 0.65 }}>{status}</span>
-    </div>
-  );
-}
-
-/** Harmony instrument: Auto (the genre default) or one of the 31, browsed by
- *  family. The bass follows the genre. */
+/** Every harmony sound remains available in one list. The bass follows the genre. */
 export default function InstrumentPane() {
-  const settings = usePlayStore((s) => s.settings);
+  const override = usePlayStore((s) => s.settings.harmonyOverride);
   const setHarmonyOverride = usePlayStore((s) => s.setHarmonyOverride);
   const genre = useSongStore((s) => s.song.genre);
 
-  const override = settings.harmonyOverride;
   const genreDefault = genreHarmonyInstrument(genre);
-  const playing = resolveHarmonyInstrument(settings, genre);
-  const bassOn = settings.bassEnabled;
   const tag = genreTag(genre);
-
-  // The family whose keys are shown; browsing never changes the sound.
-  const [openFamily, setOpenFamily] = useState<InstrumentFamily>(
-    () => familyOf(override) ?? familyOf(genreDefault) ?? 'keys',
-  );
-  const pickFamily = familyOf(override);
-  const autoFamily = override === null ? familyOf(genreDefault) : null;
-  const family = INSTRUMENT_FAMILIES.find((f) => f.id === openFamily) ?? INSTRUMENT_FAMILIES[0];
-  const instruments = HARMONY_INSTRUMENTS.filter((i) => i.family === openFamily);
-  // Two rows for every family: 4 → 2 columns, 5–6 → 3.
-  const columns = Math.ceil(instruments.length / 2);
 
   const autoTitle = genreDefault
     ? `Auto: the ${tag} default (${instrumentLabel(genreDefault)})`
     : 'Auto: no genre set, so the built-in piano';
 
+  const choices = [
+    { name: null, label: 'Auto', ariaLabel: 'Auto harmony instrument', title: autoTitle },
+    ...HARMONY_INSTRUMENTS.map((instrument) => {
+      const family = INSTRUMENT_FAMILIES.find((item) => item.id === instrument.family);
+      return {
+        name: instrument.name,
+        label: instrument.label,
+        ariaLabel: `${instrument.label}, ${family?.label ?? instrument.family}`,
+        title: `${family?.label ?? instrument.family} · ${instrument.name.replaceAll('_', ' ')}`,
+      };
+    }),
+  ];
+
+  const handleKey = (event: KeyboardEvent<HTMLDivElement>) => {
+    const radios = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="radio"]'));
+    const index = radios.indexOf(event.target as HTMLButtonElement);
+    if (index < 0) return;
+    let next: number;
+    if (event.key === 'ArrowRight' || event.key === 'ArrowDown') next = (index + 1) % radios.length;
+    else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') next = (index + radios.length - 1) % radios.length;
+    else if (event.key === 'Home') next = 0;
+    else if (event.key === 'End') next = radios.length - 1;
+    else return;
+    event.preventDefault();
+    radios[next]?.click();
+    radios[next]?.focus();
+  };
+
   return (
-    <div className="flex flex-col gap-2 min-w-0">
-      <Screen label="INSTRUMENT" style={{ height: SCREEN_HEIGHT }}>
-        <ScreenLine
-          tag="harm"
-          name={playing ? instrumentLabel(playing) : 'Built-in piano'}
-          status={override ? 'pick' : 'auto'}
-          nameStyle={{ color: 'var(--led-on)' }}
-          title={override
-            ? `Harmony: your pick; Auto would play ${genreDefault ? instrumentLabel(genreDefault) : 'the built-in piano'}`
-            : autoTitle}
-        />
-        <ScreenLine
-          tag="bass"
-          name={instrumentLabel(bassInstrumentFor(genre))}
-          status={bassOn ? 'genre' : 'off'}
-          nameStyle={{ opacity: bassOn ? 1 : 0.45 }}
-          title={bassOn ? `Bass: follows the genre (${tag}), no override` : 'Bass: off'}
-        />
-      </Screen>
-
-      <div className="grid grid-cols-4 gap-[4px]" role="group" aria-label="Harmony instrument families">
-        <KeyButton
-          size="sm"
-          label="Auto"
-          active={override === null}
-          led={override === null ? 'on' : 'off'}
-          onClick={() => setHarmonyOverride(null)}
-          title={autoTitle}
-        />
-        {INSTRUMENT_FAMILIES.map((f) => (
-          <KeyButton
-            key={f.id}
-            size="sm"
-            label={FAMILY_KEY_LABELS[f.id]}
-            active={openFamily === f.id}
-            led={f.id === pickFamily ? 'on' : f.id === autoFamily ? 'alt' : 'off'}
-            onClick={() => setOpenFamily(f.id)}
-            title={`${f.label}: show its instruments (the sound changes only when you pick one)`}
-          />
-        ))}
-        <LedLegend />
-      </div>
-
-      <div className="flex flex-col gap-[4px]">
+    <div className="h-full min-h-0 min-w-0 overflow-y-auto overscroll-contain p-[3px]" style={{ scrollbarGutter: 'stable' }}>
         <div
-          aria-hidden
-          className="flex items-center gap-[6px] uppercase"
-          style={{
-            height: 12,
-            fontFamily: 'var(--font-device)',
-            fontSize: 9,
-            lineHeight: '12px',
-            letterSpacing: '0.1em',
-            color: 'var(--key-text-dim)',
-          }}
+          className="grid gap-[3px]"
+          style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(44px, 1fr))' }}
+          role="radiogroup"
+          aria-label="Harmony instrument"
+          onKeyDown={handleKey}
         >
-          <span className="shrink-0">{family.label}</span>
-          <span className="flex-1" style={{ height: 1, background: 'currentColor', opacity: 0.3 }} />
+          {choices.map((choice) => <ToggleSwitch key={choice.name ?? 'auto'} label={choice.label}
+            ariaLabel={choice.ariaLabel} checked={override === choice.name}
+            onSelect={() => setHarmonyOverride(choice.name)} title={choice.title} />)}
         </div>
-        <div
-          className="grid gap-[4px]"
-          style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}
-          role="group"
-          aria-label={`${family.label} instruments`}
-        >
-          {instruments.map((inst) => {
-            const picked = override === inst.name;
-            const isDefault = genreDefault === inst.name;
-            return (
-              <KeyButton
-                key={inst.name}
-                size="md"
-                label={inst.label}
-                active={picked}
-                led={picked ? 'on' : override === null && isDefault ? 'alt' : 'off'}
-                onClick={() => setHarmonyOverride(inst.name)}
-                title={`${inst.label} (${inst.name})${isDefault ? ` · the ${tag} default` : ''}`}
-              />
-            );
-          })}
-        </div>
-      </div>
     </div>
   );
 }
