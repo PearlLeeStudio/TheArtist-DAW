@@ -1,0 +1,1084 @@
+{
+  "created_utc": "2026-10-27T16:05:26+00:00",
+  "settings": {
+    "bars": [
+      8,
+      32,
+      64
+    ],
+    "genres": [
+      "pop",
+      "jazz"
+    ],
+    "runs": 2,
+    "warmup": 1,
+    "context_bars": 0,
+    "key": "C major",
+    "threads": null,
+    "seed": 0,
+    "section_type": null,
+    "service_takes_section_type": true,
+    "time_signature": [
+      4,
+      4
+    ],
+    "bpm": 80
+  },
+  "environment": {
+    "torch": "2.13.0",
+    "torch_threads": 4,
+    "torch_interop_threads": 10,
+    "device": "cpu",
+    "machine": "arm64",
+    "processor": "arm",
+    "python": "3.12.13",
+    "flags": {
+      "THEARTIST_DISABLE_RAG": "1",
+      "THEARTIST_DISABLE_R2_RERANK": null,
+      "THEARTIST_DISABLE_EXPLANATIONS": null,
+      "THEARTIST_DISABLE_VOICE_LEADING": null
+    },
+    "service_modules": {
+      "torch": true,
+      "peft": true,
+      "physics_rerank": true,
+      "rag": true
+    }
+  },
+  "models": {
+    "ft_f1": {
+      "label": "F1 \u2014 10K pop mix",
+      "loaded": true,
+      "device": "cpu",
+      "load_ms": 197.676
+    },
+    "ft_f4": {
+      "label": "F4 \u2014 1K pop mix",
+      "loaded": true,
+      "device": "cpu",
+      "load_ms": 199.447
+    }
+  },
+  "cells": [
+    {
+      "genre": "pop",
+      "bars": 8,
+      "model_key": "ft_f1",
+      "model_label": "F1 \u2014 10K pop mix",
+      "total_ms": {
+        "p50": 432.427,
+        "p95": 432.691,
+        "min": 432.134,
+        "max": 432.72
+      },
+      "phase_median_ms": {
+        "setup": 0.021,
+        "composing_1": 137.352,
+        "composing_2": 135.33,
+        "composing_3": 135.609,
+        "ranking": 24.05,
+        "voicing": 0.062,
+        "complete": 0.003
+      },
+      "stage_median_ms": {
+        "setup": 0.021,
+        "composing": 408.291,
+        "ranking": 24.05,
+        "voicing": 0.062,
+        "complete": 0.003
+      },
+      "composing_share": 0.9442,
+      "ranking_share": 0.0556,
+      "ai_runs": 2,
+      "suggestion_counts": [
+        3
+      ],
+      "cold_runs": 0,
+      "model_bars_stats": {
+        "min": 8,
+        "median": 8.0,
+        "max": 8
+      },
+      "runs": [
+        {
+          "total_ms": 432.134,
+          "result": "ai",
+          "suggestions": 3,
+          "model_bars": [
+            8,
+            8,
+            8
+          ],
+          "events": [
+            {
+              "phase": "composing",
+              "step": 1,
+              "t_ms": 0.016,
+              "gap_ms": 136.216
+            },
+            {
+              "phase": "composing",
+              "step": 2,
+              "t_ms": 136.232,
+              "gap_ms": 135.58
+            },
+            {
+              "phase": "composing",
+              "step": 3,
+              "t_ms": 271.812,
+              "gap_ms": 135.825
+            },
+            {
+              "phase": "ranking",
+              "step": null,
+              "t_ms": 407.637,
+              "gap_ms": 24.427
+            },
+            {
+              "phase": "voicing",
+              "step": null,
+              "t_ms": 432.064,
+              "gap_ms": 0.067
+            },
+            {
+              "phase": "complete",
+              "step": null,
+              "t_ms": 432.131,
+              "gap_ms": 0.003
+            }
+          ],
+          "phase_ms": {
+            "setup": 0.016,
+            "composing_1": 136.216,
+            "composing_2": 135.58,
+            "composing_3": 135.825,
+            "ranking": 24.427,
+            "voicing": 0.067,
+            "complete": 0.003
+          },
+          "stage_ms": {
+            "setup": 0.016,
+            "composing": 407.621,
+            "ranking": 24.427,
+            "voicing": 0.067,
+            "complete": 0.003
+          }
+        },
+        {
+          "total_ms": 432.72,
+          "result": "ai",
+          "suggestions": 3,
+          "model_bars": [
+            8,
+            8,
+            8
+          ],
+          "events": [
+            {
+              "phase": "composing",
+              "step": 1,
+              "t_ms": 0.026,
+              "gap_ms": 138.488
+            },
+            {
+              "phase": "composing",
+              "step": 2,
+              "t_ms": 138.514,
+              "gap_ms": 135.08
+            },
+            {
+              "phase": "composing",
+              "step": 3,
+              "t_ms": 273.594,
+              "gap_ms": 135.394
+            },
+            {
+              "phase": "ranking",
+              "step": null,
+              "t_ms": 408.988,
+              "gap_ms": 23.674
+            },
+            {
+              "phase": "voicing",
+              "step": null,
+              "t_ms": 432.662,
+              "gap_ms": 0.057
+            },
+            {
+              "phase": "complete",
+              "step": null,
+              "t_ms": 432.719,
+              "gap_ms": 0.002
+            }
+          ],
+          "phase_ms": {
+            "setup": 0.026,
+            "composing_1": 138.488,
+            "composing_2": 135.08,
+            "composing_3": 135.394,
+            "ranking": 23.674,
+            "voicing": 0.057,
+            "complete": 0.002
+          },
+          "stage_ms": {
+            "setup": 0.026,
+            "composing": 408.962,
+            "ranking": 23.674,
+            "voicing": 0.057,
+            "complete": 0.002
+          }
+        }
+      ]
+    },
+    {
+      "genre": "pop",
+      "bars": 32,
+      "model_key": "ft_f1",
+      "model_label": "F1 \u2014 10K pop mix",
+      "total_ms": {
+        "p50": 1659.736,
+        "p95": 1808.654,
+        "min": 1494.273,
+        "max": 1825.2
+      },
+      "phase_median_ms": {
+        "setup": 0.016,
+        "composing_1": 343.244,
+        "composing_2": 411.887,
+        "composing_3": 817.342,
+        "ranking": 87.059,
+        "voicing": 0.189,
+        "complete": 0.002
+      },
+      "stage_median_ms": {
+        "setup": 0.016,
+        "composing": 1572.472,
+        "ranking": 87.059,
+        "voicing": 0.189,
+        "complete": 0.002
+      },
+      "composing_share": 0.9468,
+      "ranking_share": 0.053,
+      "ai_runs": 2,
+      "suggestion_counts": [
+        3
+      ],
+      "cold_runs": 0,
+      "model_bars_stats": {
+        "min": 14,
+        "median": 22.0,
+        "max": 32
+      },
+      "runs": [
+        {
+          "total_ms": 1494.273,
+          "result": "ai",
+          "suggestions": 3,
+          "model_bars": [
+            17,
+            14,
+            32
+          ],
+          "events": [
+            {
+              "phase": "composing",
+              "step": 1,
+              "t_ms": 0.015,
+              "gap_ms": 319.04
+            },
+            {
+              "phase": "composing",
+              "step": 2,
+              "t_ms": 319.055,
+              "gap_ms": 240.193
+            },
+            {
+              "phase": "composing",
+              "step": 3,
+              "t_ms": 559.248,
+              "gap_ms": 846.979
+            },
+            {
+              "phase": "ranking",
+              "step": null,
+              "t_ms": 1406.227,
+              "gap_ms": 87.842
+            },
+            {
+              "phase": "voicing",
+              "step": null,
+              "t_ms": 1494.069,
+              "gap_ms": 0.202
+            },
+            {
+              "phase": "complete",
+              "step": null,
+              "t_ms": 1494.271,
+              "gap_ms": 0.002
+            }
+          ],
+          "phase_ms": {
+            "setup": 0.015,
+            "composing_1": 319.04,
+            "composing_2": 240.193,
+            "composing_3": 846.979,
+            "ranking": 87.842,
+            "voicing": 0.202,
+            "complete": 0.002
+          },
+          "stage_ms": {
+            "setup": 0.015,
+            "composing": 1406.212,
+            "ranking": 87.842,
+            "voicing": 0.202,
+            "complete": 0.002
+          }
+        },
+        {
+          "total_ms": 1825.2,
+          "result": "ai",
+          "suggestions": 3,
+          "model_bars": [
+            16,
+            27,
+            32
+          ],
+          "events": [
+            {
+              "phase": "composing",
+              "step": 1,
+              "t_ms": 0.017,
+              "gap_ms": 367.447
+            },
+            {
+              "phase": "composing",
+              "step": 2,
+              "t_ms": 367.463,
+              "gap_ms": 583.581
+            },
+            {
+              "phase": "composing",
+              "step": 3,
+              "t_ms": 951.044,
+              "gap_ms": 787.705
+            },
+            {
+              "phase": "ranking",
+              "step": null,
+              "t_ms": 1738.749,
+              "gap_ms": 86.275
+            },
+            {
+              "phase": "voicing",
+              "step": null,
+              "t_ms": 1825.023,
+              "gap_ms": 0.175
+            },
+            {
+              "phase": "complete",
+              "step": null,
+              "t_ms": 1825.199,
+              "gap_ms": 0.002
+            }
+          ],
+          "phase_ms": {
+            "setup": 0.017,
+            "composing_1": 367.447,
+            "composing_2": 583.581,
+            "composing_3": 787.705,
+            "ranking": 86.275,
+            "voicing": 0.175,
+            "complete": 0.002
+          },
+          "stage_ms": {
+            "setup": 0.017,
+            "composing": 1738.732,
+            "ranking": 86.275,
+            "voicing": 0.175,
+            "complete": 0.002
+          }
+        }
+      ]
+    },
+    {
+      "genre": "pop",
+      "bars": 64,
+      "model_key": "ft_f1",
+      "model_label": "F1 \u2014 10K pop mix",
+      "total_ms": {
+        "p50": 1871.63,
+        "p95": 2192.586,
+        "min": 1515.011,
+        "max": 2228.248
+      },
+      "phase_median_ms": {
+        "setup": 0.019,
+        "composing_1": 307.663,
+        "composing_2": 448.271,
+        "composing_3": 944.477,
+        "ranking": 170.847,
+        "voicing": 0.35,
+        "complete": 0.002
+      },
+      "stage_median_ms": {
+        "setup": 0.019,
+        "composing": 1700.411,
+        "ranking": 170.847,
+        "voicing": 0.35,
+        "complete": 0.002
+      },
+      "composing_share": 0.9046,
+      "ranking_share": 0.0952,
+      "ai_runs": 2,
+      "suggestion_counts": [
+        3
+      ],
+      "cold_runs": 0,
+      "model_bars_stats": {
+        "min": 14,
+        "median": 22.0,
+        "max": 40
+      },
+      "runs": [
+        {
+          "total_ms": 1515.011,
+          "result": "ai",
+          "suggestions": 3,
+          "model_bars": [
+            17,
+            14,
+            32
+          ],
+          "events": [
+            {
+              "phase": "composing",
+              "step": 1,
+              "t_ms": 0.018,
+              "gap_ms": 308.421
+            },
+            {
+              "phase": "composing",
+              "step": 2,
+              "t_ms": 308.439,
+              "gap_ms": 257.74
+            },
+            {
+              "phase": "composing",
+              "step": 3,
+              "t_ms": 566.18,
+              "gap_ms": 772.751
+            },
+            {
+              "phase": "ranking",
+              "step": null,
+              "t_ms": 1338.93,
+              "gap_ms": 175.718
+            },
+            {
+              "phase": "voicing",
+              "step": null,
+              "t_ms": 1514.649,
+              "gap_ms": 0.36
+            },
+            {
+              "phase": "complete",
+              "step": null,
+              "t_ms": 1515.008,
+              "gap_ms": 0.002
+            }
+          ],
+          "phase_ms": {
+            "setup": 0.018,
+            "composing_1": 308.421,
+            "composing_2": 257.74,
+            "composing_3": 772.751,
+            "ranking": 175.718,
+            "voicing": 0.36,
+            "complete": 0.002
+          },
+          "stage_ms": {
+            "setup": 0.018,
+            "composing": 1338.912,
+            "ranking": 175.718,
+            "voicing": 0.36,
+            "complete": 0.002
+          }
+        },
+        {
+          "total_ms": 2228.248,
+          "result": "ai",
+          "suggestions": 3,
+          "model_bars": [
+            16,
+            27,
+            40
+          ],
+          "events": [
+            {
+              "phase": "composing",
+              "step": 1,
+              "t_ms": 0.02,
+              "gap_ms": 306.905
+            },
+            {
+              "phase": "composing",
+              "step": 2,
+              "t_ms": 306.925,
+              "gap_ms": 638.801
+            },
+            {
+              "phase": "composing",
+              "step": 3,
+              "t_ms": 945.726,
+              "gap_ms": 1116.204
+            },
+            {
+              "phase": "ranking",
+              "step": null,
+              "t_ms": 2061.93,
+              "gap_ms": 165.977
+            },
+            {
+              "phase": "voicing",
+              "step": null,
+              "t_ms": 2227.907,
+              "gap_ms": 0.34
+            },
+            {
+              "phase": "complete",
+              "step": null,
+              "t_ms": 2228.246,
+              "gap_ms": 0.002
+            }
+          ],
+          "phase_ms": {
+            "setup": 0.02,
+            "composing_1": 306.905,
+            "composing_2": 638.801,
+            "composing_3": 1116.204,
+            "ranking": 165.977,
+            "voicing": 0.34,
+            "complete": 0.002
+          },
+          "stage_ms": {
+            "setup": 0.02,
+            "composing": 2061.91,
+            "ranking": 165.977,
+            "voicing": 0.34,
+            "complete": 0.002
+          }
+        }
+      ]
+    },
+    {
+      "genre": "jazz",
+      "bars": 8,
+      "model_key": "ft_f4",
+      "model_label": "F4 \u2014 1K pop mix",
+      "total_ms": {
+        "p50": 457.702,
+        "p95": 467.948,
+        "min": 446.317,
+        "max": 469.086
+      },
+      "phase_median_ms": {
+        "setup": 0.015,
+        "composing_1": 145.166,
+        "composing_2": 144.955,
+        "composing_3": 139.481,
+        "ranking": 28.01,
+        "voicing": 0.073,
+        "complete": 0.002
+      },
+      "stage_median_ms": {
+        "setup": 0.015,
+        "composing": 429.603,
+        "ranking": 28.01,
+        "voicing": 0.073,
+        "complete": 0.002
+      },
+      "composing_share": 0.9384,
+      "ranking_share": 0.0614,
+      "ai_runs": 2,
+      "suggestion_counts": [
+        3
+      ],
+      "cold_runs": 0,
+      "model_bars_stats": {
+        "min": 8,
+        "median": 8.0,
+        "max": 8
+      },
+      "runs": [
+        {
+          "total_ms": 446.317,
+          "result": "ai",
+          "suggestions": 3,
+          "model_bars": [
+            8,
+            8,
+            8
+          ],
+          "events": [
+            {
+              "phase": "composing",
+              "step": 1,
+              "t_ms": 0.014,
+              "gap_ms": 139.359
+            },
+            {
+              "phase": "composing",
+              "step": 2,
+              "t_ms": 139.373,
+              "gap_ms": 137.402
+            },
+            {
+              "phase": "composing",
+              "step": 3,
+              "t_ms": 276.775,
+              "gap_ms": 139.171
+            },
+            {
+              "phase": "ranking",
+              "step": null,
+              "t_ms": 415.946,
+              "gap_ms": 30.294
+            },
+            {
+              "phase": "voicing",
+              "step": null,
+              "t_ms": 446.24,
+              "gap_ms": 0.075
+            },
+            {
+              "phase": "complete",
+              "step": null,
+              "t_ms": 446.315,
+              "gap_ms": 0.002
+            }
+          ],
+          "phase_ms": {
+            "setup": 0.014,
+            "composing_1": 139.359,
+            "composing_2": 137.402,
+            "composing_3": 139.171,
+            "ranking": 30.294,
+            "voicing": 0.075,
+            "complete": 0.002
+          },
+          "stage_ms": {
+            "setup": 0.014,
+            "composing": 415.933,
+            "ranking": 30.294,
+            "voicing": 0.075,
+            "complete": 0.002
+          }
+        },
+        {
+          "total_ms": 469.086,
+          "result": "ai",
+          "suggestions": 3,
+          "model_bars": [
+            8,
+            8,
+            8
+          ],
+          "events": [
+            {
+              "phase": "composing",
+              "step": 1,
+              "t_ms": 0.016,
+              "gap_ms": 150.972
+            },
+            {
+              "phase": "composing",
+              "step": 2,
+              "t_ms": 150.988,
+              "gap_ms": 152.509
+            },
+            {
+              "phase": "composing",
+              "step": 3,
+              "t_ms": 303.497,
+              "gap_ms": 139.792
+            },
+            {
+              "phase": "ranking",
+              "step": null,
+              "t_ms": 443.289,
+              "gap_ms": 25.725
+            },
+            {
+              "phase": "voicing",
+              "step": null,
+              "t_ms": 469.014,
+              "gap_ms": 0.071
+            },
+            {
+              "phase": "complete",
+              "step": null,
+              "t_ms": 469.085,
+              "gap_ms": 0.002
+            }
+          ],
+          "phase_ms": {
+            "setup": 0.016,
+            "composing_1": 150.972,
+            "composing_2": 152.509,
+            "composing_3": 139.792,
+            "ranking": 25.725,
+            "voicing": 0.071,
+            "complete": 0.002
+          },
+          "stage_ms": {
+            "setup": 0.016,
+            "composing": 443.273,
+            "ranking": 25.725,
+            "voicing": 0.071,
+            "complete": 0.002
+          }
+        }
+      ]
+    },
+    {
+      "genre": "jazz",
+      "bars": 32,
+      "model_key": "ft_f4",
+      "model_label": "F4 \u2014 1K pop mix",
+      "total_ms": {
+        "p50": 2494.131,
+        "p95": 2626.321,
+        "min": 2347.252,
+        "max": 2641.009
+      },
+      "phase_median_ms": {
+        "setup": 0.021,
+        "composing_1": 828.21,
+        "composing_2": 803.739,
+        "composing_3": 751.828,
+        "ranking": 110.079,
+        "voicing": 0.249,
+        "complete": 0.002
+      },
+      "stage_median_ms": {
+        "setup": 0.021,
+        "composing": 2383.779,
+        "ranking": 110.079,
+        "voicing": 0.249,
+        "complete": 0.002
+      },
+      "composing_share": 0.9555,
+      "ranking_share": 0.0444,
+      "ai_runs": 2,
+      "suggestion_counts": [
+        3
+      ],
+      "cold_runs": 0,
+      "model_bars_stats": {
+        "min": 32,
+        "median": 32.0,
+        "max": 32
+      },
+      "runs": [
+        {
+          "total_ms": 2641.009,
+          "result": "ai",
+          "suggestions": 3,
+          "model_bars": [
+            32,
+            32,
+            32
+          ],
+          "events": [
+            {
+              "phase": "composing",
+              "step": 1,
+              "t_ms": 0.027,
+              "gap_ms": 851.569
+            },
+            {
+              "phase": "composing",
+              "step": 2,
+              "t_ms": 851.596,
+              "gap_ms": 829.512
+            },
+            {
+              "phase": "composing",
+              "step": 3,
+              "t_ms": 1681.108,
+              "gap_ms": 853.401
+            },
+            {
+              "phase": "ranking",
+              "step": null,
+              "t_ms": 2534.51,
+              "gap_ms": 106.249
+            },
+            {
+              "phase": "voicing",
+              "step": null,
+              "t_ms": 2640.759,
+              "gap_ms": 0.248
+            },
+            {
+              "phase": "complete",
+              "step": null,
+              "t_ms": 2641.007,
+              "gap_ms": 0.002
+            }
+          ],
+          "phase_ms": {
+            "setup": 0.027,
+            "composing_1": 851.569,
+            "composing_2": 829.512,
+            "composing_3": 853.401,
+            "ranking": 106.249,
+            "voicing": 0.248,
+            "complete": 0.002
+          },
+          "stage_ms": {
+            "setup": 0.027,
+            "composing": 2534.483,
+            "ranking": 106.249,
+            "voicing": 0.248,
+            "complete": 0.002
+          }
+        },
+        {
+          "total_ms": 2347.252,
+          "result": "ai",
+          "suggestions": 3,
+          "model_bars": [
+            32,
+            32,
+            32
+          ],
+          "events": [
+            {
+              "phase": "composing",
+              "step": 1,
+              "t_ms": 0.016,
+              "gap_ms": 804.851
+            },
+            {
+              "phase": "composing",
+              "step": 2,
+              "t_ms": 804.867,
+              "gap_ms": 777.966
+            },
+            {
+              "phase": "composing",
+              "step": 3,
+              "t_ms": 1582.833,
+              "gap_ms": 650.256
+            },
+            {
+              "phase": "ranking",
+              "step": null,
+              "t_ms": 2233.089,
+              "gap_ms": 113.91
+            },
+            {
+              "phase": "voicing",
+              "step": null,
+              "t_ms": 2346.999,
+              "gap_ms": 0.251
+            },
+            {
+              "phase": "complete",
+              "step": null,
+              "t_ms": 2347.25,
+              "gap_ms": 0.002
+            }
+          ],
+          "phase_ms": {
+            "setup": 0.016,
+            "composing_1": 804.851,
+            "composing_2": 777.966,
+            "composing_3": 650.256,
+            "ranking": 113.91,
+            "voicing": 0.251,
+            "complete": 0.002
+          },
+          "stage_ms": {
+            "setup": 0.016,
+            "composing": 2233.074,
+            "ranking": 113.91,
+            "voicing": 0.251,
+            "complete": 0.002
+          }
+        }
+      ]
+    },
+    {
+      "genre": "jazz",
+      "bars": 64,
+      "model_key": "ft_f4",
+      "model_label": "F4 \u2014 1K pop mix",
+      "total_ms": {
+        "p50": 5695.777,
+        "p95": 6399.188,
+        "min": 4914.209,
+        "max": 6477.345
+      },
+      "phase_median_ms": {
+        "setup": 0.021,
+        "composing_1": 2447.688,
+        "composing_2": 2360.061,
+        "composing_3": 647.135,
+        "ranking": 240.384,
+        "voicing": 0.485,
+        "complete": 0.002
+      },
+      "stage_median_ms": {
+        "setup": 0.021,
+        "composing": 5454.884,
+        "ranking": 240.384,
+        "voicing": 0.485,
+        "complete": 0.002
+      },
+      "composing_share": 0.9565,
+      "ranking_share": 0.0434,
+      "ai_runs": 2,
+      "suggestion_counts": [
+        3
+      ],
+      "cold_runs": 0,
+      "model_bars_stats": {
+        "min": 30,
+        "median": 64.0,
+        "max": 64
+      },
+      "runs": [
+        {
+          "total_ms": 6477.345,
+          "result": "ai",
+          "suggestions": 3,
+          "model_bars": [
+            64,
+            64,
+            48
+          ],
+          "events": [
+            {
+              "phase": "composing",
+              "step": 1,
+              "t_ms": 0.017,
+              "gap_ms": 2515.186
+            },
+            {
+              "phase": "composing",
+              "step": 2,
+              "t_ms": 2515.203,
+              "gap_ms": 2878.857
+            },
+            {
+              "phase": "composing",
+              "step": 3,
+              "t_ms": 5394.06,
+              "gap_ms": 858.918
+            },
+            {
+              "phase": "ranking",
+              "step": null,
+              "t_ms": 6252.979,
+              "gap_ms": 223.869
+            },
+            {
+              "phase": "voicing",
+              "step": null,
+              "t_ms": 6476.847,
+              "gap_ms": 0.495
+            },
+            {
+              "phase": "complete",
+              "step": null,
+              "t_ms": 6477.342,
+              "gap_ms": 0.002
+            }
+          ],
+          "phase_ms": {
+            "setup": 0.017,
+            "composing_1": 2515.186,
+            "composing_2": 2878.857,
+            "composing_3": 858.918,
+            "ranking": 223.869,
+            "voicing": 0.495,
+            "complete": 0.002
+          },
+          "stage_ms": {
+            "setup": 0.017,
+            "composing": 6252.961,
+            "ranking": 223.869,
+            "voicing": 0.495,
+            "complete": 0.002
+          }
+        },
+        {
+          "total_ms": 4914.209,
+          "result": "ai",
+          "suggestions": 3,
+          "model_bars": [
+            64,
+            64,
+            30
+          ],
+          "events": [
+            {
+              "phase": "composing",
+              "step": 1,
+              "t_ms": 0.025,
+              "gap_ms": 2380.19
+            },
+            {
+              "phase": "composing",
+              "step": 2,
+              "t_ms": 2380.215,
+              "gap_ms": 1841.264
+            },
+            {
+              "phase": "composing",
+              "step": 3,
+              "t_ms": 4221.48,
+              "gap_ms": 435.353
+            },
+            {
+              "phase": "ranking",
+              "step": null,
+              "t_ms": 4656.832,
+              "gap_ms": 256.899
+            },
+            {
+              "phase": "voicing",
+              "step": null,
+              "t_ms": 4913.731,
+              "gap_ms": 0.475
+            },
+            {
+              "phase": "complete",
+              "step": null,
+              "t_ms": 4914.206,
+              "gap_ms": 0.002
+            }
+          ],
+          "phase_ms": {
+            "setup": 0.025,
+            "composing_1": 2380.19,
+            "composing_2": 1841.264,
+            "composing_3": 435.353,
+            "ranking": 256.899,
+            "voicing": 0.475,
+            "complete": 0.002
+          },
+          "stage_ms": {
+            "setup": 0.025,
+            "composing": 4656.807,
+            "ranking": 256.899,
+            "voicing": 0.475,
+            "complete": 0.002
+          }
+        }
+      ]
+    }
+  ]
+}
