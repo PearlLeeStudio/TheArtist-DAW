@@ -1,0 +1,172 @@
+"""Real MCP initialize/list/call protocol over in-process ASGI; providers and DAWs are mocked."""
+
+import base64
+import io
+import os
+import unittest
+from contextlib import asynccontextmanager
+from unittest import mock
+
+import httpx
+import mido
+from fastapi import FastAPI, HTTPException
+from mcp import ClientSession
+from mcp.client.streamable_http import streamable_http_client
+
+import app.main
+from app import mcp_server
+from app.models.export import DawOpenResponse
+from app.services import contracts
+from theartist_client import ArtistClient, ArtistClientError
+from tests.test_export import spec
+
+
+@asynccontextmanager
+async def connection(*, client_address="127.0.0.1", headers=None):
+    server = mcp_server.create_mcp_server()
+    application = FastAPI()
+    application.mount("/mcp", server.streamable_http_app())
+    async with server.session_manager.run(), httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=application, client=(client_address, 12345)),
+        base_url="http://127.0.0.1:8000", headers=headers,
+    ) as http:
+        async with streamable_http_client("http://127.0.0.1:8000/mcp/", http_client=http) as (read, write, _):
+            async with ClientSession(read, write) as session:
+                initialized = await session.initialize()
+                yield session, http, initialized
+
+
+class MCPProtocolTest(unittest.IsolatedAsyncioTestCase):
+    async def test_initialize_discover_schema_and_capabilities(self):
+        async with connection() as (session, _, initialized):
+            self.assertEqual(initialized.serverInfo.name, "TheArtist")
+            listed = await session.list_tools()
+            tools = {tool.name: tool for tool in listed.tools}
+            self.assertEqual(set(tools), set(contracts.TOOLS))
+            self.assertNotIn("plan_song", tools)
+            self.assertNotIn("explain_progression", tools)
+            self.assertFalse(tools["export_daw"].annotations.readOnlyHint)
+            self.assertTrue(tools["import_score"].annotations.openWorldHint)
+            self.assertIn("ExportSpec", tools["render_midi"].inputSchema["$defs"])
+            self.assertIn("schemaVersion", tools["render_midi"].outputSchema["properties"])
+            result = await session.call_tool("capabilities", {})
+            self.assertFalse(result.isError)
+            self.assertEqual(result.structuredContent["schemaVersion"], "1.0")
+            self.assertEqual(result.structuredContent["data"]["limits"]["midiBytes"], 4 * 1024 * 1024)
+            self.assertLess(len(result.content[0].text), 150)
+
+    async def test_existing_api_results_and_source_fields_are_preserved(self):
+        section = {"source": "rules", "modelUsed": None, "suggestions": [], "startMeasure": 0}
+        song = {"model_used": "rules", "tracks": {"harmony": {"source": "rule", "events": []}}, "bars": []}
+        with mock.patch.object(mcp_server.generate, "generate_section", return_value=section) as generate, \
+                mock.patch.object(mcp_server.song, "generate_song", return_value=song) as build, \
+                mock.patch.object(mcp_server.models, "list_models", return_value={"models": [{"key": "ft_f1", "available": False}]}):
+            async with connection() as (session, _, _):
+                result = await session.call_tool("generate_section", {"request": {"key": "C major", "sectionType": "verse", "chordCount": 4}})
+                self.assertFalse(result.isError)
+                self.assertEqual(result.structuredContent["data"], section)
+                result = await session.call_tool("build_song", {"request": {"genre": "pop", "length_bars": 4, "seed": 42}})
+                self.assertEqual(result.structuredContent["data"], song)
+                result = await session.call_tool("list_models", {})
+                self.assertFalse(result.structuredContent["data"]["models"][0]["available"])
+                result = await session.call_tool("get_genre_preset", {"genre": "country"})
+                self.assertEqual(result.structuredContent["data"]["harmony_rhythm"], "boom_chick")
+        generate.assert_called_once()
+        build.assert_called_once()
+        self.assertEqual(build.call_args.args[0].length_bars, 4)
+        self.assertEqual(build.call_args.args[0].seed, 42)
+
+    async def test_http_failures_and_unsupported_features_are_mcp_errors(self):
+        with mock.patch.object(mcp_server.generate, "generate_section", side_effect=HTTPException(400, "Bad key")), \
+                mock.patch.object(mcp_server.song, "generate_song") as build:
+            async with connection() as (session, _, _):
+                result = await session.call_tool("generate_section", {"request": {"key": "C major", "sectionType": "verse", "chordCount": 4}})
+                self.assertTrue(result.isError)
+                self.assertIn("HTTP 400: Bad key", result.content[0].text)
+                for request in ({"genre": "pop", "n_candidates": 2}, {"genre": "pop", "n_candidates": 3}):
+                    result = await session.call_tool("build_song", {"request": request})
+                    self.assertTrue(result.isError)
+                self.assertTrue((await session.call_tool("plan_song", {})).isError)
+                self.assertTrue((await session.call_tool("get_genre_preset", {"genre": "unknown"})).isError)
+        build.assert_not_called()
+
+    async def test_midi_roundtrip_and_wrapper_do_not_duplicate_large_content(self):
+        async with connection() as (session, _, _):
+            result = await session.call_tool("render_midi", {"spec": spec(timeSignature=[6, 8])})
+            self.assertFalse(result.isError)
+            output = result.structuredContent["data"]
+            binary = base64.b64decode(output["dataBase64"], validate=True)
+            self.assertEqual(output["byteLength"], len(binary))
+            midi = mido.MidiFile(file=io.BytesIO(binary), charset="utf8")
+            self.assertEqual(midi.ticks_per_beat, 480)
+            self.assertEqual(sum(message.time for message in midi.tracks[0]), 2880)
+            self.assertNotIn(output["dataBase64"], result.content[0].text)
+
+    async def test_score_import_requires_attachment_and_preserves_provider_failure(self):
+        request = {"filename": "score.pdf", "mimeType": "application/pdf", "dataBase64": "JVBERi0="}
+        with mock.patch.object(mcp_server.score_import, "import_score_route", side_effect=HTTPException(502, "Meta failed; request req_1")) as imported:
+            async with connection() as (session, _, _):
+                result = await session.call_tool("import_score", {"request": request})
+                self.assertTrue(result.isError)
+                imported.assert_not_called()
+                result = await session.call_tool("import_score", {"request": request, "attachmentConfirmed": True})
+                self.assertTrue(result.isError)
+                self.assertIn("req_1", result.content[0].text)
+        imported.assert_called_once()
+
+    async def test_daw_handoff_requires_three_explicit_gates(self):
+        args = {"request": {"target": "logic", "spec": spec()}, "confirmed": True}
+        with mock.patch.object(mcp_server, "open_daw_route", return_value=DawOpenResponse(action="open", path="/mock/score.mid")) as opened:
+            with mock.patch.dict(os.environ, {"THEARTIST_MCP_ALLOW_DAW": "0"}):
+                async with connection() as (session, _, _):
+                    self.assertTrue((await session.call_tool("export_daw", args)).isError)
+            with mock.patch.dict(os.environ, {"THEARTIST_MCP_ALLOW_DAW": "1"}):
+                async with connection(client_address="198.51.100.5") as (session, _, _):
+                    self.assertTrue((await session.call_tool("export_daw", args)).isError)
+                async with connection(headers={"X-Forwarded-For": "127.0.0.1"}) as (session, _, _):
+                    self.assertTrue((await session.call_tool("export_daw", args)).isError)
+                async with connection() as (session, _, _):
+                    self.assertTrue((await session.call_tool("export_daw", {**args, "confirmed": False})).isError)
+                    opened.assert_not_called()
+                    result = await session.call_tool("export_daw", args)
+                    self.assertFalse(result.isError)
+                    self.assertEqual(result.structuredContent["data"]["action"], "open")
+        opened.assert_called_once()
+
+    async def test_state_and_transport_size_limits_fail_before_work(self):
+        with mock.patch.object(mcp_server.song, "generate_song") as build:
+            async with connection() as (session, http, _):
+                with mock.patch.object(contracts, "MAX_JSON_STATE_BYTES", 10):
+                    result = await session.call_tool("build_song", {"request": {"genre": "pop"}})
+                    self.assertTrue(result.isError)
+                response = await http.post("/mcp/", content=b"{}", headers={"Content-Length": str(contracts.MAX_MCP_REQUEST_BYTES + 1)})
+                self.assertEqual(response.status_code, 413)
+        build.assert_not_called()
+
+    async def test_main_lifespan_mount_and_public_client_roundtrip(self):
+        with mock.patch.dict(os.environ, {"THEARTIST_WARMUP": "0"}):
+            async with app.main.app.router.lifespan_context(app.main.app), httpx.AsyncClient(
+                transport=httpx.ASGITransport(app=app.main.app), base_url="http://127.0.0.1:8000",
+            ) as http:
+                self.assertEqual((await http.get("/api/health")).json(), {"status": "ok"})
+                expected = (await http.get("/api/capabilities")).json()["data"]
+                async with ArtistClient(http_client=http) as artist:
+                    self.assertEqual(await artist.capabilities(), expected)
+                    binary = await artist.render_midi(spec())
+                    self.assertTrue(binary.startswith(b"MThd"))
+                    with self.assertRaises(ArtistClientError):
+                        await artist.call_tool("get_genre_preset", {"genre": "missing"})
+
+
+class MCPResultLimitsTest(unittest.TestCase):
+    def test_result_state_and_binary_validation(self):
+        with mock.patch.object(contracts, "MAX_JSON_STATE_BYTES", 20):
+            with self.assertRaisesRegex(ValueError, "state limit"):
+                contracts.contract_result({"notes": "a" * 30})
+        for midi in ("invalid!", base64.b64encode(b"not midi").decode()):
+            with self.subTest(midi=midi), self.assertRaises(ValueError):
+                contracts.contract_result({"midi_b64": midi})
+
+
+if __name__ == "__main__":
+    unittest.main()

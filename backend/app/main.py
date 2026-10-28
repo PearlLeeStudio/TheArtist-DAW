@@ -1,5 +1,6 @@
 import logging
 import os
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -10,6 +11,8 @@ from app.routes.models import router as models_router
 from app.routes.song import router as song_router
 from app.routes.score_import import router as score_import_router
 from app.routes.export import router as export_router
+from app.mcp_server import create_mcp_server
+from app.services.contracts import ContractEnvelope, capabilities
 
 # Surface app.* INFO-level logs (model load, rerank breakdown, RAG init,
 # etc.) — uvicorn's default config filters them otherwise.
@@ -19,7 +22,18 @@ logging.basicConfig(
     datefmt="%H:%M:%S",
 )
 
-app = FastAPI(title="TheArtist API", version="0.1.0")
+mcp_server = create_mcp_server()
+mcp_app = mcp_server.streamable_http_app()
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    async with mcp_server.session_manager.run():
+        await startup_warmup()
+        yield
+
+
+app = FastAPI(title="TheArtist API", version="0.1.0", lifespan=lifespan)
 
 _default_origins = "http://localhost:5173"
 _allowed_origins = os.getenv("CORS_ORIGINS", _default_origins).split(",")
@@ -45,7 +59,14 @@ def health():
     return {"status": "ok"}
 
 
-@app.on_event("startup")
+@app.get("/api/capabilities")
+def api_capabilities() -> ContractEnvelope:
+    return capabilities()
+
+
+app.mount("/mcp", mcp_app)
+
+
 async def startup_warmup():
     """Preload models at startup if THEARTIST_WARMUP=1."""
     if os.getenv("THEARTIST_WARMUP", "0") == "1":
