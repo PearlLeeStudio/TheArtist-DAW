@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
 import type { Song, ScoreImportMode } from '../../models/types';
-import { ROOTS } from '../../engine/constants';
+import { STANDARD_KEYS } from '../../engine/keySignatures';
 import { SECTION_GROUPS, isSectionType, sectionLabel, sectionsInGroup } from '../../engine/songForm';
 import {
   buildImportedSong,
@@ -11,6 +11,7 @@ import {
   importMeasureRomanPreview,
   MAX_SCORE_IMPORT_BYTES,
   readScoreImportResponse,
+  scoreImportRequestBody,
   validateScoreImportDraft,
 } from '../../engine/scoreImport';
 import type { ScoreImportDraft, ScoreMime } from '../../engine/scoreImport';
@@ -69,6 +70,7 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
   const id = useId();
   const [source, setSource] = useState<SourceFile | null>(null);
   const [mode, setMode] = useState<ScoreImportMode>('chord_symbols');
+  const [allowMeta, setAllowMeta] = useState(false);
   const [draft, setDraft] = useState<ScoreImportDraft | null>(null);
   const [reading, setReading] = useState(false);
   const [running, setRunning] = useState(false);
@@ -97,6 +99,8 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
         : !reviewed ? 'Confirm your review to enable import.' : '';
   const firstChordError = validation?.measureErrors.findIndex(Boolean) ?? -1;
   const firstSectionError = validation?.sectionErrors.findIndex(Boolean) ?? -1;
+  const sourceMeters = draft ? [...new Set(draft.measures.flatMap((measure) => measure.timeSignature ? [measure.timeSignature.join('/')] : []))] : [];
+  const changesMeter = !!draft && sourceMeters.some((meter) => meter !== draft.timeSignature);
   const focusReviewField = (fieldId: string) => {
     const field = document.getElementById(fieldId);
     const details = field?.closest('details');
@@ -118,6 +122,15 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
     if (mode === next) return;
     cancelRecognition();
     setMode(next);
+    setDraft(null);
+    setReviewed(false);
+    setError(null);
+    setStatus('');
+  };
+
+  const changeExternalChoice = (next: boolean) => {
+    cancelRecognition();
+    setAllowMeta(next);
     setDraft(null);
     setReviewed(false);
     setError(null);
@@ -184,13 +197,13 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
       const response = await fetch('/api/import/score', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ filename: source.file.name, mimeType: source.mimeType, dataBase64, mode }),
+        body: JSON.stringify(scoreImportRequestBody(source.file.name, source.mimeType, dataBase64, mode, allowMeta)),
         signal: controller.signal,
       });
       const body: unknown = await response.json().catch(() => null);
       if (!mountedRef.current || sequence !== sequenceRef.current) return;
       if (!response.ok) throw new Error(errorMessage(body, response.status));
-      const recognized = readScoreImportResponse(body, mode);
+      const recognized = readScoreImportResponse(body, mode, allowMeta ? 'auto' : 'local');
       setDraft(createScoreImportDraft(recognized, source.file.name));
       setStatus(mode === 'infer_harmony' ? 'Harmony draft ready. Check each proposed chord, its evidence and uncertainty before importing.' : 'Recognition complete. Review every measure and section before importing.');
     } catch (caught) {
@@ -250,9 +263,13 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
               <label className="flex items-center gap-2"><input type="radio" name={`${id}-mode`} value="infer_harmony" checked={mode === 'infer_harmony'} onChange={() => changeMode('infer_harmony')} />Analyze notes (no chords)</label>
             </div>
             <p className="text-xs leading-relaxed" style={mutedStyle}>{mode === 'infer_harmony'
-              ? 'Meta proposes chords from visible notes, bass and key. Harmony can be ambiguous: review every bar and the evidence. This creates a chord draft; melody notes and exact note durations are not imported.'
+              ? 'Read notes and bass, then analyze chords against the key. Review every bar and its evidence. Melody notes and exact note durations are not imported into the chord editor.'
               : 'Read chord symbols already printed on the score. A score with notes only needs Analyze notes.'}</p>
-            {mode === 'infer_harmony' && <p className="text-xs leading-relaxed" style={mutedStyle}>Experimental note reading can misidentify pitches. Confidence is the model’s estimate, not a verified accuracy score. Compare every bar with the original before importing.</p>}
+            <label className="flex items-start gap-2 text-sm"><input type="checkbox" checked={allowMeta} onChange={(e) => changeExternalChoice(e.target.checked)} className="mt-1" /><span>Use Meta for unsupported or unresolved passages</span></label>
+            <p className="text-xs leading-relaxed" style={mutedStyle}>{allowMeta
+              ? 'Built-in reading runs first. Unsupported images or PDFs may be sent to Meta; unresolved passages may send extracted note events and musical context for interpretation. No other files are collected.'
+              : 'Built-in reading runs in the app server. External model calls are off; the selected file is not sent to Meta.'}</p>
+            {mode === 'infer_harmony' && <p className="text-xs leading-relaxed" style={mutedStyle}>Confidence describes the reading or interpretation, not a measured accuracy score. Compare the note and bass evidence with the original.</p>}
           </fieldset>
           <div className="flex flex-wrap items-end justify-between gap-3">
             <label className="flex min-w-0 flex-col gap-1 text-xs" style={mutedStyle}>
@@ -263,10 +280,10 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
               <div className="flex justify-end gap-2">
                 {running && <button type="button" className="px-3 py-2 text-xs btn-hover" style={buttonStyle} onClick={cancelRecognition}>Cancel recognition</button>}
                 <button type="button" disabled={!source || running || reading} onClick={() => { void recognize(); }} className="px-4 py-2 text-xs font-bold btn-hover" style={{ background: 'var(--text-heading)', color: 'var(--bg-primary)', opacity: !source || running || reading ? 0.5 : undefined }}>
-                  {running ? 'Reading…' : mode === 'infer_harmony' ? 'Analyze notes with Meta' : draft ? 'Recognize again' : 'Recognize with Meta'}
+                  {running ? 'Reading…' : mode === 'infer_harmony' ? 'Analyze score' : draft ? 'Read again' : 'Read score'}
                 </button>
               </div>
-              <p className="text-xs" style={mutedStyle}>This sends the selected file to Meta for recognition.</p>
+              <p className="text-xs" style={mutedStyle}>{allowMeta ? 'Local first · Meta assistance allowed' : 'Local code analysis · no external model'}</p>
             </div>
           </div>
 
@@ -293,8 +310,11 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
                 <div className="min-w-0 space-y-4">
                   <div className="space-y-2">
                     <h3 className="font-display text-xl font-semibold" style={{ color: 'var(--text-heading)' }}>{draft.mode === 'infer_harmony' ? 'Review the harmony draft' : 'Review the recognition'}</h3>
+                    <p className="text-xs font-semibold">{draft.analysisSource === 'local' ? 'Analyzed by local code' : draft.analysisSource === 'mixed' ? 'Local note reading with Meta interpretation on marked passages' : 'Read with Meta'}{draft.model ? ` · ${draft.model}` : ''}</p>
                     {draft.mode === 'infer_harmony' && <p className="text-xs leading-relaxed" style={mutedStyle}>Inferred chords are proposals from the visible notation. They were not printed on the original. Listen after import and correct the draft when another harmony fits better.</p>}
                     <p className="text-xs leading-relaxed" style={mutedStyle}>Each bar has two equal chord slots. A single chord fills both slots; enter two symbols separated by a space for a change halfway through the bar. Exact note durations and melody are not imported.</p>
+                    <p className="text-xs leading-relaxed" style={mutedStyle}>All source proposals stay visible. When a bar has more than two changes, choose two for the editor. Enter N.C. explicitly to leave a bar without harmony; an unresolved bar is never made a rest automatically.</p>
+                    {changesMeter && <p className="text-xs leading-relaxed" style={mutedStyle}>Source meters: {sourceMeters.join(', ')}. The chord editor applies the selected {draft.timeSignature || 'single meter'} to every bar. Source meters are kept below; playback and export do not preserve these meter changes.</p>}
                     <p className="text-xs leading-relaxed" style={mutedStyle}>Measures stay in written order. Repeats, D.C./D.S. and coda jumps are not expanded. Check these against the original.</p>
                     {draft.warnings.length > 0 && <ul className="list-disc space-y-1 pl-4 text-xs" aria-label="Recognition warnings">{draft.warnings.map((warning, index) => <li key={index}>{warning}</li>)}</ul>}
                   </div>
@@ -302,7 +322,7 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
                   <div id={`${id}-score-fields`} tabIndex={-1} className="grid grid-cols-2 gap-3">
                     <label className="col-span-2 flex flex-col gap-1 text-xs">Title<input value={draft.title} maxLength={120} onChange={(e) => edit((d) => ({ ...d, title: e.target.value }))} className="w-full px-2 py-1.5 text-sm" style={fieldStyle} /></label>
                     <label className="flex min-w-0 flex-col gap-1 text-xs">Key<input list={`${id}-keys`} value={draft.key} placeholder="Choose key" onChange={(e) => edit((d) => ({ ...d, key: e.target.value }))} className="min-w-0 w-full px-2 py-1.5 text-sm" style={fieldStyle} /></label>
-                    <datalist id={`${id}-keys`}>{ROOTS.flatMap((root) => ['major', 'minor'].map((mode) => <option key={`${root}-${mode}`} value={`${root} ${mode}`} />))}</datalist>
+                    <datalist id={`${id}-keys`}>{STANDARD_KEYS.map((key) => <option key={key} value={key} />)}</datalist>
                     <label className="flex min-w-0 flex-col gap-1 text-xs">Time signature<select value={draft.timeSignature} onChange={(e) => edit((d) => ({ ...d, timeSignature: e.target.value }))} className="w-full px-2 py-1.5 text-sm" style={fieldStyle}>
                       <option value="">Choose meter</option>
                       {draft.timeSignature && !(IMPORT_TIME_SIGNATURES as readonly string[]).includes(draft.timeSignature) && <option value={draft.timeSignature}>{draft.timeSignature} — review</option>}
@@ -319,11 +339,15 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
                         <div key={index} className="space-y-1 py-2" style={{ borderTop: '1px solid var(--border)' }}>
                           <div className="flex items-center gap-2">
                             <label htmlFor={`${id}-bar-${index}`} className="w-10 shrink-0 text-xs font-semibold">{index + 1}</label>
-                            <input id={`${id}-bar-${index}`} aria-label={`Bar ${index + 1} chords`} aria-invalid={!!validation.measureErrors[index]} aria-describedby={validation.measureErrors[index] ? `${id}-bar-error-${index}` : undefined} value={measure.chordText} placeholder="Cmaj7 Am7" onChange={(e) => edit((d) => ({ ...d, measures: d.measures.map((m, i) => i === index ? { ...m, chordText: e.target.value } : m) }))} className="min-w-0 flex-1 px-2 py-1.5 text-sm" style={fieldStyle} />
+                            <input id={`${id}-bar-${index}`} aria-label={`Bar ${index + 1} chords`} aria-invalid={!!validation.measureErrors[index]} aria-describedby={validation.measureErrors[index] ? `${id}-bar-error-${index}` : undefined} value={measure.chordText} placeholder="Cmaj7 Am7 or N.C." onChange={(e) => edit((d) => ({ ...d, measures: d.measures.map((m, i) => i === index ? { ...m, chordText: e.target.value } : m) }))} className="min-w-0 flex-1 px-2 py-1.5 text-sm" style={fieldStyle} />
                           </div>
-                          <p className="text-xs font-semibold">{measure.chordBasis === 'inferred' ? 'Inferred · review required' : measure.chordBasis === 'unreadable' ? 'Unreadable · enter chords to continue' : 'Printed'} · {measure.confidence} confidence</p>
+                          <p className="text-xs font-semibold">{measure.analysisSource === 'local' ? 'Local code' : 'Meta interpretation'} · {measure.originalNoChord ? 'Source rest / N.C.' : measure.chordBasis === 'inferred' ? 'Inferred · review required' : measure.chordBasis === 'unreadable' ? 'Unresolved · enter chords or N.C.' : 'Printed'} · {measure.confidence} confidence{measure.timeSignature ? ` · Source meter ${measure.timeSignature.join('/')}` : ''}</p>
+                          {measure.writtenNotes.length > 0 && JSON.stringify(measure.writtenNotes) !== JSON.stringify(measure.notes) && <p className="break-words text-xs" style={mutedStyle}>Written notes: {measure.writtenNotes.join(' · ')}</p>}
+                          {(measure.notes.length > 0 || measure.bassNotes.length > 0) && <p className="break-words text-xs" style={mutedStyle}>{measure.writtenNotes.length > 0 && JSON.stringify(measure.writtenNotes) !== JSON.stringify(measure.notes) ? 'Sounding notes' : 'Read notes'}: {measure.notes.join(' · ') || '[None]'} → Bass: {measure.bassNotes.join(' · ') || '[None]'} → {measure.originalChords.join(' · ') || (measure.originalNoChord ? 'N.C.' : '[No chord determined]')}</p>}
                           <p className="text-xs" style={mutedStyle}>Roman numerals in {draft.key || 'the selected key'}: {importMeasureRomanPreview(measure.chordText, draft.key) ?? 'correct the key and chords to preview'}</p>
-                          <p className="break-words text-xs" style={mutedStyle}>{measure.chordBasis === 'inferred' ? 'Proposed' : 'Read'}: {measure.originalChords.length ? measure.originalChords.join(' · ') : '[No chord recognized]'}{measure.sourceLabel ? ` — ${measure.sourceLabel}` : ''}</p>
+                          <p className="break-words text-xs" style={mutedStyle}>{measure.chordBasis === 'inferred' ? 'Proposed' : 'Read'}: {measure.originalChords.length ? measure.originalChords.join(' · ') : measure.originalNoChord ? 'N.C.' : '[No chord determined]'}{measure.sourceLabel ? ` — ${measure.sourceLabel}` : ''}</p>
+                          {measure.originalChords.length > 0 && <p className="text-xs" style={mutedStyle}>Full source analysis in {draft.key || 'the selected key'}: {importMeasureRomanPreview(measure.originalChords.join(' '), draft.key) ?? 'some source symbols need correction'}</p>}
+                          {measure.originalChords.length > 2 && <p className="text-xs" style={mutedStyle}>{measure.originalChords.length} source changes are preserved above. Select two equal editor slots; keep the source analysis for reference.</p>}
                           {(measure.needsReview || measure.note) && <p className="text-xs" style={mutedStyle}>{measure.needsReview ? 'Check against original. ' : ''}{measure.note ? `Evidence: ${measure.note}` : ''}</p>}
                           {validation.measureErrors[index] && <p id={`${id}-bar-error-${index}`} className="text-xs">{validation.measureErrors[index]}</p>}
                         </div>
@@ -358,7 +382,7 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
                     </div>
                   </details>
 
-                  <p className="break-words text-xs" style={mutedStyle}>Recognized by {draft.model}{draft.requestId ? ` · Request ${draft.requestId}` : ''}. The source file is not stored with the song.</p>
+                  <p className="break-words text-xs" style={mutedStyle}>{draft.analysisSource === 'local' ? 'Local code result; no external model was used.' : draft.analysisSource === 'mixed' ? 'Marked passages include Meta interpretation of extracted notes, not independent verification.' : `Meta result${draft.model ? ` · ${draft.model}` : ''}.`}{draft.requestId ? ` Request ${draft.requestId}.` : ''} The source file is not stored with the song.</p>
                 </div>
               )}
             </div>

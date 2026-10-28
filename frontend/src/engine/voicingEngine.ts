@@ -24,6 +24,7 @@ export const QUALITY_INTERVALS: Record<string, number[]> = {
   '7':      [0, 4, 7, 10],
   'maj7':   [0, 4, 7, 11],
   'm7':     [0, 3, 7, 10],
+  'aug7':   [0, 4, 8, 10],
   'dim7':   [0, 3, 6, 9],
   'm7b5':   [0, 3, 6, 10],
   '6':      [0, 4, 7, 9],

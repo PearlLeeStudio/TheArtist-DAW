@@ -17,8 +17,10 @@
 ## Hackathon workflow
 
 **Import Score → review chords and song form → select a passage → Original/A/B/C
-→ arrange in Play → export MIDI or PDF.** Meta Muse Spark reads printed chord symbols
-or proposes harmony from visible notation in a separate opt-in mode; the author's Music Transformer generates chord candidates.
+→ arrange in Play → export MIDI or PDF.** Local code reads supported vector-score
+notation and proposes note-based harmony; the author's Music Transformer generates
+chord variations. Optional Muse Spark assistance interprets unresolved note passages
+or reads an explicitly selected attachment when local reading is unsupported.
 The musician corrects the import, chooses the passage and keeps the version they want.
 
 The [hackathon work log](HACKATHON.md) separates these additions from the existing
@@ -30,10 +32,12 @@ remain on the [manual checklist](docs/manual-checks.md).
 - **Import Score**, immediately left of **New from Song Form**, accepts one
   PDF, PNG, JPEG or WebP up to 8 MiB. Choose **Read chord symbols** for a chord chart
   or **Analyze notes (no chords)** for a harmony draft from notation. Review the
-  source alongside chords, evidence, uncertainty, meter, key and sections. Inferred
+  source alongside read notes, bass, chords, evidence, uncertainty, meter, key and sections. Inferred
   chords are interpretations, not verified original harmony; melody notes and their
   durations are not imported. Correct highlighted fields and tick the visible footer
   review checkbox to enable **Import reviewed score**. The footer explains any blocker.
+  Local reading is the default; API use requires an explicit choice. Responses
+  distinguish local reading, Meta interpretation and mixed results.
 - **Roman-numeral analysis** follows the review key: in C major, C → I, Am → vi,
   G7 → V7. Changing the review key reanalyzes the same symbols. The editor's main Key
   control retains its existing behavior of transposing the score. Source proposals
@@ -54,9 +58,14 @@ remain on the [manual checklist](docs/manual-checks.md).
 - The same service is available through [REST and MCP](docs/mcp.md). TheVoyager has
   a thin MCP adapter; a native DAW plugin is a future separate client.
 
-Notes-based reading is experimental. The retained [synthetic-score trials](experiments/meta/note_harmony_first_attempt.json) contain
-pitch and chord errors, including a missed seventh. It is not validated optical
-music recognition; source comparison and correction remain essential.
+The [local analysis implementation](docs/score-analysis.md) separates PDF glyph
+reading from duration/bass/voice-aware chord and Roman-numeral analysis. Original
+[treble](experiments/local/vector-score-c.json) and
+[bass](experiments/local/vector-score-f.json) PDF fixtures exercise the complete
+local path without an API call. Font encodings, unclear rhythm, octave markings
+and ambiguous harmony still require review. Earlier direct-vision
+[Meta trials](experiments/meta/note_harmony_first_attempt.json) contain pitch errors;
+they are retained as failures, not an accuracy claim.
 
 The [real Meta smoke record](experiments/meta/score_import_smoke.json) matched all
 eight symbols and both explicit sections in an original four-bar PNG fixture:

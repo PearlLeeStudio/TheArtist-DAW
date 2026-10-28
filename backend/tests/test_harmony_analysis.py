@@ -198,11 +198,57 @@ class HarmonyAnalysisTest(unittest.TestCase):
         self.assertEqual(provided.key.key, "F major")
         self.assertEqual(provided.key.source, "provided")
 
+    def test_inferred_extreme_major_signatures_preserve_written_tonic_spelling_and_roman_I(self):
+        cases = [(-7, [47, 51, 54], ["Cb", "Eb", "Gb"], "Cb major", "Cb"),
+                 (7, [49, 53, 56], ["C#", "E#", "G#"], "C# major", "C#")]
+        for signature, pitches, spellings, expected_key, expected_symbol in cases:
+            with self.subTest(key_signature=signature):
+                notes = sonority(pitches, duration=4, spellings=spellings)
+                estimate = estimate_key(notes, key_signature=signature)
+                result = analyze_harmony(notes, key_signature=signature)
+                self.assertEqual(estimate.key, expected_key)
+                self.assertEqual(result.key.key, expected_key)
+                self.assertEqual(result.segments[0].candidates[0].symbol, expected_symbol)
+                self.assertEqual(result.segments[0].candidates[0].roman, "I")
+                self.assertIn(expected_key, {candidate.key for candidate in estimate.alternatives})
+
+    def test_inferred_extreme_sharp_signatures_keep_the_relative_minor_and_manual_key_still_wins(self):
+        cases = [(6, [51, 54, 58], ["D#", "F#", "A#"], "D# minor"),
+                 (7, [46, 49, 53], ["A#", "C#", "E#"], "A# minor")]
+        for signature, pitches, spellings, expected_key in cases:
+            with self.subTest(key_signature=signature):
+                notes = sonority(pitches, duration=4, spellings=spellings)
+                result = analyze_harmony(notes, key_signature=signature)
+                self.assertEqual(result.key.key, expected_key)
+                self.assertEqual(result.segments[0].candidates[0].roman, "i")
+        cb = sonority([47, 51, 54], duration=4, spellings=["Cb", "Eb", "Gb"])
+        overridden = estimate_key(cb, key="B major", key_signature=-7)
+        self.assertEqual(overridden.key, "B major")
+        self.assertEqual(overridden.source, "provided")
+        self.assertEqual(overridden.confidence, 1.0)
+
     def test_estimated_note_timing_remains_explicit_and_caps_confidence(self):
         result = analyze_harmony(sonority([48, 52, 55]), key="C major", timing_is_estimated=True)
         self.assertLessEqual(result.segments[0].candidates[0].confidence, .55)
         self.assertTrue(result.segments[0].uncertain)
         self.assertTrue(any("timing is estimated" in warning for warning in result.warnings))
+
+    def test_short_melody_neighbors_do_not_flip_the_rank_of_an_unchanged_rootless_shell(self):
+        names = ("C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B")
+        for shift in range(12):
+            with self.subTest(transposition=shift):
+                notes = [NoteEvent(62 + shift, 0, 2, voice="bass", staff="lower"),
+                         NoteEvent(68 + shift, 0, 2, voice="inner", staff="lower")]
+                notes += [NoteEvent(pitch + shift, onset, duration, voice="melody", staff="upper")
+                          for pitch, onset, duration in ((84, .25, .25), (83, .5, .5),
+                                                         (84, 1, .5), (83, 1.5, .5))]
+                result = analyze_harmony(notes, key=f"{names[(8 + shift) % 12]} major",
+                                         time_signature=(2, 4), total_duration=2)
+                roots = {segment.candidates[0].root for segment in result.segments if segment.candidates}
+                self.assertEqual(len(roots), 1)
+                self.assertTrue(all(segment.uncertain for segment in result.segments))
+                self.assertTrue(all(len(segment.candidates) == 2 and segment.candidates[0].rootless_shell
+                                    for segment in result.segments))
 
     def test_score_key_can_be_estimated_once_and_reused_with_local_measure_times_and_meters(self):
         global_notes = sonority([48, 52, 55], duration=4)

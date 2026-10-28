@@ -24,3 +24,11 @@ The sonorities in written order are C3/E3/G3, A2/C3/E3, D3/F3/A3 and
 G2/B2/D3/F3, corresponding to C, Am, Dm and G7 (I, vi, ii, V7).
 The real-call records include unsuccessful interpretations; they must not be
 presented as proof of exact optical music recognition or accuracy on user scores.
+
+`vector-score-c.pdf` and `vector-score-f.pdf` are original single-bar vector PDFs
+with a self-authored Type3 music font and ToUnicode mapping; no third-party font
+or score data is embedded. They contain C4/E4/G4 in treble clef and F2/A2/C3 in
+bass clef, respectively. The latter also changes scale, position, key signature
+and meter. `tests/vector_score_fixture.py` generates both. Local PDF parsing,
+key/chord inference and Roman I are tested without any API call. Results are in
+`experiments/local/` and cover these simple fixtures, not arbitrary optical notation.

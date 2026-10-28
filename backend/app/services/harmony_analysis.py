@@ -327,7 +327,7 @@ def _roman(root: str, quality: str, key: str | None) -> str | None:
 
 
 def _rootless_shells(active: tuple[tuple[int, NoteEvent], ...], structural_pcs: set[int],
-                     by_pc: dict[int, float], key: KeyEstimate, confidence_cap: float) -> tuple[ChordCandidate, ...]:
+                     key: KeyEstimate, confidence_cap: float) -> tuple[ChordCandidate, ...]:
     """A tritone is compatible with two dominant 3rd/7th shells, not one chord.
 
     The missing classes here lack structural support, even if a fleeting melody
@@ -346,12 +346,13 @@ def _rootless_shells(active: tuple[tuple[int, NoteEvent], ...], structural_pcs: 
         diatonic = {(tonic + interval) % 12 for interval in (_MINOR if minor else _MAJOR)}
     else:
         tonic, diatonic = -1, set()
-    total = sum(by_pc.values())
     interpretations = []
     for root in roots:
         tones = tuple((root + interval) % 12 for interval in (0, 4, 7, 10))
-        foreign = sum(weight for pc, weight in by_pc.items() if pc not in tones)
-        score = 4 - 6 * foreign / total - .9 - .3 - .18
+        # Fleeting, unsupported melody tones cannot flip the identity of an
+        # unchanged structural shell. They stay in the evidence, while only
+        # the shell and tonal context order these inherently ambiguous roots.
+        score = 4 - .9 - .3 - .18
         score += .12 if root in diatonic else 0
         score += .08 if set(tones) <= diatonic else 0
         score += .05 if root == tonic else 0
@@ -390,7 +391,7 @@ def _rank(active: tuple[tuple[int, NoteEvent], ...], weights: dict[int, float], 
     structural_pcs = {pc for pc, weight in structural_support.items()
                       if weight >= strongest * _STRUCTURAL_SUPPORT_RATIO}
     if len(structural_pcs) == 2:
-        return _rootless_shells(active, structural_pcs, by_pc, key, confidence_cap)
+        return _rootless_shells(active, structural_pcs, key, confidence_cap)
     if len(structural_pcs) < 3:
         return ()
     total = sum(by_pc.values())

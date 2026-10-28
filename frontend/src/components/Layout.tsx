@@ -260,11 +260,11 @@ export default function Layout() {
           </div>
 
           {song.importSource && <details className="mb-3 text-xs" style={{ color: 'var(--text-muted)' }}>
-            <summary className="cursor-pointer break-words">Imported from {song.importSource.filename} · {song.importSource.mode === 'infer_harmony' ? 'reviewed harmony draft from notes' : 'reviewed chord symbols'}</summary>
+            <summary className="cursor-pointer break-words">Imported from {song.importSource.filename} · {song.importSource.analysisSource === 'local' ? 'local code' : song.importSource.analysisSource === 'mixed' ? 'local reading + Meta interpretation' : 'Meta'} · {song.importSource.mode === 'infer_harmony' ? 'reviewed harmony draft from notes' : 'reviewed chord symbols'}</summary>
             <div className="mt-2 space-y-1">
               <p>Original import analysis is kept below. Later chord or key edits do not rewrite these source proposals.</p>
               {song.importSource.measures?.map((measure, index) => <p key={index} className="break-words">
-                Bar {index + 1} · {measure.chordBasis === 'inferred' ? 'Inferred' : measure.chordBasis === 'unreadable' ? 'Unreadable' : 'Printed'} · {measure.confidence} confidence · {measure.chordBasis === 'inferred' ? 'Proposed' : 'Read'}: {measure.originalChords.join(' · ') || '[None]'}{measure.evidence ? ` · ${measure.evidence}` : ''}
+                Source bar {(measure.sourceMeasureIndex ?? index) + 1} · {measure.analysisSource === 'local' ? 'Local code' : measure.analysisSource === 'meta' ? 'Meta' : 'Original import'} · {measure.originalNoChord ? 'Source rest / N.C.' : measure.chordBasis === 'inferred' ? 'Inferred' : measure.chordBasis === 'unreadable' ? 'Unresolved' : 'Printed'} · {measure.confidence} confidence · {measure.chordBasis === 'inferred' ? 'Proposed' : 'Read'}: {measure.originalChords.join(' · ') || (measure.originalNoChord ? 'N.C.' : '[None]')}{measure.writtenNotes?.length && JSON.stringify(measure.writtenNotes) !== JSON.stringify(measure.notes) ? ` · Written notes: ${measure.writtenNotes.join(' · ')}` : ''}{measure.notes?.length ? ` · ${measure.writtenNotes?.length && JSON.stringify(measure.writtenNotes) !== JSON.stringify(measure.notes) ? 'Sounding notes' : 'Notes'}: ${measure.notes.join(' · ')}` : ''}{measure.bassNotes?.length ? ` · Bass: ${measure.bassNotes.join(' · ')}` : ''}{measure.timeSignature ? ` · Source meter: ${measure.timeSignature.join('/')}` : ''}{measure.userNoChord ? ' · User chose to leave this bar without harmony at import.' : ''}{measure.evidence ? ` · ${measure.evidence}` : ''}
               </p>)}
             </div>
           </details>}

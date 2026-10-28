@@ -1,12 +1,6 @@
 import { useState } from 'react';
 import { useSongStore } from '../../store/songStore';
-
-const ALL_KEYS = [
-  'C major', 'G major', 'D major', 'A major', 'E major', 'B major',
-  'F# major', 'Gb major', 'Db major', 'Ab major', 'Eb major', 'Bb major', 'F major',
-  'A minor', 'E minor', 'B minor', 'F# minor', 'C# minor', 'G# minor',
-  'Eb minor', 'Bb minor', 'F minor', 'C minor', 'G minor', 'D minor',
-];
+import { STANDARD_KEYS } from '../../engine/keySignatures';
 
 const TIME_SIGNATURES: [number, number][] = [
   [4, 4], [3, 4], [6, 8], [2, 4], [5, 4], [7, 8],
@@ -112,7 +106,8 @@ export default function SongSettings() {
           className=" px-1.5 py-0.5 text-sm"
           style={fieldStyle}
         >
-          {ALL_KEYS.map((k) => (
+          {!STANDARD_KEYS.includes(song.key) && <option value={song.key} disabled>{song.key} — choose a supported key</option>}
+          {STANDARD_KEYS.map((k) => (
             <option key={k} value={k}>{k}</option>
           ))}
         </select>

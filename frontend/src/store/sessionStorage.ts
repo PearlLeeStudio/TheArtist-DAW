@@ -48,18 +48,30 @@ function record(value: unknown): value is Record<string, unknown> {
 }
 
 function validImportSource(value: unknown): boolean {
+  const source = record(value) ? value.analysisSource ?? 'meta' : null;
   if (!record(value) || typeof value.filename !== 'string' || value.filename.length > 512 ||
-      typeof value.model !== 'string' || value.model.length > 200 ||
+      !['local', 'meta', 'mixed'].includes(source as string) ||
+      !(source === 'local' ? value.model === null && value.requestId === null : typeof value.model === 'string' && value.model.length <= 200) ||
       !(value.requestId === null || (typeof value.requestId === 'string' && value.requestId.length <= 200)) ||
       (value.mode !== undefined && !['chord_symbols', 'infer_harmony'].includes(value.mode as string))) return false;
   if (value.measures === undefined) return value.mode !== 'infer_harmony';
-  if (!Array.isArray(value.measures) || value.measures.length > 128) return false;
+  if (!Array.isArray(value.measures) || value.measures.length > 512) return false;
   return value.measures.every((measure) => record(measure) &&
     ['printed', 'inferred', 'unreadable'].includes(measure.chordBasis as string) &&
     ['high', 'medium', 'low'].includes(measure.confidence as string) &&
     typeof measure.evidence === 'string' && measure.evidence.length <= 400 &&
     Array.isArray(measure.originalChords) && measure.originalChords.length <= 16 &&
     measure.originalChords.every((symbol) => typeof symbol === 'string' && symbol.length <= 120) &&
+    (measure.sourceMeasureIndex === undefined || (typeof measure.sourceMeasureIndex === 'number' && Number.isInteger(measure.sourceMeasureIndex) && measure.sourceMeasureIndex >= 0 && measure.sourceMeasureIndex < 512)) &&
+    (measure.analysisSource === undefined ? source !== 'mixed' : ['local', 'meta'].includes(measure.analysisSource as string) && (source === 'mixed' || measure.analysisSource === source)) &&
+    (measure.model === undefined || ((measure.analysisSource ?? source) === 'local' ? measure.model === null : typeof measure.model === 'string' && measure.model.length <= 200)) &&
+    (measure.requestId === undefined || measure.requestId === null || (typeof measure.requestId === 'string' && measure.requestId.length <= 200 && (measure.analysisSource ?? source) !== 'local')) &&
+    (measure.notes === undefined || (Array.isArray(measure.notes) && measure.notes.length <= 128 && measure.notes.every((note) => typeof note === 'string' && note.length <= 80))) &&
+    (measure.writtenNotes === undefined || (Array.isArray(measure.writtenNotes) && measure.writtenNotes.length <= 128 && measure.writtenNotes.every((note) => typeof note === 'string' && note.length <= 80))) &&
+    (measure.bassNotes === undefined || (Array.isArray(measure.bassNotes) && measure.bassNotes.length <= 128 && measure.bassNotes.every((note) => typeof note === 'string' && note.length <= 80))) &&
+    (measure.originalNoChord === undefined || (typeof measure.originalNoChord === 'boolean' && (!measure.originalNoChord || measure.originalChords.length === 0))) &&
+    (measure.userNoChord === undefined || (typeof measure.userNoChord === 'boolean' && !(measure.userNoChord && measure.originalNoChord))) &&
+    (measure.timeSignature === undefined || measure.timeSignature === null || (Array.isArray(measure.timeSignature) && measure.timeSignature.length === 2 && Number.isInteger(measure.timeSignature[0]) && measure.timeSignature[0] >= 1 && measure.timeSignature[0] <= 32 && [1, 2, 4, 8, 16, 32].includes(measure.timeSignature[1]))) &&
     (measure.chordBasis !== 'inferred' || (value.mode === 'infer_harmony' && measure.evidence.trim() !== '')) &&
     (measure.chordBasis !== 'unreadable' || (measure.confidence === 'low' && measure.originalChords.length === 0)));
 }

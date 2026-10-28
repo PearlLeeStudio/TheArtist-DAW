@@ -28,6 +28,11 @@ unimplemented and are not part of the completed-feature checks.
   for a notes-only score. Check Printed/Inferred/Unreadable, note evidence and
   confidence against the original. All inferred chords require review. Switch
   modes during recognition; an earlier result must not populate the new mode.
+- [ ] Local analysis is selected by default. Import the original vector-score C/F
+  fixtures without a model key: verify read pitches, bass, local source and Roman I.
+  An unsupported scan reports that it needs another reader. Enable Meta explicitly
+  and check the source changes only for assisted bars; provisional reading warnings
+  and confidence limits remain visible.
 - [ ] The footer always shows the review checkbox and why Import reviewed score
   is disabled. Correct missing key/meter or highlighted bars using the footer
   links, tick review and import. Check on a narrow mobile window as well as desktop.
@@ -36,6 +41,12 @@ unimplemented and are not part of the completed-feature checks.
   import. Change the review key to reanalyze fixed symbols; the main Key control
   instead transposes the song. Check Bb/Eb borrowed chords and preserve Roman
   labels in Projects, JSON backup and PDF. Source proposal metadata stays visible.
+- [ ] Explicit N.C. produces an empty chord bar. Typing N.C. for an unresolved bar
+  is an explicit editing choice, preserved separately from the original reading.
+  A repeat-measure sign copies the immediately preceding harmony and its origin,
+  including an unresolved/N.C. state; it cannot upgrade an inference to printed.
+  More than two changes show all Roman numerals and require choosing the editor's
+  two slots. Nothing is silently truncated.
 - [ ] Explicit and inferred sections remain distinguishable. Edit labels, types and
   boundaries; reject overlaps and invalid ranges. Clicking a section label selects it.
 - [ ] Drag a passage, Generate, and compare Original/A/B/C audibly with identical
@@ -77,8 +88,8 @@ unimplemented and are not part of the completed-feature checks.
 
 ## Automated evidence
 
-Frontend: 122 tests passed; TypeScript/Vite build and ESLint passed. The build still
-reports the existing large-chunk warning. Backend: 187 tests passed and app import
+Frontend: 136 tests passed; TypeScript/Vite build and ESLint passed. The build still
+reports the existing large-chunk warning. Backend: 282 tests passed and app import
 passed. These include MIDI parsing, API errors, score-import mocks, real SDK MCP
 round trips and CPU seed isolation. Frontend transport tests cover network/HTTP
 failures, SSE errors, interrupted or malformed streams and real server results.
@@ -88,9 +99,11 @@ its live service/complete rendering loop is not verified by those tests.
 The real printed-score [review record](../experiments/meta/printed_import_review_smoke.json)
 matched all eight symbols; that exact response also passes frontend review conversion
 with key-relative Roman numerals. It covers one synthetic PNG, not a PDF or a
-representative score collection. The notes-only [first](../experiments/meta/note_harmony_first_attempt.json),
+representative score collection. The direct-vision notes-only [first](../experiments/meta/note_harmony_first_attempt.json),
 [second](../experiments/meta/note_harmony_second_attempt.json) and
 [detail-view](../experiments/meta/note_harmony_smoke.json) trials all contain chord/pitch
-errors. The ineffective detail-view runtime was removed. Notes-only reading remains
-experimental; those trials do not establish accuracy. Actual browser confirmation,
+errors. The ineffective detail-view runtime was removed. Those trials do not
+establish direct-vision accuracy. The newer local path has independent original
+vector-PDF and deterministic note-event tests; its supported encoding and unresolved
+notation are described in [score analysis](score-analysis.md). Actual browser confirmation,
 user-score comparison, MIDI hardware and Logic/Ableton checks remain unchecked.

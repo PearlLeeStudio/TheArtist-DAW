@@ -636,18 +636,21 @@ A strike at beat `p` plays the chord of the slot `p` falls in (slot 0 = beats `[
 
 ### POST `/api/import/score` — Meta score transcription for review
 
-Accepts one explicitly chosen PDF, PNG, JPEG or WebP. `mode: "chord_symbols"` (the default) transcribes printed chord symbols; `mode: "infer_harmony"` explicitly opts into harmony proposals from visible notation, including melody-only harmonization suggestions. The server makes one bounded `muse-spark-1.3` Standard call. Inference is reviewable interpretation, not verified original harmony. The endpoint does not fetch a URL, read a supplied filesystem path, store uploaded bytes, or import melody notes/durations.
+Accepts one explicitly chosen PDF, PNG, JPEG or WebP. `engine: "local"` (default) reads supported vector PDFs without a key, upload or API call. `mode: "chord_symbols"` reads written chords; `mode: "infer_harmony"` analyzes locally read notes, their timing and bass. Inference is reviewable interpretation, not verified original harmony. The endpoint does not fetch a URL, read a supplied filesystem path, store uploaded bytes, or import melody performance tracks.
+
+`engine: "auto"` explicitly permits bounded Meta assistance for unresolved local note passages or an unsupported local input format. `engine: "meta"` explicitly uses the attachment-based Meta reader. Note-text assistance has at most two calls per import, eight measures/512 notes/64 KiB per call, 45 seconds, 4096 output tokens and a $0.10 request cap. Attachment reading has one 75-second call with its existing $1.35 request cap. Both share the spend ledger and visible failure behavior.
 
 ```json
 {
   "filename": "score.png",
   "mimeType": "image/png",
   "dataBase64": "<base64 file bytes, without a data-URL prefix>",
-  "mode": "chord_symbols"
+  "mode": "chord_symbols",
+  "engine": "local"
 }
 ```
 
-The filename must be a plain filename matching the MIME type and file signature. The decoded file limit is 8 MiB. Recognition allows at most 128 written measures, 16 symbols per measure, and 64 non-overlapping sections. The Meta timeout is 75 seconds; output tokens and request/deployment spending are capped by the shared client and ledger.
+The filename must be a plain filename matching MIME and file signature. The decoded limit is 8 MiB. Local reading allows 50 pages/512 written measures and bounded page objects, glyphs and note events. Attachment-based Meta reading allows 128 measures. Review allows 16 symbols per measure and 64 non-overlapping sections. Unsupported encoding, unresolved rhythm and octave/voice limitations are reported explicitly.
 
 The JSON response is a **review draft**, not a ready-to-replace editor song:
 
@@ -655,16 +658,19 @@ The JSON response is a **review draft**, not a ready-to-replace editor song:
 |---|---|
 | `title` | Printed title or an empty string; at most 120 characters |
 | `mode` | Echoes `chord_symbols` or `infer_harmony`; unknown request modes are rejected |
+| `analysisSource` | `local`, `meta` or `mixed`; per-measure `analysisSource` and `model`/`requestId` identify the actual boundary |
 | `key` | Canonical `<root> major/minor` or `null`; aliases such as C/Am normalize to C major/A minor. An inferred or unrecognized key produces a review warning |
 | `timeSignature` | `[numerator, denominator]` or `null`; playback BPM is chosen by the user, not extracted |
-| `measures` | `[{chords: string[], sourceLabel, needsReview, note, chordBasis, confidence}]`, in written order; `chordBasis` is `printed`, `inferred` or `unreadable`; `confidence` is `high`, `medium` or `low` |
+| `measures` | `[{chords, sourceLabel, needsReview, note, chordBasis, confidence, notes, writtenNotes, bassNotes, noChord, timeSignature, analysisSource, model, requestId}]`, in written order. `notes` are sounding pitches, `writtenNotes` retain notation before a resolved octave shift, and `bassNotes` retain actual low-pitch evidence. `noChord` distinguishes explicit N.C. from unreadable emptiness. Source meters remain per measure |
 | `sections` | `[{section, label, startMeasure, length, basis, note}]`; `section` is a supported section id or `null`, indices are zero based, `basis` is `explicit` or `inferred` |
 | `warnings` | Review notes, including any repeat/ending limitations |
-| `model`, `requestId` | Actual provider model and request identifier (`requestId` may be `null`) |
+| `model`, `requestId` | `null` for local reading; actual provider metadata when Meta is used. Mixed responses retain request/model metadata per affected measure |
 
 Raw measure chord counts are preserved: empty bars and bars with more than two symbols require correction. The frontend reviews supported chord spellings, key, meter and section ranges, then requires explicit confirmation. It converts one chord into two equal slots and two chords into one slot each; it never silently drops a third symbol. Repeats, D.C./D.S. and endings remain in written order. A wholly unreadable score or a declared incomplete transcription is rejected instead of returned as a successful partial import.
 
 Inferred chords require nonempty visible-note/bass evidence or an explicit melody-only rationale in `note`, and always have `needsReview: true`. Low confidence and unreadable measures also require review. Missing inference provenance is rejected; the printed-symbol mode rejects a provider result that claims inferred chords. The review screen shows key-relative Roman numerals before loading and retains source proposals in project metadata. It never stores uploaded file bytes.
+
+See [local score analysis](docs/score-analysis.md) for the algorithms, supported encoding and confidence limits. Full harmonic proposals can exceed the editor's two slots; review must resolve that conversion. Source meter changes are evidence, while the current editor still plays/exports one global meter.
 
 Service errors use `{"detail": "..."}`; request-schema errors use FastAPI's validation-error list. Statuses are 400 for invalid filename/base64; 413 attachment too large; 415 unsupported/mismatched format; 422 invalid request or incomplete/no-readable-chord extraction; 429 API budget limit; 502 invalid provider response; 503 missing/invalid configuration or ledger; 504 Meta timeout. Provider-output validation errors do not echo extracted score text.
 

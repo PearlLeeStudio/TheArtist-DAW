@@ -8,7 +8,7 @@ from app.models.sections import SectionType
 
 MAX_SCORE_BYTES = 8 * 1024 * 1024
 MAX_SCORE_BASE64 = 4 * ((MAX_SCORE_BYTES + 2) // 3)
-MAX_SCORE_MEASURES = 128
+MAX_SCORE_MEASURES = 512
 MAX_SCORE_SECTIONS = 64
 MAX_CHORDS_PER_MEASURE = 16
 ScoreMime = Literal["application/pdf", "image/png", "image/jpeg", "image/webp"]
@@ -29,6 +29,7 @@ class ScoreImportRequest(StrictModel):
     mimeType: str
     dataBase64: str
     mode: ScoreImportMode = "chord_symbols"
+    engine: Literal["local", "meta", "auto"] = "local"
 
 
 class ImportedMeasure(StrictModel):
@@ -38,6 +39,14 @@ class ImportedMeasure(StrictModel):
     note: Note
     chordBasis: ChordBasis = "printed"
     confidence: Confidence = "high"
+    notes: list[ShortText] = Field(default_factory=list, max_length=128)
+    writtenNotes: list[ShortText] = Field(default_factory=list, max_length=128)
+    bassNotes: list[ShortText] = Field(default_factory=list, max_length=128)
+    noChord: bool = False
+    timeSignature: list[int] | None = Field(default=None, min_length=2, max_length=2)
+    analysisSource: Literal["local", "meta"] | None = None
+    requestId: str | None = Field(default=None, max_length=200)
+    model: str | None = Field(default=None, max_length=200)
 
     @field_validator("chords")
     @classmethod
@@ -48,7 +57,9 @@ class ImportedMeasure(StrictModel):
 
     @model_validator(mode="after")
     def require_review_and_evidence(self) -> "ImportedMeasure":
-        if not self.chords:
+        if self.noChord and self.chords:
+            raise ValueError("a no-chord measure cannot contain chords")
+        if not self.chords and not self.noChord:
             self.chordBasis = "unreadable"
             self.confidence = "low"
         elif self.chordBasis == "unreadable":
@@ -106,6 +117,7 @@ class ScoreExtraction(ScoreDraft):
 
 
 class ScoreImportResponse(ScoreDraft):
-    model: str
+    model: str | None
     requestId: str | None
     mode: ScoreImportMode = "chord_symbols"
+    analysisSource: Literal["local", "meta", "mixed"] = "meta"

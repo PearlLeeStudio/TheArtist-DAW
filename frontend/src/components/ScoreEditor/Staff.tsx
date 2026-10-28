@@ -5,16 +5,7 @@ import { getChordDisplayParts } from '../../engine/chordDisplay';
 import { sectionColor, sectionDisplayLabel } from '../../engine/songForm';
 import type { SlotAddress } from '../../models/types';
 import { scoreMeasureLayout } from '../../engine/scoreLayout';
-
-const KEY_SIG_MAP: Record<string, string> = {
-  'C major': 'C', 'G major': 'G', 'D major': 'D', 'A major': 'A',
-  'E major': 'E', 'B major': 'B', 'F# major': 'F#', 'Gb major': 'Gb',
-  'Db major': 'Db', 'Ab major': 'Ab', 'Eb major': 'Eb', 'Bb major': 'Bb',
-  'F major': 'F',
-  'A minor': 'Am', 'E minor': 'Em', 'B minor': 'Bm', 'F# minor': 'F#m',
-  'C# minor': 'C#m', 'G# minor': 'G#m', 'Eb minor': 'Ebm', 'Bb minor': 'Bbm',
-  'F minor': 'Fm', 'C minor': 'Cm', 'G minor': 'Gm', 'D minor': 'Dm',
-};
+import { keySignatureFor } from '../../engine/keySignatures';
 
 const MEASURES_PER_ROW = 4;
 const CHORD_AREA_HEIGHT = 8;
@@ -114,7 +105,8 @@ export default function Staff() {
     const renderer = new Renderer(container, Renderer.Backends.SVG);
     renderer.resize(totalWidth, totalHeight);
     const context = renderer.getContext();
-    const keySig = KEY_SIG_MAP[song.key] || 'C';
+    const keySig = keySignatureFor(song.key);
+    if (!keySig) return;
 
     // Get stave color from CSS variable
     const staveColor = getComputedStyle(document.documentElement).getPropertyValue('--stave-color').trim() || '#000';
@@ -140,12 +132,15 @@ export default function Staff() {
       const midY = stave.getYForLine(2);
       measured.push({ ...bl, midLineY: midY });
     }
-    setStaveLayouts(measured);
+    const frame = requestAnimationFrame(() => setStaveLayouts(measured));
+    return () => cancelAnimationFrame(frame);
   }, [song.measures.length, song.key, song.timeSignature, baseLayouts, totalWidth, totalHeight, theme]);
 
   // Position for add button
   const lastRow = rows - 1;
   const addBtnY = PADDING_Y + CHORD_AREA_HEIGHT + (lastRow + 1) * STAVE_HEIGHT + 8;
+
+  if (!keySignatureFor(song.key)) return <div ref={wrapperRef} role="alert" className="p-3 text-sm">Unsupported key signature: {song.key}. Choose a standard key in the Key control to display the score.</div>;
 
   return (
     <div ref={wrapperRef} className="relative select-none w-full">

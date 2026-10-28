@@ -3,16 +3,7 @@ import { Renderer, Stave } from 'vexflow';
 import { getChordDisplayParts } from '../../engine/chordDisplay';
 import { scoreMeasureLayout, SCORE_MEASURES_PER_ROW, SCORE_ROW_HEIGHT, SCORE_TOP } from '../../engine/scoreLayout';
 import type { Song } from '../../models/types';
-
-const KEY_SIG_MAP: Record<string, string> = {
-  'C major': 'C', 'G major': 'G', 'D major': 'D', 'A major': 'A',
-  'E major': 'E', 'B major': 'B', 'F# major': 'F#', 'Gb major': 'Gb',
-  'Db major': 'Db', 'Ab major': 'Ab', 'Eb major': 'Eb', 'Bb major': 'Bb',
-  'F major': 'F',
-  'A minor': 'Am', 'E minor': 'Em', 'B minor': 'Bm', 'F# minor': 'F#m',
-  'C# minor': 'C#m', 'G# minor': 'G#m', 'Eb minor': 'Ebm', 'Bb minor': 'Bbm',
-  'F minor': 'Fm', 'C minor': 'Cm', 'G minor': 'Gm', 'D minor': 'Dm',
-};
+import { keySignatureFor } from '../../engine/keySignatures';
 
 interface StaveLayout {
   x: number;
@@ -71,7 +62,8 @@ export default function SessionStaff({ song }: SessionStaffProps) {
     const renderer = new Renderer(container, Renderer.Backends.SVG);
     renderer.resize(totalWidth, totalHeight);
     const context = renderer.getContext();
-    const keySig = KEY_SIG_MAP[song.key] || 'C';
+    const keySig = keySignatureFor(song.key);
+    if (!keySig) return;
 
     const staveColor = getComputedStyle(document.documentElement).getPropertyValue('--stave-color').trim() || '#000';
     context.setStrokeStyle(staveColor);
@@ -95,8 +87,11 @@ export default function SessionStaff({ song }: SessionStaffProps) {
       const midY = stave.getYForLine(2);
       measured.push({ ...bl, midLineY: midY });
     }
-    setStaveLayouts(measured);
+    const frame = requestAnimationFrame(() => setStaveLayouts(measured));
+    return () => cancelAnimationFrame(frame);
   }, [song.measures.length, song.key, song.timeSignature, baseLayouts, totalWidth, totalHeight, theme]);
+
+  if (!keySignatureFor(song.key)) return <div ref={wrapperRef} role="alert" className="p-3 text-sm">Unsupported key signature: {song.key}. Open the project and choose a standard key to display the score.</div>;
 
   return (
     <div ref={wrapperRef} className="relative select-none w-full pointer-events-none">

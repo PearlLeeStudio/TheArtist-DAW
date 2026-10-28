@@ -3,6 +3,7 @@ import { jsPDF } from 'jspdf';
 import type { Chord, Song } from '../models/types';
 import { getChordDisplayParts } from './chordDisplay';
 import { sectionAt, sectionColor, sectionDisplayLabel } from './songForm';
+import { keySignatureFor } from './keySignatures';
 import {
   PDF_WIDTH, PDF_HEIGHT, pdfPageRanges, pdfMeasureLayout, withoutPdfCreationDate,
 } from './pdfLayout';
@@ -16,16 +17,6 @@ const PALETTES = {
 type Palette = typeof PALETTES.light;
 // VexFlow supplies its own OffscreenCanvas type. Use its actual context contract.
 type DrawingContext = CanvasContext['context2D'];
-const KEY_SIGS: Record<string, string> = {
-  'C major': 'C', 'G major': 'G', 'D major': 'D', 'A major': 'A', 'E major': 'E',
-  'B major': 'B', 'F# major': 'F#', 'Gb major': 'Gb', 'Db major': 'Db', 'C# major': 'C#',
-  'Ab major': 'Ab', 'G# major': 'Ab', 'Eb major': 'Eb', 'D# major': 'Eb', 'Bb major': 'Bb',
-  'A# major': 'Bb', 'F major': 'F', 'Cb major': 'Cb',
-  'A minor': 'Am', 'E minor': 'Em', 'B minor': 'Bm', 'F# minor': 'F#m', 'C# minor': 'C#m',
-  'G# minor': 'G#m', 'D# minor': 'D#m', 'Eb minor': 'Ebm', 'Bb minor': 'Bbm', 'A# minor': 'A#m',
-  'F minor': 'Fm', 'C minor': 'Cm', 'G minor': 'Gm', 'D minor': 'Dm', 'Ab minor': 'Abm',
-  'Db minor': 'C#m', 'Gb minor': 'F#m',
-};
 
 function fittedText(ctx: DrawingContext, text: string, x: number, y: number, width: number): void {
   ctx.save();
@@ -108,7 +99,7 @@ export async function createSongPdf(song: Song, theme: PdfTheme = 'current'): Pr
         const stave = new Stave(layout.x, layout.y, layout.width);
         if (layout.isFirstInRow) {
           stave.addClef('treble');
-          const key = KEY_SIGS[snapshot.key];
+          const key = keySignatureFor(snapshot.key);
           if (!key) throw new Error(`Unsupported PDF key signature: ${snapshot.key}`);
           stave.addKeySignature(key);
         }

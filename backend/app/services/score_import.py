@@ -22,6 +22,7 @@ SCORE_MAX_OUTPUT_TOKENS = 8192
 # https://dev.meta.ai/docs/cookbook/long-context
 SCORE_INPUT_TOKEN_BOUND = 1_048_576
 SCORE_MAX_REQUEST_USD = 1.35
+MAX_META_SCORE_MEASURES = 128
 
 _EXTENSIONS = {
     "application/pdf": {".pdf"}, "image/png": {".png"},
@@ -64,7 +65,7 @@ SCORE_SCHEMA = {
         "keyBasis": {"type": "string", "enum": ["printed", "inferred", "unreadable"]},
         "timeSignature": {"type": ["array", "null"], "minItems": 2, "maxItems": 2,
                           "items": {"type": "integer", "minimum": 1, "maximum": 32}},
-        "measures": {"type": "array", "maxItems": MAX_SCORE_MEASURES, "items": {
+        "measures": {"type": "array", "maxItems": MAX_META_SCORE_MEASURES, "items": {
             "type": "object", "properties": {
                 "chords": {"type": "array", "maxItems": MAX_CHORDS_PER_MEASURE,
                            "items": {"type": "string", "minLength": 1, "maxLength": 80}},
@@ -201,6 +202,25 @@ def _content(req: ScoreImportRequest) -> dict[str, Any]:
 
 def import_score(req: ScoreImportRequest) -> ScoreImportResponse:
     content = _content(req)
+    if req.engine != "meta":
+        from app.services.score_analysis import LocalScoreUnsupported, analyze_local_score
+        try:
+            response = analyze_local_score(req)
+            if req.engine == "auto" and req.mode == "infer_harmony":
+                from app.services.score_assistance import enrich_local_harmony
+                return enrich_local_harmony(req, response)
+            return response
+        except LocalScoreUnsupported as exc:
+            if req.engine == "local":
+                raise ScoreInputError(f"{exc} Select Use Meta if local reading is unsupported to try the API.", 422) from None
+            response = _import_meta_score(req, content)
+            response.warnings = [f"Local reading was unsupported: {str(exc)[:220]}. Meta processed this file.",
+                                 *response.warnings][:32]
+            return response
+    return _import_meta_score(req, content)
+
+
+def _import_meta_score(req: ScoreImportRequest, content: dict[str, Any]) -> ScoreImportResponse:
     client = get_client()
     cfg = client.config
     if cfg.provider != "meta" or cfg.model != SCORE_MODEL:
@@ -248,6 +268,8 @@ def import_score(req: ScoreImportRequest) -> ScoreImportResponse:
     if not draft.complete:
         raise ScoreInputError("The complete written score could not be read within the import limits. "
                               "Split it into shorter files (up to 128 measures) or use a clearer image.", 422)
+    if len(draft.measures) > MAX_META_SCORE_MEASURES:
+        raise ScoreInputError("Meta reading supports up to 128 written measures per request; split the score or use local analysis.", 422)
     if not any(measure.chords for measure in draft.measures):
         message = ("No supported harmony could be proposed from readable notation. "
                    "Choose a clearer score with visible notes and bass, or enter the chords manually."
@@ -257,6 +279,9 @@ def import_score(req: ScoreImportRequest) -> ScoreImportResponse:
                    "or choose a chord chart with printed symbols.")
         raise ScoreInputError(message, 422)
     for measure in draft.measures:
+        measure.analysisSource = "meta"
+        measure.requestId = result.request_id
+        measure.model = result.model
         if len(measure.chords) not in (1, 2):
             measure.needsReview = True
             if not measure.note:

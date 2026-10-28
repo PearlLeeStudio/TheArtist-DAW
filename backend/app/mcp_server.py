@@ -134,9 +134,9 @@ def create_mcp_server() -> FastMCP:
 
     @server.tool(annotations=IMPORT)
     async def import_score(request: ScoreImportRequest, attachmentConfirmed: StrictBool = False) -> ContractEnvelope:
-        """Review an attached score: chord_symbols reads printed chords; infer_harmony proposes harmony from notes. Inferred chords require human review. This incurs Meta API cost; no path/URL access."""
+        """Read an attached vector score locally by default. chord_symbols reads written chords; infer_harmony analyzes notes. Explicit auto/meta may incur Meta API cost. Interpretations require review; no path/URL access."""
         if not attachmentConfirmed:
-            raise ToolError("Confirm that the user explicitly attached this score before sending it to Meta.")
+            raise ToolError("Confirm that the user explicitly attached this score for analysis.")
         return await _invoke(score_import.import_score_route, request)
 
     @server.tool(annotations=LOCAL_WRITE)

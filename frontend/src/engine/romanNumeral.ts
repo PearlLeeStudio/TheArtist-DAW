@@ -79,6 +79,7 @@ function getQualitySuffix(quality: string): string {
     case 'dim7': return '\u00B07';
     case 'm7b5': return '\u00F87';
     case 'aug': return '+';
+    case 'aug7': return '+7';
     case 'sus2': return 'sus2';
     case 'sus4': return 'sus4';
     case '6': case 'm6': return '6';

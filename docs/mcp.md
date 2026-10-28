@@ -21,7 +21,7 @@ The Streamable HTTP endpoint is `http://127.0.0.1:8000/mcp/`. FastAPI starts and
 | `generate_section` | `SectionGenerateRequest` → existing `/api/generate/section` response | Keep `source` and `modelUsed` visible |
 | `build_song` | `SongGenerateRequest` → existing `/api/generate/song` response | Keep `model_used` and each track's `source` visible |
 | `render_midi` | The same `ExportSpec` as `/api/export/midi` | Returns `mimeType`, `filename`, `byteLength`, `dataBase64` |
-| `import_score` | The same request and review draft as `/api/import/score` | Explicit attachment confirmation; one bounded Meta call |
+| `import_score` | The same request and review draft as `/api/import/score` | Local by default; explicit attachment confirmation and bounded optional Meta assistance |
 | `export_daw` | The same request as `/api/daw/open` | Explicit local side effect; opt-in required |
 
 The request schemas are the application Pydantic models, advertised by `tools/list`. They are not separately maintained music formats. Section indices are zero based; export measures contain exactly two chord slots, with the actual resolved MIDI voicing for each chord. Score-import drafts preserve their raw chord counts until a user confirms the conversion to those two slots.
@@ -30,11 +30,15 @@ The request schemas are the application Pydantic models, advertised by `tools/li
 
 Limits are 1 MiB of music JSON, 4 MiB of MIDI bytes, a 6 MiB result envelope, and a 12 MiB MCP request body. Score attachments are limited to one 8 MiB PDF/PNG/JPEG/WebP. A generated song has at most 64 bars; score imports allow 128 measures and MIDI export 512. MIDI uses 480 PPQ and the supplied meter, metadata, voicings, rhythm, swing, instruments, and mixer CC7 values.
 
-The import tool requires `attachmentConfirmed: true`. This asserts that the user explicitly attached this score for reading by Meta. It accepts inline bytes, never filesystem paths or remote URLs. Do not gather journals, photographs, or other private files to supply it. The existing Meta timeout, one-turn policy, cost reservation, request ID and token logging apply unchanged.
+The import tool requires `attachmentConfirmed: true`. This asserts that the user explicitly attached this score for analysis. It accepts inline bytes, never filesystem paths or remote URLs. Do not gather journals, photographs, or other private files to supply it. `engine: "local"` is the default and calls no model. `auto` or `meta` explicitly permits the documented API path; timeouts, bounded calls, cost reservation, request IDs and token logging apply.
 
 The same import request supports `mode: "chord_symbols"` (default, printed transcription)
 and explicit `mode: "infer_harmony"` (notes-based interpretation). Preserve the echoed
-mode and every measure's `chordBasis`, `confidence`, `note` evidence and `needsReview`.
+mode, `analysisSource` (`local`, `meta`, `mixed`) and every measure's `chordBasis`,
+`confidence`, `note`, read `notes`/`bassNotes`, `noChord`, source meter and `needsReview`.
+Local results have a null model/request ID; mixed results retain provider metadata
+per assisted bar. Local vector PDFs allow 512 measures; attachment-based Meta
+reading allows 128. Note-text assistance is capped at two calls of eight measures.
 Inferred harmony is a proposal for human review, not verified original chords, and
 does not import melody note durations. These are two modes of the existing tool.
 

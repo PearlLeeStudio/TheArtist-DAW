@@ -16,12 +16,24 @@ export interface Measure {
 export type ScoreImportMode = 'chord_symbols' | 'infer_harmony';
 export type ImportedChordBasis = 'printed' | 'inferred' | 'unreadable';
 export type ImportConfidence = 'high' | 'medium' | 'low';
+export type ScoreAnalysisSource = 'local' | 'meta' | 'mixed';
 export interface ImportMeasureSource {
   chordBasis: ImportedChordBasis;
   confidence: ImportConfidence;
   evidence: string;
   /** Initial recognition/proposal, retained after the user edits the score. */
   originalChords: string[];
+  sourceMeasureIndex?: number;
+  analysisSource?: 'local' | 'meta';
+  model?: string | null;
+  requestId?: string | null;
+  notes?: string[];
+  writtenNotes?: string[];
+  bassNotes?: string[];
+  originalNoChord?: boolean;
+  /** The user explicitly entered N.C. for a bar that had no source rest/N.C. */
+  userNoChord?: boolean;
+  timeSignature?: [number, number] | null;
 }
 
 /** Song-form section ids. Mirrors backend/app/models/sections.py; labels,
@@ -65,9 +77,10 @@ export interface Song {
   /** Source metadata only; uploaded file bytes are never autosaved. */
   importSource?: {
     filename: string;
-    model: string;
+    model: string | null;
     requestId: string | null;
     mode?: ScoreImportMode;
+    analysisSource?: ScoreAnalysisSource;
     /** Source-bar order at import time; later score edits do not rewrite it. */
     measures?: ImportMeasureSource[];
   };

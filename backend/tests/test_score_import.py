@@ -36,7 +36,7 @@ for measure in GOOD["measures"]:
 
 def body(raw=PDF, **overrides):
     return {"filename": "score.pdf", "mimeType": "application/pdf",
-            "dataBase64": base64.b64encode(raw).decode("ascii"), **overrides}
+            "dataBase64": base64.b64encode(raw).decode("ascii"), "engine": "meta", **overrides}
 
 
 class ScoreImportTest(unittest.TestCase):
@@ -67,7 +67,8 @@ class ScoreImportTest(unittest.TestCase):
         response = CLIENT.post(ROUTE, json=body())
         self.assertEqual(response.status_code, 200, response.text)
         data = response.json()
-        self.assertEqual(set(data), {"title", "key", "timeSignature", "measures", "sections", "warnings", "model", "requestId", "mode"})
+        self.assertEqual(set(data), {"title", "key", "timeSignature", "measures", "sections", "warnings", "model", "requestId", "mode", "analysisSource"})
+        self.assertEqual(data["analysisSource"], "meta")
         self.assertEqual(data["mode"], "chord_symbols")
         self.assertEqual([m["chords"] for m in data["measures"]], [m["chords"] for m in GOOD["measures"]])
         self.assertEqual(data["sections"], GOOD["sections"])

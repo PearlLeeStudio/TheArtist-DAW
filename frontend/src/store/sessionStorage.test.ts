@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import type { SavedSession } from '../models/types.ts';
 import { DEFAULT_PLAY_SETTINGS, enginePlayConfig, playSettingsFromSession } from '../engine/playSettings.ts';
 import { mergeImport, serializeForExport, saveAll, loadAll } from './sessionStorage.ts';
+import { readScoreImportResponse, createScoreImportDraft, buildImportedSong } from '../engine/scoreImport.ts';
 
 test('bad project files cannot replace valid working data or crash the score renderer', () => {
   const malformed = {
@@ -79,6 +80,49 @@ test('foreign projects with invalid or disguised inferred provenance are skipped
     const { result, merged } = mergeImport([], JSON.stringify({ version: 1, sessions: [project] }));
     assert.equal(result.skipped, 1);
     assert.deepEqual(merged, []);
+  }
+});
+
+test('local and mixed source evidence including rests and explicit empty choices survives project roundtrip', () => {
+  const project = structuredClone(importedProject);
+  project.song.importSource = {
+    filename: 'analysis.pdf', mode: 'infer_harmony', analysisSource: 'mixed', model: 'muse-spark-1.3', requestId: 'batch-request',
+    measures: [
+      { chordBasis: 'inferred', confidence: 'high', evidence: 'C E G over C.', originalChords: ['C'], sourceMeasureIndex: 0, analysisSource: 'local', model: null, requestId: null, notes: ['C4', 'E4', 'G4'], bassNotes: ['C3'], originalNoChord: false, userNoChord: true, timeSignature: [2, 4] },
+      { chordBasis: 'inferred', confidence: 'medium', evidence: 'D F A supports D minor.', originalChords: ['Dm'], sourceMeasureIndex: 1, analysisSource: 'meta', model: 'muse-spark-1.3', requestId: 'passage-request', notes: ['D4', 'F4', 'A4'], bassNotes: ['D3'], originalNoChord: false, userNoChord: false, timeSignature: [4, 4] },
+    ],
+  };
+  assert.deepEqual(mergeImport([], serializeForExport([project])).merged[0].song.importSource, project.song.importSource);
+  project.song.importSource.analysisSource = 'local';
+  project.song.importSource.model = null;
+  project.song.importSource.requestId = null;
+  project.song.importSource.measures = [project.song.importSource.measures![0]];
+  assert.deepEqual(mergeImport([], serializeForExport([project])).merged[0].song.importSource, project.song.importSource);
+});
+
+test('ottava written and sounding pitches remain distinct through import and browser save/load', () => {
+  const response = readScoreImportResponse({
+    title: 'Octave instruction', key: 'C major', timeSignature: [4, 4], sections: [], warnings: [],
+    analysisSource: 'local', model: null, requestId: null, mode: 'infer_harmony',
+    measures: [{ chords: ['C'], sourceLabel: 'Bar 1', needsReview: true, chordBasis: 'inferred', confidence: 'medium',
+      note: 'A bounded 8va instruction raises the written note by one octave.', writtenNotes: ['C6'], notes: ['C7'], bassNotes: ['C7'] }],
+  }, 'infer_harmony', 'local');
+  const song = buildImportedSong(createScoreImportDraft(response, 'octave.pdf'));
+  const project = { ...structuredClone(importedProject), song };
+  const descriptor = Object.getOwnPropertyDescriptor(globalThis, 'localStorage');
+  let stored = '';
+  Object.defineProperty(globalThis, 'localStorage', { configurable: true, value: {
+    setItem(_key: string, value: string) { stored = value; }, getItem() { return stored; },
+  } });
+  try {
+    saveAll([project]);
+    const source = loadAll()[0].song.importSource?.measures?.[0];
+    assert.deepEqual(source?.writtenNotes, ['C6']);
+    assert.deepEqual(source?.notes, ['C7']);
+    assert.deepEqual(mergeImport([], serializeForExport(loadAll())).merged[0].song.importSource, song.importSource);
+  } finally {
+    if (descriptor) Object.defineProperty(globalThis, 'localStorage', descriptor);
+    else Reflect.deleteProperty(globalThis, 'localStorage');
   }
 });
 

@@ -1,5 +1,5 @@
 import type { Chord } from '../models/types';
-import { ROOTS } from './constants.ts';
+import { NOTE_VALUES } from './constants.ts';
 
 const QUALITY_MAP: Record<string, string> = {
   '': 'maj',
@@ -21,6 +21,9 @@ const QUALITY_MAP: Record<string, string> = {
   'ø7': 'm7b5',
   'aug': 'aug',
   '+': 'aug',
+  'aug7': 'aug7',
+  '+7': 'aug7',
+  '7#5': 'aug7',
   'sus2': 'sus2',
   'sus4': 'sus4',
   'sus': 'sus4',
@@ -51,7 +54,7 @@ export function parseChordName(input: string): Chord | null {
   const slashIdx = trimmed.lastIndexOf('/');
   if (slashIdx > 0) {
     const possibleBass = trimmed.slice(slashIdx + 1);
-    if (ROOTS.includes(possibleBass)) {
+    if (Object.hasOwn(NOTE_VALUES, possibleBass)) {
       bass = possibleBass;
       mainPart = trimmed.slice(0, slashIdx);
     }
@@ -68,7 +71,7 @@ export function parseChordName(input: string): Chord | null {
     rest = rest.slice(1);
   }
 
-  if (!ROOTS.includes(root)) return null;
+  if (!Object.hasOwn(NOTE_VALUES, root)) return null;
 
   const extensions: string[] = [];
   const extMatch = rest.match(/\(([^)]+)\)/);
