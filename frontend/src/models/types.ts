@@ -13,6 +13,26 @@ export interface Measure {
   chords: [Chord | null, Chord | null];
 }
 
+/** Song-form section ids. Mirrors backend/app/models/sections.py; labels,
+ *  dropdown groups and default chord counts live in engine/songForm.ts. */
+export type SectionType =
+  | 'intro' | 'verse' | 'pre_chorus' | 'chorus' | 'post_chorus' | 'bridge' | 'outro'
+  | 'interlude' | 'solo' | 'breakdown' | 'drop' | 'vamp' | 'turnaround' | 'tag'
+  | 'head' | 'a_section' | 'b_section';
+
+/** A song-form section laid over a run of measures. */
+export interface SongSection {
+  id: string;
+  type: SectionType;
+  startMeasure: number;  // index of its first measure
+  length: number;        // measures (bars)
+  /** Set while "New from Song Form" is still generating the section, which
+   *  it places before the request: how many measures were appended for it.
+   *  A song loaded with a pending section drops it and those measures
+   *  (withSongFormDefaults in songForm.ts). */
+  pending?: { addedMeasures: number };
+}
+
 export interface Song {
   id: string;
   title: string;
@@ -21,6 +41,13 @@ export interface Song {
   genre: string | null;
   timeSignature: [number, number];
   measures: Measure[];
+  /** Song-form sections in measure order. Missing on songs saved before
+   *  sections existed; songStore fills in []. */
+  sections?: SongSection[];
+  /** true while the title follows the sections (see autoTitle in
+   *  songForm.ts); editing the title turns it off. Missing on older songs,
+   *  where a title of '' or 'Untitled' counts as automatic. */
+  autoTitle?: boolean;
 }
 
 export interface SlotAddress {

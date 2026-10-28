@@ -2,6 +2,7 @@ import { useEffect, useRef, useMemo, useCallback, useState } from 'react';
 import { Renderer, Stave } from 'vexflow';
 import { useSongStore, isSlotInList } from '../../store/songStore';
 import { getChordDisplayParts } from '../../engine/chordDisplay';
+import { sectionLabel } from '../../engine/songForm';
 import type { SlotAddress } from '../../models/types';
 
 const KEY_SIG_MAP: Record<string, string> = {
@@ -20,6 +21,11 @@ const STAVE_HEIGHT = 170;
 const PADDING_Y = 10;
 const PADDING_X = 10;
 const ADD_BTN_HEIGHT = 50;
+// Song-form section label baseline, below the stave's y. VexFlow puts the
+// top stave line 40px below y and chord symbols sit on the middle line, so
+// this band holds only the label (and the clef, which the label clears by
+// starting at contentX).
+const SECTION_LABEL_DY = 16;
 
 interface StaveLayout {
   x: number;
@@ -333,8 +339,32 @@ export default function Staff() {
           });
         })}
 
+        {/* Song-form section labels — one per section, at the start of its
+            first measure only (a section that wraps rows is not labelled
+            again). Not hit-testable, so the slot zones underneath still
+            take clicks and drags. */}
+        {(song.sections ?? []).map((section) => {
+          const layout = staveLayouts[section.startMeasure];
+          if (!layout) return null;
+          return (
+            <text
+              key={section.id}
+              x={layout.contentX}
+              y={layout.y + SECTION_LABEL_DY}
+              fill="var(--text-muted)"
+              fontSize={10}
+              fontWeight={700}
+              letterSpacing="0.08em"
+              fontFamily="system-ui, sans-serif"
+              className="pointer-events-none"
+            >
+              {sectionLabel(section.type).toUpperCase()}
+            </text>
+          );
+        })}
+
         {/* Add measures button inside the score area */}
-        <g className="pointer-events-auto cursor-pointer" onClick={addMeasures}>
+        <g className="pointer-events-auto cursor-pointer" onClick={() => addMeasures()}>
           <rect
             x={PADDING_X}
             y={addBtnY}

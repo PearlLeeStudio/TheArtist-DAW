@@ -1,10 +1,18 @@
 import { create } from 'zustand';
-import type { Song, Measure, Chord, SlotAddress } from '../models/types';
+import type { Song, Measure, Chord, SlotAddress, SectionType, SongSection } from '../models/types';
 import { calculateRomanNumeral } from '../engine/romanNumeral';
 import { generatePianoVoicing } from '../engine/voicingEngine';
 import { NOTE_VALUES, VALUE_TO_FLAT_NAME } from '../engine/constants';
 import { stopPlayback } from '../engine/playback';
 import { setCurrentDrumPattern } from '../engine/drums';
+import {
+  DEFAULT_SONG_TITLE,
+  MAX_SECTION_BARS,
+  sectionAt,
+  sectionPlacement,
+  withAutoTitle,
+  withSongFormDefaults,
+} from '../engine/songForm';
 
 /**
  * If playback is active, stop it and return state patches that clear the
@@ -31,7 +39,7 @@ function createMeasure(index: number): Measure {
 function createInitialSong(): Song {
   return {
     id: crypto.randomUUID(),
-    title: 'Untitled',
+    title: DEFAULT_SONG_TITLE,
     bpm: 80,
     key: 'C major',
     genre: null,
@@ -42,6 +50,17 @@ function createInitialSong(): Song {
       createMeasure(2),
       createMeasure(3),
     ],
+    sections: [],
+    autoTitle: true,
+  };
+}
+
+/** Roman numeral + default voicing for a chord about to land in a slot. */
+function analyzeChord(chord: Chord, key: string): Chord {
+  return {
+    ...chord,
+    romanNumeral: calculateRomanNumeral(chord, key),
+    voicing: chord.voicing.length > 0 ? chord.voicing : generatePianoVoicing(chord),
   };
 }
 
@@ -51,7 +70,8 @@ const AUTOSAVE_DEBOUNCE_MS = 500;
 function loadFromStorage(): Song | null {
   try {
     const data = localStorage.getItem(STORAGE_KEY);
-    if (data) return JSON.parse(data);
+    // Songs autosaved before song-form sections existed lack those fields.
+    if (data) return withSongFormDefaults(JSON.parse(data));
   } catch {
     // ignore
   }
@@ -98,6 +118,10 @@ export type Instrument = 'piano' | 'guitar';
 
 interface SongState {
   song: Song;
+  /** Bumped by every song replacement (clearSong, setSong). A loaded
+   *  session keeps the id of the song it was saved from, so song.id cannot
+   *  tell a replacement from an edit; listeners compare this instead. */
+  songEpoch: number;
   selectedSlots: SlotAddress[];
   playbackPosition: { measureIndex: number; slotIndex: 0 | 1 } | null;
   isPlaying: boolean;
@@ -114,6 +138,7 @@ interface SongState {
   harmonyOverride: string | null;
 
   // Actions
+  /** A user edit — also turns the automatic (section-derived) title off. */
   setTitle: (title: string) => void;
   setBpm: (bpm: number) => void;
   setKey: (key: string) => void;
@@ -122,7 +147,21 @@ interface SongState {
   selectSlot: (slot: SlotAddress | null) => void;
   selectSlotRange: (from: SlotAddress, to: SlotAddress) => void;
   setChord: (address: SlotAddress, chord: Chord | null) => void;
-  addMeasures: () => void;
+  /** Several slots in one song update (applying an A/B/C suggestion). */
+  setChords: (updates: Array<{ address: SlotAddress; chord: Chord | null }>) => void;
+  addMeasures: (count?: number) => void;
+  /** Record a song-form section of `bars` measures right after the last
+   *  used measure (see sectionPlacement), appending measures only as
+   *  needed. Returns the new section, which stays pending (a reload drops
+   *  it) until commitSection keeps it or removeSection takes it back. */
+  placeSection: (type: SectionType, bars: number) => SongSection;
+  /** Keep a placed section once its chords have landed: it is no longer
+   *  pending, so it survives a reload. */
+  commitSection: (id: string) => void;
+  /** Drop a section record; with `trimToLength`, also drop the empty,
+   *  section-free measures at the end of the song down to that length
+   *  (undoes a placeSection whose generation failed or was cancelled). */
+  removeSection: (id: string, trimToLength?: number) => void;
   clearSong: () => void;
   /** Replace the active song outright. Used by MyPage "Load" to bring a
    *  saved session into the staff. Stops playback and clears
@@ -152,8 +191,9 @@ function loadDrumPattern(): number | null {
   }
 }
 
-export const useSongStore = create<SongState>((set) => ({
+export const useSongStore = create<SongState>((set, get) => ({
   song: loadFromStorage() || createInitialSong(),
+  songEpoch: 0,
   selectedSlots: [],
   playbackPosition: null,
   isPlaying: false,
@@ -167,7 +207,7 @@ export const useSongStore = create<SongState>((set) => ({
   harmonyOverride: null,
 
   setTitle: (title) => set((state) => ({
-    song: { ...state.song, title },
+    song: { ...state.song, title, autoTitle: false },
   })),
 
   setBpm: (bpm) => {
@@ -237,30 +277,36 @@ export const useSongStore = create<SongState>((set) => ({
     const measures = state.song.measures.map((m, mi) => {
       if (mi !== address.measureIndex) return m;
       const newChords = [...m.chords] as [Chord | null, Chord | null];
-      if (chord) {
-        const withRoman = {
-          ...chord,
-          romanNumeral: calculateRomanNumeral(chord, state.song.key),
-          voicing: chord.voicing.length > 0 ? chord.voicing : generatePianoVoicing(chord),
-        };
-        newChords[address.slotIndex] = withRoman;
-      } else {
-        newChords[address.slotIndex] = null;
-      }
+      newChords[address.slotIndex] = chord ? analyzeChord(chord, state.song.key) : null;
       return { ...m, chords: newChords };
     });
     const newSong = { ...state.song, measures };
     return { ...interruptIfPlaying(state), song: newSong };
   }),
 
-  addMeasures: () => set((state) => {
+  setChords: (updates) => set((state) => {
+    if (updates.length === 0) return {};
+    const byMeasure = new Map<number, Array<{ address: SlotAddress; chord: Chord | null }>>();
+    for (const update of updates) {
+      const list = byMeasure.get(update.address.measureIndex) ?? [];
+      list.push(update);
+      byMeasure.set(update.address.measureIndex, list);
+    }
+    const measures = state.song.measures.map((m, mi) => {
+      const list = byMeasure.get(mi);
+      if (!list) return m;
+      const newChords = [...m.chords] as [Chord | null, Chord | null];
+      for (const { address, chord } of list) {
+        newChords[address.slotIndex] = chord ? analyzeChord(chord, state.song.key) : null;
+      }
+      return { ...m, chords: newChords };
+    });
+    return { ...interruptIfPlaying(state), song: { ...state.song, measures } };
+  }),
+
+  addMeasures: (count = 4) => set((state) => {
     const currentLength = state.song.measures.length;
-    const newMeasures = [
-      createMeasure(currentLength),
-      createMeasure(currentLength + 1),
-      createMeasure(currentLength + 2),
-      createMeasure(currentLength + 3),
-    ];
+    const newMeasures = Array.from({ length: count }, (_, i) => createMeasure(currentLength + i));
     return {
       ...interruptIfPlaying(state),
       song: {
@@ -270,30 +316,98 @@ export const useSongStore = create<SongState>((set) => ({
     };
   }),
 
+  placeSection: (type, bars) => {
+    const length = Math.min(MAX_SECTION_BARS, Math.max(1, Math.floor(bars)));
+    const { startMeasure, measuresToAdd } = sectionPlacement(get().song, length);
+    const section: SongSection = {
+      id: crypto.randomUUID(),
+      type,
+      startMeasure,
+      length,
+      pending: { addedMeasures: measuresToAdd },
+    };
+    set((state) => {
+      const currentLength = state.song.measures.length;
+      const added = Array.from({ length: measuresToAdd }, (_, i) => createMeasure(currentLength + i));
+      const sections = [...(state.song.sections ?? []), section]
+        .sort((a, b) => a.startMeasure - b.startMeasure);
+      return {
+        ...interruptIfPlaying(state),
+        song: withAutoTitle({
+          ...state.song,
+          measures: [...state.song.measures, ...added],
+          sections,
+        }),
+      };
+    });
+    return section;
+  },
+
+  commitSection: (id) => set((state) => {
+    const current = state.song.sections ?? [];
+    if (!current.some((s) => s.id === id && s.pending)) return {};
+    const sections = current.map((s) => {
+      if (s.id !== id) return s;
+      const kept = { ...s };
+      delete kept.pending;
+      return kept;
+    });
+    return { song: { ...state.song, sections } };
+  }),
+
+  removeSection: (id, trimToLength) => set((state) => {
+    const current = state.song.sections ?? [];
+    const sections = current.filter((s) => s.id !== id);
+    if (sections.length === current.length) return {};
+    let end = state.song.measures.length;
+    if (trimToLength !== undefined) {
+      while (
+        end > Math.max(0, trimToLength) &&
+        !state.song.measures[end - 1].chords.some(Boolean) &&
+        !sectionAt({ sections }, end - 1)
+      ) {
+        end--;
+      }
+    }
+    const measures = end < state.song.measures.length
+      ? state.song.measures.slice(0, end)
+      : state.song.measures;
+    return {
+      ...interruptIfPlaying(state),
+      song: withAutoTitle({ ...state.song, measures, sections }),
+      selectedSlots: state.selectedSlots.filter((s) => s.measureIndex < measures.length),
+    };
+  }),
+
   clearSong: () => {
     // Always force-stop playback on full clear — user intent is "reset everything"
     stopPlayback();
     // Reset store-held transient view state too. Component-local state
-    // (ChordActions suggestions, MidiStatus suggestions, …) reacts to
-    // the new song.id via its own useEffect.
-    set({
+    // (MidiStatus suggestions, …) reacts to the new song.id via its own
+    // useEffect; generationStore drops its suggestions on the songEpoch bump.
+    // The fresh song has no sections and an automatic title again.
+    set((state) => ({
       song: createInitialSong(),
+      songEpoch: state.songEpoch + 1,
       selectedSlots: [],
       playbackPosition: null,
       isPlaying: false,
       midiCandidates: [],
-    });
+    }));
   },
 
   setSong: (song) => {
     stopPlayback();
-    set({
-      song: structuredClone(song),
+    set((state) => ({
+      // Sessions saved before song-form sections existed lack those fields.
+      song: withSongFormDefaults(structuredClone(song)),
+      // A replacement even when the session kept the working song's id.
+      songEpoch: state.songEpoch + 1,
       selectedSlots: [],
       playbackPosition: null,
       isPlaying: false,
       midiCandidates: [],
-    });
+    }));
   },
 
   setPlaybackPosition: (pos) => set({ playbackPosition: pos }),

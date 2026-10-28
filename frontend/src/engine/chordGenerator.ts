@@ -1,4 +1,4 @@
-import type { Chord, Song, SlotAddress } from '../models/types';
+import type { Chord, Measure, Song, SlotAddress, SectionType } from '../models/types';
 import { NOTE_VALUES, VALUE_TO_FLAT_NAME, MAJOR_SCALE_INTERVALS, MINOR_SCALE_INTERVALS } from './constants';
 import { parseChordName, chordToString } from './chordParser';
 import { readSSEFrames } from './sseStream';
@@ -18,6 +18,41 @@ export interface Suggestion {
   label: string;
   chords: Record<string, [string, string]>;
   explanations?: TheoryExplanation[] | null;
+}
+
+/** Who answered: 'rules' = the model was unavailable and the backend's
+ *  rule-based generator answered; 'offline' = the backend could not be
+ *  used and the local random fallback answered. */
+export type SuggestionSource = 'ai' | 'rules' | 'ai+rules' | 'offline';
+
+export interface GenerateResult {
+  suggestions: Suggestion[];
+  source: SuggestionSource | null;
+}
+
+/** Body of POST /api/generate/section(/stream). */
+export interface SectionGenerateParams {
+  song: Song;
+  sectionType: SectionType;
+  /** Even, 2..128 (two chord slots per measure). */
+  chordCount: number;
+  /** First measure of the new section; the measures before it go as context. */
+  startMeasure: number;
+  modelKey?: string | null;
+}
+
+/** Result of /api/generate/section(/stream). `suggestions[i].chords` is keyed
+ *  by absolute measure index, startMeasure .. startMeasure + bars - 1. */
+export interface SectionGenerateResponse {
+  sectionType: SectionType;
+  title: string;
+  startMeasure: number;
+  bars: number;
+  chordCount: number;
+  suggestions: Suggestion[];
+  source: 'ai' | 'rules';
+  modelUsed: string | null;
+  elapsed_ms?: number;
 }
 
 const GENRE_QUALITIES: Record<string, string[]> = {
@@ -74,37 +109,76 @@ export type GeneratePhase =
   | { name: 'explaining'; label: string }
   | { name: 'complete'; label: string };
 
-function _inferSectionType(song: Song, selectedMeasures: number[]): string {
-  const totalMeasures = song.measures.length;
-  const maxSelected = Math.max(...selectedMeasures);
-  const minSelected = Math.min(...selectedMeasures);
-  const endsAtLast = maxSelected >= totalMeasures - 1;
-  const startsAtFirst = minSelected === 0;
-  const coversMost = selectedMeasures.length >= totalMeasures * 0.7;
-  const endRatio = totalMeasures > 0 ? (maxSelected + 1) / totalMeasures : 1;
-  if (coversMost || (startsAtFirst && endsAtLast)) return 'chorus';
-  if (startsAtFirst && endRatio <= 0.2) return 'intro';
-  if (endsAtLast) return 'outro';
-  if (endRatio >= 0.7) return 'chorus';
-  if (endRatio >= 0.45) return 'bridge';
-  return 'verse';
+function _contextMeasures(measures: Measure[]) {
+  return measures.map((m, i) => ({
+    measure: i,
+    chords: m.chords.map(c => c ? chordToString(c) : null),
+  }));
 }
 
-function _buildBody(song: Song, selectedSlots: SlotAddress[], modelKey?: string) {
-  const selectedMeasures = [...new Set(selectedSlots.map(s => s.measureIndex))];
+/** Request fields shared by every generate endpoint. bpm is an int on the
+ *  backend, and SongSettings accepts decimals. */
+function _songFields(song: Song) {
   return {
     key: song.key,
-    bpm: song.bpm,
+    bpm: Math.round(song.bpm),
     genre: song.genre,
     timeSignature: song.timeSignature,
-    context: song.measures.map((m, i) => ({
-      measure: i,
-      chords: m.chords.map(c => c ? chordToString(c) : null),
-    })),
+  };
+}
+
+function _buildBody(
+  song: Song,
+  selectedSlots: SlotAddress[],
+  sectionType: SectionType | null,
+  modelKey?: string,
+) {
+  const selectedMeasures = [...new Set(selectedSlots.map(s => s.measureIndex))];
+  return {
+    ..._songFields(song),
+    context: _contextMeasures(song.measures),
     selectedMeasures,
-    sectionType: _inferSectionType(song, selectedMeasures),
+    sectionType,
     modelKey,
   };
+}
+
+function _toSource(value: unknown): SuggestionSource | null {
+  return value === 'ai' || value === 'rules' || value === 'ai+rules' ? value : null;
+}
+
+/**
+ * Readable text for an error `detail` from the backend: a plain string
+ * (HTTPException, SSE 'error' event) or FastAPI's 422 list of
+ * `{ loc, msg }` validation errors, e.g. "chordCount: Input should be
+ * less than or equal to 128".
+ */
+function _formatErrorDetail(detail: unknown): string | null {
+  if (typeof detail === 'string') return detail.trim() || null;
+  if (!Array.isArray(detail)) return null;
+  const parts = detail.map((item) => {
+    if (typeof item === 'string') return item;
+    if (typeof item !== 'object' || item === null) return '';
+    const { loc, msg } = item as { loc?: unknown; msg?: unknown };
+    const field = Array.isArray(loc) ? loc.filter((p) => p !== 'body').join('.') : '';
+    const text = typeof msg === 'string' ? msg : '';
+    return field && text ? `${field}: ${text}` : text;
+  }).filter(Boolean);
+  return parts.length > 0 ? parts.join('; ') : null;
+}
+
+async function _describeHttpError(res: Response): Promise<string> {
+  let detail: string | null = null;
+  try {
+    const body = (await res.json()) as { detail?: unknown; error?: unknown } | null;
+    detail = _formatErrorDetail(body?.detail) ?? _formatErrorDetail(body?.error);
+  } catch {
+    // not a JSON body
+  }
+  if (detail) return detail;
+  return res.status >= 500
+    ? `Server error (HTTP ${res.status})`
+    : `Request failed (HTTP ${res.status})`;
 }
 
 function _offlineFallback(song: Song, selectedSlots: SlotAddress[]): Suggestion[] {
@@ -127,14 +201,17 @@ function _offlineFallback(song: Song, selectedSlots: SlotAddress[]): Suggestion[
  * while yielding the final suggestions. Falls back to local random generation
  * on network / parse error. When `onPhase` is omitted, behaves identically
  * to the non-streaming path (just discards events).
+ *
+ * `sectionType` is sent as given — null means no song-form rules.
  */
 export async function generateChords(
   song: Song,
   selectedSlots: SlotAddress[],
+  sectionType: SectionType | null,
   modelKey?: string,
   onPhase?: (phase: GeneratePhase) => void,
-): Promise<Suggestion[]> {
-  const body = _buildBody(song, selectedSlots, modelKey);
+): Promise<GenerateResult> {
+  const body = _buildBody(song, selectedSlots, sectionType, modelKey);
   try {
     const res = await fetch('/api/generate/stream', {
       method: 'POST',
@@ -143,25 +220,77 @@ export async function generateChords(
     });
     if (!res.ok) throw new Error(`API error: ${res.status}`);
 
-    let finalSuggestions: Suggestion[] | null = null;
+    let final: GenerateResult | null = null;
     for await (const { event, data } of readSSEFrames<Record<string, unknown>>(res)) {
       if (event === 'result') {
         const sugs = (data as { suggestions?: unknown }).suggestions;
         if (!Array.isArray(sugs)) throw new Error('Invalid result payload');
-        finalSuggestions = sugs as Suggestion[];
+        final = { suggestions: sugs as Suggestion[], source: _toSource(data.source) };
       } else if (event === 'error') {
-        throw new Error((data as { detail?: string }).detail || 'stream error');
+        throw new Error(_formatErrorDetail(data.detail) || 'stream error');
       } else if (onPhase) {
         onPhase({ name: event, ...data } as GeneratePhase);
       }
     }
 
-    if (!finalSuggestions) throw new Error('Stream closed without result event');
-    return finalSuggestions;
+    if (!final) throw new Error('Stream closed without result event');
+    return final;
   } catch (err) {
     console.warn('Chord generation failed, using fallback:', err);
-    return _offlineFallback(song, selectedSlots);
+    return { suggestions: _offlineFallback(song, selectedSlots), source: 'offline' };
   }
+}
+
+/**
+ * Generate a new song-form section: POST /api/generate/section/stream with
+ * the measures before `startMeasure` as context, forward phase events to
+ * `onPhase`, and resolve with the server's SectionGenerateResponse.
+ *
+ * No offline fallback here: a non-2xx response (FastAPI 422 included), an
+ * 'error' event or a stream that ends without a result rejects with the
+ * server's message. Aborting `signal` rejects with the AbortError.
+ */
+export async function generateSection(
+  params: SectionGenerateParams,
+  onPhase?: (phase: GeneratePhase) => void,
+  signal?: AbortSignal,
+): Promise<SectionGenerateResponse> {
+  const { song, sectionType, chordCount, startMeasure, modelKey } = params;
+  const body = {
+    ..._songFields(song),
+    sectionType,
+    chordCount,
+    context: _contextMeasures(song.measures.slice(0, startMeasure)),
+    modelKey: modelKey ?? null,
+  };
+
+  let res: Response;
+  try {
+    res = await fetch('/api/generate/section/stream', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+      signal,
+    });
+  } catch (err) {
+    if (signal?.aborted) throw err;
+    throw new Error('Could not reach the server', { cause: err });
+  }
+  if (!res.ok) throw new Error(await _describeHttpError(res));
+
+  let result: SectionGenerateResponse | null = null;
+  for await (const { event, data } of readSSEFrames<Record<string, unknown>>(res)) {
+    if (event === 'result') {
+      if (!Array.isArray(data.suggestions)) throw new Error('The server sent an invalid section result');
+      result = data as unknown as SectionGenerateResponse;
+    } else if (event === 'error') {
+      throw new Error(_formatErrorDetail(data.detail) ?? 'The server reported an error');
+    } else if (onPhase) {
+      onPhase({ name: event, ...data } as GeneratePhase);
+    }
+  }
+  if (!result) throw new Error('The stream ended without a result');
+  return result;
 }
 
 /**

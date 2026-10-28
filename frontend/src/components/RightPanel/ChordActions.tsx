@@ -1,13 +1,19 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useId } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useSongStore } from '../../store/songStore';
 import { useGenerationStore } from '../../store/generationStore';
 import { useSessionStore, selectStarredSessions } from '../../store/sessionStore';
-import { parseSuggestionChords } from '../../engine/chordGenerator';
-import type { Suggestion } from '../../engine/chordGenerator';
 import GenerateProgress from './GenerateProgress';
 import { getChordDisplayParts } from '../../engine/chordDisplay';
-import type { Chord } from '../../models/types';
+import {
+  MAX_SECTION_BARS,
+  SECTION_GROUPS,
+  isSectionType,
+  sectionContaining,
+  sectionLabel,
+  sectionsInGroup,
+} from '../../engine/songForm';
+import type { Chord, SectionType, SlotAddress } from '../../models/types';
 
 const ROOTS = ['C', 'C#', 'Db', 'D', 'Eb', 'E', 'F', 'F#', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
 
@@ -29,6 +35,15 @@ function inferGenreForModelPick(modelKey: string): string | null {
   if (modelKey === 'ft_f1' || modelKey === 'phase0') return 'pop';
   if (modelKey.startsWith('ft_f')) return 'jazz';
   return null;
+}
+
+/** 'M5' or 'M5–M12' for the measures a set of suggestions applies to. */
+function measureRangeLabel(slots: SlotAddress[]): string {
+  if (slots.length === 0) return '';
+  const measures = slots.map((s) => s.measureIndex + 1);
+  const first = Math.min(...measures);
+  const last = Math.max(...measures);
+  return first === last ? `M${first}` : `M${first}–M${last}`;
 }
 
 const BASE_QUALITIES = [
@@ -143,10 +158,15 @@ export default function ChordActions({ view = 'all' }: ChordActionsProps) {
   const phase = useGenerationStore((s) => s.phase);
   const showSuggestions = useGenerationStore((s) => s.showSuggestions);
   const activeSuggestionIdx = useGenerationStore((s) => s.activeSuggestionIdx);
-  const setActiveSuggestionIdx = useGenerationStore((s) => s.setActiveSuggestionIdx);
+  const source = useGenerationStore((s) => s.source);
+  const targetSlots = useGenerationStore((s) => s.targetSlots);
+  const applySuggestion = useGenerationStore((s) => s.applySuggestion);
   const clearSuggestions = useGenerationStore((s) => s.clearSuggestions);
   const runGenerate = useGenerationStore((s) => s.runGenerate);
   const runFavoriteGenerate = useGenerationStore((s) => s.runFavoriteGenerate);
+  const generateSectionType = useGenerationStore((s) => s.generateSectionType);
+  const setGenerateSectionType = useGenerationStore((s) => s.setGenerateSectionType);
+  const sectionSelectId = useId();
 
   // Model selection — same store, persists to localStorage.
   const modelKey = useGenerationStore((s) => s.modelKey);
@@ -170,28 +190,41 @@ export default function ChordActions({ view = 'all' }: ChordActionsProps) {
           // Only surface usable checkpoints — hide any the backend reports
           // unavailable on this install so the dropdown
           // lists only models the user can actually pick.
-          setModelList(data.models.filter((m: { available: boolean }) => m.available));
-          // Migrate stale ft_f3 default → backend default (now ft_f1).
-          if (data.default && useGenerationStore.getState().modelKey === 'ft_f3') {
+          const usable: Array<{ key: string; label: string; available: boolean }> =
+            data.models.filter((m: { available: boolean }) => m.available);
+          setModelList(usable);
+          // modelKey persists across reloads, so it can name a checkpoint
+          // this install does not have. Move it to the backend default and
+          // re-sync the genre, as a model pick would.
+          const current = useGenerationStore.getState().modelKey;
+          if (
+            data.default &&
+            !usable.some((m) => m.key === current) &&
+            usable.some((m) => m.key === data.default)
+          ) {
             setModelKey(data.default);
+            const inferred = inferGenreForModelPick(data.default);
+            if (inferred) setGenre(inferred);
           }
         }
       })
       .catch(() => { /* fallback: model list unavailable */ });
-  }, [setModelKey]);
+  }, [setModelKey, setGenre]);
 
-  // Reset transient AI state whenever the song is replaced (e.g. Clear) —
-  // the suggestions tied to the old song would be stale and confusing if
-  // they stayed on screen against an empty staff.
+  // Collapse the manual builder whenever the song is replaced (e.g. Clear).
+  // The suggestions tied to the old song are dropped by generationStore on
+  // every replacement (songStore.songEpoch) — not here, so a remount of this
+  // panel (tab switch, or the jump here after New from Song Form) keeps them.
   useEffect(() => {
-    clearSuggestions();
     setExpanded(false);
-  }, [song.id, clearSuggestions]);
+  }, [song.id]);
 
-  // Mount-time genre sync. Every reload clears localStorage (main.tsx)
-  // so song.genre starts null; modelKey hydrates from its store default.
-  // Without this nudge the harmony rhythm would route to the fallback
-  // pattern until the user manually picked a genre in SongSettings.
+  // Mount-time genre sync. song.genre and modelKey both persist across
+  // reloads, so they normally come back in step; a song without a genre
+  // (first visit, after ?reset=1 or Initialize) takes the one the
+  // current model implies. Without this nudge the harmony rhythm would
+  // route to the fallback pattern until the user manually picked a genre
+  // in SongSettings.
   useEffect(() => {
     if (!song.genre) {
       const inferred = inferGenreForModelPick(modelKey);
@@ -201,6 +234,13 @@ export default function ChordActions({ view = 'all' }: ChordActionsProps) {
   }, []);
 
   const firstSlot = selectedSlots[0] ?? null;
+  // Song-form section the drag-path Generate sends: the explicit pick, or
+  // for 'auto' the section that contains the whole selection (else none).
+  const selectedMeasures = [...new Set(selectedSlots.map((s) => s.measureIndex))];
+  const autoSection = sectionContaining(song, selectedMeasures);
+  const resolvedSectionType: SectionType | null =
+    generateSectionType === 'auto' ? autoSection?.type ?? null : generateSectionType;
+  const tooManyMeasures = selectedMeasures.length > MAX_SECTION_BARS;
   const quality = resolveQuality(base, ext, add, sus, alts);
   const previewParts = getChordDisplayParts({ root, quality, bass: bass || undefined, romanNumeral: '', voicing: [], extensions: alts });
 
@@ -220,13 +260,13 @@ export default function ChordActions({ view = 'all' }: ChordActionsProps) {
   };
 
   const handleGenerate = () => {
-    if (selectedSlots.length === 0) return;
+    if (selectedSlots.length === 0 || tooManyMeasures) return;
     // Stop any ongoing playback — the user is reshaping the song; what's
     // playing won't reflect what they're about to see.
     resetPlayback();
     // Fire-and-forget: store owns the async lifecycle so navigation away
     // from this panel during generate doesn't kill the request.
-    void runGenerate(song, selectedSlots, modelKey);
+    void runGenerate(song, selectedSlots, modelKey, resolvedSectionType);
   };
 
   // Favorite Generate — runs the generate pipeline once per starred
@@ -235,29 +275,9 @@ export default function ChordActions({ view = 'all' }: ChordActionsProps) {
   // preset they marked. Calls run in parallel so total time is bounded
   // by the slowest single generate, not the sum.
   const handleFavoriteGenerate = () => {
-    if (selectedSlots.length === 0 || starredSessions.length === 0) return;
+    if (selectedSlots.length === 0 || starredSessions.length === 0 || tooManyMeasures) return;
     resetPlayback();
-    void runFavoriteGenerate(song, selectedSlots, starredSessions);
-  };
-
-  const handleSelectSuggestion = (suggestion: Suggestion, idx: number) => {
-    const chordMap = parseSuggestionChords(suggestion);
-    // Backend works at measure granularity (selectedMeasures = [5] returns
-    // both slot 0 and slot 1 for that measure), but the user's selection
-    // is slot-level. Apply only the slots the user actually picked so
-    // unselected slots (and any chord they already had) stay intact.
-    const selectedKeys = new Set(
-      selectedSlots.map(s => `${s.measureIndex}-${s.slotIndex}`)
-    );
-    for (const [key, chord] of chordMap) {
-      if (!selectedKeys.has(key)) continue;
-      const [mIdx, sIdx] = key.split('-').map(Number);
-      if (Number.isNaN(mIdx) || (sIdx !== 0 && sIdx !== 1)) continue;
-      setChord({ measureIndex: mIdx, slotIndex: sIdx as 0 | 1 }, chord);
-    }
-    // Keep the panel open so the user can A/B/C between candidates.
-    // Re-clicking the active one re-applies (cheap, idempotent).
-    setActiveSuggestionIdx(idx);
+    void runFavoriteGenerate(song, selectedSlots, starredSessions, resolvedSectionType);
   };
 
   const slotLabel = selectedSlots.length === 1
@@ -309,11 +329,49 @@ export default function ChordActions({ view = 'all' }: ChordActionsProps) {
         </div>
       )}
 
+      {/* Song-form section sent with Generate. Auto names what it resolved
+          to: the section containing the whole selection, or none (no
+          song-form rules). */}
+      <div className="flex items-center gap-2">
+        <label
+          htmlFor={sectionSelectId}
+          className="text-[10px] uppercase tracking-wide font-semibold shrink-0"
+          style={{ color: 'var(--text-muted)' }}
+        >
+          Section
+        </label>
+        <select
+          id={sectionSelectId}
+          value={generateSectionType}
+          onChange={(e) => {
+            const v = e.target.value;
+            setGenerateSectionType(isSectionType(v) ? v : 'auto');
+          }}
+          className="flex-1 min-w-0 px-2 py-1 text-xs"
+          style={{ background: 'var(--btn-bg)', color: 'var(--text-primary)', border: '1px solid var(--border)' }}
+        >
+          <option value="auto">Auto ({autoSection ? sectionLabel(autoSection.type) : 'none'})</option>
+          {SECTION_GROUPS.map((group) => (
+            <optgroup key={group.id} label={group.label}>
+              {sectionsInGroup(group.id).map((type) => (
+                <option key={type} value={type}>{sectionLabel(type)}</option>
+              ))}
+            </optgroup>
+          ))}
+        </select>
+      </div>
+
+      {tooManyMeasures && (
+        <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
+          Select at most {MAX_SECTION_BARS} measures to generate.
+        </p>
+      )}
+
       <button
         onClick={handleGenerate}
-        disabled={loading}
+        disabled={loading || tooManyMeasures}
         className="w-full px-3 py-2  text-sm font-bold"
-        style={{ background: 'var(--text-heading)', color: 'var(--bg-primary)', opacity: loading ? 0.6 : 1 }}
+        style={{ background: 'var(--text-heading)', color: 'var(--bg-primary)', opacity: loading || tooManyMeasures ? 0.6 : 1 }}
       >
         {loading ? 'Generating...' : `Generate ${selectedSlots.length > 1 ? `(${selectedSlots.length} slots)` : 'Chord'}`}
       </button>
@@ -324,12 +382,12 @@ export default function ChordActions({ view = 'all' }: ChordActionsProps) {
       {starredSessions.length > 0 && (
         <button
           onClick={handleFavoriteGenerate}
-          disabled={loading}
+          disabled={loading || tooManyMeasures}
           className="w-full px-3 py-2 text-sm font-bold"
           style={{
             background: 'var(--brand-yellow)',
             color: '#1a1a1a',
-            opacity: loading ? 0.6 : 1,
+            opacity: loading || tooManyMeasures ? 0.6 : 1,
           }}
           title={`Generate one option per starred preset (${starredSessions.length})`}
         >
@@ -348,7 +406,16 @@ export default function ChordActions({ view = 'all' }: ChordActionsProps) {
         <div className="space-y-1.5" style={{ borderTop: '1px solid var(--border)', paddingTop: '8px' }}>
           <p className="text-[10px] uppercase tracking-wide font-semibold" style={{ color: 'var(--text-muted)' }}>
             {activeSuggestionIdx === null ? 'Pick a suggestion' : 'Tap to swap'}
+            {targetSlots.length > 0 && <span className="normal-case"> · {measureRangeLabel(targetSlots)}</span>}
           </p>
+          {source === 'rules' && (
+            <p
+              className="text-[11px]"
+              style={{ color: 'var(--text-soft)', borderLeft: '2px solid var(--brand-yellow)', paddingLeft: '6px' }}
+            >
+              Model unavailable — rule-based chords
+            </p>
+          )}
           {suggestions.map((s, idx) => {
             const chordPreview = Object.entries(s.chords)
               .sort(([a], [b]) => Number(a) - Number(b))
@@ -366,7 +433,7 @@ export default function ChordActions({ view = 'all' }: ChordActionsProps) {
                 }}
               >
                 <button
-                  onClick={() => handleSelectSuggestion(s, idx)}
+                  onClick={() => applySuggestion(idx)}
                   className="w-full text-left px-3 py-2"
                 >
                   <div

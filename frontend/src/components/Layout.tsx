@@ -10,6 +10,7 @@ const INPUT_TABS: { id: InputMode; label: string }[] = [
   { id: 'manual', label: 'Set Chord' },
 ];
 import Staff from './ScoreEditor/Staff';
+import SongFormDialog from './ScoreEditor/SongFormDialog';
 import VoicingViewer from './RightPanel/VoicingViewer';
 import PlaybackControls from './RightPanel/PlaybackControls';
 import SongSettings from './RightPanel/SongSettings';
@@ -58,7 +59,16 @@ export default function Layout() {
   // MyPage is its own page, not a panel mode — sessions render as
   // read-only staves there, which needs the whole canvas width.
   const [view, setView] = useState<'editor' | 'my'>('editor');
+  const [songFormOpen, setSongFormOpen] = useState(false);
   const resizingRef = useRef(false);
+
+  // After New from Song Form lands, show Input → Generate so the A/B/C
+  // suggestions for the new section are right there to swap.
+  const handleSongFormGenerated = useCallback(() => {
+    setPanelOpen(true);
+    setPanelMode('input');
+    setInputMode('generate');
+  }, []);
 
   const startResize = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
@@ -134,12 +144,25 @@ export default function Layout() {
       <div className="flex flex-1 min-h-0">
         {/* Left Panel - Score Editor */}
         <div className="flex-1 overflow-y-auto p-4 min-w-0">
-          {/* Top bar: title centered, Save/Clear right-aligned */}
+          {/* Top bar: song-form entry left, title centered, Save/Clear
+              right-aligned */}
           <div className="flex items-center mb-4 gap-3">
-            {/* Spacer for centering */}
-            <div className="flex-1" />
+            {/* Left group — flex-1 like the right group, so the title
+                stays centered */}
+            <div className="flex-1 flex items-center justify-start gap-2">
+              <button
+                onClick={() => setSongFormOpen(true)}
+                className="px-3 py-1 text-xs font-bold whitespace-nowrap btn-hover"
+                style={{ background: 'var(--brand-yellow)', color: '#1a1a1a' }}
+                title="Pick a song-form section and how many chords to generate"
+                aria-haspopup="dialog"
+              >
+                New from Song Form
+              </button>
+            </div>
 
-            {/* Song title — centered, editorial */}
+            {/* Song title — centered, editorial. Typing here turns the
+                automatic section-based title off (songStore.setTitle). */}
             <input
               type="text"
               value={song.title}
@@ -147,6 +170,7 @@ export default function Layout() {
               className="font-display text-2xl bg-transparent outline-none text-center shrink min-w-0"
               style={{ color: 'var(--text-heading)', fontStyle: 'italic', fontWeight: 500 }}
               placeholder="Untitled"
+              aria-label="Song title"
             />
 
             {/* Save / Clear — right. "Clear selection" only appears when
@@ -302,6 +326,14 @@ export default function Layout() {
         )}
 
       </div>
+      )}
+
+      {/* Mounted only while open; the dialog opens itself as a modal. */}
+      {songFormOpen && (
+        <SongFormDialog
+          onClose={() => setSongFormOpen(false)}
+          onGenerated={handleSongFormGenerated}
+        />
       )}
     </div>
   );
