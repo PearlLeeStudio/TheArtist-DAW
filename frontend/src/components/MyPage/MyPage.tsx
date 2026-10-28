@@ -73,7 +73,7 @@ function SessionRow({
             {buttonLabel}
           </button>
           <button onClick={() => onOpen(session)} className="px-3 py-2 text-xs font-bold" style={primaryButtonStyle}
-            title="Open in the editor; unsaved work is kept in Projects first">Open</button>
+            title="Edit in the editor; current work is preserved in Projects first">Edit</button>
           <button onClick={() => onExportMidi(session)} disabled={exportingId !== null}
             className="px-3 py-2 text-xs disabled:opacity-50" style={buttonStyle}
             title="Download harmony, bass and drums as a MIDI file for your DAW">
@@ -99,18 +99,13 @@ interface Notice { error: boolean; message: string }
 
 export default function MyPage({ onExitToEditor }: MyPageProps) {
   const sessions = useSessionStore((state) => state.sessions);
-  const exportAll = useSessionStore((state) => state.exportAll);
-  const importJson = useSessionStore((state) => state.importJson);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const mountedRef = useRef(true);
   const playSequence = useRef(0);
   const exportController = useRef<AbortController | null>(null);
-  const importingRef = useRef(false);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [loadingSessionId, setLoadingSessionId] = useState<string | null>(null);
   const [isPaused, setIsPaused] = useState(false);
   const [exportingId, setExportingId] = useState<string | null>(null);
-  const [importing, setImporting] = useState(false);
   const [notice, setNotice] = useState<Notice | null>(null);
   const starredCount = sessions.filter((session) => session.starred).length;
 
@@ -196,7 +191,7 @@ export default function MyPage({ onExitToEditor }: MyPageProps) {
       }
     } catch (error) {
       setNotice({ error: true, message: `Your current work could not be saved, so this project was not opened. ${
-        error instanceof Error ? error.message : 'Download a project file to make room, then try again.'
+        error instanceof Error ? error.message : 'Check browser storage, then try again.'
       }` });
       return;
     }
@@ -250,44 +245,6 @@ export default function MyPage({ onExitToEditor }: MyPageProps) {
     }
   };
 
-  const handleExport = () => {
-    try {
-      downloadExportBlob(new Blob([exportAll()], { type: 'application/json' }), 'theartist-projects.json');
-      setNotice({ error: false, message: 'Project file download started. It contains all projects saved in this browser.' });
-    } catch (error) {
-      setNotice({ error: true, message: error instanceof Error ? error.message : 'Your project file could not be downloaded. Please try again.' });
-    }
-  };
-
-  const handleImportFile = async (file: File) => {
-    if (importingRef.current) return;
-    importingRef.current = true;
-    setImporting(true);
-    setNotice(null);
-    try {
-      const contents = await file.text();
-      if (!mountedRef.current) return;
-      const result = importJson(contents);
-      const total = result.added + result.renamed;
-      const parts = [
-        total ? `${total} project${total === 1 ? '' : 's'} added` : 'No projects added',
-        result.renamed ? `${result.renamed} kept as separate ${result.renamed === 1 ? 'copy' : 'copies'}` : null,
-        result.skipped ? `${result.skipped} could not be read` : null,
-      ].filter(Boolean);
-      setNotice({ error: result.skipped > 0, message: `${parts.join(' · ')}.` });
-    } catch (error) {
-      if (mountedRef.current) {
-        const message = error instanceof SyntaxError || error instanceof Error && error.message.includes('Unsupported')
-          ? 'Choose a TheArtist project file downloaded from Projects.'
-          : error instanceof Error ? error.message : 'This project file could not be imported.';
-        setNotice({ error: true, message });
-      }
-    } finally {
-      importingRef.current = false;
-      if (mountedRef.current) setImporting(false);
-    }
-  };
-
   return (
     <div className="flex-1 overflow-y-auto">
       <div className="max-w-5xl mx-auto p-6 space-y-5">
@@ -295,22 +252,6 @@ export default function MyPage({ onExitToEditor }: MyPageProps) {
           <div className="max-w-xl">
             <h2 className="font-display text-3xl" style={{ color: 'var(--text-heading)', fontWeight: 700 }}>Projects</h2>
             <p className="text-sm mt-1" style={mutedStyle}>Recent work saved in this browser.</p>
-            <p className="text-xs mt-2 leading-relaxed" style={mutedStyle}>
-              Download a project file to keep a backup or move your work to another device. Files do not sync automatically.
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <button onClick={handleExport} disabled={!sessions.length} className="px-3 py-2 text-xs font-bold disabled:opacity-50"
-              style={buttonStyle} title="Download every saved project in one JSON file">Download project file</button>
-            <button onClick={() => fileInputRef.current?.click()} disabled={importing}
-              className="px-3 py-2 text-xs font-bold disabled:opacity-50" style={buttonStyle}>
-              {importing ? 'Importing…' : 'Import project file'}
-            </button>
-            <input ref={fileInputRef} type="file" accept=".json,application/json" className="hidden" onChange={(event) => {
-              const file = event.target.files?.[0];
-              event.target.value = '';
-              if (file) void handleImportFile(file);
-            }} />
           </div>
         </div>
         {notice && (
@@ -324,7 +265,7 @@ export default function MyPage({ onExitToEditor }: MyPageProps) {
           <>
             <div className="flex justify-between flex-wrap gap-2 text-xs" style={mutedStyle}>
               <span>{sessions.length} saved{starredCount > 0 ? ` · ★ ${starredCount} favorites` : ''}</span>
-              <span>Opening a project keeps unsaved editor work here first.</span>
+              <span>Editing a project keeps unsaved editor work here first.</span>
             </div>
             <div className="space-y-3">
               {sessions.map((session) => (
@@ -338,7 +279,7 @@ export default function MyPage({ onExitToEditor }: MyPageProps) {
         ) : (
           <div className="py-16 text-center space-y-3" style={mutedStyle}>
             <p className="font-display text-2xl" style={{ color: 'var(--text-heading)' }}>Your next idea starts here.</p>
-            <p className="text-sm">Save a sketch from the editor, or import a project file.</p>
+            <p className="text-sm">Save a sketch from the editor to keep it here.</p>
             <button onClick={onExitToEditor} className="px-4 py-2 text-xs font-bold" style={primaryButtonStyle}>Back to editor</button>
           </div>
         )}

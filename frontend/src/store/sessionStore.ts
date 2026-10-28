@@ -13,13 +13,7 @@
 import { create } from 'zustand';
 import type { SavedSession, SessionGenerationContext, Song } from '../models/types';
 import { computeArrangement } from '../engine/arrangement';
-import {
-  loadAll,
-  saveAll,
-  serializeForExport,
-  mergeImport,
-  type ImportResult,
-} from './sessionStorage';
+import { loadAll, saveAll } from './sessionStorage';
 
 interface SessionState {
   sessions: SavedSession[];
@@ -33,14 +27,6 @@ interface SessionState {
   /** Replace a session's song + generation snapshot (used when the user
    *  loads a session, edits, and re-saves into the same slot). */
   update: (id: string, patch: { song?: Song; generation?: SessionGenerationContext }) => void;
-
-  /** Serialize all sessions as a JSON string for file download.
-   *  Pair with downloadSessionsFile() in MyPage. */
-  exportAll: () => string;
-
-  /** Merge a JSON file's contents into the current session list.
-   *  Collisions get fresh ids so both copies survive. */
-  importJson: (jsonText: string) => ImportResult;
 }
 
 function autoName(song: Song, generation: SessionGenerationContext): string {
@@ -125,14 +111,6 @@ export const useSessionStore = create<SessionState>((set, get) => ({
         }),
       ),
     });
-  },
-
-  exportAll: () => serializeForExport(get().sessions),
-
-  importJson: (jsonText) => {
-    const { merged, result } = mergeImport(get().sessions, jsonText);
-    set({ sessions: persist(merged) });
-    return result;
   },
 }));
 

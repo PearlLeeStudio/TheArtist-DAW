@@ -2,17 +2,39 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import type { SavedSession } from '../models/types.ts';
 import { DEFAULT_PLAY_SETTINGS, enginePlayConfig, playSettingsFromSession } from '../engine/playSettings.ts';
-import { mergeImport, serializeForExport, saveAll, loadAll } from './sessionStorage.ts';
+import { saveAll, loadAll } from './sessionStorage.ts';
 import { readScoreImportResponse, createScoreImportDraft, buildImportedSong, buildScoreImportForEditor } from '../engine/scoreImport.ts';
 
-test('bad project files cannot replace valid working data or crash the score renderer', () => {
+function withStoredProjects<T>(sessions: unknown[], run: () => T): T {
+  const descriptor = Object.getOwnPropertyDescriptor(globalThis, 'localStorage');
+  let stored = JSON.stringify({ version: 1, sessions });
+  Object.defineProperty(globalThis, 'localStorage', { configurable: true, value: {
+    setItem(_key: string, value: string) { stored = value; }, getItem() { return stored; },
+  } });
+  try { return run(); }
+  finally {
+    if (descriptor) Object.defineProperty(globalThis, 'localStorage', descriptor);
+    else Reflect.deleteProperty(globalThis, 'localStorage');
+  }
+}
+
+function reloadProjects(sessions: unknown[]): SavedSession[] {
+  return withStoredProjects(sessions, () => loadAll());
+}
+
+function roundTripProjects(sessions: SavedSession[]): SavedSession[] {
+  return withStoredProjects([], () => {
+    saveAll(sessions);
+    return loadAll();
+  });
+}
+
+test('invalid saved projects are skipped while valid neighboring projects remain available', () => {
   const malformed = {
     id: 'bad', name: 'Bad', createdAt: 0, starred: false,
     song: {}, generation: { model: 'ft_f1', genre: null },
   };
-  const { merged, result } = mergeImport([], JSON.stringify({ version: 1, sessions: [malformed] }));
-  assert.deepEqual(merged, []);
-  assert.equal(result.skipped, 1);
+  assert.deepEqual(reloadProjects([malformed, importedProject]), [importedProject]);
 });
 
 test('storage failure is reported to the caller instead of pretending the project was saved', () => {
@@ -39,12 +61,11 @@ const importedProject: SavedSession = {
   arrangement: { bassPattern: [0, 2], bassInstrument: 'contrabass', beatsPerMeasure: 6 },
 };
 
-test('project file roundtrip retains real chords, uncertain sections, source and a muted part', () => {
-  const result = mergeImport([], serializeForExport([importedProject]));
-  assert.deepEqual(result.merged[0], importedProject);
+test('browser save and reload retain real chords, uncertain sections, source and a muted part', () => {
+  assert.deepEqual(roundTripProjects([importedProject])[0], importedProject);
 });
 
-test('note-derived source proposals and evidence survive browser save/reload and project file roundtrip', () => {
+test('note-derived source proposals and evidence survive browser save and reload', () => {
   const project = structuredClone(importedProject);
   project.song.importSource = {
     filename: 'notes.pdf', model: 'muse-spark-1.3', requestId: 'notes-request', mode: 'infer_harmony',
@@ -58,14 +79,13 @@ test('note-derived source proposals and evidence survive browser save/reload and
   try {
     saveAll([project]);
     assert.deepEqual(loadAll()[0].song.importSource, project.song.importSource);
-    assert.deepEqual(mergeImport([], serializeForExport(loadAll())).merged[0].song.importSource, project.song.importSource);
   } finally {
     if (descriptor) Object.defineProperty(globalThis, 'localStorage', descriptor);
     else Reflect.deleteProperty(globalThis, 'localStorage');
   }
 });
 
-test('foreign projects with invalid or disguised inferred provenance are skipped', () => {
+test('saved projects with invalid or disguised inferred provenance are skipped', () => {
   const validSource = {
     filename: 'notes.pdf', model: 'muse-spark-1.3', requestId: null, mode: 'infer_harmony',
     measures: [{ chordBasis: 'inferred', confidence: 'medium', evidence: 'A C E visible.', originalChords: ['Am'] }],
@@ -77,13 +97,11 @@ test('foreign projects with invalid or disguised inferred provenance are skipped
     { ...validSource, measures: [{ ...validSource.measures[0], originalChords: [3] }] },
   ]) {
     const project = { ...importedProject, song: { ...importedProject.song, importSource: source } };
-    const { result, merged } = mergeImport([], JSON.stringify({ version: 1, sessions: [project] }));
-    assert.equal(result.skipped, 1);
-    assert.deepEqual(merged, []);
+    assert.deepEqual(reloadProjects([project]), []);
   }
 });
 
-test('local and mixed source evidence including rests and explicit empty choices survives project roundtrip', () => {
+test('local and mixed source evidence including rests and explicit empty choices survives browser reload', () => {
   const project = structuredClone(importedProject);
   project.song.importSource = {
     filename: 'analysis.pdf', mode: 'infer_harmony', analysisSource: 'mixed', model: 'muse-spark-1.3', requestId: 'batch-request',
@@ -92,15 +110,15 @@ test('local and mixed source evidence including rests and explicit empty choices
       { chordBasis: 'inferred', confidence: 'medium', evidence: 'D F A supports D minor.', originalChords: ['Dm'], sourceMeasureIndex: 1, analysisSource: 'meta', model: 'muse-spark-1.3', requestId: 'passage-request', notes: ['D4', 'F4', 'A4'], bassNotes: ['D3'], originalNoChord: false, userNoChord: false, timeSignature: [4, 4] },
     ],
   };
-  assert.deepEqual(mergeImport([], serializeForExport([project])).merged[0].song.importSource, project.song.importSource);
+  assert.deepEqual(roundTripProjects([project])[0].song.importSource, project.song.importSource);
   project.song.importSource.analysisSource = 'local';
   project.song.importSource.model = null;
   project.song.importSource.requestId = null;
   project.song.importSource.measures = [project.song.importSource.measures![0]];
-  assert.deepEqual(mergeImport([], serializeForExport([project])).merged[0].song.importSource, project.song.importSource);
+  assert.deepEqual(roundTripProjects([project])[0].song.importSource, project.song.importSource);
 });
 
-test('unresolved editor imports retain every source symbol and their review reason through project roundtrip', () => {
+test('unresolved editor imports retain every source symbol and their review reason through browser reload', () => {
   const response = readScoreImportResponse({
     title: 'Unfinished import', key: 'C major', timeSignature: [4, 4], sections: [], warnings: [],
     analysisSource: 'local', model: null, requestId: null, mode: 'chord_symbols',
@@ -123,7 +141,7 @@ test('unresolved editor imports retain every source symbol and their review reas
   try {
     saveAll([project]);
     const reloaded = loadAll();
-    const restored = mergeImport([], serializeForExport(reloaded)).merged[0];
+    const restored = reloaded[0];
     assert.deepEqual(restored.song.importSource, source);
     assert.deepEqual(restored.song.measures.map((measure) => measure.chords), [[null, null], [null, null]]);
     assert.deepEqual(restored.song.importSource!.measures!.map((measure) => measure.originalChords), [[], ['C', 'F', 'G7']]);
@@ -136,9 +154,7 @@ test('unresolved editor imports retain every source symbol and their review reas
     const invalid = { ...project, song: { ...project.song, importSource: {
       ...source, measures: [{ ...source.measures![0], editorReview }],
     } } };
-    const result = mergeImport([], JSON.stringify({ version: 1, sessions: [invalid] }));
-    assert.equal(result.result.skipped, 1);
-    assert.deepEqual(result.merged, []);
+    assert.deepEqual(reloadProjects([invalid]), []);
   }
 });
 
@@ -161,7 +177,7 @@ test('ottava written and sounding pitches remain distinct through import and bro
     const source = loadAll()[0].song.importSource?.measures?.[0];
     assert.deepEqual(source?.writtenNotes, ['C6']);
     assert.deepEqual(source?.notes, ['C7']);
-    assert.deepEqual(mergeImport([], serializeForExport(loadAll())).merged[0].song.importSource, song.importSource);
+    assert.deepEqual(loadAll()[0].song.importSource, song.importSource);
   } finally {
     if (descriptor) Object.defineProperty(globalThis, 'localStorage', descriptor);
     else Reflect.deleteProperty(globalThis, 'localStorage');
@@ -169,21 +185,15 @@ test('ottava written and sounding pitches remain distinct through import and bro
 });
 
 test('an invalid arrangement cache is discarded while the score and settings survive', () => {
-  const result = mergeImport([], JSON.stringify({ version: 1, sessions: [
+  const restored = reloadProjects([
     { ...importedProject, arrangement: { bassPattern: null } },
-  ] }));
-  assert.equal(result.result.added, 1);
-  assert.equal(result.merged[0].arrangement, undefined);
-  assert.deepEqual(result.merged[0].song, importedProject.song);
+  ]);
+  assert.equal(restored.length, 1);
+  assert.equal(restored[0].arrangement, undefined);
+  assert.deepEqual(restored[0].song, importedProject.song);
 });
 
-test('duplicate IDs inside one project file receive independent identities', () => {
-  const result = mergeImport([], serializeForExport([importedProject, importedProject]));
-  assert.deepEqual(result.result, { added: 1, renamed: 1, skipped: 0 });
-  assert.notEqual(result.merged[0].id, result.merged[1].id);
-});
-
-test('session export/import keeps independent controller levels, including a muted part', () => {
+test('session browser persistence keeps independent controller levels, including a muted part', () => {
   const session: SavedSession = {
     id: 'controller-session',
     name: 'Quiet bass mix',
@@ -208,10 +218,9 @@ test('session export/import keeps independent controller levels, including a mut
       drumVolume: 0.25,
     },
   };
-  const { merged, result } = mergeImport([], serializeForExport([session]));
-  assert.deepEqual(result, { added: 1, renamed: 0, skipped: 0 });
-  assert.deepEqual(merged[0].generation, session.generation);
-  const config = enginePlayConfig(playSettingsFromSession(merged[0].generation), merged[0].song.genre);
+  const [restored] = roundTripProjects([session]);
+  assert.deepEqual(restored.generation, session.generation);
+  const config = enginePlayConfig(playSettingsFromSession(restored.generation), restored.song.genre);
   assert.deepEqual(
     [config.masterVolume, config.harmonyVolume, config.bassVolume, config.drumVolume],
     [0.8, 0.65, 0, 0.25],
