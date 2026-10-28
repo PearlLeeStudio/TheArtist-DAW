@@ -286,14 +286,14 @@ code, pre, .mono {
 .te-device {
   --font-device: Futura, "Futura PT", "Avenir Next", Avenir, system-ui, sans-serif;
   --brand-yellow: #ec7737;
-  --panel-bg: #d5d5d7;
-  --panel-border: #a8a8ab;
+  --panel-bg: #e3e3e5;
+  --panel-border: #b8b8bc;
   --panel-glint: rgba(255, 255, 255, 0.72);
   --panel-shadow: rgba(28, 28, 30, 0.22);
-  --channel-bg: #c8c8ca;
-  --key-bg: #e1e1e3;
-  --key-bg-active: #bfc0c3;
-  --key-border: #adaeb1;
+  --channel-bg: #d9d9dc;
+  --key-bg: #ededf0;
+  --key-bg-active: #d0d0d4;
+  --key-border: #bdbdc1;
   --key-text: #303033;
   --key-text-active: #1d1d1f;
   --key-text-dim: #66666b;
@@ -454,7 +454,7 @@ code, pre, .mono {
 .te-device .te-key:not(.te-transport__key) {
   border: 2px solid #444447;
   border-radius: 3px;
-  background: linear-gradient(180deg, #c5c5c8, #b6b6ba 70%, #a6a6ab);
+  background: linear-gradient(180deg, #d8d8dc, #ccccd0 70%, #bcbcc1);
   color: #343437;
   box-shadow: inset 0 1px 2px #ffffff70, inset 0 0 3px #26262850,
               0 0 0 1px #85858a, 0 1px 1px #00000030;
