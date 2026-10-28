@@ -76,11 +76,11 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
 
   useEffect(() => {
     mountedRef.current = true;
+    sequenceRef.current++;
     if (dialogRef.current && !dialogRef.current.open) dialogRef.current.showModal();
     fileRef.current?.focus();
     return () => {
       mountedRef.current = false;
-      sequenceRef.current++;
       controllerRef.current?.abort();
       if (sourceRef.current) URL.revokeObjectURL(sourceRef.current.previewUrl);
     };
