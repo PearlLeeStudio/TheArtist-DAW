@@ -1,0 +1,90 @@
+"""A score transcription draft, before the user chooses the app's two chord slots."""
+
+from typing import Annotated, Literal
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+
+from app.models.sections import SectionType
+
+MAX_SCORE_BYTES = 8 * 1024 * 1024
+MAX_SCORE_BASE64 = 4 * ((MAX_SCORE_BYTES + 2) // 3)
+MAX_SCORE_MEASURES = 128
+MAX_SCORE_SECTIONS = 64
+MAX_CHORDS_PER_MEASURE = 16
+ScoreMime = Literal["application/pdf", "image/png", "image/jpeg", "image/webp"]
+ShortText = Annotated[str, Field(max_length=80)]
+Note = Annotated[str, Field(max_length=400)]
+ChordSymbol = Annotated[str, Field(min_length=1, max_length=80)]
+
+
+class StrictModel(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+
+
+class ScoreImportRequest(StrictModel):
+    filename: str = Field(min_length=1, max_length=180)
+    mimeType: str
+    dataBase64: str
+
+
+class ImportedMeasure(StrictModel):
+    chords: list[ChordSymbol] = Field(max_length=MAX_CHORDS_PER_MEASURE)
+    sourceLabel: ShortText
+    needsReview: bool
+    note: Note
+
+    @field_validator("chords")
+    @classmethod
+    def nonblank_chords(cls, value: list[str]) -> list[str]:
+        if any(not chord.strip() for chord in value):
+            raise ValueError("a chord symbol cannot be blank")
+        return value
+
+
+class ImportedSection(StrictModel):
+    section: SectionType | None
+    label: ShortText
+    startMeasure: int = Field(ge=0, lt=MAX_SCORE_MEASURES)
+    length: int = Field(ge=1, le=MAX_SCORE_MEASURES)
+    basis: Literal["explicit", "inferred"]
+    note: Note
+
+
+class ScoreDraft(StrictModel):
+    title: str = Field(max_length=120)
+    key: Annotated[str, Field(max_length=40)] | None
+    timeSignature: list[int] | None = Field(min_length=2, max_length=2)
+    measures: list[ImportedMeasure] = Field(max_length=MAX_SCORE_MEASURES)
+    sections: list[ImportedSection] = Field(max_length=MAX_SCORE_SECTIONS)
+    warnings: list[Note] = Field(max_length=32)
+
+    @field_validator("timeSignature")
+    @classmethod
+    def valid_meter(cls, value: list[int] | None) -> list[int] | None:
+        if value is not None and (not 1 <= value[0] <= 32 or value[1] not in (1, 2, 4, 8, 16, 32)):
+            raise ValueError("timeSignature must have a numerator 1..32 and a power-of-two denominator 1..32")
+        return value
+
+    @model_validator(mode="after")
+    def section_ranges(self) -> "ScoreDraft":
+        occupied: set[int] = set()
+        for section in self.sections:
+            end = section.startMeasure + section.length
+            if end > len(self.measures):
+                raise ValueError("section extends beyond the imported measures")
+            measures = set(range(section.startMeasure, end))
+            if occupied & measures:
+                raise ValueError("imported sections cannot overlap")
+            occupied.update(measures)
+        return self
+
+
+class ScoreExtraction(ScoreDraft):
+    # Internal evidence flags are not part of the UI contract.
+    complete: bool
+    hasRepeats: bool
+
+
+class ScoreImportResponse(ScoreDraft):
+    model: str
+    requestId: str | None
