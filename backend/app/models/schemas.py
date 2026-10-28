@@ -1,4 +1,8 @@
+from typing import Literal
+
 from pydantic import BaseModel, Field, model_validator
+
+from app.models.sections import CHORDS_PER_BAR, MAX_SECTION_CHORDS, SECTION_TYPES, SectionType
 
 
 class ContextMeasure(BaseModel):
@@ -6,7 +10,7 @@ class ContextMeasure(BaseModel):
     chords: list[str | None]
 
 
-VALID_SECTIONS = {"intro", "verse", "chorus", "bridge", "outro"}
+VALID_SECTIONS = set(SECTION_TYPES)
 
 
 class GenerateRequest(BaseModel):
@@ -18,7 +22,8 @@ class GenerateRequest(BaseModel):
     selectedMeasures: list[int]
     sectionType: str | None = Field(
         default=None,
-        description="Song section: intro, verse, chorus, bridge, outro",
+        description="Song-form section id from app/models/sections.py (intro, verse, pre_chorus, "
+                    "chorus, ..., head, a_section, b_section); null applies no song-form rules",
     )
     modelKey: str | None = Field(
         default=None,
@@ -63,6 +68,38 @@ class Suggestion(BaseModel):
 class GenerateResponse(BaseModel):
     suggestions: list[Suggestion]
     source: str = "rules"  # "ai", "rules", or "ai+rules"
+
+
+class SectionGenerateRequest(BaseModel):
+    """One song-form section composed after the measures in `context`."""
+    key: str = Field(..., examples=["C major", "A minor"])
+    bpm: int = Field(default=80, ge=20, le=300)
+    genre: str | None = None
+    timeSignature: tuple[int, int] = (4, 4)
+    sectionType: SectionType
+    chordCount: int = Field(
+        ..., ge=CHORDS_PER_BAR, le=MAX_SECTION_CHORDS,
+        description="Chord slots to fill, two per measure; the section spans ceil(chordCount / 2) bars",
+    )
+    context: list[ContextMeasure] = Field(
+        default_factory=list,
+        description="The measures before the new section, indices 0..k-1 in order",
+    )
+    modelKey: str | None = Field(
+        default=None,
+        description="Same checkpoint keys as GenerateRequest.modelKey; null = genre dispatch",
+    )
+
+
+class SectionGenerateResponse(BaseModel):
+    sectionType: SectionType
+    title: str                       # e.g. "Chorus — 8 bars"
+    startMeasure: int                # = len(context); first suggestion key
+    bars: int                        # = ceil(chordCount / 2)
+    chordCount: int                  # = bars * 2
+    suggestions: list[Suggestion]    # chords keyed by absolute measure index
+    source: Literal["ai", "rules"]
+    modelUsed: str | None = None     # checkpoint that produced the chords; null for rules
 
 
 class ErrorResponse(BaseModel):

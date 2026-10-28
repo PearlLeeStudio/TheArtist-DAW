@@ -17,6 +17,7 @@ flowchart LR
     subgraph FastAPI
         STR[POST /api/generate/stream<br/>SSE — frontend primary]
         GEN[POST /api/generate]
+        SEC[POST /api/generate/section<br/>+ /section/stream SSE]
         CH[POST /api/generate/chords]
         SONG[POST /api/generate/song<br/>voyager composite]
         MOD[GET/POST /api/models/*<br/>GET /api/genres/list]
@@ -26,9 +27,11 @@ flowchart LR
     end
 
     FE --> VP --> STR
+    FE --> VP --> SEC
     FE --> VP --> MOD
     STR --> MI
     GEN --> MI
+    SEC --> MI
     CH --> MI
     SONG --> MI
     MI --> RAG
@@ -88,8 +91,8 @@ Generate chord suggestions for selected measures. Used by the frontend chord edi
 | `modelKey` | `string \| null` | Checkpoint to use: `"phase0"`, `"ft_f1"`…`"ft_f5"`, `"ft_f1_v2"`, or `"ft_f1_lora_<genre>"` (R4 LoRA adapters). Default: `ft_f1` (recommended pop-preserving baseline). If `null` and `genre` is provided, backend dispatches via `GENRE_MODEL_DISPATCH`. See [Model Checkpoints](#model-checkpoints). |
 | `timeSignature` | `[number, number]` | e.g. `[4, 4]`, `[3, 4]`, `[6, 8]` |
 | `context` | `ContextMeasure[]` | All measures in the song with existing chords |
-| `selectedMeasures` | `number[]` | Indices of measures to generate chords for |
-| `sectionType` | `string \| null` | `"intro" \| "verse" \| "chorus" \| "bridge" \| "outro"` — applies song-form post-processing |
+| `selectedMeasures` | `number[]` | Indices of measures to generate chords for (1-64; more → 400) |
+| `sectionType` | `string \| null` | Any of the 17 [song-form section](#song-form-sections) ids, or `null` for no song-form rules. The frontend sends it explicitly (no positional guessing). Unknown ids → 400. |
 
 **Response (200):**
 
@@ -152,6 +155,8 @@ Generate chord suggestions for selected measures. Used by the frontend chord edi
 }
 ```
 
+400 = bad key format, no measures selected, more than 64 measures selected, or an unknown `sectionType`. Body-schema violations (e.g. `bpm` outside 20-300) are rejected by FastAPI with 422.
+
 **Current strategies (rule-based fallback):**
 1. **Diatonic ii-V** — weighted diatonic chord selection, ending with ii-V targeting I
 2. **Tritone substitution** — ii → bII7 instead of ii → V7
@@ -177,10 +182,146 @@ Streaming variant of `/api/generate` — **the frontend's primary generate path*
 | `voicing` | `{"label": "Picking inversions for smooth bass motion"}` | Unless disabled via `THEARTIST_DISABLE_VOICE_LEADING`. |
 | `explaining` | `{"label": "Generating per-transition theory explanations"}` | RAG-enabled genres only (jazz family + classical). |
 | `complete` | `{"label": "Done"}` | Right before `result`. |
-| `result` | Same payload shape as `/api/generate`'s 200 JSON (`{suggestions, source}`) | Final frame, then the stream closes. |
-| `error` | `{"detail": "..."}` | Terminal — validation errors are streamed as an `error` frame instead of an HTTP 4xx. |
+| `result` | Same payload shape as `/api/generate`'s 200 JSON (`{suggestions, source}`) plus `elapsed_ms` | Final frame, then the stream closes. |
+| `error` | `{"detail": "..."}` | Terminal — the 400 validation errors of `/api/generate` are streamed as an `error` frame instead of an HTTP 4xx; a failure inside generation ends the stream with `{"detail": "Chord generation failed"}`. |
+
+Every stream ends with exactly one terminal frame (`result` or `error`); phase frames carry `t_ms` (ms since the request started). Body-schema violations (e.g. `bpm` outside 20-300) are still rejected with HTTP 422 JSON before any stream starts.
 
 If torch is unavailable, no phase frames fire — the rule-based fallback runs and only the `result` frame arrives, with `"source": "rules"`. If torch is present but the checkpoint has not been downloaded, a `model_load` frame fires first (the registry attempts the load), then the load fails and the same rule-based `result` arrives.
+
+---
+
+### POST `/api/generate/section`
+
+Compose one song-form section (an 8-bar chorus, a 4-chord turnaround, …) after the measures already in the song. The section's measures are appended after `context`, so the suggestion keys are absolute measure indices.
+
+**Status:** Implemented — same AI pipeline as `/api/generate` with the section's song-form rules, plus key anchoring for a section with no chords before it; rule-based fallback.
+
+**Request:**
+
+```json
+{
+  "key": "C major",
+  "bpm": 96,
+  "genre": "pop",
+  "timeSignature": [4, 4],
+  "sectionType": "chorus",
+  "chordCount": 16,
+  "context": [
+    { "measure": 0, "chords": ["Cmaj7", "Am7"] },
+    { "measure": 1, "chords": ["Dm7", "G7"] }
+  ],
+  "modelKey": null
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `key` | `string` | Same format as `/api/generate` (`"C major"`, `"A minor"`) |
+| `bpm` | `number` | Tempo (20-300). Default `80` |
+| `genre` | `string \| null` | Same 13-genre vocabulary as `/api/generate`. Default `null` |
+| `timeSignature` | `[number, number]` | Default `[4, 4]` |
+| `sectionType` | `string` | Required. One of the 17 [song-form section](#song-form-sections) ids |
+| `chordCount` | `number` | Required, 2-128. Two chord slots per measure, so the section spans `ceil(chordCount / 2)` bars (an odd count rounds up) |
+| `context` | `ContextMeasure[]` | The measures that come **before** the new section, indices `0..k-1` in order. Default `[]` (a fresh section) |
+| `modelKey` | `string \| null` | Same checkpoint keys as `/api/generate`. Default `null` = genre dispatch |
+
+**Response (200):**
+
+```json
+{
+  "sectionType": "chorus",
+  "title": "Chorus — 8 bars",
+  "startMeasure": 2,
+  "bars": 8,
+  "chordCount": 16,
+  "suggestions": [
+    {
+      "label": "Option A — F1 — 10K pop mix (conservative)",
+      "chords": {
+        "2": ["Am", "Gmaj"],
+        "3": ["Fmaj", "Emaj"],
+        ...
+        "9": ["G7/D", "Cmaj"]
+      },
+      "explanations": null
+    },
+    ...
+  ],
+  "source": "ai",
+  "modelUsed": "ft_f1"
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `sectionType` | `string` | Echoes the request |
+| `title` | `string` | Default title for a single section: `"{Label} — {bars} bars"` (em dash, `bar` when 1), e.g. `"Chorus — 8 bars"` |
+| `startMeasure` | `number` | `= len(context)` — absolute index of the section's first measure |
+| `bars` | `number` | `= ceil(chordCount / 2)` |
+| `chordCount` | `number` | `= bars * 2` |
+| `suggestions` | `Suggestion[]` | Usually 3 (A/B/C), same shape as `/api/generate`. Each has exactly `bars` keys: `str(startMeasure)` … `str(startMeasure + bars - 1)`, each with 2 chords |
+| `source` | `"ai" \| "rules"` | `"rules"` = the model was unavailable and the rule-based generator answered |
+| `modelUsed` | `string \| null` | Checkpoint key that actually produced the chords when `source` is `"ai"` (a LoRA key that fell back to the F1 base reports `ft_f1`); `null` for rules |
+
+**Errors:**
+
+| Status | Body | When |
+|---|---|---|
+| 400 | `{"detail": "Expected key format: 'C major' or 'A minor'"}` | Bad key format. |
+| 422 | Pydantic validation | Unknown or missing `sectionType`, `chordCount` outside 2-128, `bpm` outside 20-300, or another body-schema violation. |
+
+**Internal flow:**
+1. `context` + one empty row per new bar (indices from `len(context)`); the new indices are the selection.
+2. AI (torch + checkpoint available): resolve the checkpoint exactly like `/api/generate` → sample 3 candidates → **key anchor** (only when no chord precedes the section) → rerank → song-form rules for `sectionType` → voice-leading inversions (a section whose rule resolves to the tonic — verse, chorus, outro, tag, head, A section — keeps a root-position final tonic) → RAG explanations. Song form runs before voice leading and explanations, so slash basses and theory notes describe the final chords.
+3. Rules fallback: `generate_suggestions` with a position derived from the section (intro 0.0, verse 0.25, pre_chorus 0.4, chorus 0.6, post_chorus 0.65, bridge 0.7, outro 1.0, others 0.5), then the same song-form rules.
+
+**Key anchoring** (`app/services/key_anchor.py`): with no chords to continue from, the model largely ignores the `[KEY:…]` token (a fresh "C major" pop request can come back in E major). Each candidate's diatonic collection is estimated by counting its chord tones inside each of the 12 major-scale collections (relative major and minor are the same collection); when the best collection beats the requested key's by at least 5% of all chord tones (and at least 2 tones), every chord — root and slash bass — is transposed by the interval between the two collections' tonics and spelled for the requested key (sharps for G D A E B major, E B minor and any key named with a `#`; flats for flat keys and C major / A minor). Rock and blues progressions centre on their collection's 5th degree instead (C–Bb–F or C7–F7–G7 sits in F major's collection): a candidate that opens on that degree and either closes on it or lands on it more often than on the collection's tonic is transposed so that this centre falls on the requested tonic — an E blues asked for in C major comes back as a C blues, not a G blues, and a C blues asked for in C major stays as it is. Such a result is spelled like the major key on the requested tonic (`F#m`, not `Gbm`, for A minor). Ties and near-ties keep the model's chords; a candidate is never moved when the section follows chords the model could continue from.
+
+---
+
+### POST `/api/generate/section/stream`
+
+Streaming variant of `/api/generate/section`. Same request body and validation; response is `text/event-stream` with the same headers as `/api/generate/stream`.
+
+**SSE frames:** the same phase frames as [`/api/generate/stream`](#post-apigeneratestream) (`model_load`, `composing` ×3, `ranking`, `voicing`, `explaining`, `complete`; each data object has `label` plus `t_ms`), then exactly one terminal frame:
+
+| Event | Payload | When |
+|-------|---------|------|
+| `result` | The `/api/generate/section` 200 JSON plus `elapsed_ms` | Generation finished (AI or rules). |
+| `error` | `{"detail": "..."}` | Bad key format (streamed instead of a 400), or a failure inside generation. |
+
+Body-schema violations are HTTP 422 JSON before the stream starts, exactly like the JSON route, so a client must handle a non-2xx response from this route too.
+
+---
+
+### Song-form sections
+
+One vocabulary for `sectionType` on every route. Canonical list: `backend/app/models/sections.py` (mirrored in `frontend/src/engine/songForm.ts`). Two chord slots per measure; `bars = ceil(chordCount / 2)`; at most 128 chords = 64 bars on every path. The rules live in `backend/app/services/song_form.py`; each keeps the chord count unchanged, and roman numerals are relative to the request key (minor keys use i / iv / V7).
+
+| id | Label | Group | Default chords | Song-form rule |
+|----|-------|-------|----------------|----------------|
+| `intro` | Intro | common | 8 | Starts on I |
+| `verse` | Verse | common | 16 | Ends V7 → I |
+| `pre_chorus` | Pre-Chorus | common | 8 | Ends on V7 (half cadence) |
+| `chorus` | Chorus | common | 16 | Ends V7 → I |
+| `post_chorus` | Post-Chorus | common | 8 | Static loop: repeats its first 2 bars, no cadence |
+| `bridge` | Bridge | common | 16 | Starts on IV, ends IV → V7 |
+| `outro` | Outro | common | 8 | Ends IV → I (plagal) |
+| `interlude` | Interlude | instrumental | 8 | None (the model's phrase) |
+| `solo` | Solo | instrumental | 16 | None |
+| `breakdown` | Breakdown | instrumental | 16 | Static: repeats its first bar |
+| `drop` | Drop | instrumental | 16 | Static loop: repeats its first 2 bars |
+| `vamp` | Vamp | instrumental | 4 | Static: repeats its first bar |
+| `turnaround` | Turnaround | instrumental | 4 | Last 4 chords I – vi – ii – V7 (minor: i – VI – iiø – V7); under 4 chords just ends on V7 |
+| `tag` | Tag | instrumental | 8 | Ends V7 → I, like an outro's close |
+| `head` | Head | jazz | 64 | Ends V7 → I |
+| `a_section` | A Section | jazz | 16 | Ends V7 → I |
+| `b_section` | B Section | jazz | 16 | Starts on IV, ends IV → V7 |
+
+A rule that ends on I writes a bare tonic triad (`Cmaj` / `Amin`), and voice leading leaves it in root position; other chords may still receive slash-bass inversions.
+
+Chords a rule writes are spelled for the key. The five original sections (intro, verse, chorus, bridge, outro) keep their original spelling, flats except in B, F# and C#. The other sections follow the key signature like key anchoring, so an E major turnaround ends `Emaj7 – C#m7 – F#m7 – B7` and an E minor one `Em7 – Cmaj7 – F#m7b5 – B7`, while F major and D minor keep flats.
 
 ---
 
@@ -463,7 +604,8 @@ sequenceDiagram
     BE->>BE: Validate key format
     BE->>INF: generate_ai_suggestions()
     INF-->>FE: SSE phases: model_load / composing ×3 /<br/>ranking / voicing / explaining
-    INF->>INF: Sample 3 candidates → rerank (R1+R2)<br/>→ voice-leading → RAG explain
+    INF->>INF: Sample 3 → key anchor (fresh selection) → rerank<br/>→ song form → voice leading → RAG explain
+    Note over INF: Full length — each pass writes every selected bar<br/>(EOS / PAD / empty bars banned until then)
     alt torch / checkpoint unavailable
         BE->>GEN: generate_suggestions()
         GEN->>GEN: Run 3 strategies<br/>(diatonic, tritone, modal)
@@ -489,7 +631,8 @@ backend/
 │   ├── main.py                 # FastAPI app, CORS (localhost:5173); registers the four
 │   │                           # routers below + GET /api/health + optional startup warmup
 │   ├── routes/
-│   │   ├── generate.py         # POST /api/generate + /api/generate/stream (SSE)
+│   │   ├── generate.py         # POST /api/generate + /api/generate/stream (SSE),
+│   │   │                       # POST /api/generate/section + /section/stream (SSE)
 │   │   ├── chords.py           # POST /api/generate/chords (programmatic / TheVoyager)
 │   │   ├── song.py             # POST /api/generate/song (voyager composite, 3-track)
 │   │   └── models.py           # GET/POST /api/models/* + GET /api/genres/list
@@ -497,12 +640,14 @@ backend/
 │   │   ├── chord_generator.py  # 3-strategy rule-based generator (fallback)
 │   │   ├── inference.py        # Model registry + AI pipeline (R1+R2 rerank, RAG explain)
 │   │   ├── genre_tables.py     # GENRE_DEFAULTS + per-genre rhythm/instrument tables
+│   │   ├── key_anchor.py       # Transposes fresh candidates into the requested key
 │   │   ├── song_builder.py     # Harmony/bass/drum event layering + MIDI render
 │   │   ├── song_form.py        # Song-form post-processor (sectionType)
 │   │   └── voice_leading.py    # Bass-motion inversion picker
 │   └── models/
-│       └── schemas.py          # Pydantic: Generate*, ChordGenerate*, SongGenerate*,
-│                               # Track/TrackEvent, Suggestion, TheoryExplanation
+│       ├── schemas.py          # Pydantic: Generate*, SectionGenerate*, ChordGenerate*,
+│       │                       # SongGenerate*, Track/TrackEvent, Suggestion, TheoryExplanation
+│       └── sections.py         # Song-form section vocabulary (17 ids, labels, default sizes)
 ├── pyproject.toml              # deps: fastapi, uvicorn, pydantic
 └── uv.lock
 ```
@@ -516,13 +661,15 @@ uv run uvicorn app.main:app --reload   # localhost:8000
 
 ### Model Inference (implemented)
 
-The Music Transformer checkpoints are trained (Phase 0 + F1–F5 + 11 LoRAs, served from `ai/checkpoints/`) and `/api/generate` (+ `/api/generate/stream`) runs the full pipeline in `app/services/inference.py`:
+The Music Transformer checkpoints are trained (Phase 0 + F1–F5 + 11 LoRAs, served from `ai/checkpoints/`) and `/api/generate` (+ `/api/generate/stream`, `/api/generate/section`, `/api/generate/section/stream`) runs the full pipeline in `app/services/inference.py`:
 
 1. Resolve checkpoint (`modelKey` → genre dispatch via `GENRE_MODEL_DISPATCH` → `DEFAULT_MODEL`) and lazy-load via `ModelRegistry`
 2. Tokenize context with the extended 359-vocab tokenizer (13 genre tokens)
-3. Sample 3 candidates at temperatures 0.7 / 0.9 / 1.1 (conservative / balanced / creative)
-4. Rerank by composite score: R1 (Sethares sensory consonance) + R2 (theory retrieval)
-5. Inject voice-leading (bass-motion inversions)
-6. Attach RAG theory explanations (jazz-family + classical genres only)
+3. Sample 3 candidates at temperatures 0.7 / 0.9 / 1.1 (conservative / balanced / creative). Each pass is held to the selection's length: `[EOS]`, `[PAD]` and empty bars are banned until every selected bar is written, and sampling stops right after the last one, within a budget of 3 tokens per bar plus `max(8, bars // 2)`. A pass that still runs out of budget is logged as a warning, and the bars it did not write repeat its own bars
+4. Key-anchor each candidate when no chord precedes the selection (see [key anchoring](#post-apigeneratesection))
+5. Rerank by composite score: R1 (Sethares sensory consonance) + R2 (theory retrieval)
+6. Apply the song-form rules for `sectionType`
+7. Inject voice-leading (bass-motion inversions; when the section's rule resolves to the tonic, that final tonic stays in root position)
+8. Attach RAG theory explanations (jazz-family + classical genres only)
 
 The rule-based generator remains the fallback when torch or the chosen checkpoint is unavailable.

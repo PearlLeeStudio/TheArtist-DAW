@@ -266,6 +266,11 @@ class MusicTransformer(nn.Module):
         repetition_penalty: float = 1.0,
         no_repeat_ngram_size: int = 0,
         ignore_repeat_token_ids: set[int] | None = None,
+        *,
+        n_bars: int | None = None,
+        bar_id: int = 3,
+        chord_ids: set[int] | None = None,
+        end_ids: set[int] | None = None,
     ) -> torch.Tensor:
         """Autoregressive generation from a prompt.
 
@@ -285,6 +290,23 @@ class MusicTransformer(nn.Module):
             ignore_repeat_token_ids: token ids exempt from the two repetition
                 controls above — e.g. [BAR] or other separators that
                 *should* recur. If None, no exemptions.
+            n_bars: write exactly this many complete bars after the prompt.
+                ``eos_id`` and ``end_ids`` are banned until they are
+                complete, and generation stops as soon as they are;
+                ``max_new_tokens`` still caps the pass, so it can come back
+                short. Bars count as the tokenizer encodes them: ``bar_id``
+                followed by one or more ``chord_ids``, complete once the
+                next ``bar_id`` closes it (that closing ``bar_id`` ends the
+                output). A ``bar_id`` that would close an empty bar is
+                banned too, so runs of empty bars cannot use up the budget
+                (they appear once the window has slid past the prompt's
+                header). Chords before the first generated ``bar_id``
+                continue the prompt's last bar and do not count. None (the
+                default) stops on ``eos_id`` or ``max_new_tokens`` alone.
+            bar_id: the bar separator ([BAR]); used with ``n_bars``.
+            chord_ids: the chord token ids; required with ``n_bars``.
+            end_ids: other tokens that would end the sequence (e.g. [PAD]),
+                banned with ``eos_id`` under ``n_bars``.
 
         Returns:
             (1, L') full sequence including prompt and generated tokens.
@@ -293,7 +315,15 @@ class MusicTransformer(nn.Module):
         ids = prompt_ids.clone()
         exempt = ignore_repeat_token_ids or set()
 
+        if n_bars is not None and chord_ids is None:
+            raise ValueError("generate(n_bars=...) needs chord_ids")
+        banned_ends = sorted({eos_id, *(end_ids or ())})
+        bars_done = 0
+        bar_chords: int | None = None  # chords in the bar being written; None before its [BAR]
+
         for _ in range(max_new_tokens):
+            if n_bars is not None and bars_done >= n_bars:
+                break
             ctx = ids[:, -self.max_seq_len :]
             logits = self(ctx)[:, -1, :] / max(temperature, 1e-8)
 
@@ -327,6 +357,15 @@ class MusicTransformer(nn.Module):
                     bidx = torch.tensor(list(banned), device=logits.device, dtype=torch.long)
                     logits[0, bidx] = float("-inf")
 
+            # Under n_bars nothing may end the sequence (the loop itself stops
+            # once the bars are complete), and a bar just opened must get a
+            # chord before the next [BAR]. Banned before top-k / top-p so the
+            # filters pick from the tokens that remain.
+            if n_bars is not None:
+                logits[0, banned_ends] = float("-inf")
+                if bar_chords == 0:
+                    logits[0, bar_id] = float("-inf")
+
             # Top-k
             if top_k > 0:
                 topk_vals, _ = torch.topk(logits, min(top_k, logits.size(-1)))
@@ -346,5 +385,14 @@ class MusicTransformer(nn.Module):
 
             if (next_id == eos_id).all():
                 break
+
+            if n_bars is not None:
+                token = int(next_id[0, 0])
+                if token == bar_id:
+                    if bar_chords:  # this [BAR] closes a bar that holds chords
+                        bars_done += 1
+                    bar_chords = 0
+                elif bar_chords is not None and token in chord_ids:
+                    bar_chords += 1
 
         return ids

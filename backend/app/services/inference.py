@@ -26,6 +26,8 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from app.models.schemas import ContextMeasure, Suggestion, TheoryExplanation
+from app.services.key_anchor import anchor_to_key
+from app.services.song_form import ROOT_POSITION_ENDINGS, apply_song_form_to_suggestions
 from app.services.voice_leading import apply_voice_leading_bass
 
 log = logging.getLogger(__name__)
@@ -485,10 +487,18 @@ def generate_with_model(
     repetition_penalty: float = 1.3,
     no_repeat_ngram_size: int = 3,
 ) -> list[list[str]]:
-    """Run model inference, return list of bars (each bar = list of chord strings)."""
+    """Run model inference, return list of bars (each bar = list of chord strings).
+
+    The pass is held to ``n_bars`` (see MusicTransformer.generate): [EOS],
+    [PAD] and empty bars are banned until that many bars are complete, and
+    sampling stops once they are. It still comes back short when it runs out
+    of token budget first.
+    """
     device = loaded.device
     prompt = torch.tensor([prompt_ids], device=device)
-    max_new = n_bars * 3 + 2  # BAR + 2 chords per bar + EOS
+    # BAR + 2 chords per bar, plus slack so a few extra chords or other
+    # non-chord tokens cannot cut the section short
+    max_new = n_bars * 3 + max(8, n_bars // 2)
 
     # Structural separators MUST be allowed to recur; exempt them from
     # repetition / no-repeat-ngram controls.
@@ -506,14 +516,19 @@ def generate_with_model(
         repetition_penalty=repetition_penalty,
         no_repeat_ngram_size=no_repeat_ngram_size,
         ignore_repeat_token_ids=exempt,
+        n_bars=n_bars,
+        bar_id=tokenizer.bar_id,
+        chord_ids={i for tok, i in tokenizer.token2id.items() if not tok.startswith("[")},
+        end_ids={tokenizer.pad_id},
     )
 
     gen_ids = output[0, len(prompt_ids):].tolist()
     gen_tokens = tokenizer.decode(gen_ids)
 
-    # Parse tokens into bars
+    # Parse tokens into bars, counted the way generate() counts them: chords
+    # before the first [BAR] continue the prompt's last bar, not a new one.
     bars: list[list[str]] = []
-    current_bar: list[str] = []
+    current_bar: list[str] | None = None
     for tok in gen_tokens:
         if tok == "[BAR]":
             if current_bar:
@@ -521,7 +536,7 @@ def generate_with_model(
             current_bar = []
         elif tok in ("[EOS]", "[PAD]"):
             break
-        elif not tok.startswith("["):
+        elif current_bar is not None and not tok.startswith("["):
             current_bar.append(tok)
     if current_bar:
         bars.append(current_bar)
@@ -534,10 +549,16 @@ def _bars_to_chord_map(
     selected_measures: list[int],
     chords_per_bar: int = 2,
 ) -> dict[str, list[str]]:
-    """Convert model output bars to Suggestion.chords format."""
+    """Convert model output bars to Suggestion.chords format.
+
+    A pass normally writes one bar per selected measure (generate_with_model
+    holds it to the count). One that ran out of token budget first is
+    padded: the bars it did not write repeat its own bars from the start,
+    so the padding stays in the progression's key.
+    """
     chord_map: dict[str, list[str]] = {}
     for i, m_idx in enumerate(selected_measures):
-        bar_chords = bars[i][:chords_per_bar] if i < len(bars) else []
+        bar_chords = bars[i % len(bars)][:chords_per_bar] if bars else []
         while len(bar_chords) < chords_per_bar:
             bar_chords.append(bar_chords[-1] if bar_chords else "Cmaj")
         chord_map[str(m_idx)] = bar_chords
@@ -810,8 +831,9 @@ def _rerank_composite(
 
 
 # ─── Pipeline stages ───────────────────────────────────────────────────
-# `generate_ai_suggestions` orchestrates these in order. Each stage owns
-# its own phase-event emission, so the orchestrator just chains calls.
+# `generate_ai_result` orchestrates these in order (`generate_ai_suggestions`
+# wraps it). Each stage owns its own phase-event emission, so the
+# orchestrator just chains calls.
 
 # Type alias for clarity at call sites; kept as a string forward-ref
 # so we don't need to add a `typing.Callable` import for it.
@@ -872,8 +894,10 @@ def _compose_candidates(
 ) -> list[Suggestion]:
     """Stage 2 — run the model at the three configured temperatures.
     Emits `composing` once per temperature with step / total / creativity
-    in the payload. Inference failures are logged and skipped, so a
-    flaky pass at one temperature doesn't kill the whole request."""
+    in the payload. Inference failures (and passes that end before any
+    chord) are logged and skipped, so a flaky pass at one temperature
+    doesn't kill the whole request. A pass that comes back short of the
+    selection is logged and padded with its own bars."""
     registry = ModelRegistry.get()
     tokenizer = registry.tokenizer
     suggestions: list[Suggestion] = []
@@ -886,6 +910,14 @@ def _compose_candidates(
         })
         try:
             bars = generate_with_model(loaded, tokenizer, prompt_ids, n_bars, temperature=temp)
+            if not bars:
+                log.warning(f"Model ended before any chord: temp={temp}")
+                continue
+            if len(bars) < n_bars:
+                log.warning(
+                    f"Model wrote {len(bars)} of {n_bars} bars, repeating its own bars "
+                    f"for the rest: temp={temp}"
+                )
             chord_map = _bars_to_chord_map(bars, selected_measures)
             letter = chr(ord("A") + len(suggestions))
             suggestions.append(Suggestion(
@@ -908,13 +940,26 @@ def _score_and_rerank(
     return _rerank_composite(suggestions, genre=genre)
 
 
-def _inject_voice_leading(suggestions: list[Suggestion], on_phase) -> list[Suggestion]:
+def _inject_voice_leading(
+    suggestions: list[Suggestion], on_phase, section_type: str | None = None,
+) -> list[Suggestion]:
     """Stage 4 — pick inversions for smooth bass motion. Emits `voicing`
-    unless disabled by env var."""
+    unless disabled by env var. When the section's rule resolves to the
+    tonic (outro, tag, verse, chorus, ...) that final tonic keeps its root
+    position."""
     if os.getenv("THEARTIST_DISABLE_VOICE_LEADING"):
         return suggestions
     on_phase("voicing", {"label": "Picking inversions for smooth bass motion"})
-    return apply_voice_leading_bass(suggestions)
+    endings: list[tuple[Suggestion, str, str]] = []
+    if section_type in ROOT_POSITION_ENDINGS:
+        for s in suggestions:
+            last = max(s.chords, key=int) if s.chords else None
+            if last is not None and s.chords[last]:
+                endings.append((s, last, s.chords[last][-1]))
+    suggestions = apply_voice_leading_bass(suggestions)
+    for s, last, chord in endings:
+        s.chords[last][-1] = chord
+    return suggestions
 
 
 def _explain_each_transition(
@@ -933,7 +978,34 @@ def _explain_each_transition(
     return _attach_explanations(suggestions, selected_measures)
 
 
-def generate_ai_suggestions(
+def _has_chords_before(context: list[ContextMeasure], selected_measures: list[int]) -> bool:
+    """Does any measure before the selection hold a chord for the model to continue from?"""
+    first_selected = min(selected_measures) if selected_measures else 0
+    return any(
+        chord and chord.strip()
+        for cm in context if cm.measure < first_selected
+        for chord in cm.chords
+    )
+
+
+def _anchor_candidates(suggestions: list[Suggestion], key_root: str, is_minor: bool) -> None:
+    """Transpose each candidate into the requested key (see key_anchor) in place."""
+    for s in suggestions:
+        anchored = anchor_to_key(_flatten_suggestion(s), key_root, is_minor)
+        idx = 0
+        for m_str in sorted(s.chords.keys(), key=int):
+            n = len(s.chords[m_str])
+            s.chords[m_str] = anchored[idx : idx + n]
+            idx += n
+
+
+@dataclass
+class AIResult:
+    suggestions: list[Suggestion]
+    model_key: str  # checkpoint that actually produced the chords
+
+
+def generate_ai_result(
     key: str,
     genre: str | None,
     context: list[ContextMeasure],
@@ -942,15 +1014,21 @@ def generate_ai_suggestions(
     model_key: str | None = None,
     bpm: int | None = None,
     on_phase=None,  # type: ignore[assignment]
-) -> list[Suggestion] | None:
+    section_type: str | None = None,
+) -> AIResult | None:
     """Generate 3 suggestions, then re-rank by sensory consonance + theory.
 
     Pipeline stages (each owns its phase event):
         1. _resolve_model            → "model_load" (cold only)
         2. _compose_candidates       → "composing" ×3
+           _anchor_candidates          (only when no chord precedes the selection)
         3. _score_and_rerank         → "ranking"
+           song-form rules for `section_type` (None = no rules)
         4. _inject_voice_leading     → "voicing" (unless disabled)
         5. _explain_each_transition  → "explaining" (when RAG enabled)
+
+    Song form runs before voice leading and explanations, so slash bass
+    notes and theory notes describe the final chords.
 
     `on_phase(stage, payload)` is called between stages so streaming
     endpoints can push live progress to the client. No-op when omitted.
@@ -975,9 +1053,37 @@ def generate_ai_suggestions(
     if not suggestions:
         return None
 
+    parts = key.strip().split()
+    key_root = parts[0]
+    is_minor = len(parts) > 1 and parts[1].lower().startswith("min")
+    # With no chords to continue from the model ignores the KEY token.
+    if not _has_chords_before(context, selected_measures):
+        _anchor_candidates(suggestions, key_root, is_minor)
+
     suggestions = _score_and_rerank(suggestions, notify, genre=genre)
-    suggestions = _inject_voice_leading(suggestions, notify)
+    apply_song_form_to_suggestions(suggestions, section_type, key_root, is_minor)
+    suggestions = _inject_voice_leading(suggestions, notify, section_type=section_type)
     suggestions = _explain_each_transition(suggestions, selected_measures, notify, genre=genre)
 
     notify("complete", {"label": "Done"})
-    return suggestions
+    return AIResult(suggestions=suggestions, model_key=loaded.name)
+
+
+def generate_ai_suggestions(
+    key: str,
+    genre: str | None,
+    context: list[ContextMeasure],
+    selected_measures: list[int],
+    time_signature: tuple[int, int] = (4, 4),
+    model_key: str | None = None,
+    bpm: int | None = None,
+    on_phase=None,  # type: ignore[assignment]
+    section_type: str | None = None,
+) -> list[Suggestion] | None:
+    """`generate_ai_result` without the checkpoint key. Returns None when the
+    caller should fall back to rule-based generation."""
+    result = generate_ai_result(
+        key, genre, context, selected_measures, time_signature,
+        model_key=model_key, bpm=bpm, on_phase=on_phase, section_type=section_type,
+    )
+    return result.suggestions if result is not None else None
