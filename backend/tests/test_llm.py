@@ -87,7 +87,7 @@ class FakeTransport:
 
 class LLMTestCase(unittest.TestCase):
     def setUp(self):
-        tmp = tempfile.TemporaryDirectory()
+        tmp = tempfile.TemporaryDirectory(prefix="llm-test-", dir=Path(__file__).parent)
         self.addCleanup(tmp.cleanup)
         self.ledger_path = Path(tmp.name) / "ledger" / "meta_ledger.json"
 
@@ -114,6 +114,28 @@ class LLMTestCase(unittest.TestCase):
 
 
 class ReservationTests(LLMTestCase):
+    def test_media_needs_an_explicit_token_bound_instead_of_base64_characters(self):
+        client = self.client(FakeTransport(response(json.dumps(GOOD))))
+        messages = [{"role": "user", "content": [{"type": "image_url", "image_url": {"url": "data:image/png;base64,AA=="}}]}]
+        with self.assertRaisesRegex(ValueError, "input_token_upper_bound"):
+            client.prepare(messages, SCHEMA, name="media")
+        prepared = client.prepare(messages, SCHEMA, name="media", input_token_upper_bound=1_048_576,
+                                  max_completion_tokens=8192, max_request_usd=1.35)
+        self.assertEqual(prepared.input_tokens_estimate, 1_048_576)
+        self.assertEqual(prepared.reserve_usd, 1.345536)
+        # This bound covers the processed input, and must not be sent as an API parameter.
+        self.assertNotIn("input_token_upper_bound", prepared.body)
+        self.assertNotIn("max_request_usd", prepared.body)
+
+    def test_bad_explicit_bounds_are_rejected(self):
+        client = self.client(FakeTransport(response(json.dumps(GOOD))))
+        for bound in (0, -1, True, 1.5):
+            with self.subTest(bound=bound), self.assertRaises(ValueError):
+                client.prepare(MESSAGES, SCHEMA, name="media", input_token_upper_bound=bound)
+        for cap in (0, -1, True, float("inf"), float("nan")):
+            with self.subTest(cap=cap), self.assertRaises(ValueError):
+                client.prepare(MESSAGES, SCHEMA, name="media", max_request_usd=cap)
+
     def test_reservation_is_input_estimate_plus_full_completion_budget(self):
         prepared = self.client(FakeTransport(response(json.dumps(GOOD)))).prepare(
             MESSAGES, SCHEMA, name="song_form", max_completion_tokens=2048)
@@ -159,6 +181,16 @@ class ReservationTests(LLMTestCase):
 
 
 class CapTests(LLMTestCase):
+    def test_per_request_cap_rejects_before_reservation_or_transport(self):
+        transport = FakeTransport(response(json.dumps(GOOD)))
+        with self.assertRaises(BudgetExceeded) as ctx:
+            self.call(self.client(transport), input_token_upper_bound=1_048_576,
+                      max_completion_tokens=8192, max_request_usd=1.0)
+        self.assertEqual(transport.calls, [])
+        self.assertFalse(self.ledger_path.exists())
+        self.assertEqual(ctx.exception.request_usd, 1.345536)
+        self.assertEqual(ctx.exception.cap_usd, 1.0)
+
     def test_cap_refusal_happens_before_the_transport(self):
         transport = FakeTransport(response(json.dumps(GOOD)))
         with self.assertRaises(BudgetExceeded) as ctx:

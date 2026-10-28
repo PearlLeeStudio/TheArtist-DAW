@@ -647,8 +647,16 @@ class LLMClient:
         self._transport_lock = threading.Lock()
 
     def prepare(self, messages: Sequence[Mapping[str, Any]], schema: Mapping[str, Any], *, name: str,
-                max_completion_tokens: int = 2048, timeout_s: float | None = None) -> PreparedRequest:
-        """Build the request body and its worst-case reservation without sending anything."""
+                max_completion_tokens: int = 2048, timeout_s: float | None = None,
+                input_token_upper_bound: int | None = None,
+                max_request_usd: float | None = None) -> PreparedRequest:
+        """Build the request and reservation without sending anything.
+
+        Text keeps the existing character estimate. Media requires a caller-supplied
+        bound for ALL input tokens, including extracted text, images, and schema;
+        base64 character length cannot bound a document's tokenized representation.
+        A model's full context window is a conservative bound for accepted requests.
+        """
         if not _SCHEMA_NAME.fullmatch(name):
             raise LLMSchemaError(f"schema name {name!r} must be 1-64 letters, digits, _ or -")
         if isinstance(max_completion_tokens, bool) or not isinstance(max_completion_tokens, int) \
@@ -670,20 +678,41 @@ class LLMClient:
         }
         if self.config.reasoning_effort:
             body["reasoning_effort"] = self.config.reasoning_effort
-        chars = len(json.dumps(msgs, ensure_ascii=False)) + len(json.dumps(strict, ensure_ascii=False))
-        input_tokens = math.ceil(chars / CHARS_PER_TOKEN)
+        has_media = any(isinstance(m.get("content"), list) and any(
+            not isinstance(part, dict) or part.get("type") != "text" for part in m["content"])
+            for m in msgs)
+        if input_token_upper_bound is not None:
+            if isinstance(input_token_upper_bound, bool) or not isinstance(input_token_upper_bound, int) \
+                    or input_token_upper_bound < 1:
+                raise ValueError("input_token_upper_bound must be a positive integer")
+            input_tokens = input_token_upper_bound
+        elif has_media:
+            raise ValueError("media input requires an explicit input_token_upper_bound")
+        else:
+            chars = len(json.dumps(msgs, ensure_ascii=False)) + len(json.dumps(strict, ensure_ascii=False))
+            input_tokens = math.ceil(chars / CHARS_PER_TOKEN)
         # Worst case: every input token uncached, and the whole completion budget spent
         # (reasoning tokens bill as output and count toward max_completion_tokens)
         reserve = round((input_tokens * self.config.price_input_per_m
                          + max_completion_tokens * self.config.price_output_per_m) / 1_000_000, 8)
+        if max_request_usd is not None:
+            if isinstance(max_request_usd, bool) or not math.isfinite(max_request_usd) or max_request_usd <= 0:
+                raise ValueError("max_request_usd must be a positive finite number")
+            if reserve > max_request_usd:
+                raise BudgetExceeded(
+                    f"request reservation ${reserve:.6f} exceeds the per-request cap ${max_request_usd:.6f}",
+                    spent_usd=0.0, outstanding_usd=0.0, request_usd=reserve, cap_usd=max_request_usd)
         return PreparedRequest(body, timeout, strict, input_tokens, reserve)
 
     def chat_json(self, messages: Sequence[Mapping[str, Any]], schema: Mapping[str, Any], *, name: str,
-                  label: str, max_completion_tokens: int = 2048, timeout_s: float | None = None) -> LLMResult:
+                  label: str, max_completion_tokens: int = 2048, timeout_s: float | None = None,
+                  input_token_upper_bound: int | None = None,
+                  max_request_usd: float | None = None) -> LLMResult:
         """Send one strict-JSON request; return the checked object or raise an LLMError."""
         cfg = self.config
         prepared = self.prepare(messages, schema, name=name, max_completion_tokens=max_completion_tokens,
-                                timeout_s=timeout_s)
+                                timeout_s=timeout_s, input_token_upper_bound=input_token_upper_bound,
+                                max_request_usd=max_request_usd)
         if not cfg.api_key:
             raise LLMConfigError(f"{cfg.key_source} is not set, so provider {cfg.provider} cannot be called")
         transport = self._get_transport()
