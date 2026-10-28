@@ -1,0 +1,45 @@
+{
+  "ts": "2026-10-28T00:19:18+00:00",
+  "data": {
+    "sections": [
+      {
+        "chordCount": 4,
+        "type": "intro"
+      },
+      {
+        "chordCount": 8,
+        "type": "verse"
+      },
+      {
+        "chordCount": 8,
+        "type": "pre_chorus"
+      },
+      {
+        "chordCount": 16,
+        "type": "chorus"
+      },
+      {
+        "chordCount": 8,
+        "type": "bridge"
+      },
+      {
+        "chordCount": 4,
+        "type": "outro"
+      }
+    ],
+    "title": "Sunshine in C"
+  },
+  "provider": "meta",
+  "model": "muse-spark-1.3",
+  "request_id": "7ee8ff92-95de-4ee4-a859-ecfe4c0a9f62",
+  "response_id": "chatcmpl-01a17fe0-2319-7505-9d5d-dd02da384d6f",
+  "usage": {
+    "prompt_tokens": 252,
+    "cached_tokens": 0,
+    "completion_tokens": 596,
+    "reasoning_tokens": 513
+  },
+  "cost_usd": 0.002848,
+  "latency_ms": 3381,
+  "label": "smoke.song_form"
+}
