@@ -5,9 +5,12 @@ sends only `(genre, length_bars)`, artist owns key / bpm / time-signature
 defaults, generates the chord progression with the genre-appropriate
 checkpoint, then layers harmony + bass + drum into 3 symbolic tracks
 (melody track was dropped 2026-05-10) and ships a MIDI render along.
+The optional `harmony_rhythm` / `drum_pattern` / `harmony_instrument`
+make the editor's Play-panel choices; null keeps the genre's own.
 
 Response shape (per `SongGenerateResponse`):
     {genre, key, bpm, time_signature,
+     harmony_rhythm, drum_pattern,     # effective choices; drum_pattern "off" = no drums
      bars: [{"chords": [...]}, ...],
      tracks: {harmony, bass, drum},   # each: {events, instrument, source}
      midi_b64,
@@ -32,12 +35,17 @@ from app.services.chord_generator import generate_suggestions
 from app.services.genre_tables import (
     bass_instrument,
     drum_pattern,
+    drum_pattern_by_id,
     genre_defaults,
+    genre_drum_pattern_id,
+    genre_rhythm_preset,
     harmony_instrument,
+    harmony_rhythm_preset,
 )
 from app.services.inference import (
     TORCH_AVAILABLE,
     ModelRegistry,
+    _bars_to_chord_map,
     build_prompt,
     dispatch_model_for_genre,
     generate_with_model,
@@ -64,10 +72,14 @@ def _generate_bars(
     n_bars: int,
 ) -> tuple[list[dict], str]:
     """Run the existing chord-generation chain (AI when available, rules
-    otherwise) and return (bars, model_used). Mirrors the path in
-    `routes/chords.py:generate_chords` but with no candidate fan-out.
+    otherwise) and return (bars, model_used): `n_bars` bars of two chords.
+    Mirrors the path in `routes/chords.py:generate_chords` but with no
+    candidate fan-out. A model pass is fitted like the editor's
+    (`_bars_to_chord_map`): a short one repeats its own bars, each bar
+    keeps two chords; a pass with no bars falls back to the rules.
     """
     model_key = dispatch_model_for_genre(genre)
+    selected = list(range(n_bars))
 
     if TORCH_AVAILABLE:
         registry = ModelRegistry.get()
@@ -75,7 +87,7 @@ def _generate_bars(
         prompt_ids = build_prompt(
             tokenizer, key, genre, time_signature,
             context=[],
-            selected_measures=list(range(n_bars)),
+            selected_measures=selected,
             bpm=bpm,
         )
         loaded = registry.load_model(model_key)
@@ -85,12 +97,14 @@ def _generate_bars(
                     loaded, tokenizer, prompt_ids, n_bars,
                     temperature=0.8,
                 )
-                return [{"chords": b} for b in bars], model_key
+                if bars:
+                    chord_map = _bars_to_chord_map(bars, selected)
+                    return [{"chords": chord_map[str(m)]} for m in selected], model_key
+                log.warning("AI inference returned no bars, falling back to rules")
             except Exception:
                 log.exception("AI inference failed, falling back to rules")
 
     # Rule fallback
-    selected = list(range(n_bars))
     full_context = [ContextMeasure(measure=m, chords=[None, None]) for m in selected]
     suggestions = generate_suggestions(
         key=key, genre=genre, context=full_context,
@@ -132,6 +146,16 @@ def generate_song(req: SongGenerateRequest) -> SongGenerateResponse:
             ),
         )
 
+    # Play-panel choices (ids already validated by the schema); None = the genre's.
+    rhythm = harmony_rhythm_preset(req.harmony_rhythm) or genre_rhythm_preset(req.genre)
+    if req.drum_pattern is None:
+        drum_id = genre_drum_pattern_id(req.genre)
+    elif req.drum_pattern == "off":
+        drum_id = None
+    else:
+        drum_id = req.drum_pattern
+    h_instrument = req.harmony_instrument or harmony_instrument(req.genre)
+
     bars, model_used = _generate_bars(
         genre=req.genre,
         key=key,
@@ -140,9 +164,11 @@ def generate_song(req: SongGenerateRequest) -> SongGenerateResponse:
         n_bars=req.length_bars,
     )
 
-    h_events = build_harmony_events(bars, req.genre, beats_per_measure=beats_per_measure)
+    h_events = build_harmony_events(bars, req.genre, beats_per_measure=beats_per_measure,
+                                    pattern=rhythm["pattern"])
     b_events = build_bass_events(bars, req.genre, beats_per_measure=beats_per_measure)
-    d_events = build_drum_events(req.length_bars, req.genre, beats_per_measure=beats_per_measure)
+    d_events = build_drum_events(len(bars), req.genre, beats_per_measure=beats_per_measure,
+                                 pattern=drum_pattern_by_id(drum_id), enabled=drum_id is not None)
 
     midi = render_midi(
         bars, req.genre,
@@ -150,6 +176,7 @@ def generate_song(req: SongGenerateRequest) -> SongGenerateResponse:
         harmony_events=h_events,
         bass_events=b_events,
         drum_events=d_events,
+        harmony_instrument=h_instrument,
     )
 
     return SongGenerateResponse(
@@ -157,9 +184,11 @@ def generate_song(req: SongGenerateRequest) -> SongGenerateResponse:
         key=key,
         bpm=bpm,
         time_signature=time_signature,
+        harmony_rhythm=rhythm["id"],
+        drum_pattern=drum_id if drum_id is not None else "off",
         bars=bars,
         tracks={
-            "harmony": _events_to_track(h_events, harmony_instrument(req.genre)),
+            "harmony": _events_to_track(h_events, h_instrument),
             "bass":    _events_to_track(b_events, bass_instrument(req.genre)),
             "drum":    _events_to_track(d_events, "gm_drum_kit"),
         },

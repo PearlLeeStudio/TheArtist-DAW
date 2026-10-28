@@ -490,6 +490,11 @@ midi = to_pretty_midi(song)       # ready for a soundfont render
 | `length_bars` | int | — | `8` | Range 1–64. |
 | `n_candidates` | int | — | `1` | Reserved 1–3. Current build returns 1. |
 | `seed` | int \| null | — | `null` | Reserved for deterministic sampling. |
+| `harmony_rhythm` | string \| null | — | `null` | A comping-rhythm preset id (`charleston`, `eighth_pulse`, `boom_chick`, `shuffle`, `bossa`, `chorale`, `folk_pocket`, `neo_soul_offbeat`, `boom_bap`, `sidechain_offbeat`, `funky_drummer`, `block`, `half`). `null` = the genre's. |
+| `drum_pattern` | int \| `"off"` \| null | — | `null` | A drum pattern id 1–15, or `"off"` for no drums. `null` = the genre's. |
+| `harmony_instrument` | string \| null | — | `null` | One of the editor's 31 harmony instruments (GM Soundfont names). `null` = the genre's. |
+
+The three optional fields are the editor's Play-panel choices; [API_SPEC.md](API_SPEC.md) lists every preset, pattern and instrument.
 
 **4) Response shape** (`SongGenerateResponse` — top-level keys)
 
@@ -499,11 +504,13 @@ midi = to_pretty_midi(song)       # ready for a soundfont render
 | `key` | string | Picked from `GENRE_DEFAULTS` — e.g. jazz→`F major`, electronic→`A minor`. |
 | `bpm` | int | Picked from `GENRE_DEFAULTS` — e.g. blues→90, electronic→128. |
 | `time_signature` | `[int, int]` | `[4, 4]` for all 13 genres in v1. |
-| `bars` | `[{"chords": [str, str]}]` | Two chord slots per bar. Slot 0 covers `[0, beats/2)`, slot 1 covers `[beats/2, beats)`. |
-| `tracks.harmony.events[]` | `[TrackEvent]` | Chord voicing struck on the genre's 1-bar comping rhythm. Each event = `{bar, beat, pitch, duration, velocity}`. |
+| `harmony_rhythm` | string | The comping-rhythm preset that played (the request's, else the genre's). |
+| `drum_pattern` | int \| `"off"` | The drum pattern that played, or `"off"`. Sent back in a request, it replays the same drums. |
+| `bars` | `[{"chords": [str, str]}]` | Exactly `length_bars` bars of two chord slots. Slot 0 covers `[0, beats/2)`, slot 1 covers `[beats/2, beats)`. |
+| `tracks.harmony.events[]` | `[TrackEvent]` | Chord voicing struck on the 1-bar comping rhythm; a strike lasts until just before the next one. Each event = `{bar, beat, pitch, duration, velocity}`. |
 | `tracks.bass.events[]` | `[TrackEvent]` | Chord root struck on `GENRE_BASS_RHYTHM` positions, anchored at MIDI 36 (C2). |
-| `tracks.drum.events[]` | `[TrackEvent]` | Per-genre pattern. `voice` is `K`/`S`/`H`/`O`/`X`/`C`/`R`/`T`/`M`/`L`; `pitch` is `null`. |
-| `tracks.<name>.instrument` | string | GM Soundfont name (e.g. `electric_piano_1`, `contrabass`) for harmony/bass; `gm_drum_kit` for drum. |
+| `tracks.drum.events[]` | `[TrackEvent]` | The drum pattern that played (empty when `"off"`). `voice` is `K`/`S`/`H`/`O`/`X`/`C`/`R`/`T`/`M`/`L`; `pitch` is `null`. |
+| `tracks.<name>.instrument` | string | GM Soundfont name (e.g. `electric_piano_1`, `contrabass`) for harmony/bass — harmony is `harmony_instrument` when sent; `gm_drum_kit` for drum. |
 | `tracks.<name>.source` | `"rule"` | All three layers rule-based in v1. |
 | `midi_b64` | string | Convenience MIDI render. 4 internal tracks: meta (tempo+time-sig), harmony ch 0, bass ch 1, drum ch 9. |
 | `model_used` | string | Chord-generation checkpoint (`ft_f4`, `ft_f1_lora_country`, …) or `"rules"` if the AI path was unavailable. |
@@ -535,7 +542,7 @@ The full per-genre 1-bar harmony / bass rhythm patterns live in `frontend/src/en
 | Status | Body | When |
 |---|---|---|
 | 400 | `{"detail": "Unsupported genre '<x>'. Expected one of: ..."}` | Genre not in the 13-genre vocabulary. |
-| 422 | Pydantic validation | `length_bars` out of `[1, 64]`, missing `genre`, etc. |
+| 422 | Pydantic validation | `length_bars` out of `[1, 64]`, missing `genre`, or an unknown `harmony_rhythm` / `drum_pattern` / `harmony_instrument` (the message lists the valid values). |
 
 For the older `/api/generate/chords` programmatic chord-only endpoint (no arrangement), see [API_SPEC.md](API_SPEC.md).
 

@@ -425,7 +425,7 @@ If `modelKey` is `null` or unknown and `genre` is provided, the backend uses `di
 
 ### POST `/api/generate/song` — Composite (chord + arrangement, voyager primary)
 
-> **Status: Live**. Voyager primary path. Artist owns all musical-domain decisions internally; voyager sends only `genre` + `length_bars`.
+> **Status: Live**. Voyager primary path. Artist owns all musical-domain decisions internally; voyager needs to send only `genre` + `length_bars`. Three optional fields make the editor's Play-panel choices — comping rhythm, drum pattern (or none) and harmony instrument; left out or `null`, each is the genre's own.
 
 Generate a full **3-track** song (harmony + bass + drum) in one call. Internally composes the chord progression on the genre-appropriate checkpoint, then layers harmony comping rhythm + bass + drum on top, returning symbolic events plus a base64 MIDI.
 
@@ -438,7 +438,10 @@ Generate a full **3-track** song (harmony + bass + drum) in one call. Internally
   "genre": "jazz",
   "length_bars": 8,
   "n_candidates": 1,
-  "seed": null
+  "seed": null,
+  "harmony_rhythm": null,
+  "drum_pattern": null,
+  "harmony_instrument": null
 }
 ```
 
@@ -448,6 +451,68 @@ Generate a full **3-track** song (harmony + bass + drum) in one call. Internally
 | `length_bars` | `int` | 1-64. Default 8. |
 | `n_candidates` | `int` | 1-3. Default 1. (Reserved — current build always returns 1.) |
 | `seed` | `int \| null` | Optional. Reserved for deterministic sampling. |
+| `harmony_rhythm` | `string \| null` | Optional. A [harmony rhythm preset](#harmony-rhythm-presets) id. Default `null` = the genre's preset. |
+| `drum_pattern` | `int \| "off" \| null` | Optional. A [drum pattern](#drum-patterns) id `1`-`15`, or `"off"` for no drum events. Default `null` = the genre's pattern. |
+| `harmony_instrument` | `string \| null` | Optional. One of the 31 [harmony instruments](#harmony-instruments). Default `null` = the genre's harmony instrument. Sets `tracks.harmony.instrument` and the MIDI harmony program. |
+
+An unknown `harmony_rhythm`, `drum_pattern` or `harmony_instrument` is a 422 whose message lists the valid values. `drum_pattern` takes a JSON integer or the string `"off"` only (`true`, `"3"` or `3.0` are 422). The bass layer always follows the genre (no override).
+
+#### Harmony rhythm presets
+
+`harmony_rhythm` ids — `services/genre_tables.py:HARMONY_RHYTHM_PRESETS`, mirrored from the editor's `frontend/src/engine/genreTables.ts`. Positions are beats in a 4/4 bar.
+
+| id | Label | Beats struck | Genre default for |
+|---|---|---|---|
+| `charleston` | Charleston | 0, 1.5 | jazz |
+| `eighth_pulse` | 8th pulse | 0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5 | pop, rock |
+| `boom_chick` | Boom-chick | 1, 3 | country, gospel |
+| `shuffle` | Shuffle | 0, 2/3, 1, 5/3, 2, 8/3, 3, 11/3 | blues |
+| `bossa` | Bossa | 0, 1.5, 3 | bossa |
+| `chorale` | Chorale | 0, 1, 2, 3 | classical |
+| `folk_pocket` | Folk pocket | 0, 2, 2.5, 3, 3.5 | folk |
+| `neo_soul_offbeat` | Neo-soul offbeat | 1.5, 2.5, 3.5 | rnb_soul |
+| `boom_bap` | Boom-bap | 0, 2.5 | hip_hop |
+| `sidechain_offbeat` | Sidechain offbeat | 0.5, 1.5, 2.5, 3.5 | electronic |
+| `funky_drummer` | Funky drummer | 0, 0.5, 2, 2.5 | funk |
+| `block` | Block | 0, 2 | — (pick only) |
+| `half` | Half time | 0 | — (pick only; a bar's second chord is not struck) |
+
+A strike at beat `p` plays the chord of the slot `p` falls in (slot 0 = beats `[0, beats_per_measure/2)`); a slot with no strike position is not struck. A strike lasts `0.85 × min(average spacing, gap to the next strike)` beats, where the average spacing is `beats_per_measure / strikes per bar` and the last strike's gap runs to the next bar's first strike, so a chord never runs into its own re-strike (Charleston: 1.275 at beat 0, 1.7 at beat 1.5). Same formula as the editor's `harmonyStrikes`.
+
+#### Drum patterns
+
+`drum_pattern` ids — `services/genre_tables.py:DRUM_PATTERNS`, mirrored from `frontend/src/engine/drumPatterns.ts`. `"off"` returns `tracks.drum.events: []` (the track keeps `instrument: "gm_drum_kit"`) and a MIDI drum track with no notes.
+
+| id | Name | Genre default for |
+|---|---|---|
+| `1` | Pop | pop |
+| `2` | Hip-hop | hip_hop |
+| `3` | Electronic | electronic |
+| `4` | Jazz Swing | jazz |
+| `5` | Bossa | bossa |
+| `6` | Folk / Ballad | folk |
+| `7` | Funk 16 | funk |
+| `8` | Blues Shuffle | blues |
+| `9` | Rock Anthem | rock |
+| `10` | Funk Show | — (pick only) |
+| `11` | Samba | — (pick only) |
+| `12` | Country | country |
+| `13` | R&B / Soul | rnb_soul |
+| `14` | Gospel | gospel |
+| `15` | Classical | classical |
+
+#### Harmony instruments
+
+`harmony_instrument` names — `services/genre_tables.py:HARMONY_INSTRUMENTS`, the editor's 31-instrument grid (GM Soundfont snake_case names). Every genre default is one of them; the MIDI render maps each to its General MIDI program (`GM_PROGRAM`).
+
+| Family | Names |
+|---|---|
+| Keys / voice | `acoustic_grand_piano`, `electric_piano_1`, `drawbar_organ`, `clavinet`, `pad_2_warm`, `choir_aahs` |
+| Guitar | `acoustic_guitar_nylon`, `acoustic_guitar_steel`, `electric_guitar_clean`, `overdriven_guitar`, `distortion_guitar` |
+| Strings | `violin`, `viola`, `cello`, `string_ensemble_1`, `pizzicato_strings`, `orchestral_harp` |
+| Winds | `flute`, `clarinet`, `oboe`, `bassoon` |
+| Reeds | `soprano_sax`, `alto_sax`, `tenor_sax`, `baritone_sax` |
+| Brass | `trumpet`, `trombone`, `french_horn`, `tuba`, `brass_section`, `muted_trumpet` |
 
 **Response (n_candidates=1):**
 
@@ -457,6 +522,8 @@ Generate a full **3-track** song (harmony + bass + drum) in one call. Internally
   "key": "F major",
   "bpm": 110,
   "time_signature": [4, 4],
+  "harmony_rhythm": "charleston",
+  "drum_pattern": 4,
   "bars": [
     {"chords": ["Fmaj7", "Dm7"]},
     {"chords": ["Gm7",  "C7"]}
@@ -464,8 +531,10 @@ Generate a full **3-track** song (harmony + bass + drum) in one call. Internally
   "tracks": {
     "harmony": {
       "events": [
-        {"bar": 0, "beat": 0.0, "pitch": 65, "duration": 1.7, "velocity": 0.7},
-        {"bar": 0, "beat": 0.0, "pitch": 69, "duration": 1.7, "velocity": 0.7},
+        {"bar": 0, "beat": 0.0, "pitch": 65, "duration": 1.275, "velocity": 0.7},
+        {"bar": 0, "beat": 0.0, "pitch": 69, "duration": 1.275, "velocity": 0.7},
+        ...
+        {"bar": 0, "beat": 1.5, "pitch": 65, "duration": 1.7, "velocity": 0.7},
         ...
       ],
       "instrument": "electric_piano_1",
@@ -499,16 +568,18 @@ Generate a full **3-track** song (harmony + bass + drum) in one call. Internally
 | Field | Type | Description |
 |---|---|---|
 | `genre, key, bpm, time_signature` | echo | Echoes the resolved request context. `key`/`bpm`/`time_signature` come from `services/genre_tables.py:GENRE_DEFAULTS`. |
-| `bars[i].chords` | `[str, str]` | Two chord slots per measure (slot 0 = beats `[0, beats_per_measure/2)`, slot 1 = `[beats_per_measure/2, beats_per_measure)`). |
+| `harmony_rhythm` | `str` | The rhythm preset id that played: the request's, else the genre's (e.g. `charleston` for jazz). |
+| `drum_pattern` | `int \| "off"` | The drum pattern id that played: the request's, else the genre's; `"off"` when the request sent `"off"`. Sent back as the request's `drum_pattern`, it replays the same drums. |
+| `bars[i].chords` | `[str, str]` | Two chord slots per measure (slot 0 = beats `[0, beats_per_measure/2)`, slot 1 = `[beats_per_measure/2, beats_per_measure)`). Always `length_bars` bars: a model pass that comes back short repeats its own bars, a 1-chord bar repeats its chord and extra chords are dropped (as in the editor path). |
 | `tracks.<name>.events[].bar` | `int` | 0-indexed bar position (`0 ≤ bar < length_bars`). |
 | `tracks.<name>.events[].beat` | `float` | Bar-relative beat position in `[0, beats_per_measure)`. |
 | `tracks.<name>.events[].pitch` | `int \| null` | MIDI note (harmony / bass). `null` for drum events; use `voice` instead. |
 | `tracks.<name>.events[].voice` | `str \| null` | Drum voice letter (`K` kick, `S` snare, `H` closed hi-hat, `O` open hi-hat, `X` cross-stick, `C` crash, `R` ride, `T` hi tom, `M` mid tom, `L` low/floor tom). `null` for harmony / bass. |
-| `tracks.<name>.events[].duration` | `float` | Beats. Auto-scales with pattern density for harmony (sparse → sustained, dense → stab). |
+| `tracks.<name>.events[].duration` | `float` | Beats. Harmony: the [strike length](#harmony-rhythm-presets) (sparse → sustained, dense → stab, never into the next strike). Bass: 0.9. Drum: one 16th (0.25). |
 | `tracks.<name>.events[].velocity` | `float` | 0–1. |
-| `tracks.<name>.instrument` | `str` | GM Soundfont snake_case name for harmony/bass; `gm_drum_kit` for drum. Pick a sample bank that matches. |
+| `tracks.<name>.instrument` | `str` | GM Soundfont snake_case name for harmony/bass (harmony = `harmony_instrument` when sent, else the genre's); `gm_drum_kit` for drum. Pick a sample bank that matches. |
 | `tracks.<name>.source` | `"rule"` | All three layers are deterministic-rule in v1. Reserved for `"learned"` if a learned bass/melody Transformer ships in v2. |
-| `midi_b64` | `str` | Multi-track MIDI binary (base64). 4 tracks: meta (tempo + time-sig), harmony (channel 0), bass (channel 1), drum (channel 9). Convenience render — voyager can ignore and re-render from event JSON if it has its own pipeline. |
+| `midi_b64` | `str` | Multi-track MIDI binary (base64). 4 tracks: meta (tempo + time-sig), harmony (channel 0, General MIDI program of the harmony instrument), bass (channel 1), drum (channel 9; no notes when drums are off). A MIDI note ends no later than the next strike of its pitch on its channel, so funk's bass, which re-strikes its root after 0.5 beats, is 0.5 there instead of the event's 0.9. Convenience render — voyager can ignore and re-render from event JSON if it has its own pipeline. |
 | `model_used` | `str` | The chord-generation checkpoint key (e.g. `ft_f4`, `ft_f1_lora_country`, or `rules` for the rule fallback path). |
 
 **Genre defaults table** (`backend/app/services/genre_tables.py:GENRE_DEFAULTS`):
@@ -532,16 +603,17 @@ Generate a full **3-track** song (harmony + bass + drum) in one call. Internally
 **Internal flow:**
 1. `dispatch_model_for_genre(genre)` → checkpoint (jazz→F4, pop→F1, others→matching LoRA, fallback to F1 base if a LoRA dir is absent).
 2. `genre_defaults(genre)` → `key` / `bpm` / `time_signature`.
-3. Run chord generation (AI when `TORCH_AVAILABLE` and the checkpoint loads, else rule fallback) → `bars`.
-4. `song_builder.build_harmony_events / build_bass_events / build_drum_events` → 3 layered events.
-5. `song_builder.render_midi` → base64 MIDI.
+3. Resolve the Play-panel choices: `harmony_rhythm` preset, else `genre_rhythm_preset(genre)`; `drum_pattern` id, else `GENRE_TO_DRUM_PATTERN_ID[genre]` (`"off"` → none); `harmony_instrument`, else `GENRE_HARMONY_INSTRUMENT[genre]`.
+4. Run chord generation (AI when `TORCH_AVAILABLE` and the checkpoint loads, else rule fallback) → `bars`, fitted to `length_bars` bars of two chords (`_bars_to_chord_map`); a model pass with no bars falls back to the rules. All three tracks span these bars.
+5. `song_builder.build_harmony_events(…, pattern=…)` / `build_bass_events` / `build_drum_events(…, pattern=…, enabled=…)` → 3 layered events.
+6. `song_builder.render_midi(…, harmony_instrument=…)` → base64 MIDI.
 
 **Errors:**
 
 | Status | Body | When |
 |---|---|---|
 | 400 | `{"detail": "Unsupported genre '<x>'. Expected one of: ..."}` | Genre not in the 13-vocab. |
-| 422 | Pydantic validation | `length_bars` out of `[1, 64]`, `n_candidates` out of `[1, 3]`, or missing `genre`. |
+| 422 | Pydantic validation | `length_bars` out of `[1, 64]`, `n_candidates` out of `[1, 3]`, missing `genre`, or an unknown `harmony_rhythm` / `drum_pattern` / `harmony_instrument` — the message lists the valid values, e.g. `"Value error, unknown drum_pattern 99; expected a pattern id 1-15 or 'off'"`. Checked before the genre, so a request with both problems is a 422. |
 
 ---
 

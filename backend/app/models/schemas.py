@@ -1,8 +1,9 @@
 from typing import Literal
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from app.models.sections import CHORDS_PER_BAR, MAX_SECTION_CHORDS, SECTION_TYPES, SectionType
+from app.services.genre_tables import DRUM_PATTERNS, HARMONY_INSTRUMENTS, HARMONY_RHYTHM_PRESETS
 
 
 class ContextMeasure(BaseModel):
@@ -165,13 +166,54 @@ class Track(BaseModel):
     source: str = "rule"   # "rule" | "learned"
 
 
+_RHYTHM_IDS = tuple(p["id"] for p in HARMONY_RHYTHM_PRESETS)
+_DRUM_ID_RANGE = f"{min(DRUM_PATTERNS)}-{max(DRUM_PATTERNS)}"   # ids are contiguous
+
+
 class SongGenerateRequest(BaseModel):
     """Voyager primary endpoint. Voyager sends only (genre, length_bars);
-    artist owns key / bpm / time-signature defaults internally."""
+    artist owns key / bpm / time-signature defaults internally. The three
+    optional arrangement fields are the editor's Play-panel choices; null
+    keeps the genre's own."""
     genre: str = Field(..., description="One of the 13 supported genres")
     length_bars: int = Field(default=8, ge=1, le=64)
     n_candidates: int = Field(default=1, ge=1, le=3)
     seed: int | None = None
+    harmony_rhythm: str | None = Field(
+        default=None,
+        description=f"Harmony comping rhythm preset id, one of: {', '.join(_RHYTHM_IDS)}. "
+                    "Null = the genre's own",
+    )
+    drum_pattern: int | Literal["off"] | None = Field(
+        default=None,
+        description=f"Drum pattern id {_DRUM_ID_RANGE}, or 'off' for no drum events. Null = the genre's own",
+    )
+    harmony_instrument: str | None = Field(
+        default=None,
+        description=f"Harmony GM instrument, one of: {', '.join(HARMONY_INSTRUMENTS)}. Null = the genre's own",
+    )
+
+    @field_validator("harmony_rhythm")
+    @classmethod
+    def _known_harmony_rhythm(cls, v: str | None) -> str | None:
+        if v is not None and v not in _RHYTHM_IDS:
+            raise ValueError(f"unknown harmony_rhythm {v!r}; expected one of: {', '.join(_RHYTHM_IDS)}")
+        return v
+
+    @field_validator("drum_pattern", mode="before")
+    @classmethod
+    def _known_drum_pattern(cls, v: object) -> object:
+        # Checked on the raw value so true, "3" or 3.0 are rejected, not read as ids.
+        if v is None or v == "off" or (type(v) is int and v in DRUM_PATTERNS):
+            return v
+        raise ValueError(f"unknown drum_pattern {v!r}; expected a pattern id {_DRUM_ID_RANGE} or 'off'")
+
+    @field_validator("harmony_instrument")
+    @classmethod
+    def _known_harmony_instrument(cls, v: str | None) -> str | None:
+        if v is not None and v not in HARMONY_INSTRUMENTS:
+            raise ValueError(f"unknown harmony_instrument {v!r}; expected one of: {', '.join(HARMONY_INSTRUMENTS)}")
+        return v
 
 
 class SongGenerateResponse(BaseModel):
@@ -179,6 +221,8 @@ class SongGenerateResponse(BaseModel):
     key: str
     bpm: int
     time_signature: tuple[int, int]
+    harmony_rhythm: str                    # effective rhythm preset id (the genre's when not picked)
+    drum_pattern: int | Literal["off"]     # effective drum pattern id, or "off"; sent back, it replays the same drums
     bars: list[dict]                       # [{"chords": [...]}]
     tracks: dict[str, Track]               # 3 tracks: harmony, bass, drum
     midi_b64: str                          # MIDI render for caller convenience

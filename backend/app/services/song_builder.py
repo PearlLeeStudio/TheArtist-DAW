@@ -5,13 +5,15 @@ chord stage produces bars, this builder turns those bars into 3 layers of
 symbolic events (harmony / bass / drum) plus a convenience MIDI render.
 
 3-track only (melody dropped 2026-05-10). Each layer is rule-based:
-  - harmony: chord voicing struck at GENRE_HARMONY_RHYTHM positions
+  - harmony: chord voicing struck at a comping rhythm's positions (the
+    genre's preset unless the caller passes one), lengths from
+    harmony_strikes
   - bass: chord root struck at GENRE_BASS_RHYTHM positions (C2 base)
-  - drum: per-genre voice/timing pattern from GENRE_DRUM_PATTERN
+  - drum: a DRUM_PATTERNS voice/timing pattern (the genre's unless the
+    caller passes one or turns the drums off)
 
 Rhythm patterns are 1-bar literal — if a slot has no pattern position
-landing in it, that slot's chord simply isn't struck (the previous strike
-sustains).
+landing in it, that slot's chord simply isn't struck.
 """
 
 from __future__ import annotations
@@ -23,11 +25,13 @@ import mido
 
 from app.services.genre_tables import (
     DRUM_VOICE_TO_GM_NOTE,
+    GM_PROGRAM,
     bass_instrument,
     bass_pattern,
     drum_pattern,
-    harmony_instrument,
+    harmony_instrument as genre_harmony_instrument,
     harmony_pattern,
+    harmony_strikes,
 )
 from app.services.voice_leading import _CHORD_TONES, _parse
 
@@ -86,21 +90,19 @@ def build_harmony_events(
     genre: str,
     *,
     beats_per_measure: int,
+    pattern: list[float] | None = None,
 ) -> list[dict]:
-    """Schedule chord stabs at the genre's harmony rhythm positions."""
-    pattern = harmony_pattern(genre)
+    """Schedule chord strikes at a 1-bar comping rhythm: `pattern` (beat
+    positions, e.g. a HARMONY_RHYTHM_PRESETS entry's), else the genre's.
+    Strike lengths come from harmony_strikes (sparse → sustained, dense →
+    stabby, never into the next strike)."""
+    strikes = harmony_strikes(pattern if pattern is not None else harmony_pattern(genre), beats_per_measure)
     beats_per_slot = beats_per_measure / 2
-    # Stab duration auto-scales to pattern density (sparse → sustained,
-    # dense → stabby). 0.85 keeps a hair of breath between strikes.
-    n = max(1, len(pattern))
-    strike_dur = (beats_per_measure / n) * 0.85
 
     events: list[dict] = []
     for bar_idx, bar in enumerate(bars):
         chords = bar.get("chords") or []
-        for pos in pattern:
-            if pos < 0 or pos >= beats_per_measure:
-                continue
+        for pos, dur in strikes:
             chord_sym = _slot_chord(chords, pos, beats_per_slot)
             if not chord_sym:
                 continue
@@ -110,9 +112,9 @@ def build_harmony_events(
             for pitch in voicing:
                 events.append({
                     "bar": bar_idx,
-                    "beat": float(pos),
+                    "beat": pos,
                     "pitch": pitch,
-                    "duration": strike_dur,
+                    "duration": dur,
                     "velocity": 0.7,
                 })
     return events
@@ -156,15 +158,23 @@ def build_drum_events(
     genre: str,
     *,
     beats_per_measure: int,
+    pattern: dict | None = None,
+    enabled: bool = True,
 ) -> list[dict]:
-    """Repeat the genre's drum pattern across every bar.
+    """Repeat a drum pattern across every bar: `pattern` (a DRUM_PATTERNS
+    entry), else the genre's. `enabled=False` means no drums (the Play
+    panel's Off) and returns [] whatever `pattern` is.
     Drum patterns are encoded on a 16th-note grid (pos16 in 0..15);
-    convert to bar-relative beats for the response.
+    convert to bar-relative beats for the response. A 16th is 0.25 beats
+    in every meter, so steps past the bar drop out (3/4 plays steps
+    0-11), as in the editor's drums.ts.
     """
-    p = drum_pattern(genre)
+    if not enabled:
+        return []
+    p = pattern if pattern is not None else drum_pattern(genre)
     if p is None:
         return []
-    grid_step = beats_per_measure / 16.0   # 4/4 → 0.25 beats per 16th
+    grid_step = 0.25   # one 16th, in beats
 
     events: list[dict] = []
     for bar_idx in range(n_bars):
@@ -193,10 +203,13 @@ def render_midi(
     harmony_events: list[dict],
     bass_events: list[dict],
     drum_events: list[dict],
+    harmony_instrument: str | None = None,
 ) -> bytes:
     """Pack the three event lists into a multi-track MIDI binary.
     Each track gets a GM program-change so the receiver can render with
     matching timbres without needing the instrument lookup.
+    `harmony_instrument` replaces the genre's harmony instrument.
+    A note ends no later than the next strike of its pitch on its channel.
     """
     mid = mido.MidiFile()
     ppq = mid.ticks_per_beat   # default 480
@@ -207,15 +220,29 @@ def render_midi(
     def event_to_messages(track_events: list[dict], channel: int, *, drum: bool) -> list[mido.Message]:
         # Convert each event to (note_on_tick, note_off_tick, note, velocity)
         # then sort and emit with delta-times.
-        flat: list[tuple[int, str, int, int]] = []
+        notes: list[tuple[int, int, int, int]] = []
         for e in track_events:
             start_beat = e["bar"] * beats_per_measure + e["beat"]
             end_beat = start_beat + e["duration"]
             note = (DRUM_VOICE_TO_GM_NOTE.get(e["voice"], 36) if drum
                     else int(e["pitch"]))
             vel = max(1, min(127, int(round(e["velocity"] * 127))))
-            flat.append((to_ticks(start_beat), "on",  note, vel))
-            flat.append((to_ticks(end_beat),   "off", note, 0))
+            notes.append((to_ticks(start_beat), to_ticks(end_beat), note, vel))
+
+        # Cut a note at the next strike of the same pitch: one channel can't
+        # sound a pitch twice, and players pair the note-offs differently
+        # (funk's bass re-strikes its root 0.5 beats into a 0.9-beat note).
+        # The event JSON keeps the editor's lengths.
+        notes.sort()
+        next_on: dict[int, int] = {}
+        flat: list[tuple[int, str, int, int]] = []
+        for on, off, note, vel in reversed(notes):
+            nxt = next_on.get(note)
+            if nxt is not None and on < nxt < off:
+                off = nxt
+            next_on[note] = on
+            flat.append((on,  "on",  note, vel))
+            flat.append((off, "off", note, 0))
         flat.sort(key=lambda x: (x[0], 0 if x[1] == "off" else 1))
 
         msgs: list[mido.Message] = []
@@ -240,33 +267,19 @@ def render_midi(
                                  time=0))
     mid.tracks.append(meta)
 
-    # Per-track GM program (best-effort approximations — voyager can ignore).
-    GM_HARMONY = {
-        "acoustic_grand_piano": 0,
-        "electric_piano_1":     4,
-        "drawbar_organ":        16,
-        "acoustic_guitar_nylon": 24,
-        "acoustic_guitar_steel": 25,
-        "electric_guitar_clean": 27,
-        "overdriven_guitar":     29,
-        "pad_2_warm":            89,
-    }
-    GM_BASS = {
-        "contrabass":             32,
-        "electric_bass_finger":   33,
-    }
-
-    # Channel 0 = harmony, 1 = bass, 9 = drums (GM convention).
+    # Channel 0 = harmony, 1 = bass, 9 = drums (GM convention). Programs
+    # come from GM_PROGRAM; voyager can ignore them.
+    h_instrument = harmony_instrument or genre_harmony_instrument(genre)
     h_track = mido.MidiTrack()
     h_track.append(mido.Message("program_change",
-                                program=GM_HARMONY.get(harmony_instrument(genre), 0),
+                                program=GM_PROGRAM.get(h_instrument, 0),
                                 channel=0, time=0))
     h_track.extend(event_to_messages(harmony_events, channel=0, drum=False))
     mid.tracks.append(h_track)
 
     b_track = mido.MidiTrack()
     b_track.append(mido.Message("program_change",
-                                program=GM_BASS.get(bass_instrument(genre), 33),
+                                program=GM_PROGRAM.get(bass_instrument(genre), 33),
                                 channel=1, time=0))
     b_track.extend(event_to_messages(bass_events, channel=1, drum=False))
     mid.tracks.append(b_track)
