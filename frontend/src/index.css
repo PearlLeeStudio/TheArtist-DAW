@@ -401,6 +401,11 @@ code, pre, .mono {
   letter-spacing: normal;
   text-transform: none;
 }
+.te-voicing-drawing {
+  --text-muted: var(--screen-text-dim);
+  --text-soft: var(--screen-text-dim);
+  --fret-label: var(--screen-text-dim);
+}
 .te-voicing-drawing svg {
   max-height: clamp(64px, calc(8dvh - 8px), 124px);
 }

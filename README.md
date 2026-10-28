@@ -55,6 +55,8 @@ remain on the [manual checklist](docs/manual-checks.md).
 - **Play** keeps the active chord and its Piano/Guitar display directly below
   transport. The keyboard keeps its natural SVG proportions with compact spacing;
   the small 🎹/🎸 selectors retain English accessible labels and tooltips.
+  Piano and guitar drawings sit on a black background, with contrasting labels
+  in both app themes.
   The neutral Apple-style silver panel uses gray selection, tab and emoji-selector
   keys in dark frames; selected keys light up with a warm amber face. Bass off
   keeps its gray face and explicit off label.

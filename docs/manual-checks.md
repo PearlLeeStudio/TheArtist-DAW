@@ -82,6 +82,8 @@ unimplemented and are not part of the completed-feature checks.
   retain an outer scrolling fallback. Instrument, Rhythm and Drums each fit their
   available area without internal scrolling; the bottom faders stay in place when
   changing tabs.
+- [ ] Piano and guitar drawings use a black background in both app themes. Check
+  note labels, muted text and guitar fret labels remain readable against it.
 - [ ] All six black transport keys stay in one row beside the disc. The disc
   rotates only while actual playback runs, pauses at its current angle and respects
   reduced-motion preferences. Play uses a system Futura-first stack when installed,
