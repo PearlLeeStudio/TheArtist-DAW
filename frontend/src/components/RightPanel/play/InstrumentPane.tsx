@@ -1,4 +1,5 @@
-// All instrument families remain visible in one readable scrolling list.
+// Family buttons keep every sound reachable without a scrolling list.
+import { useState } from 'react';
 import type { KeyboardEvent } from 'react';
 import { usePlayStore } from '../../../store/playStore';
 import { useSongStore } from '../../../store/songStore';
@@ -35,7 +36,7 @@ const NAMES: Record<string, string> = {
   muted_trumpet: 'Muted trumpet',
 };
 
-/** Every harmony sound remains available in one list. The bass follows the genre. */
+/** Every harmony sound remains available through its family. The bass follows the genre. */
 export default function InstrumentPane() {
   const override = usePlayStore((s) => s.settings.harmonyOverride);
   const setHarmonyOverride = usePlayStore((s) => s.setHarmonyOverride);
@@ -43,13 +44,19 @@ export default function InstrumentPane() {
 
   const genreDefault = genreHarmonyInstrument(genre);
   const tag = genreTag(genre);
+  const [openGroup, setOpenGroup] = useState(() => {
+    const sound = HARMONY_INSTRUMENTS.find((instrument) => instrument.name === (override ?? genreDefault));
+    return GROUPS.find((group) => sound && group.families.includes(sound.family))?.id ?? 'keys';
+  });
+  const group = GROUPS.find((item) => item.id === openGroup) ?? GROUPS[0];
+  const instruments = HARMONY_INSTRUMENTS.filter((instrument) => group.families.includes(instrument.family));
 
   const autoTitle = genreDefault
     ? `Auto: the ${tag} default (${instrumentLabel(genreDefault)})`
     : 'Auto: no genre set, so the built-in piano';
 
   const handleKey = (event: KeyboardEvent<HTMLDivElement>) => {
-    const radios = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="radio"]'));
+    const radios = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>('[data-instrument-choice]'));
     const index = radios.indexOf(event.target as HTMLButtonElement);
     if (index < 0) return;
     let next: number;
@@ -64,42 +71,42 @@ export default function InstrumentPane() {
   };
 
   return (
-    <div className="te-instrument-list min-w-0 space-y-3 p-[3px]"
-      style={{ scrollbarGutter: 'stable' }} role="radiogroup" aria-label="Harmony instrument" onKeyDown={handleKey}>
-      <button type="button" role="radio" aria-checked={override === null} tabIndex={override === null ? 0 : -1}
+    <div className="te-instrument-list min-w-0 h-full p-[3px]"
+      style={{ display: 'grid', gridTemplateRows: '26px 36px 1fr', gap: 4 }} role="group" aria-label="Harmony instrument" onKeyDown={handleKey}>
+      <button type="button" aria-pressed={override === null} data-instrument-choice
         data-active={override === null ? '' : undefined} onClick={() => setHarmonyOverride(null)} title={autoTitle}
-        className="te-key btn-hover flex w-full items-center justify-between gap-2 px-2 py-2 text-left"
-        style={{ fontSize: 13, lineHeight: '17px', letterSpacing: 'normal', fontWeight: override === null ? 700 : 400,
+        className="te-key btn-hover flex w-full items-center justify-between gap-2 px-2 text-left"
+        style={{ fontSize: 12, lineHeight: '14px', letterSpacing: 'normal', fontWeight: override === null ? 700 : 400,
           borderColor: override === null ? 'var(--key-text)' : 'var(--key-border)' }}>
         <span>Auto</span>
         <span style={{ color: 'var(--key-text-dim)', fontWeight: 400 }}>Genre default</span>
       </button>
 
-      {GROUPS.map((group) => (
-        <div key={group.id} role="group" aria-label={group.label} className="space-y-1">
-          <div className="flex items-center gap-1.5" style={{ fontSize: 14, lineHeight: '18px', color: 'var(--key-text)', fontWeight: 600 }}>
-            <span aria-hidden="true" style={{ fontSize: 14 }}>{group.emoji}</span>
-            <span>{group.label}</span>
-          </div>
-          <div className="grid gap-1" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))' }}>
-            {HARMONY_INSTRUMENTS.filter((instrument) => group.families.includes(instrument.family)).map((instrument) => {
+      <div className="grid grid-cols-5 gap-[3px]" role="group" aria-label="Instrument families">
+        {GROUPS.map((family) => <button key={family.id} type="button" className="te-key btn-hover flex min-w-0 flex-col items-center justify-center"
+          aria-pressed={family.id === openGroup} data-active={family.id === openGroup ? '' : undefined}
+          onClick={() => setOpenGroup(family.id)} title={family.label} style={{ letterSpacing: 'normal' }}>
+          <span aria-hidden="true" style={{ fontSize: 14, lineHeight: '16px' }}>{family.emoji}</span>
+          <span style={{ fontSize: 10, lineHeight: '12px' }}>{family.id === 'woodwinds' ? 'Winds' : family.label}</span>
+        </button>)}
+      </div>
+      <div className="grid grid-cols-4 content-start gap-[3px]" role="group" aria-label={`${group.label} instruments`}>
+            {instruments.map((instrument) => {
               const selected = override === instrument.name;
               const label = NAMES[instrument.name] ?? instrument.label;
               return (
-                <button key={instrument.name} type="button" role="radio" aria-checked={selected}
-                  aria-label={`${label}, ${group.label}`} tabIndex={selected ? 0 : -1}
+                <button key={instrument.name} type="button" aria-pressed={selected} data-instrument-choice
+                  aria-label={`${label}, ${group.label}`}
                   data-active={selected ? '' : undefined} onClick={() => setHarmonyOverride(instrument.name)}
-                  title={`${group.label} · ${label}`} className="te-key btn-hover min-w-0 px-1.5 py-1.5 text-left"
-                  style={{ minHeight: 36, fontSize: 13, lineHeight: '17px', letterSpacing: 'normal',
+                  title={`${group.label} · ${label}`} className="te-key btn-hover min-w-0 px-1 py-1 text-left"
+                  style={{ minHeight: 28, fontSize: 11, lineHeight: '12px', letterSpacing: 'normal',
                     whiteSpace: 'normal', overflowWrap: 'anywhere', fontWeight: selected ? 700 : 400,
                     borderColor: selected ? 'var(--key-text)' : 'var(--key-border)' }}>
                   {label}
                 </button>
               );
             })}
-          </div>
-        </div>
-      ))}
+      </div>
     </div>
   );
 }

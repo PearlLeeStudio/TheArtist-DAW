@@ -72,31 +72,46 @@ unimplemented and are not part of the completed-feature checks.
 ## Play and controller
 
 - [ ] At 1366×768 and 1366×660, with panel width 300–320 px, the active chord and
-  compact Piano/Guitar selector remain below transport on every Play tab. Switch only the
-  drawing and confirm the sound does not change. Check the matte hardware panel
-  against both app themes. The taller device scrolls vertically; the selection
-  list has a fixed height so the bottom faders do not move when changing tabs.
+  compact 🎹/🎸 selector remain below transport on every Play tab. Confirm its
+  accessible labels and tooltips still say Piano/Guitar in English. The piano
+  keeps its natural SVG proportions with compact surrounding space. Switch only
+  the drawing and confirm the sound does not change. Check the neutral Apple-style
+  silver hardware panel against both app themes, with no green cast. At viewport
+  heights of at least 900 px, check that the
+  responsive panel fits without an outer vertical scrollbar. Shorter windows
+  retain an outer scrolling fallback. Instrument, Rhythm and Drums each fit their
+  available area without internal scrolling; the bottom faders stay in place when
+  changing tabs.
 - [ ] All six black transport keys stay in one row beside the disc. The disc
   rotates only while actual playback runs, pauses at its current angle and respects
-  reduced-motion preferences. Play uses the app's original typeface.
-- [ ] Instrument exposes Auto and all 31 sounds as readable name buttons grouped
-  under keyboard, guitar, strings, woodwind and brass emoji headings. Reach every
-  group with pointer and keyboard, verify the selected highlight and saved sound.
+  reduced-motion preferences. Play uses a system Futura-first stack when installed,
+  falling back to Avenir Next and then sans-serif.
+- [ ] Instrument exposes Auto and emoji family selectors for keyboard, guitar,
+  strings, woodwind and brass. The current family shows 4–8 readable sound buttons
+  without scrolling; reach all 31 sounds with pointer and keyboard and verify the
+  selected highlight and saved sound.
 - [ ] Below the keyboard/guitar drawing, Rhythm and Drums each have a full-width
-  black status row inside one deep full-width display, with 24px names matching
-  the larger chord readout. Rhythm HARM/BASS
+  black status window 60 px tall. Names such as Bossa and Samba use 12 px regular
+  text at the right, like the Piano label. Step cells are flat black/green, without
+  raised bevels or shadows. Rhythm HARM/BASS
   and drum K/S/H steps remain visible when any selection tab is open. Tabs sit
   below both windows. Muted rows remain distinguishable.
-- [ ] Rhythm and drum choices use a small lever beside a larger readable name;
-  exactly one preset per group is up, including Auto/Off. Bass has an independent
-  on/off lever. Arrow/Home/End selection still works. No extra status windows appear
-  inside the selection tabs.
+- [ ] Rhythm and drum choices use compact text radio buttons with wrapped labels;
+  exactly one preset per group is highlighted, including Auto/Off. Bass has an
+  independent on/off text button. Arrow/Home/End selection still works. No extra
+  status windows appear inside the selection tabs.
+- [ ] Selection buttons, tab keys and the small emoji selector have gray faces in
+  dark frames when unselected and a warm amber illuminated face when selected.
+  Check pointer and keyboard selection, one selected preset per group, and Bass
+  off's gray face and explicit off label. The separate status LEDs remain flat
+  green without shadows.
 - [ ] First Play works in Safari. Adjust Master/Harmony/Bass/Drums while notes ring;
   each part at zero mutes independently, and Master at zero mutes everything.
   Bottom controls have no tab. BPM and all four volume controls are vertical faders
-  with small rectangular metal caps,
-  names below and no visible
-  numbers, percent values or scales. Check pointer/touch drag, Up/Down, Home/End
+  with photo-inspired slim black tracks and 10 px round metal caps. Names sit below,
+  with no visible numbers, percent values or scales. Check that the full range-input
+  area remains usable for dragging despite the small visible cap. Check pointer/touch
+  drag, Up/Down, Home/End
   and double-click defaults. Saving and reopening retains the actual levels.
   BPM spans 20–300 in steps of one and resets to 80 on double-click.
 - [ ] Compare all 13 harmony rhythms using different first/second chords, especially

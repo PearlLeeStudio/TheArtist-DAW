@@ -10,7 +10,6 @@ import {
 } from '../../../engine/playSettings';
 import { usePlayStore } from '../../../store/playStore';
 import { useSongStore } from '../../../store/songStore';
-import ToggleSwitch from './ui/ToggleSwitch';
 import { genreTag } from './genreTag';
 
 const SUBDIVISIONS: [number, string][] = [
@@ -38,6 +37,26 @@ export default function RhythmPane() {
   const bassName = instrumentLabel(bassInstrumentFor(genre));
   const hasGenre = normalizeGenre(genre) !== null;
   const tag = genreTag(genre);
+  const choices = [
+    {
+      id: 'auto', label: 'Auto', checked: isAuto,
+      onSelect: () => setHarmonyRhythmId(null),
+      title: hasGenre
+        ? `Auto: the ${tag} comping rhythm (${auto.label})`
+        : `Auto: no genre set, so ${auto.label}`,
+    },
+    ...HARMONY_RHYTHM_PRESETS.map((preset) => {
+      const autoPlays = isAuto && preset.id === auto.id;
+      const counts = harmonyStrikes(meterRhythm(preset.pattern, beats), beats).map((s) => countLabel(s.pos)).join(', ');
+      return {
+        id: preset.id,
+        label: preset.label,
+        checked: settings.harmonyRhythmId === preset.id,
+        onSelect: () => setHarmonyRhythmId(preset.id),
+        title: `${preset.label}: strikes on ${counts}${autoPlays ? ` · Auto plays this for ${tag}` : ''}`,
+      };
+    }),
+  ];
   const handleKey = (event: KeyboardEvent<HTMLDivElement>) => {
     const radios = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="radio"]'));
     const index = radios.indexOf(event.target as HTMLButtonElement);
@@ -54,43 +73,33 @@ export default function RhythmPane() {
   };
 
   return (
-    <div className="flex h-full min-h-0 min-w-0 flex-col gap-2">
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-[3px]">
-      <div className="grid gap-1" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(104px, 1fr))' }} role="radiogroup" aria-label="Harmony rhythm" onKeyDown={handleKey}>
-        <ToggleSwitch
-          label="Auto"
-          checked={isAuto}
-          onSelect={() => setHarmonyRhythmId(null)}
-          title={hasGenre
-            ? `Auto: the ${tag} comping rhythm (${auto.label})`
-            : `Auto: no genre set, so ${auto.label}`}
-        />
-        {HARMONY_RHYTHM_PRESETS.map((p) => {
-          const picked = settings.harmonyRhythmId === p.id;
-          const autoPlays = isAuto && p.id === auto.id;
-          const counts = harmonyStrikes(meterRhythm(p.pattern, beats), beats).map((s) => countLabel(s.pos)).join(', ');
-          return (
-            <ToggleSwitch
-              key={p.id}
-              label={p.label}
-              checked={picked}
-              onSelect={() => setHarmonyRhythmId(p.id)}
-              title={`${p.label}: strikes on ${counts}${autoPlays ? ` · Auto plays this for ${tag}` : ''}`}
-            />
-          );
-        })}
-      </div>
+    <div className="te-choice-grid flex h-full min-h-0 min-w-0 flex-col gap-1 p-[3px]">
+      <div className="grid min-h-0 flex-1 gap-[3px]"
+        style={{ gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gridTemplateRows: `repeat(${Math.ceil(choices.length / 4)}, minmax(26px, 1fr))` }}
+        role="radiogroup" aria-label="Harmony rhythm" onKeyDown={handleKey}>
+        {choices.map((choice) => (
+          <button key={choice.id} type="button" role="radio" aria-checked={choice.checked}
+            tabIndex={choice.checked ? 0 : -1} data-active={choice.checked ? '' : undefined}
+            onClick={choice.onSelect} title={choice.title}
+            className="te-key btn-hover min-w-0"
+            style={{ minHeight: 26, padding: '0 3px', fontSize: 12, lineHeight: '12px', letterSpacing: 'normal',
+              whiteSpace: 'normal', overflowWrap: 'anywhere', fontWeight: choice.checked ? 700 : 400,
+              borderColor: choice.checked ? 'var(--key-text)' : 'var(--key-border)' }}>
+            {choice.label}
+          </button>
+        ))}
       </div>
 
-      <div className="shrink-0">
-      <ToggleSwitch
-        kind="switch"
-        label={`Bass · ${bassName}`}
-        checked={bassOn}
-        onSelect={() => setBassEnabled(!bassOn)}
+      <button type="button" aria-pressed={bassOn} data-active={bassOn ? '' : undefined}
+        onClick={() => setBassEnabled(!bassOn)}
+        className="te-key btn-hover w-full shrink-0 px-2"
+        style={{ minHeight: 26, fontSize: 12, lineHeight: '14px', letterSpacing: 'normal',
+          whiteSpace: 'normal', fontWeight: bassOn ? 700 : 400,
+          borderColor: bassOn ? 'var(--key-text)' : 'var(--key-border)' }}
         title={`Bass ${bassOn ? 'on' : 'off'}: ${bassName} plays each chord's root on the ${hasGenre ? tag : 'default'} bass rhythm`}
-      />
-      </div>
+      >
+        Bass {bassOn ? 'on' : 'off'} · {bassName}
+      </button>
     </div>
   );
 }

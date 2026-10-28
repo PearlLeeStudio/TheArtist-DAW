@@ -284,51 +284,51 @@ code, pre, .mono {
 
 /* Bevelled enclosure and recessed control bays stay within the Play panel. */
 .te-device {
-  --font-device: var(--font-serif);
+  --font-device: Futura, "Futura PT", "Avenir Next", Avenir, system-ui, sans-serif;
   --brand-yellow: #ec7737;
-  --panel-bg: #c9ccca;
-  --panel-border: #9ea59f;
+  --panel-bg: #d5d5d7;
+  --panel-border: #a8a8ab;
   --panel-glint: rgba(255, 255, 255, 0.72);
-  --panel-shadow: rgba(35, 39, 30, 0.26);
-  --channel-bg: #bdc0b7;
-  --key-bg: #d8dad3;
-  --key-bg-active: #b9bdb2;
-  --key-border: #a0a49a;
-  --key-text: #30362b;
-  --key-text-active: #161d11;
-  --key-text-dim: #5e6855;
-  --key-edge: rgba(33, 39, 26, 0.3);
-  --key-shadow: 0 2px 2px rgba(31, 37, 24, 0.24), inset 0 1px 0 #ffffffc7, inset 0 -1px 0 #92988a;
-  --key-shadow-active: inset 0 1px 3px #59644a66, inset 0 -1px 0 #eff4e8;
-  --knob-face-top: #f0f2ec;
-  --knob-face-mid: #c4c9bc;
-  --knob-face-bottom: #9da590;
-  --knob-side: #7f8972;
-  --knob-shadow: rgba(28, 36, 19, 0.32);
-  --knob-border: #7d8770;
+  --panel-shadow: rgba(28, 28, 30, 0.22);
+  --channel-bg: #c8c8ca;
+  --key-bg: #e1e1e3;
+  --key-bg-active: #bfc0c3;
+  --key-border: #adaeb1;
+  --key-text: #303033;
+  --key-text-active: #1d1d1f;
+  --key-text-dim: #66666b;
+  --key-edge: rgba(29, 29, 31, 0.3);
+  --key-shadow: 0 2px 2px rgba(29, 29, 31, 0.2), inset 0 1px 0 #ffffffc7, inset 0 -1px 0 #9a9a9e;
+  --key-shadow-active: inset 0 1px 3px #63636766, inset 0 -1px 0 #f0f0f2;
+  --knob-face-top: #f2f2f4;
+  --knob-face-mid: #c8c8cb;
+  --knob-face-bottom: #a0a0a4;
+  --knob-side: #838387;
+  --knob-shadow: rgba(28, 28, 30, 0.28);
+  --knob-border: #858589;
   --knob-glint: rgba(255, 255, 255, 0.85);
   --led-on: #91ef49;
   --led-alt: #f7823c;
-  --led-off: #5b6450;
-  --led-ring: inset 0 0 0 1px #18260d66;
+  --led-off: #66666b;
+  --led-ring: inset 0 0 0 1px #1d1d1f66;
   --screen-bg: #11150e;
   --screen-text: #e0ebd8;
   --screen-text-dim: #8d9b80;
   --screen-led-off: #26301e;
   --screen-shadow: inset 0 1px 5px #000000bd, 0 1px 0 #ffffff96;
   background: linear-gradient(135deg, #ffffff66, transparent 42%),
-              repeating-linear-gradient(0deg, #5a674904 0 1px, transparent 1px 3px), var(--panel-bg);
+              repeating-linear-gradient(0deg, #33333304 0 1px, transparent 1px 3px), var(--panel-bg);
   border: 1px solid var(--panel-border);
   border-radius: 12px;
   box-shadow: inset 0 1px 0 var(--panel-glint), inset 0 -1px 2px var(--panel-shadow),
               0 4px 9px var(--panel-shadow);
 }
 .te-step-meter {
-  padding: 2px;
-  border: 1px solid #22291d;
-  border-radius: 3px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
   background: #080d06;
-  box-shadow: inset 0 2px 4px #000000, 0 1px 0 #ffffff8c;
+  box-shadow: none;
 }
 .te-status-window {
   --key-text-dim: var(--screen-text-dim);
@@ -338,25 +338,28 @@ code, pre, .mono {
   border-radius: 0;
   background: transparent;
   box-shadow: none;
+  display: flex;
+  height: 60px;
+  flex-direction: column;
+  justify-content: center;
 }
 .te-playback-status {
-  gap: 18px;
-  min-height: 248px;
+  gap: 6px;
   width: calc(100% + 16px);
   margin-inline: -8px;
-  padding: 18px 12px;
+  padding: 6px 12px;
   border-block: 1px solid #020402;
-  background: linear-gradient(155deg, #242c24, #080d09 38%, #101811);
-  box-shadow: inset 0 2px 6px #000, inset 0 -1px 0 #343d32;
+  background: #0b110d;
+  box-shadow: none;
 }
 .te-status-window + .te-status-window {
-  padding-top: 16px;
-  border-top: 1px solid #b8d5b51c;
+  padding-top: 0;
+  border-top: 0;
 }
 .te-playback-status .te-step-meter {
-  padding: 1px 0;
+  padding: 0;
   border: 0;
-  border-radius: 1px;
+  border-radius: 0;
   background: #111a11;
   box-shadow: none;
 }
@@ -364,16 +367,17 @@ code, pre, .mono {
   display: flex;
   align-items: center;
   gap: 8px;
-  height: 32px;
-  margin: 0 0 8px;
-  color: var(--screen-text);
-  font-size: 24px;
-  font-weight: 600;
-  line-height: 32px;
+  justify-content: space-between;
+  height: 16px;
+  margin: 0 0 4px;
+  color: var(--screen-text-dim);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 16px;
 }
 .te-status-type {
   flex: none;
-  width: 46px;
+  width: auto;
   color: var(--screen-text-dim);
   font-size: 11px;
   font-weight: 400;
@@ -381,49 +385,39 @@ code, pre, .mono {
   text-transform: uppercase;
 }
 .te-selection-pane {
-  height: 240px;
-  min-height: 240px;
-  overflow-y: auto;
-  overscroll-behavior: contain;
+  height: 160px;
+  min-height: 160px;
+  overflow: visible;
 }
 .te-device .te-pane-tab {
   height: 34px !important;
-  border-radius: 2px;
-  background: #e6e8e2;
-  color: #30372b;
-  box-shadow: 0 2px 0 #92998b, inset 0 1px 0 #ffffffc7;
   font-size: 12px !important;
   letter-spacing: -0.02em;
   text-transform: none;
 }
-.te-device .te-pane-tab[data-active] {
-  background: #f0f2eb;
-  box-shadow: inset 0 -2px 0 #3d4932, 0 1px 0 #92998b;
-}
 .te-device .te-visual-key {
   height: 26px !important;
-  border-radius: 2px;
-  border-color: #40473b;
-  background: #232921;
-  color: #edf1e9;
-  box-shadow: 0 2px 0 #969e8d, inset 0 1px 0 #ffffff1c;
   font-size: 9px !important;
   letter-spacing: normal;
   text-transform: none;
 }
-.te-device .te-visual-key[data-active] {
-  background: #ecefe6;
-  color: #252d1e;
-  box-shadow: inset 0 -1px 0 #fff, 0 1px 0 #858f7a;
+.te-voicing-drawing svg {
+  max-height: clamp(64px, calc(8dvh - 8px), 124px);
 }
-.te-instrument-list .te-key {
-  border-radius: 2px;
-  background: #e3e7df;
-  box-shadow: 0 1px 0 #98a18e, inset 0 1px 0 #ffffffa8;
-}
-.te-instrument-list .te-key[data-active] {
-  background: #f2f4ed;
-  box-shadow: inset 0 -2px 0 #434f37;
+
+/* On a full-height desktop, distribute the available height instead of
+   scrolling the hardware enclosure. Smaller windows retain a safe scroll fallback. */
+@media (min-height: 900px) {
+  .te-device {
+    --te-fader-bank-height: clamp(112px, 14dvh, 220px);
+    gap: 6px;
+    overflow-y: hidden;
+  }
+  .te-device .te-selection-pane {
+    height: auto;
+    min-height: 156px;
+    flex: 1 1 156px;
+  }
 }
 .te-channel {
   background: linear-gradient(180deg, rgba(0, 0, 0, 0.07), transparent 50%), var(--channel-bg);
@@ -455,6 +449,26 @@ code, pre, .mono {
   opacity: 0.4;
   cursor: default;
   transform: none;
+}
+/* Console-style selection keys: a dark frame, gray unlit face and amber lamp. */
+.te-device .te-key:not(.te-transport__key) {
+  border: 2px solid #444447;
+  border-radius: 3px;
+  background: linear-gradient(180deg, #c5c5c8, #b6b6ba 70%, #a6a6ab);
+  color: #343437;
+  box-shadow: inset 0 1px 2px #ffffff70, inset 0 0 3px #26262850,
+              0 0 0 1px #85858a, 0 1px 1px #00000030;
+}
+.te-device .te-key:not(.te-transport__key)[data-active],
+.te-device .te-key:not(.te-transport__key):active:not(:disabled) {
+  background: radial-gradient(ellipse at 50% 42%, #fff0bb, #ebca8f 72%, #c39b62);
+  color: #3b3122;
+  box-shadow: inset 0 0 4px #fff6cfb3, inset 0 -1px 2px #a4743b4d,
+              0 0 0 1px #6b655c, 0 0 5px #edc47f66;
+}
+.te-device .te-key:not(.te-transport__key):hover {
+  filter: brightness(1.04);
+  opacity: 1;
 }
 /* The yellow focus ring barely shows on the light panel: use the key text colour. */
 :root.light .te-key:focus-visible,

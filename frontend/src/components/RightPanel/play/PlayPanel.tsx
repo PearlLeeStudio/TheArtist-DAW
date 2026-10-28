@@ -85,7 +85,6 @@ export default function PlayPanel({ midiActiveNotes }: PlayPanelProps) {
                 tabIndex={pane === p.id ? 0 : -1}
                 active={pane === p.id}
                 ariaSelected={pane === p.id}
-                led={pane === p.id ? 'on' : 'off'}
                 onClick={() => setPane(p.id)}
                 className="te-pane-tab"
               />

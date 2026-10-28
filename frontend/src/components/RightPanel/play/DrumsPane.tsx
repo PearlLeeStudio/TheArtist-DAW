@@ -4,7 +4,6 @@ import { DRUM_PATTERNS, drumPatternById } from '../../../engine/drumPatterns';
 import { genreDrumPatternId } from '../../../engine/playSettings';
 import { usePlayStore } from '../../../store/playStore';
 import { useSongStore } from '../../../store/songStore';
-import ToggleSwitch from './ui/ToggleSwitch';
 import { genreTag } from './genreTag';
 
 /** Drums: follow the genre (Auto), off, or one of the 15 patterns. A pick
@@ -58,23 +57,24 @@ export default function DrumsPane() {
   };
 
   return (
-    <div className="h-full min-h-0 min-w-0 overflow-y-auto overscroll-contain p-[3px]" style={{ scrollbarGutter: 'stable' }}>
+    <div className="te-choice-grid h-full min-h-0 min-w-0 p-[3px]">
         <div
           role="radiogroup"
           aria-label="Drum pattern"
           onKeyDown={handleKey}
-          className="mx-auto grid w-full gap-[3px]"
-          style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(104px, 1fr))' }}
+          className="grid h-full w-full gap-[3px]"
+          style={{ gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gridTemplateRows: `repeat(${Math.ceil(choices.length / 4)}, minmax(26px, 1fr))` }}
         >
           {choices.map((choice) => (
-            <ToggleSwitch
-              key={choice.id}
-              label={choice.label}
-              ariaLabel={choice.ariaLabel}
-              checked={choice.checked}
-              onSelect={choice.onSelect}
-              title={choice.title}
-            />
+            <button key={choice.id} type="button" role="radio" aria-label={choice.ariaLabel}
+              aria-checked={choice.checked} tabIndex={choice.checked ? 0 : -1}
+              data-active={choice.checked ? '' : undefined} onClick={choice.onSelect} title={choice.title}
+              className="te-key btn-hover min-w-0"
+              style={{ minHeight: 26, padding: '0 3px', fontSize: 12, lineHeight: '12px', letterSpacing: 'normal',
+                whiteSpace: 'normal', overflowWrap: 'anywhere', fontWeight: choice.checked ? 700 : 400,
+                borderColor: choice.checked ? 'var(--key-text)' : 'var(--key-border)' }}>
+              {choice.label}
+            </button>
           ))}
         </div>
     </div>

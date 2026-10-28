@@ -4,21 +4,20 @@
   gap: 4px;
   box-sizing: border-box;
   width: 100%;
-  height: 260px;
+  height: var(--te-fader-bank-height, 220px);
   min-width: 0;
-  min-height: 260px;
-  max-height: 280px;
+  min-height: var(--te-fader-bank-height, 220px);
   padding: 8px 6px;
-  border: 1px solid var(--volume-panel-edge, var(--panel-border));
-  border-radius: 5px;
-  background: var(--volume-panel, var(--channel-bg));
-  box-shadow: inset 0 1px 0 var(--panel-glint), 0 1px 2px var(--panel-shadow);
+  border: 0;
+  border-radius: 0;
+  background: #c8c8ca;
+  box-shadow: none;
 }
 
 .te-volume-fader {
-  /* Travel compensation uses the cap's height, independently of its width. */
-  --te-volume-thumb-size: 11px;
-  --te-volume-thumb-width: 20px;
+  /* Visible and native caps share the height used by travel compensation. */
+  --te-volume-thumb-size: 10px;
+  --te-volume-thumb-width: var(--te-volume-thumb-size);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -38,19 +37,20 @@
   display: block;
   flex: 1 1 auto;
   width: 100%;
-  min-height: 70px;
+  min-height: 65px;
   max-height: 220px;
 }
 
 .te-volume-fader-groove {
   position: absolute;
+  box-sizing: border-box;
   top: calc(var(--te-volume-thumb-size) / 2);
   bottom: calc(var(--te-volume-thumb-size) / 2);
-  left: calc(50% - 4px);
-  width: 8px;
-  border: 1px solid #151615;
-  border-radius: 6px;
-  background: linear-gradient(90deg, #121312, #262826 55%, #191b19);
+  left: calc(50% - 3.5px);
+  width: 7px;
+  border: 1px solid #888888;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #080808, #202020 55%, #101010);
   box-shadow: inset 2px 0 3px rgb(0 0 0 / 65%),
               inset 0 1px 2px rgb(0 0 0 / 70%),
               1px 0 0 rgb(255 255 255 / 24%);
@@ -63,25 +63,14 @@
   box-sizing: border-box;
   width: var(--te-volume-thumb-width);
   height: var(--te-volume-thumb-size);
-  border: 1px solid #8d968e;
-  border-radius: 3px;
-  background: linear-gradient(180deg, #f2f4f0, #d5dad4 44%, #b2bab3);
-  box-shadow: 0 1px 2px rgb(0 0 0 / 27%),
-              inset 0 1px 0 rgb(255 255 255 / 85%),
-              inset 0 -1px 0 rgb(0 0 0 / 12%);
+  border: 1px solid #8d8d92;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 28%, #f8f8fa, #d8d8dc 52%, #a8a8ae);
+  box-shadow: 0 1px 1.5px rgb(0 0 0 / 20%),
+              inset 0 1px 1px rgb(255 255 255 / 75%),
+              inset 0 -1px 1px rgb(0 0 0 / 8%);
   pointer-events: none;
   transition: filter 80ms ease;
-}
-
-.te-volume-fader-thumb::after {
-  content: '';
-  position: absolute;
-  top: calc(50% - .5px);
-  left: 3px;
-  right: 3px;
-  height: 1px;
-  background: #737d74;
-  box-shadow: 0 1px 0 rgb(255 255 255 / 45%);
 }
 
 .te-volume-fader-input {
@@ -115,7 +104,7 @@
   width: var(--te-volume-thumb-width);
   height: var(--te-volume-thumb-size);
   border: 0;
-  border-radius: 3px;
+  border-radius: 50%;
   appearance: none;
   -webkit-appearance: none;
   background: transparent;
@@ -133,12 +122,12 @@
   width: var(--te-volume-thumb-width);
   height: var(--te-volume-thumb-size);
   border: 0;
-  border-radius: 3px;
+  border-radius: 50%;
   background: transparent;
 }
 
 .te-volume-fader-input:focus-visible ~ .te-volume-fader-thumb {
-  outline: 1px solid var(--volume-label, var(--key-text));
+  outline: 1px solid #333333;
   outline-offset: 3px;
 }
 
@@ -151,7 +140,7 @@
   display: block;
   flex: none;
   max-width: 100%;
-  color: var(--volume-label, var(--key-text));
+  color: #333333;
   font-family: var(--font-device);
   font-size: 12px;
   font-weight: 500;

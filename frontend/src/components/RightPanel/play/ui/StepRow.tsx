@@ -17,7 +17,7 @@ interface StepRowProps {
   dim?: boolean;
   /** Extra gap every n cells (default 4; 0 = none). */
   group?: number;
-  /** LED cell height in px; the recessed frame adds six pixels. */
+  /** Flat LED row height in pixels. */
   height?: number;
   labelSize?: number;
 }
@@ -29,19 +29,19 @@ const CELL_GAP = 2;
 /** Added to CELL_GAP at each group boundary. */
 const GROUP_GAP = 3;
 
-function cellStyle(cell: StepCell, here: boolean, groupStart: boolean, radius: number): CSSProperties {
+function cellStyle(cell: StepCell, here: boolean, groupStart: boolean): CSSProperties {
   const style: CSSProperties = {
     flex: '1 1 0',
     minWidth: 0,
-    borderRadius: radius,
+    borderRadius: 0,
     marginLeft: groupStart ? GROUP_GAP : undefined,
   };
   const level = Math.min(1, Math.max(0, cell.level || 0));
   if (level === 0) {
     style.background = here
-      ? 'linear-gradient(180deg, #405935, #24341e)'
-      : 'linear-gradient(180deg, #20271d, #141a12)';
-    style.boxShadow = here ? 'inset 0 0 0 1px #b5ff7d, 0 0 4px #76ef48' : 'inset 0 1px 1px #080c07';
+      ? '#294b20'
+      : '#182015';
+    if (here) style.outline = '1px solid #d6ffbc';
     return style;
   }
   const color = cell.alt ? '#c8ff67' : '#8bff4c';
@@ -49,15 +49,15 @@ function cellStyle(cell: StepCell, here: boolean, groupStart: boolean, radius: n
   style.background = here || level >= 1
     ? color
     : `color-mix(in srgb, ${color} ${Math.round(25 + 75 * level)}%, #172211)`;
-  style.boxShadow = here
-    ? `inset 0 1px 0 #e4ffd2, 0 0 0 1px #d6ffbc, 0 0 6px ${color}`
-    : 'inset 0 1px 0 #d1ffa566, inset 0 -1px 0 #27571a';
+  if (here) {
+    style.outline = '1px solid #e6ffda';
+    style.outlineOffset = -1;
+  }
   return style;
 }
 
-/** Horizontal green LEDs in a black recessed meter, with the live beat marked. */
+/** Flat green LEDs on a black meter, with the live beat marked. */
 export default function StepRow({ cells, playhead = null, label, dim = false, group = 4, height = 10, labelSize = 9 }: StepRowProps) {
-  const radius = Math.min(2, height / 4);
   const onSteps = cells.flatMap((cell, i) => (cell.level > 0 ? [i + 1] : []));
   const name = `${label ? `${label}: ` : ''}${onSteps.length > 0 ? `steps ${onSteps.join(' ')}` : 'no steps'}${dim ? ', muted' : ''}`;
 
@@ -67,7 +67,7 @@ export default function StepRow({ cells, playhead = null, label, dim = false, gr
       aria-label={name}
       className="flex w-full min-w-0 items-center"
       style={{
-        height: height + 6,
+        height,
         opacity: dim ? 0.35 : 1,
         filter: dim ? 'saturate(0.4)' : undefined,
         transition: 'opacity 0.15s ease',
@@ -77,7 +77,7 @@ export default function StepRow({ cells, playhead = null, label, dim = false, gr
         <span
           className="shrink-0 truncate uppercase"
           style={{
-            width: labelSize > 9 ? 34 : LABEL_WIDTH,
+            width: labelSize > 9 ? 42 : LABEL_WIDTH,
             marginRight: LABEL_GAP,
             fontFamily: 'var(--font-device)',
             fontSize: labelSize,
@@ -93,7 +93,7 @@ export default function StepRow({ cells, playhead = null, label, dim = false, gr
         {cells.map((cell, i) => (
           <span
             key={i}
-            style={cellStyle(cell, i === playhead, group > 0 && i > 0 && i % group === 0, radius)}
+            style={cellStyle(cell, i === playhead, group > 0 && i > 0 && i % group === 0)}
           />
         ))}
       </div>

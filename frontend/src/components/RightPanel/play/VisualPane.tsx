@@ -38,9 +38,9 @@ const SOURCE_COLOR: Record<Source, string> = {
   score: 'var(--brand-yellow)',
 };
 
-const MODES: { mode: VisualDisplayMode; label: string }[] = [
-  { mode: 'piano', label: 'Piano' },
-  { mode: 'guitar', label: 'Guitar' },
+const MODES: { mode: VisualDisplayMode; label: string; emoji: string }[] = [
+  { mode: 'piano', label: 'Piano', emoji: '🎹' },
+  { mode: 'guitar', label: 'Guitar', emoji: '🎸' },
 ];
 
 function chordAt(measures: Measure[], slot: SlotAddress): Chord | null {
@@ -117,7 +117,7 @@ export default function VisualPane({ midiActiveNotes, compact = false }: { midiA
   };
 
   return (
-    <div role="group" aria-label="Visual voicing" className="flex flex-col min-w-0" style={{ gap: 8, height: compact ? 196 : undefined }}>
+    <div role="group" aria-label="Visual voicing" className="flex flex-col min-w-0 gap-2">
       <Screen style={{ height: compact ? 48 : SCREEN_HEIGHT, padding: compact ? '8px' : undefined }}>
         {/* Header in the look of Screen's label row: source (or the pane name), rule, instrument. */}
         {!compact && <div
@@ -164,27 +164,28 @@ export default function VisualPane({ midiActiveNotes, compact = false }: { midiA
         </div>
       </Screen>
 
-      <div className={compact ? 'grid min-w-0 items-center gap-1.5' : 'flex min-w-0 flex-col gap-2'} style={compact ? { gridTemplateColumns: 'minmax(0, 1fr) 36px', height: 140 } : undefined}>
+      <div className={compact ? 'grid min-w-0 items-center gap-1.5' : 'flex min-w-0 flex-col gap-2'} style={compact ? { gridTemplateColumns: 'minmax(0, 1fr) 32px', height: shape === 'piano' ? 72 : 'clamp(72px, 8dvh, 132px)' } : undefined}>
       <div className={`te-visual-selector grid gap-[3px] ${compact ? 'grid-cols-1' : 'grid-cols-2'}`} role="radiogroup" aria-label="Piano or guitar display" onKeyDown={handleDisplayKey} style={compact ? { gridColumn: 2, gridRow: 1 } : undefined}>
-        {MODES.map(({ mode, label }) => {
+        {MODES.map(({ mode, label, emoji }) => {
           const chosen = shape === mode;
           return (
             <KeyButton
               key={mode}
               label={label}
+              ariaLabel={label}
               active={chosen}
               role="radio"
               tabIndex={chosen ? 0 : -1}
               onClick={() => setDisplayMode(mode)}
               className="te-visual-key"
               title={modeTitle(mode)}
-            />
+            ><span aria-hidden="true" style={{ fontSize: 17, lineHeight: '20px' }}>{emoji}</span></KeyButton>
           );
         })}
       </div>
 
       <div
-        className="w-full mx-auto"
+        className="te-voicing-drawing w-full mx-auto"
         role="img"
         aria-label={`${shape === 'guitar' ? 'Guitar shape' : 'Keyboard voicing'}${chordName ? ` of ${chordName}` : ''}`}
         style={{
@@ -199,7 +200,7 @@ export default function VisualPane({ midiActiveNotes, compact = false }: { midiA
         {shape === 'guitar' ? (
           <GuitarFretboard frets={guitarFrets} highlightColor={highlight} />
         ) : (
-          <PianoKeyboard activeNotes={pianoNotes} highlightColor={highlight} height={compact ? 112 : undefined} />
+          <PianoKeyboard activeNotes={pianoNotes} highlightColor={highlight} />
         )}
       </div>
       </div>

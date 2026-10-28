@@ -22,8 +22,8 @@ export default function PlaybackStatus() {
       <section className="te-status-window" aria-label="Rhythm playback">
         <p className="te-status-title"><span className="te-status-type">Rhythm</span><span className="min-w-0 truncate">{rhythm.label}</span></p>
         <div className="flex flex-col gap-[2px]">
-          <StepRow label="HARM" cells={harmony} playhead={step} height={14} labelSize={11} />
-          <StepRow label="BASS" cells={bass} playhead={step} height={14} labelSize={11} dim={!settings.bassEnabled} />
+          <StepRow label="HARM" cells={harmony} playhead={step} height={10} labelSize={11} />
+          <StepRow label="BASS" cells={bass} playhead={step} height={10} labelSize={11} dim={!settings.bassEnabled} />
         </div>
       </section>
       <section className="te-status-window" aria-label="Drum playback">
@@ -31,7 +31,7 @@ export default function PlaybackStatus() {
           <span className="te-status-type">Drums</span><span className="min-w-0 truncate">{drum?.name ?? 'Off'}</span>
         </p>
         <div className="flex flex-col gap-[2px]">
-          {rows.map((row) => <StepRow key={row.label} label={row.label} cells={row.cells} playhead={drum ? step : null} dim={!drum} height={14} labelSize={11} />)}
+          {rows.map((row) => <StepRow key={row.label} label={row.label} cells={row.cells} playhead={drum ? step : null} dim={!drum} height={10} labelSize={11} />)}
         </div>
       </section>
     </div>

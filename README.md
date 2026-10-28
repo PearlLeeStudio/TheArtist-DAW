@@ -53,13 +53,25 @@ remain on the [manual checklist](docs/manual-checks.md).
   Loading another score first preserves the current work. There is no account or
   cloud synchronization.
 - **Play** keeps the active chord and its Piano/Guitar display directly below
-  transport. Full-width Rhythm and Drums status windows remain underneath,
-  above the selection tabs, with names matching the chord display size.
-  Instrument groups all 31 sounds under emoji family headings and readable name
-  buttons. Rhythm and drum choices use small levers beside larger names; their
-  green step meters remain visible across every tab. The bottom controls stay
+  transport. The keyboard keeps its natural SVG proportions with compact spacing;
+  the small 🎹/🎸 selectors retain English accessible labels and tooltips.
+  The neutral Apple-style silver panel uses gray selection, tab and emoji-selector
+  keys in dark frames; selected keys light up with a warm amber face. Bass off
+  keeps its gray face and explicit off label.
+  Play uses a system Futura-first stack when available, with Avenir Next and
+  sans-serif fallbacks. Full-width Rhythm and Drums status windows remain underneath,
+  above the selection tabs, each 60 px tall with flat black/green step cells.
+  Preset names such as Bossa and Samba use right-aligned 12 px regular text.
+  At viewport heights of at least 900 px, the responsive layout targets a full-panel
+  fit; shorter windows keep vertical scrolling. All three selection panes fit
+  their controls without internal scrolling. Instrument uses five emoji family
+  selectors and shows the current family's 4–8 sound buttons to reach all 31 sounds.
+  Rhythm and Drums use compact text buttons with one highlighted preset; Bass has
+  a separate on/off text button.
+  Their green step meters remain visible across every tab. The bottom controls stay
   present without a tab: BPM plus Master, Harmony, Bass and Drums use five vertical
-  faders with small metal caps and names below. Playback keys sit in one row beside
+  faders with photo-inspired slim black tracks, 10 px round metal caps and names
+  below. Playback keys sit in one row beside
   a disc that rotates only during playback. The 13 harmony rhythms and 15 drum patterns
   retain their playback behavior.
 - **Export** downloads editable, three-part MIDI with tempo, meter, section markers
@@ -124,7 +136,7 @@ Baseline editor screenshot: interactive staff, voicing and MIDI / AI / manual in
 | **MIDI input with confirm flow** | Hold a chord ≥3 s → auto-commit · release early → Confirm card with root-cycling chips, slash-chord inversion detection, and a 3-chord transition view (prev → curr → next + voice-leading arrows) |
 | **Audio playback** | Tone.js + smplr — sampled piano, GM guitars / keys / strings, and 15 drum pattern presets. Switch instruments live mid-playback. |
 | **Controller mixer** | Always at the bottom of Play: separate BPM, Master, Harmony, Bass and Drums faders. Live output gains are saved with each session; the lowest volume position mutes the part, Master mutes the whole mix. |
-| **Dark + light theme** | Classical staff with an editorial dark/light palette; a tactile Play panel with raised keys, shaded knobs and coloured mixer rings. |
+| **Dark + light theme** | Classical staff with an editorial dark/light palette; a tactile Play panel with compact text keys, flat status cells and slim vertical faders. |
 | **Resizable right panel** | Drag the boundary 300–640 px wide; collapse with a short tab-aligned toggle. |
 | **Rule-based fallback** | If models or chromadb fail to load, the API drops to a rule-based generator so the staff always responds. |
 
@@ -174,9 +186,9 @@ retain their previous levels.
 </table>
 
 Both modes use `--brand-yellow` (#facc15) for active Play/Input tabs, the panel
-toggle, focus rings and voicing highlights. The Controller adds distinct ring
-colours for its four levels. Bevelled surfaces, recessed control bays and shaded
-knob caps give the Play panel depth while the staff keeps its classical styling.
+toggle, focus rings and voicing highlights. The Play panel combines shallow key
+relief, flat black/green step cells and slim faders while the staff keeps its
+classical styling.
 
 ## Architecture
 
