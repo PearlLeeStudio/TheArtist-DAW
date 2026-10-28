@@ -53,9 +53,10 @@ Interactive staff (left) with chord progression · resizable right panel (right)
 | **Two-axis rerank** | R1 — Sethares sensory roughness (physics) · R2 — music theory retrieval over Berklee Book of Jazz Harmony + Open Music Theory v2 (jazz-family genres → Berklee, classical → OMT, merge by distance). Both scores combine into the Option A/B/C ordering. |
 | **Voice-leading inversions** | Post-process injects slash-chord inversions (e.g. `Am7/C`) where they smooth the bass line — the LM only emits root-position chords, voice leading is added on top |
 | **MIDI input with confirm flow** | Hold a chord ≥3 s → auto-commit · release early → Confirm card with root-cycling chips, slash-chord inversion detection, and a 3-chord transition view (prev → curr → next + voice-leading arrows) |
-| **Audio playback** | Tone.js + smplr (GM Soundfont samples) — sampled piano, sampled GM guitars / keys / strings + 15 drum pattern presets (sampled kits + smplr drum-machine voices). Switch instruments live mid-playback. |
-| **Dark + light theme** | Editorial near-black dark / pure-achromatic light. Single `--brand-yellow` drives every active state. |
-| **Resizable right panel** | Drag the boundary 240–640 px wide; collapse with a short tab-aligned toggle. |
+| **Audio playback** | Tone.js + smplr — sampled piano, GM guitars / keys / strings, and 15 drum pattern presets. Switch instruments live mid-playback. |
+| **Controller mixer** | Play → CTRL: separate Master, Harmony, Bass and Drums volume knobs. Live output gains, saved with each session; 0% mutes the part, Master 0% mutes the whole mix. |
+| **Dark + light theme** | Classical staff with an editorial dark/light palette; a tactile Play panel with raised keys, shaded knobs and coloured mixer rings. |
+| **Resizable right panel** | Drag the boundary 300–640 px wide; collapse with a short tab-aligned toggle. |
 | **Rule-based fallback** | If models or chromadb fail to load, the API drops to a rule-based generator so the staff always responds. |
 
 ## Walkthrough
@@ -78,6 +79,19 @@ Pick a slot on the staff, hit **Enable MIDI** with a connected keyboard. Hold a 
 
 Whichever chord is active (selected on the staff, currently playing back, or under a MIDI hold) lights up its tones on a styled keyboard or fretboard. Voicings cap at 4 notes — for tension chords (9 / 11 / 13 / altered dominants) the 5th drops, keeping the hand realistic and leaving register room for future melody lines. Switch instruments live; the playback engine swaps mid-song.
 
+### Controller — master and part levels
+
+Open **Play → CTRL** to balance **Master**, **Harmony**, **Bass** and **Drums**
+with four 48px knobs. The other Play panes keep the instrument, rhythm and drum
+presets within reach, and the BPM knob stays on the left rail.
+
+Drag vertically, scroll, or use the arrow keys to change a level; hold Shift
+while dragging for fine adjustment. Double-click a knob to restore its default.
+Levels change the audio output, including notes already ringing. Harmony and
+Bass remain independent even when they use the same instrument. Save preserves
+the mix for MyPage playback, Load and session JSON export/import; old sessions
+retain their previous levels.
+
 ### Dark + light themes
 
 <table>
@@ -91,7 +105,10 @@ Whichever chord is active (selected on the staff, currently playing back, or und
 </tr>
 </table>
 
-Both modes reserve a single warm hue — `--brand-yellow` (#facc15) — for active state across Play/Input tabs, panel toggle, focus rings, `::selection`, voicing highlight, and the MIDI Confirm card's chip row. Accent green is reserved for live MIDI input; the playback wash is the only other warm tone, and only fires under the cursor.
+Both modes use `--brand-yellow` (#facc15) for active Play/Input tabs, the panel
+toggle, focus rings and voicing highlights. The Controller adds distinct ring
+colours for its four levels. Bevelled surfaces, recessed control bays and shaded
+knob caps give the Play panel depth while the staff keeps its classical styling.
 
 ## Architecture
 
@@ -214,7 +231,7 @@ TheArtist/
 │   │   ├── ScoreEditor/Staff.tsx              # VexFlow staff
 │   │   └── RightPanel/
 │   │       ├── play/                          # Play panel: transport, rail, Visual /
-│   │       │                                  #   Instrument / Rhythm / Drums panes, ui/ keys
+│   │       │                                  #   Instrument / Rhythm / Drums / Controller panes
 │   │       ├── SongSettings.tsx               # BPM / time / key / genre bar
 │   │       ├── ChordActions.tsx               # AI Generate flow + manual chord
 │   │       ├── GenerateProgress.tsx           # 7-stage SSE progress chips
