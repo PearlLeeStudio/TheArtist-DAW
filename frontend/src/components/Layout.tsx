@@ -188,7 +188,7 @@ export default function Layout() {
                 onClick={() => setImportOpen(true)}
                 className="px-3 py-1 text-xs font-bold whitespace-nowrap btn-hover"
                 style={{ background: 'var(--btn-bg)', color: 'var(--text-heading)', border: '1px solid var(--border)' }}
-                title="Import and review a PDF or image with chord symbols"
+                title="Import and review a PDF score"
                 aria-haspopup="dialog"
               >
                 Import Score

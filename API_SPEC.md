@@ -638,6 +638,8 @@ A strike at beat `p` plays the chord of the slot `p` falls in (slot 0 = beats `[
 
 Accepts one explicitly chosen PDF, PNG, JPEG or WebP. `engine: "local"` (default) reads supported vector PDFs without a key, upload or API call. `mode: "chord_symbols"` reads written chords; `mode: "infer_harmony"` analyzes locally read notes, their timing and bass. Inference is reviewable interpretation, not verified original harmony. The endpoint does not fetch a URL, read a supplied filesystem path, store uploaded bytes, or import melody performance tracks.
 
+The frontend file picker currently offers PDF scores and automatically sends `mode: "infer_harmony", engine: "local"`. Printed symbols and explicit N.C. take priority; only chordless passages receive note-based proposals. The screen does not expose the API's mode or Meta options.
+
 `engine: "auto"` explicitly permits bounded Meta assistance for unresolved local note passages or an unsupported local input format. `engine: "meta"` explicitly uses the attachment-based Meta reader. Note-text assistance has at most two calls per import, eight measures/512 notes/64 KiB per call, 45 seconds, 4096 output tokens and a $0.10 request cap. Attachment reading has one 75-second call with its existing $1.35 request cap. Both share the spend ledger and visible failure behavior.
 
 ```json

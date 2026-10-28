@@ -1,6 +1,10 @@
 # Local score analysis
 
-Import Score defaults to local code. Reading a supported vector PDF and analyzing
+Selecting a file in Import Score automatically starts local code analysis, with
+an indeterminate progress indicator until the response arrives. Printed chord
+symbols take priority; note-based harmony is proposed only where symbols are
+absent. A valid draft enables Import reviewed score without a separate checkbox;
+clicking it confirms the replacement. Reading a supported vector PDF and analyzing
 its notes requires no model key, API call, file upload or network connection.
 There is no song-name lookup or stored answer for a particular score.
 
@@ -54,7 +58,9 @@ local modulations; those need a separate analysis of the surrounding progression
 
 ## Optional Meta assistance
 
-`engine: "local"` is the default. Selecting `auto` explicitly permits Meta when
+The import screen always sends `engine: "local"`; it has no Meta option and never
+automatically calls an external model. The API retains the bounded Meta capability
+for future work. For API callers, `engine: "local"` is the default. Selecting `auto` explicitly permits Meta when
 the format is unsupported or local harmony is unresolved. Locally read note
 events can be sent as musical text for interpretation; filenames, lyrics and
 document images are excluded from that assistance path. It uses at most two

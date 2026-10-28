@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
-import type { Song, ScoreImportMode } from '../../models/types';
+import type { Song } from '../../models/types';
 import { STANDARD_KEYS } from '../../engine/keySignatures';
 import { SECTION_GROUPS, isSectionType, sectionLabel, sectionsInGroup } from '../../engine/songForm';
 import {
@@ -34,6 +34,7 @@ const mutedStyle: CSSProperties = { color: 'var(--text-muted)' };
 const buttonStyle: CSSProperties = {
   background: 'var(--btn-bg)', border: '1px solid var(--border)', color: 'var(--text-primary)',
 };
+const IMPORT_MODE = 'infer_harmony';
 
 function errorMessage(body: unknown, status: number): string {
   if (body && typeof body === 'object' && 'detail' in body) {
@@ -69,12 +70,9 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
   const closedRef = useRef(false);
   const id = useId();
   const [source, setSource] = useState<SourceFile | null>(null);
-  const [mode, setMode] = useState<ScoreImportMode>('chord_symbols');
-  const [allowMeta, setAllowMeta] = useState(false);
   const [draft, setDraft] = useState<ScoreImportDraft | null>(null);
   const [reading, setReading] = useState(false);
   const [running, setRunning] = useState(false);
-  const [reviewed, setReviewed] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState('');
 
@@ -91,12 +89,12 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
   }, []);
 
   const validation = draft ? validateScoreImportDraft(draft) : null;
-  const canImport = !!draft && !!validation?.valid && reviewed && !running && !reading;
+  const canImport = !!draft && !!validation?.valid && !running && !reading;
   const correctionCount = validation ? validation.errors.length + validation.measureErrors.filter(Boolean).length + validation.sectionErrors.filter(Boolean).length : 0;
   const importBlockReason = reading ? 'Wait for the file check to finish.' : running ? 'Wait for the score analysis to finish.'
-    : !draft ? 'Select a file and run recognition or note analysis first.'
+    : !draft ? 'Choose a score to analyze.'
       : !validation?.valid ? `Fix ${correctionCount} highlighted ${correctionCount === 1 ? 'field' : 'fields'} to enable import.`
-        : !reviewed ? 'Confirm your review to enable import.' : '';
+        : '';
   const firstChordError = validation?.measureErrors.findIndex(Boolean) ?? -1;
   const firstSectionError = validation?.sectionErrors.findIndex(Boolean) ?? -1;
   const sourceMeters = draft ? [...new Set(draft.measures.flatMap((measure) => measure.timeSignature ? [measure.timeSignature.join('/')] : []))] : [];
@@ -115,26 +113,8 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
     controllerRef.current = null;
     runningRef.current = false;
     setRunning(false);
-    setStatus('Recognition cancelled.');
-  };
-
-  const changeMode = (next: ScoreImportMode) => {
-    if (mode === next) return;
-    cancelRecognition();
-    setMode(next);
-    setDraft(null);
-    setReviewed(false);
-    setError(null);
-    setStatus('');
-  };
-
-  const changeExternalChoice = (next: boolean) => {
-    cancelRecognition();
-    setAllowMeta(next);
-    setDraft(null);
-    setReviewed(false);
-    setError(null);
-    setStatus('');
+    setReading(false);
+    setStatus('Analysis cancelled.');
   };
 
   const handleClose = () => {
@@ -154,7 +134,6 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
     sourceRef.current = null;
     setSource(null);
     setDraft(null);
-    setReviewed(false);
     setError(null);
     setStatus('');
     setReading(true);
@@ -165,9 +144,12 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
       if (!mountedRef.current || sequence !== sequenceRef.current) return;
       const checked = checkScoreFile(file, header);
       if (!checked.ok) throw new Error(checked.message);
+      if (checked.mimeType !== 'application/pdf') throw new Error('Choose a PDF score. Image import is not available yet.');
       const selected = { file, mimeType: checked.mimeType, previewUrl: URL.createObjectURL(file) };
       sourceRef.current = selected;
       setSource(selected);
+      setReading(false);
+      void recognize(selected, sequence);
     } catch (caught) {
       if (mountedRef.current && sequence === sequenceRef.current) {
         setError(caught instanceof Error ? caught.message : 'The file could not be read.');
@@ -177,41 +159,39 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
     }
   };
 
-  const recognize = async () => {
-    if (!source || runningRef.current || reading) return;
-    const sequence = ++sequenceRef.current;
+  const recognize = async (selected: SourceFile, sequence: number) => {
+    if (!mountedRef.current || closedRef.current || sequence !== sequenceRef.current || runningRef.current) return;
     const controller = new AbortController();
     controllerRef.current = controller;
     runningRef.current = true;
     setRunning(true);
     setDraft(null);
-    setReviewed(false);
     setError(null);
-    setStatus(mode === 'infer_harmony' ? 'Analyzing visible notes for a harmony draft…' : 'Recognizing chord symbols and section labels…');
+    setStatus('Analyzing score…');
     let timedOut = false;
     const timer = window.setTimeout(() => { timedOut = true; controller.abort(); }, 100_000);
     try {
-      const dataBase64 = await fileBase64(source.file);
+      const dataBase64 = await fileBase64(selected.file);
       if (sequence !== sequenceRef.current) return;
       if (controller.signal.aborted) throw new Error('Recognition was interrupted.');
       const response = await fetch('/api/import/score', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(scoreImportRequestBody(source.file.name, source.mimeType, dataBase64, mode, allowMeta)),
+        body: JSON.stringify(scoreImportRequestBody(selected.file.name, selected.mimeType, dataBase64, IMPORT_MODE, false)),
         signal: controller.signal,
       });
       const body: unknown = await response.json().catch(() => null);
       if (!mountedRef.current || sequence !== sequenceRef.current) return;
       if (!response.ok) throw new Error(errorMessage(body, response.status));
-      const recognized = readScoreImportResponse(body, mode, allowMeta ? 'auto' : 'local');
-      setDraft(createScoreImportDraft(recognized, source.file.name));
-      setStatus(mode === 'infer_harmony' ? 'Harmony draft ready. Check each proposed chord, its evidence and uncertainty before importing.' : 'Recognition complete. Review every measure and section before importing.');
+      const recognized = readScoreImportResponse(body, IMPORT_MODE, 'local');
+      setDraft(createScoreImportDraft(recognized, selected.file.name));
+      setStatus('Ready to review.');
     } catch (caught) {
       if (!mountedRef.current || sequence !== sequenceRef.current) return;
       setStatus('');
-      setError(timedOut ? 'Recognition timed out. Please try a smaller image or PDF.'
-        : controller.signal.aborted ? 'Recognition cancelled.'
-          : caught instanceof Error ? caught.message : 'Score recognition failed. Please try again.');
+      setError(timedOut ? 'Analysis timed out. Try a smaller file.'
+        : controller.signal.aborted ? 'Analysis cancelled.'
+          : caught instanceof Error ? caught.message : 'The score could not be analyzed. Try again.');
     } finally {
       window.clearTimeout(timer);
       if (mountedRef.current && sequence === sequenceRef.current) {
@@ -222,9 +202,14 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
     }
   };
 
+  const retryAnalysis = () => {
+    const selected = sourceRef.current;
+    if (!selected || runningRef.current || reading) return;
+    void recognize(selected, ++sequenceRef.current);
+  };
+
   const edit = (update: (current: ScoreImportDraft) => ScoreImportDraft) => {
     setDraft((current) => current ? update(current) : current);
-    setReviewed(false);
   };
 
   const apply = () => {
@@ -246,48 +231,29 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
       className="m-auto p-0 backdrop:bg-black/60"
       style={{ width: 'min(1040px, calc(100vw - 24px))', maxHeight: 'calc(100dvh - 24px)', overflow: 'hidden', background: 'var(--bg-surface)', color: 'var(--text-primary)', border: '1px solid var(--border)', borderTop: '3px solid var(--brand-yellow)' }}
     >
-      <form className="flex min-h-0 flex-col" style={{ maxHeight: 'calc(100dvh - 28px)' }} onSubmit={(e) => { e.preventDefault(); apply(); }}>
+      <form className="flex min-h-0 flex-col" style={{ maxHeight: 'calc(100dvh - 28px)' }} onSubmit={(e) => { e.preventDefault(); apply(); }} onKeyDown={(e) => { if (e.key === 'Enter' && e.target instanceof HTMLInputElement && e.target.type !== 'file') e.preventDefault(); }}>
         <header className="flex shrink-0 items-start justify-between gap-4 px-5 py-4" style={{ borderBottom: '1px solid var(--border)' }}>
           <div>
             <h2 id={`${id}-heading`} className="font-display text-2xl font-bold" style={{ color: 'var(--text-heading)' }}>Import Score</h2>
-            <p className="mt-1 text-xs" style={mutedStyle}>Read an image or PDF, then review the chord score and song form.</p>
+            <p className="mt-1 text-xs" style={mutedStyle}>Printed chords stay as written; passages without chords are analyzed from the notes.</p>
           </div>
           <button type="button" className="shrink-0 px-3 py-1.5 text-xs btn-hover" style={buttonStyle} onClick={() => dialogRef.current?.close()}>Close</button>
         </header>
 
         <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-5">
-          <fieldset disabled={reading} className="space-y-2" style={{ border: '1px solid var(--border)', padding: 12 }}>
-            <legend className="px-1 text-xs font-semibold">What is on the score?</legend>
-            <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm">
-              <label className="flex items-center gap-2"><input type="radio" name={`${id}-mode`} value="chord_symbols" checked={mode === 'chord_symbols'} onChange={() => changeMode('chord_symbols')} />Read chord symbols</label>
-              <label className="flex items-center gap-2"><input type="radio" name={`${id}-mode`} value="infer_harmony" checked={mode === 'infer_harmony'} onChange={() => changeMode('infer_harmony')} />Analyze notes (no chords)</label>
-            </div>
-            <p className="text-xs leading-relaxed" style={mutedStyle}>{mode === 'infer_harmony'
-              ? 'Read notes and bass, then analyze chords against the key. Review every bar and its evidence. Melody notes and exact note durations are not imported into the chord editor.'
-              : 'Read chord symbols already printed on the score. A score with notes only needs Analyze notes.'}</p>
-            <label className="flex items-start gap-2 text-sm"><input type="checkbox" checked={allowMeta} onChange={(e) => changeExternalChoice(e.target.checked)} className="mt-1" /><span>Use Meta for unsupported or unresolved passages</span></label>
-            <p className="text-xs leading-relaxed" style={mutedStyle}>{allowMeta
-              ? 'Built-in reading runs first. Unsupported images or PDFs may be sent to Meta; unresolved passages may send extracted note events and musical context for interpretation. No other files are collected.'
-              : 'Built-in reading runs in the app server. External model calls are off; the selected file is not sent to Meta.'}</p>
-            {mode === 'infer_harmony' && <p className="text-xs leading-relaxed" style={mutedStyle}>Confidence describes the reading or interpretation, not a measured accuracy score. Compare the note and bass evidence with the original.</p>}
-          </fieldset>
           <div className="flex flex-wrap items-end justify-between gap-3">
             <label className="flex min-w-0 flex-col gap-1 text-xs" style={mutedStyle}>
-              Score file · PNG, JPEG, WebP or PDF · up to 8 MiB
-              <input ref={fileRef} type="file" accept=".png,.jpg,.jpeg,.webp,.pdf,image/png,image/jpeg,image/webp,application/pdf" className="max-w-full text-sm" onChange={(e) => { void chooseFile(e.target.files?.[0]); e.target.value = ''; }} />
+              PDF score · up to 8 MiB
+              <input ref={fileRef} type="file" accept=".pdf,application/pdf" className="max-w-full text-sm" onChange={(e) => { void chooseFile(e.target.files?.[0]); e.target.value = ''; }} />
             </label>
-            <div className="space-y-1 text-right">
-              <div className="flex justify-end gap-2">
-                {running && <button type="button" className="px-3 py-2 text-xs btn-hover" style={buttonStyle} onClick={cancelRecognition}>Cancel recognition</button>}
-                <button type="button" disabled={!source || running || reading} onClick={() => { void recognize(); }} className="px-4 py-2 text-xs font-bold btn-hover" style={{ background: 'var(--text-heading)', color: 'var(--bg-primary)', opacity: !source || running || reading ? 0.5 : undefined }}>
-                  {running ? 'Reading…' : mode === 'infer_harmony' ? 'Analyze score' : draft ? 'Read again' : 'Read score'}
-                </button>
-              </div>
-              <p className="text-xs" style={mutedStyle}>{allowMeta ? 'Local first · Meta assistance allowed' : 'Local code analysis · no external model'}</p>
+            <div className="flex gap-2">
+              {(reading || running) && <button type="button" className="px-3 py-2 text-xs btn-hover" style={buttonStyle} onClick={cancelRecognition}>Cancel</button>}
+              {source && !draft && !running && !reading && <button type="button" onClick={retryAnalysis} className="px-3 py-2 text-xs btn-hover" style={buttonStyle}>Try again</button>}
             </div>
           </div>
 
           {(reading || status) && <p role="status" className="text-sm" style={mutedStyle}>{reading ? 'Checking the file…' : status}</p>}
+          {(reading || running) && <progress role="progressbar" aria-label={reading ? 'Checking score file' : 'Analyzing score'} className="h-2 w-full" style={{ accentColor: 'var(--brand-yellow)' }} />}
 
           {source && (
             <div className={draft ? 'grid grid-cols-1 items-start gap-5 md:grid-cols-[minmax(220px,0.8fr)_minmax(0,1.2fr)]' : ''}>
@@ -309,14 +275,13 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
               {draft && validation && (
                 <div className="min-w-0 space-y-4">
                   <div className="space-y-2">
-                    <h3 className="font-display text-xl font-semibold" style={{ color: 'var(--text-heading)' }}>{draft.mode === 'infer_harmony' ? 'Review the harmony draft' : 'Review the recognition'}</h3>
-                    <p className="text-xs font-semibold">{draft.analysisSource === 'local' ? 'Analyzed by local code' : draft.analysisSource === 'mixed' ? 'Local note reading with Meta interpretation on marked passages' : 'Read with Meta'}{draft.model ? ` · ${draft.model}` : ''}</p>
-                    {draft.mode === 'infer_harmony' && <p className="text-xs leading-relaxed" style={mutedStyle}>Inferred chords are proposals from the visible notation. They were not printed on the original. Listen after import and correct the draft when another harmony fits better.</p>}
-                    <p className="text-xs leading-relaxed" style={mutedStyle}>Each bar has two equal chord slots. A single chord fills both slots; enter two symbols separated by a space for a change halfway through the bar. Exact note durations and melody are not imported.</p>
-                    <p className="text-xs leading-relaxed" style={mutedStyle}>All source proposals stay visible. When a bar has more than two changes, choose two for the editor. Enter N.C. explicitly to leave a bar without harmony; an unresolved bar is never made a rest automatically.</p>
-                    {changesMeter && <p className="text-xs leading-relaxed" style={mutedStyle}>Source meters: {sourceMeters.join(', ')}. The chord editor applies the selected {draft.timeSignature || 'single meter'} to every bar. Source meters are kept below; playback and export do not preserve these meter changes.</p>}
-                    <p className="text-xs leading-relaxed" style={mutedStyle}>Measures stay in written order. Repeats, D.C./D.S. and coda jumps are not expanded. Check these against the original.</p>
-                    {draft.warnings.length > 0 && <ul className="list-disc space-y-1 pl-4 text-xs" aria-label="Recognition warnings">{draft.warnings.map((warning, index) => <li key={index}>{warning}</li>)}</ul>}
+                    <h3 className="font-display text-xl font-semibold" style={{ color: 'var(--text-heading)' }}>Review score</h3>
+                    <p className="text-xs" style={mutedStyle}>Check the chords, key and meter, then import.</p>
+                    {changesMeter && <p className="text-xs" style={mutedStyle}>The original uses {sourceMeters.join(', ')}. The editor uses {draft.timeSignature || 'one chosen meter'} throughout.</p>}
+                    {draft.warnings.length > 0 && <details className="text-xs" style={mutedStyle}>
+                      <summary className="cursor-pointer">Reading notes · {draft.warnings.length}</summary>
+                      <ul className="mt-1 list-disc space-y-1 pl-4" aria-label="Reading notes">{draft.warnings.map((warning, index) => <li key={index}>{warning}</li>)}</ul>
+                    </details>}
                   </div>
 
                   <div id={`${id}-score-fields`} tabIndex={-1} className="grid grid-cols-2 gap-3">
@@ -335,27 +300,33 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
                   <details open style={{ border: '1px solid var(--border)' }}>
                     <summary className="cursor-pointer px-3 py-2 text-sm font-semibold">Chords · {draft.measures.length} bars</summary>
                     <div className="space-y-2 px-3 pb-3">
+                      <p className="text-xs" style={mutedStyle}>One or two equal chord slots per bar. Use N.C. to leave a bar without harmony.</p>
                       {draft.measures.map((measure, index) => (
                         <div key={index} className="space-y-1 py-2" style={{ borderTop: '1px solid var(--border)' }}>
                           <div className="flex items-center gap-2">
                             <label htmlFor={`${id}-bar-${index}`} className="w-10 shrink-0 text-xs font-semibold">{index + 1}</label>
                             <input id={`${id}-bar-${index}`} aria-label={`Bar ${index + 1} chords`} aria-invalid={!!validation.measureErrors[index]} aria-describedby={validation.measureErrors[index] ? `${id}-bar-error-${index}` : undefined} value={measure.chordText} placeholder="Cmaj7 Am7 or N.C." onChange={(e) => edit((d) => ({ ...d, measures: d.measures.map((m, i) => i === index ? { ...m, chordText: e.target.value } : m) }))} className="min-w-0 flex-1 px-2 py-1.5 text-sm" style={fieldStyle} />
                           </div>
-                          <p className="text-xs font-semibold">{measure.analysisSource === 'local' ? 'Local code' : 'Meta interpretation'} · {measure.originalNoChord ? 'Source rest / N.C.' : measure.chordBasis === 'inferred' ? 'Inferred · review required' : measure.chordBasis === 'unreadable' ? 'Unresolved · enter chords or N.C.' : 'Printed'} · {measure.confidence} confidence{measure.timeSignature ? ` · Source meter ${measure.timeSignature.join('/')}` : ''}</p>
-                          {measure.writtenNotes.length > 0 && JSON.stringify(measure.writtenNotes) !== JSON.stringify(measure.notes) && <p className="break-words text-xs" style={mutedStyle}>Written notes: {measure.writtenNotes.join(' · ')}</p>}
-                          {(measure.notes.length > 0 || measure.bassNotes.length > 0) && <p className="break-words text-xs" style={mutedStyle}>{measure.writtenNotes.length > 0 && JSON.stringify(measure.writtenNotes) !== JSON.stringify(measure.notes) ? 'Sounding notes' : 'Read notes'}: {measure.notes.join(' · ') || '[None]'} → Bass: {measure.bassNotes.join(' · ') || '[None]'} → {measure.originalChords.join(' · ') || (measure.originalNoChord ? 'N.C.' : '[No chord determined]')}</p>}
+                          <p className="text-xs" style={mutedStyle}>{measure.originalNoChord ? 'Rest / N.C.' : measure.chordBasis === 'inferred' ? 'Analyzed from notes' : measure.chordBasis === 'unreadable' ? 'Needs a chord or N.C.' : 'Written on score'}</p>
                           <p className="text-xs" style={mutedStyle}>Roman numerals in {draft.key || 'the selected key'}: {importMeasureRomanPreview(measure.chordText, draft.key) ?? 'correct the key and chords to preview'}</p>
+                          <details className="text-xs" style={mutedStyle}>
+                          <summary className="cursor-pointer">Notes and source</summary>
+                          <div className="mt-1 space-y-1">
+                          {measure.writtenNotes.length > 0 && JSON.stringify(measure.writtenNotes) !== JSON.stringify(measure.notes) && <p className="break-words">Written notes: {measure.writtenNotes.join(' · ')}</p>}
+                          {(measure.notes.length > 0 || measure.bassNotes.length > 0) && <p className="break-words">{measure.writtenNotes.length > 0 && JSON.stringify(measure.writtenNotes) !== JSON.stringify(measure.notes) ? 'Sounding notes' : 'Read notes'}: {measure.notes.join(' · ') || '[None]'} → Bass: {measure.bassNotes.join(' · ') || '[None]'}</p>}
                           <p className="break-words text-xs" style={mutedStyle}>{measure.chordBasis === 'inferred' ? 'Proposed' : 'Read'}: {measure.originalChords.length ? measure.originalChords.join(' · ') : measure.originalNoChord ? 'N.C.' : '[No chord determined]'}{measure.sourceLabel ? ` — ${measure.sourceLabel}` : ''}</p>
                           {measure.originalChords.length > 0 && <p className="text-xs" style={mutedStyle}>Full source analysis in {draft.key || 'the selected key'}: {importMeasureRomanPreview(measure.originalChords.join(' '), draft.key) ?? 'some source symbols need correction'}</p>}
-                          {measure.originalChords.length > 2 && <p className="text-xs" style={mutedStyle}>{measure.originalChords.length} source changes are preserved above. Select two equal editor slots; keep the source analysis for reference.</p>}
                           {(measure.needsReview || measure.note) && <p className="text-xs" style={mutedStyle}>{measure.needsReview ? 'Check against original. ' : ''}{measure.note ? `Evidence: ${measure.note}` : ''}</p>}
+                          {measure.timeSignature && <p>Original meter: {measure.timeSignature.join('/')}</p>}
+                          </div>
+                          </details>
                           {validation.measureErrors[index] && <p id={`${id}-bar-error-${index}`} className="text-xs">{validation.measureErrors[index]}</p>}
                         </div>
                       ))}
                     </div>
                   </details>
 
-                  <details open style={{ border: '1px solid var(--border)' }}>
+                  <details style={{ border: '1px solid var(--border)' }}>
                     <summary className="cursor-pointer px-3 py-2 text-sm font-semibold">Song form · {draft.sections.length} sections</summary>
                     <div className="space-y-3 px-3 pb-3">
                       <p className="text-xs" style={mutedStyle}>Inferred sections are suggestions, not labels found on the score. Editing them keeps that origin visible.</p>
@@ -382,7 +353,6 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
                     </div>
                   </details>
 
-                  <p className="break-words text-xs" style={mutedStyle}>{draft.analysisSource === 'local' ? 'Local code result; no external model was used.' : draft.analysisSource === 'mixed' ? 'Marked passages include Meta interpretation of extracted notes, not independent verification.' : `Meta result${draft.model ? ` · ${draft.model}` : ''}.`}{draft.requestId ? ` Request ${draft.requestId}.` : ''} The source file is not stored with the song.</p>
                 </div>
               )}
             </div>
@@ -392,10 +362,6 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
         <footer className="flex shrink-0 flex-col items-stretch gap-3 px-5 py-3 sm:flex-row sm:items-end" style={{ borderTop: '1px solid var(--border)', background: 'var(--bg-surface)' }}>
           <div className="min-w-0 flex-1 text-xs" style={mutedStyle}>
             <p>Import replaces the current score. You can undo the import in the editor.</p>
-            {draft && <label className="mt-2 flex items-start gap-2 text-sm" style={{ color: 'var(--text-primary)' }}>
-              <input type="checkbox" checked={reviewed} onChange={(e) => setReviewed(e.target.checked)} className="mt-1" />
-              <span>{draft.mode === 'infer_harmony' ? 'I checked the proposed chords, their evidence, and the sections.' : 'I checked every chord and section against the original.'}</span>
-            </label>}
             {importBlockReason && <p id={`${id}-import-block`} role="status" className="mt-1">{importBlockReason}</p>}
             {(error || (validation && !validation.valid)) && <div className="mt-1 max-h-20 overflow-y-auto pr-1">
               {error && <p role="alert" className="border-l-2 px-2 py-1" style={{ background: 'var(--btn-bg)', borderColor: 'var(--brand-yellow)', color: 'var(--text-primary)' }}>{error}</p>}

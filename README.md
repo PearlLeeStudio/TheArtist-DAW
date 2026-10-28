@@ -30,14 +30,15 @@ Automated checks pass; browser/audio checks, PDF appearance and actual DAW impor
 remain on the [manual checklist](docs/manual-checks.md).
 
 - **Import Score**, immediately left of **New from Song Form**, accepts one
-  PDF, PNG, JPEG or WebP up to 8 MiB. Choose **Read chord symbols** for a chord chart
-  or **Analyze notes (no chords)** for a harmony draft from notation. Review the
+  PDF score up to 8 MiB. Selecting a file starts local analysis
+  automatically, with a progress indicator. Printed chords are preserved; only
+  passages without chords receive note-based harmony proposals. Review the
   source alongside read notes, bass, chords, evidence, uncertainty, meter, key and sections. Inferred
   chords are interpretations, not verified original harmony; melody notes and their
-  durations are not imported. Correct highlighted fields and tick the visible footer
-  review checkbox to enable **Import reviewed score**. The footer explains any blocker.
-  Local reading is the default; API use requires an explicit choice. Responses
-  distinguish local reading, Meta interpretation and mixed results.
+  durations are not imported. Correct highlighted fields, then click
+  **Import reviewed score** to confirm. The footer explains any blocker.
+  The import screen uses local reading only; the bounded Meta capability remains
+  available in the API for future work, without a screen option or automatic call.
 - **Roman-numeral analysis** follows the review key: in C major, C → I, Am → vi,
   G7 → V7. Changing the review key reanalyzes the same symbols. The editor's main Key
   control retains its existing behavior of transposing the score. Source proposals

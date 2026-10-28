@@ -212,7 +212,7 @@ def import_score(req: ScoreImportRequest) -> ScoreImportResponse:
             return response
         except LocalScoreUnsupported as exc:
             if req.engine == "local":
-                raise ScoreInputError(f"{exc} Select Use Meta if local reading is unsupported to try the API.", 422) from None
+                raise ScoreInputError(f"{exc} This format is not supported by local score import. Try a supported vector PDF.", 422) from None
             response = _import_meta_score(req, content)
             response.warnings = [f"Local reading was unsupported: {str(exc)[:220]}. Meta processed this file.",
                                  *response.warnings][:32]

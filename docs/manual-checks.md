@@ -19,23 +19,27 @@ unimplemented and are not part of the completed-feature checks.
 ## Import and revise
 
 - [ ] Import Score is immediately left of New from Song Form. Load a chord-symbol
-  PDF and an image; compare each measure with the source preview before confirming.
-  The synthetic `backend/tests/fixtures/score-import.png` is a small starter case.
+  PDF and compare each measure with the source preview before confirming.
+  The original `backend/tests/fixtures/vector-score-c.pdf` and `vector-score-f.pdf`
+  are small notes-only starter cases. The file chooser offers PDFs; image import
+  remains an API capability rather than a screen option.
 - [ ] Verify one-chord expansion, unknown key/meter, unsupported chord names and
   zero or three-plus symbols in a bar. A correction is required rather than silently
   discarding symbols. Cancel, close and replace files while a request is running.
-- [ ] Choose Read chord symbols for a chord chart and Analyze notes (no chords)
-  for a notes-only score. Check Printed/Inferred/Unreadable, note evidence and
-  confidence against the original. All inferred chords require review. Switch
-  modes during recognition; an earlier result must not populate the new mode.
-- [ ] Local analysis is selected by default. Import the original vector-score C/F
+- [ ] Selecting a file starts local analysis automatically with an indeterminate
+  progress bar. There are no mode controls, Meta checkbox or separate review
+  checkbox. Printed chords stay unchanged; chordless passages receive proposals.
+  Check Printed/Inferred/Unreadable, note evidence and confidence against the
+  original. Replace a file during analysis; an earlier result must not populate
+  the replacement. Cancel and retry without choosing the file again.
+- [ ] Import the original vector-score C/F
   fixtures without a model key: verify read pitches, bass, local source and Roman I.
-  An unsupported scan reports that it needs another reader. Enable Meta explicitly
-  and check the source changes only for assisted bars; provisional reading warnings
-  and confidence limits remain visible.
-- [ ] The footer always shows the review checkbox and why Import reviewed score
+  An unsupported scan reports that local reading cannot handle it, without
+  suggesting a missing screen control or making an external model request.
+- [ ] The footer always shows why Import reviewed score
   is disabled. Correct missing key/meter or highlighted bars using the footer
-  links, tick review and import. Check on a narrow mobile window as well as desktop.
+  links, then click Import reviewed score to confirm. A valid draft enables the
+  button immediately. Check on a narrow mobile window as well as desktop.
   Readable C/Am key aliases normalize to C major/A minor.
 - [ ] Review C, Am and G7 in C major: I, vi and V7 appear in review and after
   import. Change the review key to reanalyze fixed symbols; the main Key control

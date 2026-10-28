@@ -253,7 +253,7 @@ class ScoreAnalysisTest(unittest.TestCase):
             with self.assertRaises(score_import.ScoreInputError) as error:
                 score_import.import_score(request())
         self.assertEqual(error.exception.status_code, 422)
-        self.assertIn("Select Use Meta", str(error.exception))
+        self.assertIn("local score import", str(error.exception))
         meta.assert_not_called()
         self.get_client.assert_not_called()
 
