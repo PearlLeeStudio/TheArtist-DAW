@@ -55,23 +55,45 @@ export interface SlotAddress {
   slotIndex: 0 | 1;
 }
 
+/** Keyboard or guitar shapes in the Play panel's Visual pane; auto follows
+ *  the harmony instrument (guitars → guitar). */
+export type VisualMode = 'auto' | 'piano' | 'guitar';
+
+/** auto: the song genre's drum pattern; manual: drumPatternId (null = off). */
+export type DrumMode = 'auto' | 'manual';
+
+/**
+ * The Play panel's sound settings, persisted under `theartist-play` and
+ * saved with every session so MyPage replays a session the way the editor
+ * played it. Resolution against a genre lives in engine/playSettings.ts.
+ */
+export interface PlaySettings {
+  /** User-picked GM harmony instrument (one of the 31 in genreTables.ts);
+   *  null = the genre default. The bass has no override. */
+  harmonyOverride: string | null;
+  /** HARMONY_RHYTHM_PRESETS id; null = the genre's comping rhythm (Auto). */
+  harmonyRhythmId: string | null;
+  drumMode: DrumMode;
+  /** Pattern id (drumPatterns.ts) used while drumMode is manual; null = off. */
+  drumPatternId: number | null;
+  /** Bass layer (chord root on the genre's bass rhythm) on or off. */
+  bassEnabled: boolean;
+  visualMode: VisualMode;
+  /** Drum bus gain 0..1. */
+  drumVolume: number;
+}
+
 /**
  * Generation-time settings remembered alongside a saved session — what the
- * user had configured on the Generate panel when they pressed Save.
- * Re-applying these is what makes a saved session function as a "preset"
- * for Favorite Generate.
+ * user had configured on the Generate panel when they pressed Save, plus
+ * the Play panel settings. Re-applying these is what makes a saved session
+ * function as a "preset" for Favorite Generate. Every PlaySettings field is
+ * optional: sessions saved before the Play panel carry only drumPatternId
+ * and harmonyOverride (see playSettingsFromSession).
  */
-export interface SessionGenerationContext {
+export interface SessionGenerationContext extends Partial<PlaySettings> {
   model: string;            // checkpoint key, e.g. 'ft_f1' (default 2026-05-09)
   genre: string | null;
-  /** Drum pattern selection at save time. null = drums off. Pearl 2026-05-09:
-   *  bundled so MyPage music-gen reproduces the exact playback config. */
-  drumPatternId?: number | null;
-  /** User-picked GM harmony instrument name captured at Save time
-   *  (Pearl 2026-05-10). null = use the genre default table. Bass has
-   *  no override (Pearl owns it); melody layer was dropped. Voyager API
-   *  never reads this; only affects MyPage local Play. */
-  harmonyOverride?: string | null;
   creativity?: 'conservative' | 'balanced' | 'creative';
   alpha?: number;           // R1 (Sethares) rerank weight, optional override
   beta?: number;            // R2 (Berklee) rerank weight, optional override

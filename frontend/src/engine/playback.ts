@@ -1,30 +1,70 @@
 import * as Tone from 'tone';
 import type { Song, SlotAddress, Chord, Arrangement } from '../models/types';
 import { resolvePianoVoicing, generateGuitarVoicing } from './voicingEngine';
-import { scheduleDrumMeasure, clearDrumSchedule } from './drums';
-import { harmonyInstrumentForGenre, playChordOnInstrument, preloadInstruments } from './instruments';
-import { scheduleArrangement, GENRE_HARMONY_RHYTHM, expandPatternPerSlot } from './arrangement';
-import type { Instrument } from '../store/songStore';
+import { scheduleDrumMeasure, clearDrumSchedule, setCurrentDrumPattern, setDrumVolume, swingDelay } from './drums';
+import { playChordOnInstrument, preloadInstruments } from './instruments';
+import { scheduleBassSlot, setBassEnabled } from './arrangement';
+import {
+  HARMONY_GRID,
+  autoRhythmPreset,
+  genreHarmonyInstrument,
+  harmonyStrikes,
+  meterRhythm,
+} from './playSettings';
+import type { EnginePlayConfig, VoicingMode } from './playSettings';
+
+// Live play state. Transport callbacks read these when a note fires, so the
+// Play panel's instrument, rhythm, voicing, drum and bass changes are heard
+// on the next strike without a reschedule. The editor store keeps them in
+// sync (playStore.ts); MyPage applies a session's before it plays.
 
 /**
- * User-picked GM instrument that replaces the genre's auto-resolved
- * harmony default. `null` falls back to harmonyInstrumentForGenre().
- * Set via setHarmonyOverride() — VoicingViewer mirrors the songStore
- * value into here so the in-flight Transport callback picks the
- * latest at note-trigger time.
+ * User-picked GM instrument that replaces the genre's harmony default;
+ * `null` falls back to the played song's genre (genreHarmonyInstrument).
  */
 let harmonyOverride: string | null = null;
+/** Picked comping rhythm (beat positions); `null` = the played song's genre
+ *  rhythm, the plan's `override ?? GENRE_HARMONY_RHYTHM[genre] ?? Block`. */
+let harmonyRhythmOverride: number[] | null = null;
+/** Set by the first startPlayback(): from then on samples may load on a
+ *  pick. Before it, loading would open the AudioContext ahead of a gesture,
+ *  and startPlayback() preloads anyway. */
+let audioStarted = false;
+/** Genre of the song scheduled last; Auto's instrument is its default. */
+let scheduledGenre: string | null = null;
+
 export function setHarmonyOverride(name: string | null): void {
+  if (name === harmonyOverride) return;
   harmonyOverride = name;
-  // Start fetching the samples as soon as the user picks the instrument,
-  // so a mid-playback swap has them ready by the next trigger instead of
-  // dropping a few bars to the synth fallback.
-  if (name) void preloadInstruments([name]);
+  // Fetch the samples as soon as the user picks the instrument (Auto: the
+  // playing song's genre default), so a mid-playback swap has them ready by
+  // the next trigger instead of dropping a few bars to the synth fallback.
+  if (audioStarted) void preloadInstruments([name ?? genreHarmonyInstrument(scheduledGenre)]);
+}
+
+export function setHarmonyRhythmOverride(pattern: number[] | null): void {
+  harmonyRhythmOverride = pattern;
+}
+
+/** Apply every Play-panel setting at once (playSettings.ts enginePlayConfig). */
+export function applyPlayConfig(config: EnginePlayConfig): void {
+  setHarmonyOverride(config.harmonyOverride);
+  setHarmonyRhythmOverride(config.harmonyRhythmOverride);
+  currentInstrument = config.voicingMode;
+  setCurrentDrumPattern(config.drumPatternId);
+  setDrumVolume(config.drumVolume);
+  setBassEnabled(config.bassEnabled);
 }
 
 /** Sampled instruments the current schedule needs; awaited by
  *  startPlayback(). Set by schedulePlayback(). */
 let pendingInstruments: (string | null)[] = [];
+/** The schedule's harmony is the built-in piano (no genre, no pick), whose
+ *  samples startPlayback() waits for as well. */
+let pendingPiano = false;
+/** Bumped by every schedule, stop and pause: a startPlayback() still waiting
+ *  on samples sees the change and does not start. */
+let scheduleGeneration = 0;
 
 // Piano uses real Salamander Grand Piano samples (Yamaha C5, recorded by
 // Alexander Holm, CC BY 3.0) hosted on tonejs.github.io. Sounds like an
@@ -34,13 +74,21 @@ let pendingInstruments: (string | null)[] = [];
 // pipeline doesn't need to know which one is in play.
 let pianoSampler: Tone.Sampler | null = null;
 let guitarSynth: Tone.PolySynth | null = null;
-let currentInstrument: Instrument = 'piano';
+/** Keyboard or guitar voicing for the harmony layer, read per strike. */
+let currentInstrument: VoicingMode = 'piano';
 let scheduledEvents: number[] = [];
 let isPlaying = false;
 let isPaused = false;
+/** The editor's Loop key. */
 let loopEnabled = false;
+/** The running schedule repeats while the Loop key is on (MyPage's do not). */
+let scheduleFollowsLoop = true;
 let currentMeasureIndex = 0;
 let scheduledSlots: SlotAddress[] = [];
+/** Where Transport time 0 sits in its bar (a selection may start on the
+ *  second chord slot) and the bar length — for getPlaybackStep(). */
+let scheduleStartBeat = 0;
+let scheduleBeatsPerMeasure = 4;
 
 type PositionCallback = (measureIndex: number, slotIndex: 0 | 1, chord: Chord | null) => void;
 let positionCallback: PositionCallback | null = null;
@@ -96,8 +144,8 @@ function getGuitarSynth(): Tone.PolySynth {
     guitarSynth = new Tone.PolySynth(Tone.FMSynth, {
       harmonicity: 3.01,
       modulationIndex: 1.5,
-      oscillator: { type: 'triangle' } as any,
-      modulation: { type: 'square' } as any,
+      oscillator: { type: 'triangle' },
+      modulation: { type: 'square' },
       envelope: {
         attack: 0.002,
         decay: 1.2,
@@ -116,8 +164,14 @@ function getGuitarSynth(): Tone.PolySynth {
   return guitarSynth;
 }
 
-function getSynth(): Tone.Sampler | Tone.PolySynth {
-  return currentInstrument === 'guitar' ? getGuitarSynth() : getPianoSynth();
+/** Resolves once the built-in piano's samples are in, or after `timeoutMs`
+ *  — like preloadInstruments(), a dead CDN still lets playback start. */
+function pianoLoaded(timeoutMs = 8000): Promise<void> {
+  if (getPianoSynth().loaded) return Promise.resolve();
+  return Promise.race([
+    Tone.loaded().then(() => undefined, () => undefined),
+    new Promise<void>((resolve) => setTimeout(resolve, timeoutMs)),
+  ]);
 }
 
 function midiToFreq(midi: number): number {
@@ -129,32 +183,62 @@ function clearSchedule(): void {
   scheduledEvents = [];
 }
 
+const OPEN_STRINGS = [40, 45, 50, 55, 59, 64];
+
+/** MIDI notes for a chord in the live voicing mode (keyboard or guitar). */
+function voiceChord(chord: Chord): number[] {
+  if (currentInstrument === 'guitar') {
+    return generateGuitarVoicing(chord)
+      .map((f, i) => (f >= 0 ? OPEN_STRINGS[i] + f : -1))
+      .filter((m) => m >= 0);
+  }
+  return resolvePianoVoicing(chord);
+}
+
+/** Strike a chord on the live harmony instrument (the pick, else the played
+ *  song's genre default), falling back to the built-in piano/guitar synth
+ *  while samples load so playback never goes silent. The built-in piano is
+ *  sampled too: until it has loaded, the guitar synth stands in. */
+function strikeChord(chord: Chord, genre: string | null, time: number, duration: number): void {
+  const voicing = voiceChord(chord);
+  const sfInstrument = harmonyOverride ?? genreHarmonyInstrument(genre);
+  if (sfInstrument && playChordOnInstrument(sfInstrument, voicing, time, duration, 0.7)) return;
+  const piano = currentInstrument === 'piano' ? getPianoSynth() : null;
+  const synth = piano?.loaded ? piano : getGuitarSynth();
+  try {
+    synth.triggerAttackRelease(voicing.map(midiToFreq), duration, time);
+  } catch (err) {
+    console.warn('chord trigger failed:', err);
+  }
+}
+
+// Fires when playback ends naturally (song completes without loop), so the
+// UI can flip its play/pause icon back instead of showing "pause" over silence.
+let endCallback: (() => void) | null = null;
+
 /**
  * Schedule playback for specific measure ranges.
  * If slots is provided, only those slots play. Otherwise plays all measures.
  */
-// Pearl 2026-05-09: callback fires when playback ends naturally (song
-// completes without loop). Lets the React store sync isPlaying back to
-// false so the play/pause button icon reflects reality. Without this,
-// audio stops but the button still shows "pause" until user interacts.
-let endCallback: (() => void) | null = null;
-
 export function schedulePlayback(
   song: Song,
   onPosition: PositionCallback,
   slots?: SlotAddress[],
-  instrument?: Instrument,
+  /** Keyboard or guitar voicing; omitted = keep the applied play config. */
+  instrument?: VoicingMode,
   onEnd?: () => void,
-  /** Pre-computed multi-track arrangement (1-bar pattern + instruments).
-   *  When provided, the bass + melody layers schedule on top of harmony
-   *  + drum. Pearl 2026-05-10 round 3 — used by MyPage's Play button.
-   *  Editor's regular play leaves this undefined → harmony + drum only. */
+  /** Bass layer (computeArrangement, or a saved session's). Scheduled for
+   *  every played chord slot; the Play panel's Bass key mutes it live.
+   *  Omitted = harmony + drums only. */
   arrangement?: Arrangement,
+  /** Repeat at the end while the editor's Loop key is on; false plays once. */
+  followLoop = true,
 ): void {
-  currentInstrument = instrument ?? 'piano';
+  if (instrument) currentInstrument = instrument;
   stopPlayback();
   positionCallback = onPosition;
   endCallback = onEnd ?? null;
+  scheduleFollowsLoop = followLoop;
 
   const bpm = song.bpm || 80;
   Tone.getTransport().bpm.value = bpm;
@@ -174,22 +258,23 @@ export function schedulePlayback(
       scheduledSlots.push({ measureIndex: mi, slotIndex: 1 });
     }
   }
+  scheduleStartBeat = (scheduledSlots[0]?.slotIndex ?? 0) * beatsPerSlot;
+  scheduleBeatsPerMeasure = beatsPerMeasure;
 
-  // Capture genre at schedule time. Reading song.genre directly (instead
-  // of a module-level global like the old `playbackGenre`) keeps the
-  // rhythm pattern lookup correct across Vite HMR, which would otherwise
-  // reset the global to null and silently route every genre to the
-  // [0, 2] fallback until the user re-picked the genre.
-  const songGenre = (song.genre ?? '').toLowerCase();
+  // The genre is read from the song at schedule time rather than from a
+  // module-level global, which Vite HMR would reset to null. Its comping
+  // rhythm plays unless the Play panel picked another one.
+  const genre = song.genre;
+  const genreRhythm = autoRhythmPreset(genre).pattern;
+  scheduledGenre = genre;
 
   // Record which sampled instruments this schedule will reach for, so
   // startPlayback() can wait on their CDN samples before rolling the
   // Transport. Resolved here rather than at trigger time because the
   // Transport callback runs too late to await anything.
-  pendingInstruments = [
-    harmonyOverride ?? harmonyInstrumentForGenre(songGenre),
-    arrangement?.bassInstrument ?? null,
-  ];
+  const harmonyInstrument = harmonyOverride ?? genreHarmonyInstrument(genre);
+  pendingInstruments = [harmonyInstrument, arrangement?.bassInstrument ?? null];
+  pendingPiano = harmonyInstrument === null && currentInstrument === 'piano';
 
   let time = 0;
   const scheduledDrumMeasures = new Set<number>();
@@ -200,9 +285,10 @@ export function schedulePlayback(
     const chord = measure.chords[slot.slotIndex];
     const slotTime = time;
 
-    // Schedule drums at the start of each distinct measure we encounter
-    if (!scheduledDrumMeasures.has(slot.measureIndex) && slot.slotIndex === 0) {
-      scheduleDrumMeasure(slotTime, secondsPerBeat, beatsPerMeasure);
+    // Drums for each measure from the first of its slots played here: the
+    // whole bar, or its second half when the schedule enters on slot 1.
+    if (!scheduledDrumMeasures.has(slot.measureIndex)) {
+      scheduleDrumMeasure(slotTime, secondsPerBeat, beatsPerMeasure, slot.slotIndex * beatsPerSlot * 4);
       scheduledDrumMeasures.add(slot.measureIndex);
     }
 
@@ -213,68 +299,40 @@ export function schedulePlayback(
     }, slotTime);
     scheduledEvents.push(eventId);
 
-    // Play chord — Pearl 2026-05-10: harmony follows the genre's comping
-    // rhythm pattern (was dumb block-on-slot before). Pattern is expanded
-    // per-slot so sparse 1-bar patterns (jazz Charleston `[0, 1.5]`,
-    // blues `[0]`) still strike both chord slots by mirroring slot 0's
-    // sub-pattern into slot 1. Strike duration auto-scales with density.
     if (chord) {
-      const chordRef = chord;
-      const harmonyPattern = GENRE_HARMONY_RHYTHM[songGenre] ?? [0, 2];
-      const expanded = expandPatternPerSlot(harmonyPattern, beatsPerSlot, beatsPerMeasure);
-      const positionsForThisSlot = expanded.filter(e => e.slotIdx === slot.slotIndex);
+      // Harmony: one event per HARMONY_GRID position inside this slot, plus
+      // the slot's own start (where Block strikes in any meter). Each asks
+      // the live rhythm (the pick, else the genre's) whether it strikes
+      // there, so a rhythm switch is heard from the next grid position. A
+      // strike lasts its harmonyStrikes() length at the tempo playing now.
+      // A slot with no strike position in the rhythm is not struck.
       const slotStartBeat = slot.slotIndex * beatsPerSlot;
-      const strikeDur = (beatsPerMeasure / Math.max(1, expanded.length)) * secondsPerBeat * 0.85;
-      for (const { pos } of positionsForThisSlot) {
-        const triggerTime = slotTime + (pos - slotStartBeat) * secondsPerBeat;
+      for (const pos of new Set([slotStartBeat, ...HARMONY_GRID])) {
+        if (pos < slotStartBeat || pos >= slotStartBeat + beatsPerSlot) continue;
         const noteEventId = Tone.getTransport().schedule((t) => {
-          const OPEN_STRINGS = [40, 45, 50, 55, 59, 64];
-          let voicing: number[];
-          if (currentInstrument === 'guitar') {
-            const frets = generateGuitarVoicing(chordRef);
-            voicing = frets
-              .map((f, i) => f >= 0 ? OPEN_STRINGS[i] + f : -1)
-              .filter(m => m >= 0);
-          } else {
-            voicing = resolvePianoVoicing(chordRef);
-          }
-          const sfInstrument = harmonyOverride ?? harmonyInstrumentForGenre(songGenre);
-          if (sfInstrument && playChordOnInstrument(sfInstrument, voicing, t, strikeDur, 0.7)) {
-            // smplr fired
-          } else {
-            const synth = getSynth();
-            const isSampler = (synth as { loaded?: boolean }).loaded !== undefined;
-            if (isSampler && !(synth as { loaded?: boolean }).loaded) {
-              return;
-            }
-            const notes = voicing.map(m => midiToFreq(m));
-            try {
-              synth.triggerAttackRelease(notes, strikeDur, t);
-            } catch (err) {
-              console.warn('chord trigger failed:', err);
-            }
-          }
-        }, triggerTime);
+          const rhythm = meterRhythm(harmonyRhythmOverride ?? genreRhythm, beatsPerMeasure);
+          const strike = harmonyStrikes(rhythm, beatsPerMeasure).find((s) => Math.abs(s.pos - pos) < 1e-9);
+          if (!strike) return;
+          // A swung "&" (drums.ts swingDelay) starts late and still ends on time.
+          const delay = swingDelay(pos);
+          strikeChord(chord, genre, t + delay, strike.dur * (60 / Tone.getTransport().bpm.value) - delay);
+        }, slotTime + (pos - slotStartBeat) * secondsPerBeat);
         scheduledEvents.push(noteEventId);
+      }
+
+      if (arrangement) {
+        scheduleBassSlot(arrangement, chord, slot.slotIndex, slotTime, beatsPerMeasure, secondsPerBeat, scheduledEvents);
       }
     }
 
     time += slotDuration;
   }
 
-  // Multi-track arrangement (bass + melody) — Pearl 2026-05-10. Only
-  // schedules when the caller explicitly passes events (MyPage Play
-  // button). Editor's regular play stays harmony + drum only — Pearl
-  // can opt the editor in later if desired.
-  if (arrangement) {
-    scheduleArrangement(arrangement, song, 0, secondsPerBeat, scheduledEvents);
-  }
-
   // End event — Tone v15 warns if scheduled callbacks call schedule-affecting
   // APIs (e.g. Transport.stop) without forwarding the passed-in `t`. Use the
   // precise scheduled time for the stop so timing stays sample-accurate.
   const endId = Tone.getTransport().schedule((t) => {
-    if (loopEnabled) {
+    if (loopEnabled && scheduleFollowsLoop) {
       Tone.getTransport().seconds = 0;
     } else {
       stopPlayback(t);
@@ -288,18 +346,35 @@ export function schedulePlayback(
   scheduledEvents.push(endId);
 }
 
-export async function startPlayback(): Promise<void> {
+/**
+ * Start the scheduled playback. Resolves true once the Transport rolls, or
+ * false, without starting, when the schedule was replaced, stopped or
+ * paused (cancelPendingStart) while it waited for audio and samples.
+ */
+export async function startPlayback(): Promise<boolean> {
+  const generation = scheduleGeneration;
   await Tone.start();
+  audioStarted = true;
   // Wait for the schedule's sampled instruments before rolling the
   // Transport, so bar 1 plays on the real instrument instead of the synth
   // fallback. Bounded internally — a 404 name or dead CDN still starts.
-  await preloadInstruments(pendingInstruments);
+  await Promise.all([preloadInstruments(pendingInstruments), pendingPiano ? pianoLoaded() : undefined]);
+  if (generation !== scheduleGeneration) return false;
   Tone.getTransport().start();
   isPlaying = true;
   isPaused = false;
+  return true;
 }
 
+/** A startPlayback() still waiting on samples will not start. */
+export function cancelPendingStart(): void {
+  scheduleGeneration++;
+}
+
+/** Pause; a schedule that has not started yet stays paused at its start,
+ *  so resumePlayback() plays it from there. */
 export function pausePlayback(): void {
+  cancelPendingStart();
   Tone.getTransport().pause();
   isPlaying = false;
   isPaused = true;
@@ -315,6 +390,7 @@ export function stopPlayback(time?: number): void {
   // When called from inside a Transport callback, `time` should be the
   // scheduled-event time so Tone v15 doesn't warn about inaccurate timing.
   // External callers (UI buttons) pass nothing → undefined defers to "now".
+  cancelPendingStart();
   Tone.getTransport().stop(time);
   Tone.getTransport().seconds = 0;
   clearSchedule();
@@ -344,7 +420,18 @@ export function getCurrentMeasureIndex(): number {
   return currentMeasureIndex;
 }
 
-export function setCurrentInstrument(instrument: Instrument): void {
+/** The step of the bar playing now — a 16th by default — for the Play
+ *  panel's LED playheads; null while stopped or paused. */
+export function getPlaybackStep(stepsPerBeat = 4): number | null {
+  if (!isPlaying) return null;
+  const transport = Tone.getTransport();
+  // The position being heard now: Transport.ticks reads a look-ahead (~0.1 s) ahead of it.
+  const beat = transport.getTicksAtTime(Tone.immediate()) / transport.PPQ + scheduleStartBeat;
+  const steps = Math.max(1, Math.round(scheduleBeatsPerMeasure * stepsPerBeat));
+  return Math.floor(beat * stepsPerBeat) % steps;
+}
+
+export function setCurrentInstrument(instrument: VoicingMode): void {
   currentInstrument = instrument;
 }
 

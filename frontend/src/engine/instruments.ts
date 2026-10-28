@@ -15,12 +15,15 @@
  *
  * Boundary (revised 2026-05-09):
  *   Artist owns the genre→instrument decision. Voyager only sends genre.
- *   GENRE_HARMONY_INSTRUMENT below is the authoritative map for the
- *   harmony layer — when R4 multi-track lands, equivalent maps for bass +
- *   melody join.
+ *   GENRE_HARMONY_INSTRUMENT / GENRE_BASS_INSTRUMENT (genreTables.ts) are
+ *   the authoritative maps for the harmony and bass layers.
  */
 import * as Tone from 'tone';
 import { Soundfont, SplendidGrandPiano, ElectricPiano } from 'smplr';
+import { GENRE_BASS_INSTRUMENT, GENRE_HARMONY_INSTRUMENT } from './genreTables';
+
+// The genre → instrument tables live in genreTables.ts (pure data).
+export { GENRE_BASS_INSTRUMENT, GENRE_HARMONY_INSTRUMENT } from './genreTables';
 
 /**
  * Pearl 2026-05-09 — Logic Pro 퀄리티 요청. Tier-1 (curated, high quality):
@@ -130,53 +133,10 @@ export function preloadInstruments(
   ]);
 }
 
-/**
- * 13-genre → harmony-layer GM instrument (Pearl 2026-05-09).
- * Phase 2b — covers harmony only. Bass + melody maps land with R4 multi-track.
- */
-export const GENRE_HARMONY_INSTRUMENT: Record<string, string> = {
-  jazz:       'electric_piano_1',     // Rhodes — jazz comping standard
-  pop:        'acoustic_grand_piano',
-  rock:       'overdriven_guitar',
-  blues:      'electric_guitar_clean',
-  bossa:      'acoustic_guitar_nylon', // Brazilian classical-style nylon
-  classical:  'acoustic_grand_piano',
-  country:    'acoustic_guitar_steel',
-  rnb_soul:   'electric_piano_1',     // Rhodes (R&B/neo-soul standard)
-  hip_hop:    'electric_piano_1',     // Soulful chord pads under hip-hop
-  electronic: 'pad_2_warm',           // Synth pad
-  funk:       'electric_guitar_clean', // Funky comping rhythm guitar
-  folk:       'acoustic_guitar_steel',
-  gospel:     'drawbar_organ',        // Hammond-style drawbar organ (GM 16)
-};
-
 export function harmonyInstrumentForGenre(genre: string | null | undefined): string | null {
   if (!genre) return null;
   return GENRE_HARMONY_INSTRUMENT[genre.toLowerCase()] ?? null;
 }
-
-/**
- * 13-genre → bass-layer GM instrument (Pearl 2026-05-10 R4 MVP).
- * Pearl scoped to two organic options: orchestral contrabass (upright) OR
- * electric bass (P-bass/J-bass fingerstyle). Synth-bass / slap-bass are
- * achievable later via instrument swap on the same map. Choices follow
- * recording-convention norms for each genre.
- */
-export const GENRE_BASS_INSTRUMENT: Record<string, string> = {
-  jazz:       'contrabass',           // upright = jazz ensemble standard
-  pop:        'electric_bass_finger', // modern pop = J-bass fingerstyle
-  rock:       'electric_bass_finger', // P/J-bass, drives the rhythm section
-  blues:      'electric_bass_finger', // modern blues bands
-  bossa:      'contrabass',           // bossa nova = nylon + upright (Jobim)
-  classical:  'contrabass',           // orchestral double bass
-  country:    'electric_bass_finger', // modern country = electric (older = upright)
-  rnb_soul:   'electric_bass_finger', // R&B / neo-soul fingerstyle
-  hip_hop:    'electric_bass_finger', // bass synth conceptually but staying organic
-  electronic: 'electric_bass_finger', // synth-bass would be ideal; staying organic per Pearl scope
-  funk:       'electric_bass_finger', // funk = slap eventually; for now fingerstyle root
-  folk:       'contrabass',           // bluegrass / traditional folk = upright
-  gospel:     'electric_bass_finger', // modern gospel = electric
-};
 
 export function bassInstrumentForGenre(genre: string | null | undefined): string | null {
   if (!genre) return null;
@@ -184,8 +144,8 @@ export function bassInstrumentForGenre(genre: string | null | undefined): string
 }
 
 // Melody layer dropped 2026-05-10 — see arrangement.ts header for
-// rationale. Harmony's instrument-override grid (VoicingViewer) absorbs
-// the variety role melody used to provide.
+// rationale. The Play panel's harmony instrument picker absorbs the
+// variety role melody used to provide.
 
 /**
  * Trigger a chord (one or more MIDI note numbers) on a specific GM instrument.
