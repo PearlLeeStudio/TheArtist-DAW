@@ -9,8 +9,8 @@ import {
   HARMONY_GRID,
   autoRhythmPreset,
   genreHarmonyInstrument,
-  harmonyStrikes,
-  meterRhythm,
+  harmonyStrikesForChords,
+  secondsPerMeterBeat,
 } from './playSettings';
 import type { EnginePlayConfig, VoicingMode } from './playSettings';
 
@@ -248,7 +248,8 @@ export function schedulePlayback(
 
   const beatsPerMeasure = song.timeSignature[0];
   const beatsPerSlot = beatsPerMeasure / 2;
-  const secondsPerBeat = 60 / bpm;
+  const beatUnit = 4 / song.timeSignature[1];
+  const secondsPerBeat = secondsPerMeterBeat(bpm, song.timeSignature[1]);
   const slotDuration = beatsPerSlot * secondsPerBeat;
 
   // Determine which slots to play
@@ -292,7 +293,7 @@ export function schedulePlayback(
     // Drums for each measure from the first of its slots played here: the
     // whole bar, or its second half when the schedule enters on slot 1.
     if (!scheduledDrumMeasures.has(slot.measureIndex)) {
-      scheduleDrumMeasure(slotTime, secondsPerBeat, beatsPerMeasure, slot.slotIndex * beatsPerSlot * 4);
+      scheduleDrumMeasure(slotTime, secondsPerBeat, beatsPerMeasure, slot.slotIndex * beatsPerSlot * 4, beatUnit);
       scheduledDrumMeasures.add(slot.measureIndex);
     }
 
@@ -309,23 +310,27 @@ export function schedulePlayback(
       // the live rhythm (the pick, else the genre's) whether it strikes
       // there, so a rhythm switch is heard from the next grid position. A
       // strike lasts its harmonyStrikes() length at the tempo playing now.
-      // A slot with no strike position in the rhythm is not struck.
+      // Sparse rhythms add one boundary strike when a different second chord
+      // would otherwise be omitted (also when previewing only that slot).
+      const audibleChords = measure.chords.map((c, si) =>
+        scheduledSlots.some((s) => s.measureIndex === slot.measureIndex && s.slotIndex === si) ? c : null,
+      );
       const slotStartBeat = slot.slotIndex * beatsPerSlot;
       for (const pos of new Set([slotStartBeat, ...HARMONY_GRID])) {
         if (pos < slotStartBeat || pos >= slotStartBeat + beatsPerSlot) continue;
         const noteEventId = Tone.getTransport().schedule((t) => {
-          const rhythm = meterRhythm(harmonyRhythmOverride ?? genreRhythm, beatsPerMeasure);
-          const strike = harmonyStrikes(rhythm, beatsPerMeasure).find((s) => Math.abs(s.pos - pos) < 1e-9);
+          const strike = harmonyStrikesForChords(harmonyRhythmOverride ?? genreRhythm, beatsPerMeasure, audibleChords)
+            .find((s) => Math.abs(s.pos - pos) < 1e-9);
           if (!strike) return;
           // A swung "&" (drums.ts swingDelay) starts late and still ends on time.
-          const delay = swingDelay(pos);
-          strikeChord(chord, genre, t + delay, strike.dur * (60 / Tone.getTransport().bpm.value) - delay);
+          const delay = swingDelay(pos, beatUnit);
+          strikeChord(chord, genre, t + delay, strike.dur * secondsPerMeterBeat(Tone.getTransport().bpm.value, song.timeSignature[1]) - delay);
         }, slotTime + (pos - slotStartBeat) * secondsPerBeat);
         scheduledEvents.push(noteEventId);
       }
 
       if (arrangement) {
-        scheduleBassSlot(arrangement, chord, slot.slotIndex, slotTime, beatsPerMeasure, secondsPerBeat, scheduledEvents);
+        scheduleBassSlot(arrangement, chord, slot.slotIndex, slotTime, beatsPerMeasure, secondsPerBeat, scheduledEvents, beatUnit);
       }
     }
 

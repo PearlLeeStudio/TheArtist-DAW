@@ -100,6 +100,7 @@ export function scheduleBassSlot(
   beatsPerMeasure: number,
   secondsPerBeat: number,
   scheduledIds: number[],
+  beatUnit = 1,
 ): void {
   const bassMidi = bassNoteFor(chord);
   if (bassMidi === null) return;
@@ -111,8 +112,11 @@ export function scheduleBassSlot(
     const id = Tone.getTransport().schedule((t) => {
       if (!bassEnabled) return;
       // ~a quarter at the tempo playing now (the BPM knob changes it live).
-      const dur = 0.9 * (60 / Tone.getTransport().bpm.value);
-      playChordOnInstrument(arrangement.bassInstrument, [bassMidi], t + swingDelay(pos), dur, 0.6, 'bass');
+      const next = pattern.filter((p) => p > pos && p < beatsPerMeasure).sort((a, b) => a - b)[0] ?? beatsPerMeasure;
+      const seconds = (60 * beatUnit) / Tone.getTransport().bpm.value;
+      const delay = swingDelay(pos, beatUnit);
+      const dur = Math.max(0.01, Math.min(0.9, next - pos, slotStartBeat + beatsPerSlot - pos) * seconds - delay);
+      playChordOnInstrument(arrangement.bassInstrument, [bassMidi], t + delay, dur, 0.6, 'bass');
     }, slotTime + (pos - slotStartBeat) * secondsPerBeat);
     scheduledIds.push(id);
   }

@@ -12,8 +12,8 @@ symbolic events (harmony / bass / drum) plus a convenience MIDI render.
   - drum: a DRUM_PATTERNS voice/timing pattern (the genre's unless the
     caller passes one or turns the drums off)
 
-Rhythm patterns are 1-bar literal — if a slot has no pattern position
-landing in it, that slot's chord simply isn't struck.
+Sparse rhythms add a boundary strike when a different second chord would
+otherwise be omitted. Repeated single-chord bars retain the original rhythm.
 """
 
 from __future__ import annotations
@@ -96,13 +96,24 @@ def build_harmony_events(
     positions, e.g. a HARMONY_RHYTHM_PRESETS entry's), else the genre's.
     Strike lengths come from harmony_strikes (sparse → sustained, dense →
     stabby, never into the next strike)."""
-    strikes = harmony_strikes(pattern if pattern is not None else harmony_pattern(genre), beats_per_measure)
+    base_pattern = pattern if pattern is not None else harmony_pattern(genre)
     beats_per_slot = beats_per_measure / 2
 
     events: list[dict] = []
     for bar_idx, bar in enumerate(bars):
         chords = bar.get("chords") or []
+        positions = [pos for pos, _ in harmony_strikes(base_pattern, beats_per_measure)]
+        first = _slot_chord(chords, 0, beats_per_slot)
+        second = _slot_chord(chords, beats_per_slot, beats_per_slot)
+        changed = first != second
+        if positions and first and not any(pos < beats_per_slot for pos in positions):
+            positions.append(0)
+        if positions and second and changed and not any(pos >= beats_per_slot for pos in positions):
+            positions.append(beats_per_slot)
+        strikes = harmony_strikes(positions, beats_per_measure)
         for pos, dur in strikes:
+            if changed and pos < beats_per_slot:
+                dur = min(dur, beats_per_slot - pos)
             chord_sym = _slot_chord(chords, pos, beats_per_slot)
             if not chord_sym:
                 continue

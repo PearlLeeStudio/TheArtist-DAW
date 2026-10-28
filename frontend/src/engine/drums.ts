@@ -372,11 +372,11 @@ export function getCurrentDrumPattern(): number | null {
  * Read when the note fires, so a pattern switch or the BPM knob applies
  * from the next note.
  */
-export function swingDelay(beatInBar: number): number {
+export function swingDelay(beatInBar: number, beatUnit = 1): number {
   const swing = drumPatternById(currentPatternId)?.swing ?? 0;
   if (swing <= 0) return 0;
   const offBeat = Math.abs(beatInBar - Math.floor(beatInBar) - 0.5) < 1e-9;
-  return offBeat ? (swing * 60) / Tone.getTransport().bpm.value : 0;
+  return offBeat ? (swing * 60 * beatUnit) / Tone.getTransport().bpm.value : 0;
 }
 
 // ---------- Scheduling ----------
@@ -402,6 +402,7 @@ export function scheduleDrumMeasure(
   secondsPerBeat: number,
   beatsPerMeasure: number,
   startStep = 0,
+  beatUnit = 1,
 ): void {
   ensureSynths();
   const sixteenthDur = secondsPerBeat / 4;
@@ -412,7 +413,7 @@ export function scheduleDrumMeasure(
     const id = Tone.getTransport().schedule((t) => {
       const pattern = drumPatternById(currentPatternId);
       if (!pattern) return;  // drums off
-      const when = t + swingDelay(pos / 4);
+      const when = t + swingDelay(pos / 4, beatUnit);
       const kit = pattern.kit ?? 'acoustic';
       for (const [voice, hits] of Object.entries(pattern.voices) as [DrumVoice, DrumHit[]][]) {
         if (!hits) continue;

@@ -32,7 +32,7 @@ CLIENT = TestClient(app.main.app)
 SONG = "/api/generate/song"
 BARS = [{"chords": ["Cmaj7", "Am7"]}, {"chords": ["Dm7", "G7"]}]
 RESPONSE_KEYS = {"genre", "key", "bpm", "time_signature", "harmony_rhythm", "drum_pattern",
-                 "bars", "tracks", "midi_b64", "model_used"}
+                 "bars", "tracks", "midi_b64", "model_used", "seed"}
 
 
 def strikes(track: dict) -> set[tuple[int, float, float]]:
@@ -79,11 +79,13 @@ class SongApiTest(unittest.TestCase):
         self.assertEqual(res.status_code, 200)
         data = res.json()
         self.assertEqual(set(data), RESPONSE_KEYS)
+        self.assertIsNone(data["seed"])
         self.assertEqual((data["harmony_rhythm"], data["drum_pattern"]), ("charleston", 4))
         harmony = data["tracks"]["harmony"]
         self.assertEqual(harmony["instrument"], "electric_piano_1")
-        # Charleston [0, 1.5]: average spacing 2; gaps 1.5 and 2.5 (to the next bar's beat 0).
-        self.assertEqual(strikes(harmony), {(bar, 0.0, 1.275) for bar in (0, 1)} | {(bar, 1.5, 1.7) for bar in (0, 1)})
+        # A different second chord adds the half-bar strike to Charleston.
+        self.assertEqual(strikes(harmony), {(bar, pos, dur) for bar in (0, 1)
+                                          for pos, dur in [(0.0, 1.133333333), (1.5, 0.425), (2.0, 1.133333333)]})
         self.assertEqual(data["tracks"]["drum"]["instrument"], "gm_drum_kit")
         self.assertEqual(midi_programs(data), [(0, 4), (1, 32)])   # electric piano, upright bass
 
@@ -110,6 +112,9 @@ class SongApiTest(unittest.TestCase):
         self.assertEqual(at_2_5, sorted(_harmony_voicing("Am7")))
 
     def test_every_rhythm_preset_strikes_its_positions(self):
+        # With no chord change, sparse presets retain their literal rhythm.
+        self.generate.side_effect = lambda **_: ([{"chords": ["Cmaj7", "Cmaj7"]},
+                                                  {"chords": ["Dm7", "Dm7"]}], "rules")
         for preset in HARMONY_RHYTHM_PRESETS:
             with self.subTest(preset=preset["id"]):
                 data = self.post(genre="pop", harmony_rhythm=preset["id"]).json()

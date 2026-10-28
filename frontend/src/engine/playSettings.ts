@@ -6,6 +6,7 @@
  * session replay exactly like the editor.
  */
 import type {
+  Chord,
   DrumMode,
   PlaySettings,
   SessionGenerationContext,
@@ -156,6 +157,29 @@ export function harmonyStrikes(pattern: number[], beatsPerMeasure: number): { po
     const next = i + 1 < positions.length ? positions[i + 1] : positions[0] + beatsPerMeasure;
     return { pos, dur: 0.85 * Math.min(average, next - pos) };
   });
+}
+
+/** Sparse presets keep their feel, but never omit a different second chord. */
+export function harmonyStrikesForChords(
+  pattern: number[], beatsPerMeasure: number, chords: readonly (Chord | null)[],
+): { pos: number; dur: number }[] {
+  const positions = meterRhythm(pattern, beatsPerMeasure).filter((p) => p >= 0 && p < beatsPerMeasure);
+  if (!positions.length) return [];
+  const half = beatsPerMeasure / 2;
+  const identity = (chord: Chord | null | undefined) => chord
+    ? [chord.root, chord.quality, chord.bass ?? '', ...chord.extensions].join('|') : '';
+  const changed = identity(chords[0]) !== identity(chords[1]);
+  if (chords[0] && !positions.some((p) => p < half)) positions.push(0);
+  if (chords[1] && changed && !positions.some((p) => p >= half)) positions.push(half);
+  return harmonyStrikes(positions, beatsPerMeasure).map((strike) => ({
+    ...strike,
+    dur: changed && strike.pos < half ? Math.min(strike.dur, half - strike.pos) : strike.dur,
+  }));
+}
+
+/** BPM is quarter notes/minute; pattern positions use the written meter unit. */
+export function secondsPerMeterBeat(bpm: number, denominator: number): number {
+  return (60 / bpm) * (4 / denominator);
 }
 
 /** Where the second chord slot starts in a 4/4 bar. */
