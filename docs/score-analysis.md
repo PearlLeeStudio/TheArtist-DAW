@@ -47,6 +47,10 @@ Candidates include triads, sevenths and supported extensions, inversions, note
 evidence and key-relative Roman numerals. Written roots determine borrowed or
 altered scale degrees. Confidence is a heuristic, not a measured accuracy rate.
 Unknown rhythm limits confidence instead of being treated as an exact performance.
+Roman numerals describe the chord root and quality relative to the selected key
+(C, Am, G7 in C major become I, vi, V7). They do not automatically establish
+secondary-dominant functions such as V7/vi, tritone-substitution functions or
+local modulations; those need a separate analysis of the surrounding progression.
 
 ## Optional Meta assistance
 
