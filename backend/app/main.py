@@ -9,6 +9,7 @@ from app.routes.chords import router as chords_router
 from app.routes.models import router as models_router
 from app.routes.song import router as song_router
 from app.routes.score_import import router as score_import_router
+from app.routes.export import router as export_router
 
 # Surface app.* INFO-level logs (model load, rerank breakdown, RAG init,
 # etc.) — uvicorn's default config filters them otherwise.
@@ -36,6 +37,7 @@ app.include_router(chords_router, prefix="/api")
 app.include_router(models_router, prefix="/api")
 app.include_router(song_router, prefix="/api")
 app.include_router(score_import_router, prefix="/api")
+app.include_router(export_router, prefix="/api")
 
 
 @app.get("/api/health")

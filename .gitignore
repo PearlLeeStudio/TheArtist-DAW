@@ -54,3 +54,6 @@ model/**/embedding_extension.pt
 
 # Local LLM spend ledger (request ids, token counts, costs)
 backend/.ledger/
+
+# Local MIDI handoff files; created only when opening a DAW
+backend/.exports/
