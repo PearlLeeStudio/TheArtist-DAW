@@ -62,15 +62,10 @@ export function isDiatonic(chord: Chord, key: string): boolean {
  * (in-key) interpretations float to the top, then ties break on the
  * candidates' original ordering (note-match score from `detectChordCandidates`).
  *
- * `_prevChord` / `_nextChord` are reserved for future cadential heuristics
- * (V→I bonus, ii→V setup bonus, etc.); v1 ignores them but the signature
- * is stable.
  */
 export function rankCandidatesByContext(
   candidates: Chord[],
   key: string,
-  _prevChord?: Chord | null,
-  _nextChord?: Chord | null,
 ): Chord[] {
   return [...candidates].sort((a, b) => {
     const aDiatonic = isDiatonic(a, key) ? 1 : 0;

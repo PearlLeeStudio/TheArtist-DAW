@@ -14,7 +14,8 @@ const PALETTES = {
   dark: { background: '#0a0a0a', ink: '#eaeaea', chord: '#d6d6d6', muted: '#9e9e9e' },
 };
 type Palette = typeof PALETTES.light;
-type DrawingContext = CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
+// VexFlow supplies its own OffscreenCanvas type. Use its actual context contract.
+type DrawingContext = CanvasContext['context2D'];
 const KEY_SIGS: Record<string, string> = {
   'C major': 'C', 'G major': 'G', 'D major': 'D', 'A major': 'A', 'E major': 'E',
   'B major': 'B', 'F# major': 'F#', 'Gb major': 'Gb', 'Db major': 'Db', 'C# major': 'C#',

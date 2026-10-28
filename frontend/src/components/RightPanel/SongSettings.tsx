@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useSongStore } from '../../store/songStore';
 
 const ALL_KEYS = [
@@ -59,13 +59,12 @@ export default function SongSettings() {
   const setTimeSignature = useSongStore((s) => s.setTimeSignature);
   const setGenre = useSongStore((s) => s.setGenre);
 
-  const [bpmDraft, setBpmDraft] = useState(String(song.bpm));
-  useEffect(() => { setBpmDraft(String(song.bpm)); }, [song.bpm]);
+  const [bpmDraft, setBpmDraft] = useState<string | null>(null);
 
   const commitBpm = () => {
-    const n = Number(bpmDraft);
+    const n = Number(bpmDraft ?? song.bpm);
     if (Number.isFinite(n) && n > 0) setBpm(n);
-    else setBpmDraft(String(song.bpm));
+    setBpmDraft(null);
   };
 
   return (
@@ -74,7 +73,7 @@ export default function SongSettings() {
         <span className="text-[10px] uppercase tracking-wide font-semibold" style={labelStyle}>BPM</span>
         <input
           type="number"
-          value={bpmDraft}
+          value={bpmDraft ?? String(song.bpm)}
           onChange={(e) => setBpmDraft(e.target.value)}
           onBlur={commitBpm}
           onKeyDown={(e) => {
