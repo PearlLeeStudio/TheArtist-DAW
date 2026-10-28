@@ -7,6 +7,9 @@ Working repository of TheArtist for the Meta Global AI Developer Hackathon
 ## Ground rules
 - Do the work directly. Do not route tasks through agent skills or slash-command workflows.
 - Shell commands use absolute paths only (no `cd`, no computed paths); git as `git -C <absolute repo path> …`.
+- Read only inside the project tree you were started in (and its subfolders) plus the session scratch directory.
+  Never read the user's home directory, other volumes or other projects, even when a tool would allow it.
+  Inside the project tree, read freely without asking.
 - Everything up to the git tag `baseline` is pre-existing (the public TheArtist release snapshot).
   Hackathon work is every commit after it. Each landed feature gets a row in `HACKATHON.md`.
 - Commit here only for files in this repo, when a unit of work is done: `type(scope): description`,
@@ -17,6 +20,9 @@ Working repository of TheArtist for the Meta Global AI Developer Hackathon
 - Meta Model API: Standard model IDs (`muse-spark-1.3`), never Contributor mode. Every call has a request
   timeout, a max-turn count and a cost cap enforced in code, and logs request IDs and token usage.
   Failures are shown as failures, never hidden behind a fallback that looks like success.
+- Runtime AI in the product is the TheArtist Music Transformer plus Meta models only (Muse Spark through the
+  Meta Model API; Meta open weights such as Muse Spark Open, Muse Glimmer or Llama through a partner or locally).
+  Other vendors' models are development tools only and are never called from product code.
 - Licenses stay as released: code MIT; model weights and training data CC BY-NC 4.0 (portfolio, demo and research use).
 - Before claiming done (no `cd`): `npm --prefix <repo>/frontend run build` and `run lint`,
   `uv run --directory <repo>/backend python -c "import app.main"`, plus the tests the task names.
