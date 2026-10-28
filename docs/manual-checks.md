@@ -1,0 +1,63 @@
+# Browser, audio and DAW checks
+
+These checks are pending. Automated validation does not establish visual quality,
+MIDI-device behavior, audible balance, PDF appearance or DAW compatibility.
+
+Restart the backend after installing its updated dependencies, then refresh the
+frontend. New import/export/MCP routes require the new backend process. Safari can
+exercise the score and audio workflow; use Chrome for Web MIDI.
+
+## Import and revise
+
+- [ ] Import Score is immediately left of New from Song Form. Load a chord-symbol
+  PDF and an image; compare each measure with the source preview before confirming.
+  The synthetic `backend/tests/fixtures/score-import.png` is a small starter case.
+- [ ] Verify one-chord expansion, unknown key/meter, unsupported chord names and
+  zero or three-plus symbols in a bar. A correction is required rather than silently
+  discarding symbols. Cancel, close and replace files while a request is running.
+- [ ] Explicit and inferred sections remain distinguishable. Edit labels, types and
+  boundaries; reject overlaps and invalid ranges. Clicking a section label selects it.
+- [ ] Drag a passage, Generate, and compare Original/A/B/C audibly with identical
+  settings. Restore Original, including voicings and rests. Changes outside the
+  selection survive. Replacing a score cannot apply an old in-flight result.
+- [ ] Import/Open preserves current work in Projects. Save, refresh, Open, export
+  project JSON and import it again. Chords, sections and four mixer levels survive.
+  Invalid JSON and storage errors remain visible without replacing current work.
+
+## Play and controller
+
+- [ ] At 1366×768 and 1366×660, with panel width 300–320 px, all five panes and four
+  48px mixer knobs fit. Check dark/light contrast, labels and readable values.
+- [ ] First Play works in Safari. Adjust Master/Harmony/Bass/Drums while notes ring;
+  each part at zero mutes independently, and Master at zero mutes everything.
+  Check drag, Shift-drag, wheel, arrow keys and double-click defaults.
+- [ ] Compare all 13 harmony rhythms using different first/second chords, especially
+  Charleston and Half. Check slash bass, second-slot-only preview, 3/4 and 6/8 tempo,
+  swing, live preset changes, pause/resume, seek, stop and loop.
+- [ ] In Chrome, enable MIDI, switch to Play → Visual and keep seeing incoming notes
+  without writing chords. Return to Input → MIDI for capture. Test early release,
+  a changed held voicing, fewer than three held notes, device unplug/reconnect,
+  panel collapse, a modal and a new song while notes are held.
+
+## Files and DAW
+
+- [ ] Download MIDI; import into Logic. Confirm Harmony/Bass/Drums, tempo, actual
+  meter, markers, voicings, rests, swing, muted parts and no stuck notes. MIDI carries
+  editable notes and GM/controller hints; DAW instrument sound may differ.
+- [ ] Use Open in Logic and Ableton reveal/drag. Test a missing DAW and a backend
+  error. Hosted clients must still offer MIDI download.
+- [ ] Export PDF with 4/8/28/29/64 bars in light, dark and current themes. Inspect
+  first cold load, all keys, slash chords, diminished/half-diminished symbols, Korean
+  titles, section boundaries and page breaks. No crop, missing glyph or work date.
+
+## Automated evidence
+
+Frontend: 94 tests passed; TypeScript/Vite build and ESLint passed. The build still
+reports the existing large-chunk warning. Backend: 173 tests passed and app import
+passed. These include MIDI parsing, API errors, score-import mocks, real SDK MCP
+round trips and CPU seed isolation. TheVoyager adapter has five mock contract tests;
+its live service/complete rendering loop is not verified by those tests.
+
+The real Meta import [record](../experiments/meta/score_import_smoke.json) covers one
+synthetic PNG, not a PDF or a representative score collection. Actual browser,
+MIDI hardware and Logic/Ableton checks above remain unchecked.

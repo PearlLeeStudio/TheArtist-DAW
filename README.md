@@ -1,7 +1,7 @@
 <h1 align="center">TheArtist</h1>
 
 <p align="center">
-  <em>An AI chord-composition tool for musicians — write progressions on an interactive staff, get suggestions from a custom-trained Music Transformer, and see voice-leading visualised in real time.</em>
+  <em>Bring in a chord score, develop a selected passage with a custom Music Transformer, compare it with the original, and take the arrangement into your DAW.</em>
 </p>
 
 <p align="center">
@@ -14,12 +14,50 @@
   <img alt="Stack" src="https://img.shields.io/badge/stack-React%2019%20%C2%B7%20FastAPI%20%C2%B7%20PyTorch-1c1917?style=flat-square">
 </p>
 
+## Hackathon workflow
+
+**Import Score → review chords and song form → select a passage → Original/A/B/C
+→ arrange in Play → export MIDI or PDF.** Meta Muse Spark reads chord symbols
+from a PDF or image; the author's Music Transformer generates chord candidates.
+The musician corrects the import, chooses the passage and keeps the version they want.
+
+The [hackathon work log](HACKATHON.md) separates these additions from the existing
+editor and trained models. The screenshots and linked video below show the
+**baseline**, before Import Score and the new Play/Controller panel.
+Automated checks pass; browser/audio checks, PDF appearance and actual DAW import
+remain on the [manual checklist](docs/manual-checks.md).
+
+- **Import Score**, immediately left of **New from Song Form**, accepts one
+  chord-symbol PDF, PNG, JPEG or WebP up to 8 MiB. Review the source alongside its
+  extracted chords, meter, key and sections. Unknown values and unsupported chord
+  counts must be corrected before loading. This is not notes-only harmonization.
+- **Sections** preserves explicit versus inferred labels, lets you edit boundaries,
+  and selects a region by its staff label. **Original/A/B/C** changes only the chosen
+  slots and can restore the exact original voicings.
+- **Projects** saves work in this browser and supports project JSON backup/import.
+  Loading another score first preserves the current work. There is no account or
+  cloud synchronization.
+- **Play → CTRL** balances Master, Harmony, Bass and Drums independently, alongside
+  13 harmony rhythms and 15 drum patterns. Sparse rhythms still play a different
+  second chord in the bar.
+- **Export** downloads editable, three-part MIDI with tempo, meter, section markers
+  and mixer levels, or an A4 score PDF. Local Logic opening and Ableton file reveal
+  use the local backend; hosted clients can download MIDI.
+- The same service is available through [REST and MCP](docs/mcp.md). TheVoyager has
+  a thin MCP adapter; a native DAW plugin is a future separate client.
+
+The [real Meta smoke record](experiments/meta/score_import_smoke.json) matched all
+eight symbols and both explicit sections in an original four-bar PNG fixture:
+5.62 seconds, $0.007285. It is one simple example, not a score-recognition benchmark.
+Meta import errors stay visible and each call has a timeout, cost reservation and
+usage/request-ID record. Set `MODEL_API_KEY` on the backend for this feature.
+
 <p align="center">
   <img src="screenshot/01-main-light.png" alt="TheArtist — main view with chord progression and voicing keyboard (light theme)" width="100%">
 </p>
 
 <p align="center"><sub>
-Interactive staff (left) with chord progression · resizable right panel (right) with playback, drums, voicing, and MIDI / AI / manual input · Music Transformer suggestions ranked by Sethares physics + dual-corpus theory retrieval (Berklee Jazz + Open Music Theory).
+Baseline editor screenshot: interactive staff, voicing and MIDI / AI / manual input. The hackathon build adds score import, selection comparison, Play controls and export; theory corpora are not shipped or used in its demo.
 </sub></p>
 
 <p align="center">
@@ -29,7 +67,7 @@ Interactive staff (left) with chord progression · resizable right panel (right)
 </p>
 
 <p align="center"><sub>
-▶ <a href="https://youtu.be/iSDj4VK9nKc">Watch the demo on YouTube</a> — staff editor, MIDI hold-to-commit, AI generation with live SSE progress, voice-leading inversions, and per-genre LoRA playback across the 13-genre vocabulary.
+▶ <a href="https://youtu.be/iSDj4VK9nKc">Watch the baseline demo on YouTube</a> — existing staff editor, MIDI input and generation; this is not the hackathon submission video.
 </sub></p>
 
 ## Links
@@ -50,7 +88,7 @@ Interactive staff (left) with chord progression · resizable right panel (right)
 | **Compose on a staff** | VexFlow notation, click to select measures, drag-select ranges, slash-chord support |
 | **Generate with a paper-trained model** | F1 default (10K pop mix); the released F1 base is weight-identical to the Phase 0 pop baseline (~84.2% pop / 72.9% jazz top-1 — a checkpoint-selection artifact), and the selection-corrected `ft_f1_v2` retrain (83.7% pop / 80.3% jazz) restores the jazz adaptation; F1–F5 + F1 v2 + Phase 0 baseline + 11 LoRA adapters (13-genre vocabulary) selectable |
 | **Live progress streaming** | `/api/generate/stream` SSE pipeline shows each phase (Read → Load → Compose → Rank → Voice → Theory → Done) as the model thinks |
-| **Two-axis rerank** | R1 — Sethares sensory roughness (physics) · R2 — music theory retrieval over Berklee Book of Jazz Harmony + Open Music Theory v2 (jazz-family genres → Berklee, classical → OMT, merge by distance). Both scores combine into the Option A/B/C ordering. |
+| **Candidate ranking** | R1 — Sethares sensory roughness. The baseline R2 retrieval pipeline is retained for research; its corpora and indices are not shipped or used in the hackathon demo. |
 | **Voice-leading inversions** | Post-process injects slash-chord inversions (e.g. `Am7/C`) where they smooth the bass line — the LM only emits root-position chords, voice leading is added on top |
 | **MIDI input with confirm flow** | Hold a chord ≥3 s → auto-commit · release early → Confirm card with root-cycling chips, slash-chord inversion detection, and a 3-chord transition view (prev → curr → next + voice-leading arrows) |
 | **Audio playback** | Tone.js + smplr — sampled piano, GM guitars / keys / strings, and 15 drum pattern presets. Switch instruments live mid-playback. |
@@ -89,7 +127,7 @@ Drag vertically, scroll, or use the arrow keys to change a level; hold Shift
 while dragging for fine adjustment. Double-click a knob to restore its default.
 Levels change the audio output, including notes already ringing. Harmony and
 Bass remain independent even when they use the same instrument. Save preserves
-the mix for MyPage playback, Load and session JSON export/import; old sessions
+the mix for Projects playback, Open and project JSON export/import; old sessions
 retain their previous levels.
 
 ### Dark + light themes
@@ -112,7 +150,29 @@ knob caps give the Play panel depth while the staff keeps its classical styling.
 
 ## Architecture
 
-### High level
+### Shared hackathon service
+
+```mermaid
+flowchart LR
+  Score["Chord-symbol PDF / image"] --> Meta["Meta Muse Spark · bounded extraction"]
+  Meta --> Review["Review chords and song form"]
+  Review --> Editor["Staff · selection · Original/A/B/C"]
+  Editor --> Rest["REST / streaming"]
+  Voyager["TheVoyager thin client"] --> MCP["MCP /mcp/"]
+  Plugin["Future native plugin"] -.-> MCP
+  Rest --> Music["Shared inference and arrangement services"]
+  MCP --> Music
+  Music --> MT["Own Music Transformer"]
+  Music --> MIDI["Editable MIDI · local DAW handoff"]
+  Editor --> Play["Play · four-part mixer"]
+  Editor --> Files["PDF · local Projects / JSON"]
+```
+
+The MCP tools wrap implemented services, including score import. Planning and
+theory explanation tools are not advertised until implemented. See the
+[versioned contract and tool list](docs/mcp.md).
+
+### Baseline model and editor internals
 
 ```mermaid
 flowchart LR
@@ -505,8 +565,8 @@ midi = to_pretty_midi(song)       # ready for a soundfont render
 |---|---|---|---|---|
 | `genre` | string | ✓ | — | One of `jazz, pop, rock, blues, bossa, classical, country, rnb_soul, hip_hop, electronic, funk, folk, gospel`. 400 if not in list. |
 | `length_bars` | int | — | `8` | Range 1–64. |
-| `n_candidates` | int | — | `1` | Reserved 1–3. Current build returns 1. |
-| `seed` | int \| null | — | `null` | Reserved for deterministic sampling. |
+| `n_candidates` | int | — | `1` | Must be exactly `1`; unsupported candidate fan-out returns 422. |
+| `seed` | int \| null | — | `null` | Strict integer `0..2^32-1`; request-local sampling, echoed in the response. Reproducibility requires the same model and runtime. |
 | `harmony_rhythm` | string \| null | — | `null` | A comping-rhythm preset id (`charleston`, `eighth_pulse`, `boom_chick`, `shuffle`, `bossa`, `chorale`, `folk_pocket`, `neo_soul_offbeat`, `boom_bap`, `sidechain_offbeat`, `funky_drummer`, `block`, `half`). `null` = the genre's. |
 | `drum_pattern` | int \| `"off"` \| null | — | `null` | A drum pattern id 1–15, or `"off"` for no drums. `null` = the genre's. |
 | `harmony_instrument` | string \| null | — | `null` | One of the editor's 31 harmony instruments (GM Soundfont names). `null` = the genre's. |
@@ -518,6 +578,7 @@ The three optional fields are the editor's Play-panel choices; [API_SPEC.md](API
 | Key | Type | Description |
 |---|---|---|
 | `genre` | string | Echo of request. |
+| `seed` | int \| null | Echo of the sampling seed; `null` keeps stochastic generation. |
 | `key` | string | Picked from `GENRE_DEFAULTS` — e.g. jazz→`F major`, electronic→`A minor`. |
 | `bpm` | int | Picked from `GENRE_DEFAULTS` — e.g. blues→90, electronic→128. |
 | `time_signature` | `[int, int]` | `[4, 4]` for all 13 genres in v1. |
