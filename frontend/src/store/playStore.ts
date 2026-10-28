@@ -1,6 +1,6 @@
 /**
  * Play-panel store: harmony instrument and comping rhythm, drums, bass,
- * visual mode and drum level, plus which pane is open. Persisted under
+ * visual mode and master/part levels, plus which pane is open. Persisted under
  * `theartist-play` and mirrored into the playback engine on every change —
  * whichever pane is mounted — so the next note that fires already uses it.
  * The engine resolves Auto against the editor song's genre, and re-syncs
@@ -12,12 +12,13 @@ import {
   DEFAULT_PLAY_SETTINGS,
   enginePlayConfig,
   sanitizePlaySettings,
+  sanitizeVolume,
 } from '../engine/playSettings';
 import { applyPlayConfig } from '../engine/playback';
 import { useSongStore } from './songStore';
 
-export type PlayPane = 'visual' | 'instrument' | 'rhythm' | 'drums';
-const PANES: PlayPane[] = ['visual', 'instrument', 'rhythm', 'drums'];
+export type PlayPane = 'visual' | 'instrument' | 'rhythm' | 'drums' | 'controller';
+const PANES: PlayPane[] = ['visual', 'instrument', 'rhythm', 'drums', 'controller'];
 
 const STORAGE_KEY = 'theartist-play';
 /** The drum pick saved before the Play panel existed: an id, or 'null' (off). */
@@ -71,7 +72,10 @@ interface PlayState {
   setDrumPattern: (id: number | null) => void;
   setBassEnabled: (on: boolean) => void;
   setVisualMode: (mode: VisualMode) => void;
-  /** Drum bus gain, clamped to 0..1. */
+  /** Live mixer gains, clamped to 0..1. */
+  setMasterVolume: (volume: number) => void;
+  setHarmonyVolume: (volume: number) => void;
+  setBassVolume: (volume: number) => void;
   setDrumVolume: (volume: number) => void;
   /** Replace every setting at once (MyPage Load restores a session's). */
   replaceSettings: (settings: PlaySettings) => void;
@@ -93,7 +97,10 @@ export const usePlayStore = create<PlayState>((set) => {
     setDrumPattern: (drumPatternId) => update({ drumMode: 'manual', drumPatternId }),
     setBassEnabled: (bassEnabled) => update({ bassEnabled }),
     setVisualMode: (visualMode) => update({ visualMode }),
-    setDrumVolume: (volume) => update({ drumVolume: Math.max(0, Math.min(1, volume)) }),
+    setMasterVolume: (volume) => update({ masterVolume: sanitizeVolume(volume, DEFAULT_PLAY_SETTINGS.masterVolume) }),
+    setHarmonyVolume: (volume) => update({ harmonyVolume: sanitizeVolume(volume, DEFAULT_PLAY_SETTINGS.harmonyVolume) }),
+    setBassVolume: (volume) => update({ bassVolume: sanitizeVolume(volume, DEFAULT_PLAY_SETTINGS.bassVolume) }),
+    setDrumVolume: (volume) => update({ drumVolume: sanitizeVolume(volume, DEFAULT_PLAY_SETTINGS.drumVolume) }),
     replaceSettings: (settings) => set({ settings: sanitizePlaySettings(settings) }),
   };
 });

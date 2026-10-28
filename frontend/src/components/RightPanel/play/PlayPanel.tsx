@@ -1,10 +1,10 @@
 /**
  * Play mode as one device panel: the transport on top, a rail of pane keys
- * with the BPM and drum-level knobs on the left, and the open pane on the
+ * with the BPM knob on the left, and the open pane on the
  * right. Every part has a fixed height, so nothing here scrolls.
  */
-// ~470px tall on a 1366×768 window and needs 344: frame 18 + transport 30 + 8
-// + rail 288 (keys 156 + spacer ≥ 8 + knobs 58 + 8 + 58). The pane (≤ 284px
+// Needs 340px: frame 18 + transport 30 + 8 + tallest pane 284.
+// The rail needs 262px (five keys 196 + spacer ≥ 8 + BPM 58). The pane (≤ 284px
 // tall) gets the rest of the row: ~197px wide at the 300px minimum panel
 // width, ~217px at the default 320px.
 import { useId } from 'react';
@@ -12,7 +12,6 @@ import type { KeyboardEvent } from 'react';
 import { useSongStore } from '../../../store/songStore';
 import { usePlayStore } from '../../../store/playStore';
 import type { PlayPane } from '../../../store/playStore';
-import { DEFAULT_PLAY_SETTINGS } from '../../../engine/playSettings';
 import KeyButton from './ui/KeyButton';
 import Knob from './ui/Knob';
 import Transport from './Transport';
@@ -20,6 +19,7 @@ import VisualPane from './VisualPane';
 import InstrumentPane from './InstrumentPane';
 import RhythmPane from './RhythmPane';
 import DrumsPane from './DrumsPane';
+import ControllerPane from './ControllerPane';
 
 /** Rail keys: `label` on the key cap, `name` for screen readers. */
 const PANES: { id: PlayPane; label: string; name: string; title: string }[] = [
@@ -27,6 +27,7 @@ const PANES: { id: PlayPane; label: string; name: string; title: string }[] = [
   { id: 'instrument', label: 'INSTR', name: 'Instrument', title: 'Instrument: the harmony sound' },
   { id: 'rhythm', label: 'RHYTHM', name: 'Rhythm', title: 'Rhythm: comping rhythm and bass' },
   { id: 'drums', label: 'DRUMS', name: 'Drums', title: 'Drums: drum pattern' },
+  { id: 'controller', label: 'CTRL', name: 'Controller', title: 'Controller: master, harmony, bass and drum volumes' },
 ];
 
 const RAIL_WIDTH = 52;
@@ -37,7 +38,6 @@ const RAIL_WIDTH = 52;
 const BPM_MIN = 20;
 const BPM_MAX = 300;
 const BPM_DEFAULT = 80;
-const DRUM_DEFAULT = Math.round(DEFAULT_PLAY_SETTINGS.drumVolume * 100);
 
 const formatInt = (v: number): string => String(Math.round(v));
 
@@ -48,8 +48,6 @@ interface PlayPanelProps {
 export default function PlayPanel({ midiActiveNotes }: PlayPanelProps) {
   const pane = usePlayStore((s) => s.pane);
   const setPane = usePlayStore((s) => s.setPane);
-  const drumVolume = usePlayStore((s) => s.settings.drumVolume);
-  const setDrumVolume = usePlayStore((s) => s.setDrumVolume);
   const bpm = useSongStore((s) => s.song.bpm);
   const setBpmLive = useSongStore((s) => s.setBpmLive);
   const baseId = useId();
@@ -77,11 +75,8 @@ export default function PlayPanel({ midiActiveNotes }: PlayPanelProps) {
 
   return (
     <div
-      className="h-full min-h-0 flex flex-col gap-2 p-2 overflow-hidden"
+      className="te-device h-full min-h-0 flex flex-col gap-2 p-2 overflow-hidden"
       style={{
-        background: 'var(--panel-bg)',
-        border: '1px solid var(--panel-border)',
-        borderRadius: 6,
         color: 'var(--key-text)',
         fontFamily: 'var(--font-device)',
       }}
@@ -89,7 +84,7 @@ export default function PlayPanel({ midiActiveNotes }: PlayPanelProps) {
       <Transport />
 
       <div className="flex-1 min-h-0 flex gap-2">
-        {/* Rail: pane keys on top, knobs at the bottom. */}
+        {/* Rail: pane keys on top, tempo always within reach at the bottom. */}
         <div className="shrink-0 flex flex-col" style={{ width: RAIL_WIDTH }}>
           <div
             role="tablist"
@@ -130,16 +125,6 @@ export default function PlayPanel({ midiActiveNotes }: PlayPanelProps) {
               onChange={setBpmLive}
               format={formatInt}
             />
-            <Knob
-              label="DRUM"
-              value={Math.round(drumVolume * 100)}
-              min={0}
-              max={100}
-              step={1}
-              defaultValue={DRUM_DEFAULT}
-              onChange={(v: number) => setDrumVolume(v / 100)}
-              format={formatInt}
-            />
           </div>
         </div>
 
@@ -150,6 +135,7 @@ export default function PlayPanel({ midiActiveNotes }: PlayPanelProps) {
           {pane === 'instrument' && <InstrumentPane />}
           {pane === 'rhythm' && <RhythmPane />}
           {pane === 'drums' && <DrumsPane />}
+          {pane === 'controller' && <ControllerPane />}
         </div>
       </div>
     </div>

@@ -1,8 +1,11 @@
-import { useEffect, useEffectEvent, useRef, useState } from 'react';
+import { useEffect, useEffectEvent, useId, useRef, useState } from 'react';
 import type { KeyboardEvent as ReactKeyboardEvent, PointerEvent as ReactPointerEvent } from 'react';
 
 interface KnobProps {
   label: string;
+  ariaLabel?: string;
+  /** Channel colour for the value arc; defaults to the panel's yellow. */
+  accent?: string;
   value: number;
   min: number;
   max: number;
@@ -12,8 +15,10 @@ interface KnobProps {
   defaultValue?: number;
   onChange: (v: number) => void;
   format?: (v: number) => string;
-  /** Knob diameter in px (default 34). The whole control is size + 24 px tall. */
+  /** Knob diameter in px (default 34); labels add 24px at the default text size. */
   size?: number;
+  /** Label/value size in px; larger mixer knobs use 11 instead of 9. */
+  textSize?: number;
 }
 
 /** Vertical drag distance for the full range; Shift drags five times finer. */
@@ -27,7 +32,6 @@ const START_DEG = -135;
 const SWEEP_DEG = 270;
 /** Set on <html> while dragging (index.css): no text selection, ns-resize cursor. */
 const DRAG_CLASS = 'te-knob-drag';
-const TEXT_LINE = 11;
 
 interface Drag {
   pointerId: number;
@@ -73,9 +77,11 @@ function arcPath(c: number, r: number, from: number, to: number): string {
  * increase (pointer capture, ~150px for the full range, Shift = fine),
  * scroll, or use the keyboard (Arrows = step, PageUp/PageDown = 10 steps,
  * Home/End). Double-click resets to defaultValue. Fills its column's
- * width; size + 24 px tall.
+ * width; size + 24 px tall with the default label size, or +28px at 11px.
  */
-export default function Knob({ label, value, min, max, step, defaultValue, onChange, format, size = 34 }: KnobProps) {
+export default function Knob({ label, ariaLabel, accent, value, min, max, step, defaultValue, onChange, format, size = 34, textSize = 9 }: KnobProps) {
+  const faceId = `${useId()}-knob-face`;
+  const textLine = textSize + 2;
   const stepSize = step !== undefined && step > 0 ? step : (max - min) / 100 || 1;
   const rootRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<Drag | null>(null);
@@ -196,10 +202,10 @@ export default function Knob({ label, value, min, max, step, defaultValue, onCha
       ref={rootRef}
       role="slider"
       tabIndex={0}
-      aria-label={label}
+      aria-label={ariaLabel ?? label}
       aria-valuemin={min}
       aria-valuemax={max}
-      aria-valuenow={value}
+      aria-valuenow={current}
       aria-valuetext={shown}
       title={`${label}: drag up or down (Shift = fine), scroll or use the arrow keys${defaultValue !== undefined ? '; double-click resets' : ''}`}
       data-dragging={dragging ? '' : undefined}
@@ -220,6 +226,13 @@ export default function Knob({ label, value, min, max, step, defaultValue, onCha
         className="block shrink-0"
         style={{ overflow: 'visible' }}
       >
+        <defs>
+          <linearGradient id={faceId} x1="0" y1="0" x2="0.8" y2="1">
+            <stop offset="0%" style={{ stopColor: 'var(--knob-face-top)' }} />
+            <stop offset="48%" style={{ stopColor: 'var(--knob-face-mid)' }} />
+            <stop offset="100%" style={{ stopColor: 'var(--knob-face-bottom)' }} />
+          </linearGradient>
+        </defs>
         <path
           d={arcPath(c, arcR, START_DEG, START_DEG + SWEEP_DEG)}
           fill="none"
@@ -241,12 +254,27 @@ export default function Knob({ label, value, min, max, step, defaultValue, onCha
               fill="none"
               strokeWidth={stroke}
               strokeLinecap="round"
-              style={{ stroke: 'var(--led-on)' }}
+              style={{ stroke: accent ?? 'var(--led-on)' }}
             />
           </>
         )}
-        <circle cx={c} cy={c + 1.25} r={capR} style={{ fill: 'var(--key-edge)' }} />
-        <circle className="te-knob-cap" cx={c} cy={c} r={capR - 0.5} strokeWidth={1} />
+        <circle cx={c} cy={c + 2.5} r={capR + 1} style={{ fill: 'var(--knob-shadow)' }} />
+        <circle cx={c} cy={c + 1.75} r={capR} style={{ fill: 'var(--knob-side)' }} />
+        <circle
+          className="te-knob-cap"
+          cx={c}
+          cy={c}
+          r={capR - 0.5}
+          strokeWidth={1}
+          fill={`url(#${faceId})`}
+        />
+        <path
+          d={arcPath(c, capR - 2, -110, 35)}
+          fill="none"
+          strokeWidth={0.8}
+          strokeLinecap="round"
+          style={{ stroke: 'var(--knob-glint)' }}
+        />
         <line
           x1={px0}
           y1={py0}
@@ -261,8 +289,8 @@ export default function Knob({ label, value, min, max, step, defaultValue, onCha
         className="block w-full truncate text-center uppercase"
         style={{
           marginTop: 2,
-          fontSize: 9,
-          lineHeight: `${TEXT_LINE}px`,
+          fontSize: textSize,
+          lineHeight: `${textLine}px`,
           letterSpacing: '0.06em',
           color: 'var(--key-text-dim)',
         }}
@@ -270,10 +298,11 @@ export default function Knob({ label, value, min, max, step, defaultValue, onCha
         {label}
       </span>
       <span
-        className="block w-full truncate text-center"
+        className="tabular block w-full truncate text-center"
         style={{
-          fontSize: 9,
-          lineHeight: `${TEXT_LINE}px`,
+          fontSize: textSize,
+          fontWeight: 600,
+          lineHeight: `${textLine}px`,
           color: dragging ? 'var(--key-text-active)' : 'var(--key-text)',
         }}
       >

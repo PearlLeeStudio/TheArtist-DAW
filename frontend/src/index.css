@@ -197,6 +197,9 @@ code, pre, .mono {
 :root {
   --panel-bg:          #161616;
   --panel-border:      #2a2a2a;
+  --panel-glint:       rgba(255, 255, 255, 0.08);
+  --panel-shadow:      rgba(0, 0, 0, 0.6);
+  --channel-bg:        #1b1c1a;
 
   --key-bg:            #232323;
   --key-bg-active:     #303030;
@@ -205,8 +208,20 @@ code, pre, .mono {
   --key-text-active:   #ffffff;   /* label of a latched / pressed key */
   --key-text-dim:      #8f8f8f;   /* sublabels, knob and step-row labels */
   --key-edge:          rgba(0, 0, 0, 0.6);   /* underside of a knob cap */
-  --key-shadow:        inset 0 -2px 0 rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  --key-shadow:        0 2px 1px rgba(0, 0, 0, 0.5), inset 0 -2px 0 rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.12);
   --key-shadow-active: inset 0 1px 3px rgba(0, 0, 0, 0.65);
+
+  --knob-face-top:     #74756f;
+  --knob-face-mid:     #41423e;
+  --knob-face-bottom:  #262723;
+  --knob-side:         #131410;
+  --knob-shadow:       rgba(0, 0, 0, 0.7);
+  --knob-border:       #151612;
+  --knob-glint:        rgba(255, 255, 255, 0.34);
+  --mix-master:        #ffad76;
+  --mix-harmony:       var(--brand-yellow);
+  --mix-bass:          #65d9b7;
+  --mix-drums:         #82baff;
 
   --led-on:            var(--brand-yellow);
   --led-alt:           #fb923c;
@@ -228,6 +243,9 @@ code, pre, .mono {
 :root.light {
   --panel-bg:          #e9e9e7;
   --panel-border:      #d4d4d1;
+  --panel-glint:       rgba(255, 255, 255, 0.85);
+  --panel-shadow:      rgba(0, 0, 0, 0.16);
+  --channel-bg:        #dededa;
 
   --key-bg:            #fafafa;
   --key-bg-active:     #e1e1df;
@@ -236,8 +254,16 @@ code, pre, .mono {
   --key-text-active:   #000000;
   --key-text-dim:      #5e5e5c;
   --key-edge:          rgba(0, 0, 0, 0.18);
-  --key-shadow:        inset 0 -2px 0 rgba(0, 0, 0, 0.1);
+  --key-shadow:        0 2px 1px rgba(0, 0, 0, 0.16), inset 0 -2px 0 rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.9);
   --key-shadow-active: inset 0 1px 3px rgba(0, 0, 0, 0.22);
+
+  --knob-face-top:     #ffffff;
+  --knob-face-mid:     #e7e7e0;
+  --knob-face-bottom:  #bfc0b7;
+  --knob-side:         #93958b;
+  --knob-shadow:       rgba(0, 0, 0, 0.22);
+  --knob-border:       #8e9087;
+  --knob-glint:        rgba(255, 255, 255, 0.95);
 
   --led-on:            var(--brand-yellow);
   --led-alt:           #f97316;
@@ -256,12 +282,27 @@ code, pre, .mono {
   --screen-shadow:     inset 0 0 0 1px rgba(0, 0, 0, 0.75), inset 0 2px 6px rgba(0, 0, 0, 0.6);
 }
 
+/* Bevelled enclosure and recessed control bays stay within the Play panel. */
+.te-device {
+  background: linear-gradient(145deg, var(--panel-glint), transparent 32%), var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 7px;
+  box-shadow: inset 0 1px 0 var(--panel-glint), inset 0 -2px 2px var(--panel-shadow),
+              0 3px 5px var(--panel-shadow);
+}
+.te-channel {
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.07), transparent 50%), var(--channel-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 5px;
+  box-shadow: inset 0 2px 3px var(--panel-shadow), 0 1px 0 var(--panel-glint);
+}
+
 /* KeyButton. Hover dimming and the 1px press come from .btn-hover. */
 .te-key {
   font-family: var(--font-device);
   letter-spacing: 0.06em;
   color: var(--key-text);
-  background: var(--key-bg);
+  background: linear-gradient(180deg, var(--panel-glint), transparent 45%), var(--key-bg);
   border: 1px solid var(--key-border);
   border-radius: 4px;
   box-shadow: var(--key-shadow);
@@ -317,13 +358,12 @@ code, pre, .mono {
   user-select: none;
 }
 .te-knob-cap {
-  fill: var(--key-bg);
-  stroke: var(--key-border);
-  transition: fill 0.1s ease;
+  stroke: var(--knob-border);
+  transition: filter 0.1s ease;
 }
 .te-knob:hover .te-knob-cap,
 .te-knob[data-dragging] .te-knob-cap {
-  fill: var(--key-bg-active);
+  filter: brightness(1.1);
 }
 /* On <html> while a knob is dragged: no text selection, one cursor everywhere. */
 :root.te-knob-drag {
