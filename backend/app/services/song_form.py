@@ -10,6 +10,9 @@ Rules are genre-agnostic and based on relative scale degrees.
 
 from __future__ import annotations
 
+from app.models.schemas import Suggestion
+from app.services.key_anchor import uses_sharps
+
 NOTES_FLAT = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"]
 NOTES_SHARP = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
 
@@ -21,9 +24,21 @@ for _i, _n in enumerate(NOTES_SHARP):
 
 _SHARP_KEYS = frozenset({"B", "F#", "C#"})
 
+# The five original sections keep the spelling above (flats except in B, F#
+# and C#), so their output stays exactly as it was. The sections added with
+# the wider vocabulary spell by key signature, like key_anchor: E major and
+# E minor write C#m7 / F#m7, not Dbm7 / Gbm7.
+_ORIGINAL_SECTIONS = frozenset({"intro", "verse", "chorus", "bridge", "outro"})
+
 
 def _note(semi: int, flats: bool = True) -> str:
     return NOTES_FLAT[semi % 12] if flats else NOTES_SHARP[semi % 12]
+
+
+def _spells_with_flats(section: str, key: str, is_minor: bool) -> bool:
+    if section in _ORIGINAL_SECTIONS:
+        return key not in _SHARP_KEYS
+    return not uses_sharps(key, is_minor)
 
 
 def _parse_chord_root(chord: str) -> tuple[str, str] | None:
@@ -68,6 +83,12 @@ def _make_chord(key_root: int, interval: int, quality: str, flats: bool) -> str:
 # CHORUS: starts I(28%)/IV(13%), ends I(26%)/V(13%) — V→I cadence (11%)
 # BRIDGE: starts IV(11%)/vi(6%), ends V(19%) — half cadence
 # OUTRO:  ends I(31%) — V→I(10%), IV→I(9%) — strong resolution
+#
+# The other section ids (app/models/sections.py) follow common practice
+# rather than the corpus statistics above: a pre-chorus hangs on V, loop
+# sections (post-chorus, drop, breakdown, vamp) repeat their opening bars,
+# a turnaround leads back to the top, a tag closes like an outro, and the
+# jazz head / A / B sections cadence like verse / chorus / bridge.
 
 def apply_song_form(
     chords: list[str],
@@ -79,7 +100,8 @@ def apply_song_form(
 
     Args:
         chords: Generated chord names (flat list for all selected measures)
-        section: One of 'intro', 'verse', 'chorus', 'bridge', 'outro'
+        section: A section id from app/models/sections.py; ids without a
+            rule (interlude, solo, unknown) pass through unchanged
         key: Key root note (e.g. 'C', 'Bb')
         is_minor: Whether the key is minor
 
@@ -92,10 +114,15 @@ def apply_song_form(
     key_root = NOTE_TO_SEMI.get(key)
     if key_root is None:
         return chords
-    flats = key not in _SHARP_KEYS
+    flats = _spells_with_flats(section, key, is_minor)
 
     result = list(chords)
     rules = SECTION_RULES[section]
+
+    # Static sections: repeat the opening chords across the whole section
+    if rules.get("loop"):
+        n = rules["loop"]
+        result = [result[i % n] for i in range(len(result))]
 
     # Apply first chord rule
     if rules.get("force_start") and len(result) >= 1:
@@ -118,6 +145,34 @@ def apply_song_form(
     return result
 
 
+def apply_song_form_to_suggestions(
+    suggestions: list[Suggestion],
+    section: str | None,
+    key_root: str,
+    is_minor: bool,
+) -> None:
+    """Run apply_song_form over each suggestion's whole chord sequence in place,
+    keeping every measure's slot count. No-op when ``section`` is empty."""
+    if not section:
+        return
+    for suggestion in suggestions:
+        sorted_keys = sorted(suggestion.chords.keys(), key=int)
+        flat_chords: list[str] = []
+        for k in sorted_keys:
+            flat_chords.extend(suggestion.chords[k])
+        flat_chords = apply_song_form(
+            chords=flat_chords,
+            section=section,
+            key=key_root,
+            is_minor=is_minor,
+        )
+        idx = 0
+        for k in sorted_keys:
+            n = len(suggestion.chords[k])
+            suggestion.chords[k] = flat_chords[idx : idx + n]
+            idx += n
+
+
 def _apply_cadence(
     chords: list[str],
     cadence_type: str,
@@ -125,7 +180,7 @@ def _apply_cadence(
     is_minor: bool,
     flats: bool,
 ) -> list[str]:
-    """Apply cadence pattern to last 2 chords."""
+    """Apply cadence pattern to last 2 chords (last 4 for a turnaround)."""
     result = list(chords)
 
     if cadence_type == "authentic":
@@ -155,6 +210,18 @@ def _apply_cadence(
         iv_q = "m7" if is_minor else "maj7"
         result[-2] = _make_chord(key_root, 5, iv_q, flats)
         result[-1] = _make_chord(key_root, 7, "7", flats)
+
+    elif cadence_type == "turnaround":
+        # I → vi → ii → V7 back to the top; minor: i → VI → iiø → V7.
+        # Under 4 chords there is only room for the V7.
+        if len(result) >= 4:
+            if is_minor:
+                pattern = [(0, "m7"), (8, "maj7"), (2, "m7b5"), (7, "7")]
+            else:
+                pattern = [(0, "maj7"), (9, "m7"), (2, "m7"), (7, "7")]
+            result[-4:] = [_make_chord(key_root, iv, q, flats) for iv, q in pattern]
+        else:
+            result[-1] = _make_chord(key_root, 7, "7", flats)
 
     return result
 
@@ -204,4 +271,53 @@ SECTION_RULES: dict[str, dict] = {
         "cadence": "plagal",
         "force_end": _tonic_end,
     },
+    "pre_chorus": {
+        # Hang on V (half cadence) so the chorus lands as the arrival
+        "cadence": "half",
+    },
+    "post_chorus": {
+        # Static two-bar loop, no cadence
+        "loop": 4,
+    },
+    "drop": {
+        "loop": 4,
+    },
+    "breakdown": {
+        # Static one-bar vamp, no cadence
+        "loop": 2,
+    },
+    "vamp": {
+        "loop": 2,
+    },
+    "turnaround": {
+        # Last 4 chords: I → vi → ii → V7 (minor: i → VI → iiø → V7)
+        "cadence": "turnaround",
+    },
+    "tag": {
+        # Close like an outro, but with V → I
+        "cadence": "authentic",
+        "force_end": _tonic_end,
+    },
+    # Jazz head / A section resolve like verse and chorus; B section is the bridge
+    "head": {
+        "cadence": "authentic",
+    },
+    "a_section": {
+        "cadence": "authentic",
+    },
+    "b_section": {
+        "force_start": _iv_start,
+        "cadence": "half_iv_v",
+    },
+    # Interlude and solo keep the model's own phrase
+    "interlude": {},
+    "solo": {},
 }
+
+# Sections whose rule resolves to the tonic (verse, chorus, outro, tag, head,
+# A section). Voice leading must leave that final tonic in root position:
+# an inverted I after the V7 does not resolve.
+ROOT_POSITION_ENDINGS = frozenset(
+    section for section, rules in SECTION_RULES.items()
+    if rules.get("cadence") in ("authentic", "plagal")
+)
