@@ -4,6 +4,7 @@ import { useSongStore, isSlotInList } from '../../store/songStore';
 import { getChordDisplayParts } from '../../engine/chordDisplay';
 import { sectionColor, sectionDisplayLabel } from '../../engine/songForm';
 import type { SlotAddress } from '../../models/types';
+import { scoreMeasureLayout } from '../../engine/scoreLayout';
 
 const KEY_SIG_MAP: Record<string, string> = {
   'C major': 'C', 'G major': 'G', 'D major': 'D', 'A major': 'A',
@@ -73,35 +74,11 @@ export default function Staff() {
     return () => ro.disconnect();
   }, []);
 
-  // Pearl 2026-05-09: equal chord-area width across all measures in a row.
-  // Previous layout gave every measure the same stave width, but the first
-  // measure burns ~60px on clef + key sig + time sig — squeezing its chord
-  // slots. Now we add a CLEF_OFFSET (60px) to the first measure's width
-  // and shift subsequent measures right by the same amount, so the chord
-  // content area (after the leading margin) is identical across m0-m3.
-  const CLEF_OFFSET = 60; // = first-in-row content offset (70) - regular margin (10)
-  const baseStaveWidth = Math.max(
-    120,
-    (containerWidth - PADDING_X * 2 - CLEF_OFFSET) / MEASURES_PER_ROW,
-  );
-
   const [staveLayouts, setStaveLayouts] = useState<StaveLayout[]>([]);
 
   const baseLayouts = useMemo((): Omit<StaveLayout, 'midLineY'>[] => {
-    return Array.from({ length: song.measures.length }, (_, i) => {
-      const row = Math.floor(i / MEASURES_PER_ROW);
-      const col = i % MEASURES_PER_ROW;
-      const isFirstInRow = col === 0;
-      // First-in-row gets baseStaveWidth + CLEF_OFFSET. Subsequent measures
-      // start `CLEF_OFFSET` further right (because the first one ate that
-      // extra width). Net: all measures share the same effective chord area.
-      const width = baseStaveWidth + (isFirstInRow ? CLEF_OFFSET : 0);
-      const x = PADDING_X + col * baseStaveWidth + (col > 0 ? CLEF_OFFSET : 0);
-      const y = PADDING_Y + CHORD_AREA_HEIGHT + row * STAVE_HEIGHT;
-      const contentX = x + (isFirstInRow ? 70 : 10);
-      return { x, y, width, isFirstInRow, contentX };
-    });
-  }, [song.measures.length, baseStaveWidth]);
+    return Array.from({ length: song.measures.length }, (_, i) => scoreMeasureLayout(i, containerWidth));
+  }, [song.measures.length, containerWidth]);
 
   const rows = Math.ceil(song.measures.length / MEASURES_PER_ROW);
   const totalWidth = containerWidth;

@@ -13,6 +13,7 @@ import Staff from './ScoreEditor/Staff';
 import SongFormDialog from './ScoreEditor/SongFormDialog';
 import ImportScoreDialog from './ScoreEditor/ImportScoreDialog';
 import SectionsDialog from './ScoreEditor/SectionsDialog';
+import ExportMenu from './ScoreEditor/ExportMenu';
 import PlayPanel from './RightPanel/play/PlayPanel';
 import SongSettings from './RightPanel/SongSettings';
 import ChordActions from './RightPanel/ChordActions';
@@ -218,6 +219,7 @@ export default function Layout() {
                 the user has slots selected; it lives next to the global
                 Clear so the two destructive actions are co-located. */}
             <div className="flex-1 flex items-center justify-end gap-2">
+              <ExportMenu />
               <button
                 onClick={handleSaveSession}
                 className="px-3 py-1  text-xs font-bold btn-hover"
