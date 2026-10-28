@@ -2,7 +2,7 @@ import { useEffect, useRef, useMemo, useCallback, useState } from 'react';
 import { Renderer, Stave } from 'vexflow';
 import { useSongStore, isSlotInList } from '../../store/songStore';
 import { getChordDisplayParts } from '../../engine/chordDisplay';
-import { sectionLabel } from '../../engine/songForm';
+import { sectionColor, sectionDisplayLabel } from '../../engine/songForm';
 import type { SlotAddress } from '../../models/types';
 
 const KEY_SIG_MAP: Record<string, string> = {
@@ -88,7 +88,7 @@ export default function Staff() {
   const [staveLayouts, setStaveLayouts] = useState<StaveLayout[]>([]);
 
   const baseLayouts = useMemo((): Omit<StaveLayout, 'midLineY'>[] => {
-    return song.measures.map((_, i) => {
+    return Array.from({ length: song.measures.length }, (_, i) => {
       const row = Math.floor(i / MEASURES_PER_ROW);
       const col = i % MEASURES_PER_ROW;
       const isFirstInRow = col === 0;
@@ -183,6 +183,16 @@ export default function Staff() {
           selectSlot(null);
         }}
       >
+        {/* Low-contrast form bands remain separate from selection and the playhead. */}
+        {(song.sections ?? []).flatMap((section) =>
+          Array.from({ length: section.length }, (_, offset) => {
+            const layout = staveLayouts[section.startMeasure + offset];
+            if (!layout) return null;
+            return <rect key={`${section.id}-${offset}`} x={layout.contentX} y={layout.y - CHORD_AREA_HEIGHT}
+              width={layout.x + layout.width - layout.contentX} height={STAVE_HEIGHT - 10}
+              fill={sectionColor(section.type)} fillOpacity={0.09} className="pointer-events-none" />;
+          }),
+        )}
         {song.measures.map((measure, mi) => {
           const layout = staveLayouts[mi];
           if (!layout) return null;
@@ -339,10 +349,7 @@ export default function Staff() {
           });
         })}
 
-        {/* Song-form section labels — one per section, at the start of its
-            first measure only (a section that wraps rows is not labelled
-            again). Not hit-testable, so the slot zones underneath still
-            take clicks and drags. */}
+        {/* Labels select the whole region; drag zones still select individual chords. */}
         {(song.sections ?? []).map((section) => {
           const layout = staveLayouts[section.startMeasure];
           if (!layout) return null;
@@ -351,14 +358,30 @@ export default function Staff() {
               key={section.id}
               x={layout.contentX}
               y={layout.y + SECTION_LABEL_DY}
-              fill="var(--text-muted)"
-              fontSize={10}
+              fill="var(--text-soft)"
+              fontSize={11}
               fontWeight={700}
               letterSpacing="0.08em"
               fontFamily="system-ui, sans-serif"
-              className="pointer-events-none"
+              className="pointer-events-auto cursor-pointer"
+              role="button"
+              tabIndex={0}
+              aria-label={`Select ${sectionDisplayLabel(section)}, bars ${section.startMeasure + 1} to ${section.startMeasure + section.length}`}
+              onClick={() => selectSlotRange(
+                { measureIndex: section.startMeasure, slotIndex: 0 },
+                { measureIndex: section.startMeasure + section.length - 1, slotIndex: 1 },
+              )}
+              onKeyDown={(event) => {
+                if (event.key !== 'Enter' && event.key !== ' ') return;
+                event.preventDefault();
+                selectSlotRange(
+                  { measureIndex: section.startMeasure, slotIndex: 0 },
+                  { measureIndex: section.startMeasure + section.length - 1, slotIndex: 1 },
+                );
+              }}
             >
-              {sectionLabel(section.type).toUpperCase()}
+              <title>{sectionDisplayLabel(section)} · {section.origin === 'inferred' ? 'Suggested from the score' : section.origin === 'explicit' ? 'Label read from the score' : 'Click to select this region'}</title>
+              {sectionDisplayLabel(section).slice(0, 22).toUpperCase()}{section.origin === 'inferred' ? ' ?' : ''}
             </text>
           );
         })}

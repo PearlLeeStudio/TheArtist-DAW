@@ -9,11 +9,13 @@ import {
   autoTitle,
   barsForChords,
   checkChordCount,
+  checkSectionRanges,
   chordCountSummary,
   sectionAt,
   sectionContaining,
   sectionPlacement,
   sectionTitle,
+  sectionDisplayLabel,
   sectionsInGroup,
   withAutoTitle,
   withSongFormDefaults,
@@ -47,6 +49,23 @@ function song(overrides: Partial<Song> = {}): Song {
 function section(type: SongSection['type'], startMeasure: number, length: number): SongSection {
   return { id: `${type}-${startMeasure}`, type, startMeasure, length };
 }
+
+test('imported uncertain sections retain their label and uncertainty after loading', () => {
+  const region: SongSection = { id: 'region', type: null, label: 'Repeated region', origin: 'inferred', startMeasure: 0, length: 4 };
+  const loaded = withSongFormDefaults(song({ sections: [region], title: 'Imported', autoTitle: false }));
+  assert.deepEqual(loaded.sections, [region]);
+  assert.equal(sectionDisplayLabel(region), 'Repeated region');
+  assert.equal(sectionContaining(loaded, [0, 3])?.type, null);
+  assert.equal(loaded.title, 'Imported');
+});
+
+test('editing section boundaries rejects overlaps, fractions and out-of-score ranges', () => {
+  assert.equal(checkSectionRanges([section('verse', 0, 2), section('chorus', 2, 2)], 4), null);
+  assert.match(checkSectionRanges([section('verse', 0, 3), section('chorus', 2, 2)], 4)!, /overlap/);
+  assert.match(checkSectionRanges([section('verse', 2, 3)], 4)!, /last bar/);
+  assert.match(checkSectionRanges([section('verse', 0.5, 2)], 4)!, /valid/);
+  assert.match(checkSectionRanges([section('verse', 0, 0)], 4)!, /valid/);
+});
 
 test('vocabulary: 17 ids in three groups', () => {
   assert.equal(SECTION_TYPES.length, 17);

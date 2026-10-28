@@ -7,6 +7,7 @@ import { cancelPendingStart, setLiveBpm, stopPlayback } from '../engine/playback
 import {
   DEFAULT_SONG_TITLE,
   MAX_SECTION_BARS,
+  checkSectionRanges,
   sectionAt,
   sectionPlacement,
   withAutoTitle,
@@ -118,6 +119,7 @@ interface SongState {
   playbackPosition: { measureIndex: number; slotIndex: 0 | 1 } | null;
   isPlaying: boolean;
   midiCandidates: Chord[];
+  previousImportSong: Song | null;
 
   // Actions
   /** A user edit — also turns the automatic (section-derived) title off. */
@@ -133,7 +135,7 @@ interface SongState {
   selectSlotRange: (from: SlotAddress, to: SlotAddress) => void;
   setChord: (address: SlotAddress, chord: Chord | null) => void;
   /** Several slots in one song update (applying an A/B/C suggestion). */
-  setChords: (updates: Array<{ address: SlotAddress; chord: Chord | null }>) => void;
+  setChords: (updates: Array<{ address: SlotAddress; chord: Chord | null }>, options?: { preserveAnalysis?: boolean }) => void;
   addMeasures: (count?: number) => void;
   /** Record a song-form section of `bars` measures right after the last
    *  used measure (see sectionPlacement), appending measures only as
@@ -152,6 +154,9 @@ interface SongState {
    *  saved session into the staff. Stops playback and clears
    *  selection / live-MIDI state to match. */
   setSong: (song: Song) => void;
+  importSong: (song: Song) => void;
+  undoImport: () => void;
+  setSections: (sections: SongSection[]) => string | null;
   setPlaybackPosition: (pos: { measureIndex: number; slotIndex: 0 | 1 } | null) => void;
   setIsPlaying: (playing: boolean) => void;
   resetPlayback: () => void;
@@ -166,6 +171,7 @@ export const useSongStore = create<SongState>((set, get) => ({
   playbackPosition: null,
   isPlaying: false,
   midiCandidates: [],
+  previousImportSong: null,
 
   setTitle: (title) => set((state) => ({
     song: { ...state.song, title, autoTitle: false },
@@ -253,7 +259,7 @@ export const useSongStore = create<SongState>((set, get) => ({
     return { ...interruptIfPlaying(state), song: newSong };
   }),
 
-  setChords: (updates) => set((state) => {
+  setChords: (updates, options) => set((state) => {
     if (updates.length === 0) return {};
     const byMeasure = new Map<number, Array<{ address: SlotAddress; chord: Chord | null }>>();
     for (const update of updates) {
@@ -266,7 +272,9 @@ export const useSongStore = create<SongState>((set, get) => ({
       if (!list) return m;
       const newChords = [...m.chords] as [Chord | null, Chord | null];
       for (const { address, chord } of list) {
-        newChords[address.slotIndex] = chord ? analyzeChord(chord, state.song.key) : null;
+        newChords[address.slotIndex] = chord
+          ? options?.preserveAnalysis ? structuredClone(chord) : analyzeChord(chord, state.song.key)
+          : null;
       }
       return { ...m, chords: newChords };
     });
@@ -362,6 +370,7 @@ export const useSongStore = create<SongState>((set, get) => ({
       playbackPosition: null,
       isPlaying: false,
       midiCandidates: [],
+      previousImportSong: null,
     }));
   },
 
@@ -376,7 +385,28 @@ export const useSongStore = create<SongState>((set, get) => ({
       playbackPosition: null,
       isPlaying: false,
       midiCandidates: [],
+      previousImportSong: null,
     }));
+  },
+
+  importSong: (song) => {
+    const previous = structuredClone(get().song);
+    get().setSong(song);
+    set({ previousImportSong: previous });
+  },
+
+  undoImport: () => {
+    const previous = get().previousImportSong;
+    if (previous) get().setSong(previous);
+  },
+
+  setSections: (sections) => {
+    const error = checkSectionRanges(sections, get().song.measures.length);
+    if (error) return error;
+    set((state) => ({
+      song: withAutoTitle({ ...state.song, sections: structuredClone(sections).sort((a, b) => a.startMeasure - b.startMeasure) }),
+    }));
+    return null;
   },
 
   setPlaybackPosition: (pos) => set({ playbackPosition: pos }),

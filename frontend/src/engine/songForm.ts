@@ -63,8 +63,38 @@ export function isSectionType(value: unknown): value is SectionType {
   return typeof value === 'string' && Object.hasOwn(SECTION_INFO, value);
 }
 
-export function sectionLabel(type: SectionType): string {
-  return SECTION_INFO[type].label;
+export function sectionLabel(type: SectionType | null): string {
+  return type === null ? 'Section' : SECTION_INFO[type].label;
+}
+
+export function sectionDisplayLabel(section: SongSection): string {
+  return section.label?.trim() || sectionLabel(section.type);
+}
+
+/** Keep imported regions editable without pretending their musical role is known. */
+export function checkSectionRanges(sections: readonly SongSection[], measureCount: number): string | null {
+  const ids = new Set<string>();
+  let end = 0;
+  for (const section of [...sections].sort((a, b) => a.startMeasure - b.startMeasure)) {
+    if (!isValidSection(section) || ids.has(section.id)) return 'Each section needs a valid, unique range.';
+    ids.add(section.id);
+    if (section.startMeasure + section.length > measureCount) return 'A section extends past the last bar.';
+    if (section.startMeasure < end) return 'Sections must not overlap.';
+    if (section.label !== undefined && (typeof section.label !== 'string' || section.label.length > 80)) {
+      return 'Section names must be 80 characters or fewer.';
+    }
+    end = section.startMeasure + section.length;
+  }
+  return null;
+}
+
+export function sectionColor(type: SectionType | null): string {
+  if (type === 'chorus' || type === 'post_chorus' || type === 'drop') return '#d29b45';
+  if (type === 'verse' || type === 'head' || type === 'a_section') return '#6a9fc2';
+  if (type === 'bridge' || type === 'b_section' || type === 'solo') return '#a28abc';
+  if (type === 'pre_chorus' || type === 'breakdown' || type === 'turnaround') return '#b58077';
+  if (type === null) return '#929292';
+  return '#79a58a';
 }
 
 export function sectionsInGroup(group: SectionGroup): SectionType[] {
@@ -89,8 +119,11 @@ export function sectionTitle(type: SectionType, bars: number): string {
 export function autoTitle(sections: readonly SongSection[]): string {
   if (sections.length === 0) return DEFAULT_SONG_TITLE;
   const ordered = [...sections].sort((a, b) => a.startMeasure - b.startMeasure);
-  if (ordered.length === 1) return sectionTitle(ordered[0].type, ordered[0].length);
-  const labels = ordered.slice(0, AUTO_TITLE_MAX_LABELS).map((s) => sectionLabel(s.type));
+  if (ordered.length === 1) {
+    const s = ordered[0];
+    return `${sectionDisplayLabel(s)} — ${s.length} ${s.length === 1 ? 'bar' : 'bars'}`;
+  }
+  const labels = ordered.slice(0, AUTO_TITLE_MAX_LABELS).map(sectionDisplayLabel);
   // U+2013 en dash between labels, U+2026 ellipsis when some are left out.
   return labels.join('–') + (ordered.length > AUTO_TITLE_MAX_LABELS ? '…' : '');
 }
@@ -149,7 +182,7 @@ function isValidSection(value: unknown): value is SongSection {
   const s = value as Record<string, unknown>;
   return (
     typeof s.id === 'string' &&
-    isSectionType(s.type) &&
+    (s.type === null || isSectionType(s.type)) &&
     Number.isInteger(s.startMeasure) && (s.startMeasure as number) >= 0 &&
     Number.isInteger(s.length) && (s.length as number) >= 1
   );

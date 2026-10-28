@@ -1,5 +1,5 @@
 import type { Chord } from '../models/types';
-import { NOTE_VALUES, MAJOR_SCALE_INTERVALS, MINOR_SCALE_INTERVALS } from './constants';
+import { NOTE_VALUES, MAJOR_SCALE_INTERVALS, MINOR_SCALE_INTERVALS } from './constants.ts';
 
 const ROMAN_NUMERALS = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'];
 

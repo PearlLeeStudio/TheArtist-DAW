@@ -1,5 +1,5 @@
 import type { Chord } from '../models/types';
-import { ROOTS } from './constants';
+import { ROOTS } from './constants.ts';
 
 const QUALITY_MAP: Record<string, string> = {
   '': 'maj',

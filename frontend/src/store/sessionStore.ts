@@ -44,19 +44,12 @@ interface SessionState {
 }
 
 function autoName(song: Song, generation: SessionGenerationContext): string {
-  const date = new Date();
-  const dateStr = date.toLocaleString(undefined, {
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
   const genrePart = generation.genre ? ` · ${generation.genre}` : '';
   // Pearl 2026-05-10: keep the song title literal — including "Untitled" —
   // instead of substituting song.key. Users want to see "Untitled" as-is so
   // they can tell the title was never set vs. assuming the key was the title.
   const titlePart = song.title || 'Untitled';
-  return `${titlePart}${genrePart} · ${dateStr}`;
+  return `${titlePart}${genrePart}`;
 }
 
 function persist(sessions: SavedSession[]): SavedSession[] {

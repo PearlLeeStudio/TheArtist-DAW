@@ -11,6 +11,8 @@ const INPUT_TABS: { id: InputMode; label: string }[] = [
 ];
 import Staff from './ScoreEditor/Staff';
 import SongFormDialog from './ScoreEditor/SongFormDialog';
+import ImportScoreDialog from './ScoreEditor/ImportScoreDialog';
+import SectionsDialog from './ScoreEditor/SectionsDialog';
 import PlayPanel from './RightPanel/play/PlayPanel';
 import SongSettings from './RightPanel/SongSettings';
 import ChordActions from './RightPanel/ChordActions';
@@ -21,6 +23,7 @@ import { useSongStore } from '../store/songStore';
 import { useSessionStore } from '../store/sessionStore';
 import { useGenerationStore } from '../store/generationStore';
 import { usePlayStore } from '../store/playStore';
+import type { Song } from '../models/types';
 
 /** The Play panel needs this much width for its rail and one pane. */
 const MIN_PANEL_WIDTH = 300;
@@ -49,16 +52,21 @@ export default function Layout() {
   const modelKey = useGenerationStore((s) => s.modelKey);
   const playSettings = usePlayStore((s) => s.settings);
   const resetPlayback = useSongStore((s) => s.resetPlayback);
+  const importSong = useSongStore((s) => s.importSong);
+  const previousImportSong = useSongStore((s) => s.previousImportSong);
+  const undoImport = useSongStore((s) => s.undoImport);
+  const [saveMessage, setSaveMessage] = useState('');
 
   // Bundle the Play-panel settings with the saved score, so MyPage replays
   // the session the way the editor played it at Save time (bpm + genre are
   // already inside `song`).
   const handleSaveSession = useCallback(() => {
-    addSession(song, {
-      model: modelKey,
-      genre: song.genre,
-      ...playSettings,
-    });
+    try {
+      addSession(song, { model: modelKey, genre: song.genre, ...playSettings });
+      setSaveMessage('Saved in this browser. Open Projects to download a backup.');
+    } catch (error) {
+      setSaveMessage(error instanceof Error ? error.message : 'The project could not be saved.');
+    }
   }, [addSession, song, modelKey, playSettings]);
 
   const [midiActiveNotes, setMidiActiveNotes] = useState<number[]>([]);
@@ -71,6 +79,8 @@ export default function Layout() {
   // read-only staves there, which needs the whole canvas width.
   const [view, setView] = useState<'editor' | 'my'>('editor');
   const [songFormOpen, setSongFormOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
+  const [sectionsOpen, setSectionsOpen] = useState(false);
   const resizingRef = useRef(false);
 
   // After New from Song Form lands, show Input → Generate so the A/B/C
@@ -80,6 +90,13 @@ export default function Layout() {
     setPanelMode('input');
     setInputMode('generate');
   }, []);
+
+  const handleImported = useCallback((imported: Song) => {
+    importSong(imported);
+    setPanelOpen(true);
+    setPanelMode('input');
+    setInputMode('generate');
+  }, [importSong]);
 
   const startResize = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
@@ -146,9 +163,9 @@ export default function Layout() {
               background: view === 'my' ? 'var(--text-heading)' : 'var(--btn-bg)',
               color: view === 'my' ? 'var(--bg-primary)' : 'var(--text-primary)',
             }}
-            title={view === 'my' ? 'Back to editor' : 'Open MyPage'}
+            title={view === 'my' ? 'Back to editor' : 'Open saved projects'}
           >
-            MyPage
+            {view === 'my' ? 'Editor' : 'Projects'}
           </button>
         </div>
       </header>
@@ -161,10 +178,19 @@ export default function Layout() {
         <div className="flex-1 overflow-y-auto p-4 min-w-0">
           {/* Top bar: song-form entry left, title centered, Save/Clear
               right-aligned */}
-          <div className="flex items-center mb-4 gap-3">
+          <div className="flex flex-wrap items-center mb-4 gap-3">
             {/* Left group — flex-1 like the right group, so the title
                 stays centered */}
             <div className="flex-1 flex items-center justify-start gap-2">
+              <button
+                onClick={() => setImportOpen(true)}
+                className="px-3 py-1 text-xs font-bold whitespace-nowrap btn-hover"
+                style={{ background: 'var(--btn-bg)', color: 'var(--text-heading)', border: '1px solid var(--border)' }}
+                title="Import and review a PDF or image with chord symbols"
+                aria-haspopup="dialog"
+              >
+                Import Score
+              </button>
               <button
                 onClick={() => setSongFormOpen(true)}
                 className="px-3 py-1 text-xs font-bold whitespace-nowrap btn-hover"
@@ -221,6 +247,8 @@ export default function Layout() {
             </div>
           </div>
 
+          {saveMessage && <p role="status" className="text-xs mb-3" style={{ color: 'var(--text-soft)' }}>{saveMessage}</p>}
+
           {/* Inline song settings — sits above the staff so the user can
               click straight on BPM / Time / Key / Genre to change them
               instead of hunting in a side panel. */}
@@ -228,6 +256,15 @@ export default function Layout() {
             <SongSettings />
           </div>
 
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-2 text-xs" style={{ color: 'var(--text-muted)' }}>
+            <span>{song.sections?.length ? 'Click a section name or drag across chords to select a range.' : 'Drag across chords to generate a variation.'}</span>
+            <div className="flex gap-2">
+              {previousImportSong && <button onClick={() => {
+                if (window.confirm('Restore the song from before the import? Changes made after importing will be replaced.')) undoImport();
+              }} className="px-2 py-1 btn-hover" style={{ background: 'var(--btn-bg)' }}>Undo import</button>}
+              <button onClick={() => setSectionsOpen(true)} className="px-2 py-1 btn-hover" style={{ background: 'var(--btn-bg)' }} aria-haspopup="dialog">Edit Song Form</button>
+            </div>
+          </div>
           <Staff />
         </div>
 
@@ -344,6 +381,8 @@ export default function Layout() {
           onGenerated={handleSongFormGenerated}
         />
       )}
+      {importOpen && <ImportScoreDialog onClose={() => setImportOpen(false)} onImported={handleImported} />}
+      {sectionsOpen && <SectionsDialog onClose={() => setSectionsOpen(false)} />}
     </div>
   );
 }

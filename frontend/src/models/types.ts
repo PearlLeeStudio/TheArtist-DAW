@@ -23,7 +23,10 @@ export type SectionType =
 /** A song-form section laid over a run of measures. */
 export interface SongSection {
   id: string;
-  type: SectionType;
+  /** null keeps an uncertain imported region without inventing Verse/Chorus. */
+  type: SectionType | null;
+  label?: string;
+  origin?: 'explicit' | 'inferred' | 'manual';
   startMeasure: number;  // index of its first measure
   length: number;        // measures (bars)
   /** Set while "New from Song Form" is still generating the section, which
@@ -48,6 +51,8 @@ export interface Song {
    *  songForm.ts); editing the title turns it off. Missing on older songs,
    *  where a title of '' or 'Untitled' counts as automatic. */
   autoTitle?: boolean;
+  /** Source metadata only; uploaded file bytes are never autosaved. */
+  importSource?: { filename: string; model: string; requestId: string | null };
 }
 
 export interface SlotAddress {
