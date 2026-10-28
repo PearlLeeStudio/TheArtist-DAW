@@ -19,12 +19,12 @@ export default function ThemeToggle() {
   return (
     <button
       onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-      className="px-2 py-1.5 text-base leading-none"
+      className="inline-flex h-7 w-8 items-center justify-center text-base leading-none"
       style={{ background: 'var(--btn-bg)', color: 'var(--text-primary)' }}
       title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
       aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
     >
-      {theme === 'dark' ? '\uD83C\uDF19' : '\u2600\uFE0F'}
+      <span aria-hidden="true" style={{ fontSize: 8 }}>{theme === 'dark' ? '\uD83C\uDF19' : '\u2600\uFE0F'}</span>
     </button>
   );
 }
