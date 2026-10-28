@@ -177,8 +177,16 @@ class SongGenerateRequest(BaseModel):
     keeps the genre's own."""
     genre: str = Field(..., description="One of the 13 supported genres")
     length_bars: int = Field(default=8, ge=1, le=64)
-    n_candidates: int = Field(default=1, ge=1, le=3)
-    seed: int | None = None
+    n_candidates: int = Field(
+        default=1, ge=1, le=1, strict=True,
+        description="This composite endpoint returns one arrangement and supports only 1. "
+                    "Use /api/generate/chords for multiple chord candidates.",
+    )
+    seed: int | None = Field(
+        default=None, ge=0, le=0xFFFFFFFF, strict=True,
+        description="Optional request-local sampling seed (0..4294967295), including rule fallback. "
+                    "Reproducible for the same model, device, runtime and request; null stays stochastic.",
+    )
     harmony_rhythm: str | None = Field(
         default=None,
         description=f"Harmony comping rhythm preset id, one of: {', '.join(_RHYTHM_IDS)}. "
@@ -227,3 +235,4 @@ class SongGenerateResponse(BaseModel):
     tracks: dict[str, Track]               # 3 tracks: harmony, bass, drum
     midi_b64: str                          # MIDI render for caller convenience
     model_used: str
+    seed: int | None = None              # actual sampling seed; null means stochastic

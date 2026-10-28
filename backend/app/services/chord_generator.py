@@ -78,7 +78,7 @@ GENRE_UPGRADES: dict[str, dict[int, list[str]]] = {
 
 
 def _diatonic_chord(root: int, degree: int, is_minor: bool, flats: bool,
-                    genre: str | None = None) -> str:
+                    genre: str | None = None, *, rng: random.Random) -> str:
     """Build a diatonic chord name, optionally upgraded for genre color."""
     intervals = MINOR_INTERVALS if is_minor else MAJOR_INTERVALS
     qualities = MINOR_QUALITIES if is_minor else MAJOR_QUALITIES
@@ -88,16 +88,16 @@ def _diatonic_chord(root: int, degree: int, is_minor: bool, flats: bool,
     # Genre-specific quality upgrade (~30% chance)
     if genre and genre in GENRE_UPGRADES:
         upgrades = GENRE_UPGRADES[genre].get(degree)
-        if upgrades and random.random() < 0.3:
-            quality = random.choice(upgrades)
+        if upgrades and rng.random() < 0.3:
+            quality = rng.choice(upgrades)
 
     return f"{note}{quality}" if quality != "maj" else note
 
 
 # ── Strategy helpers ────────────────────────────────────────────────────
 
-def _pick_weighted(options: list[int], weights: list[float]) -> int:
-    return random.choices(options, weights=weights, k=1)[0]
+def _pick_weighted(options: list[int], weights: list[float], rng: random.Random) -> int:
+    return rng.choices(options, weights=weights, k=1)[0]
 
 
 def _collect_preceding_chords(
@@ -171,6 +171,7 @@ def _cadence_ending(root: int, is_minor: bool, flats: bool, chords: list[str],
 def _strategy_diatonic(
     root: int, is_minor: bool, flats: bool, n_slots: int,
     genre: str | None, _preceding: list[str], position: float,
+    rng: random.Random,
 ) -> StrategyResult:
     """Circle-of-fifths / diatonic voice leading."""
     degrees = list(range(7))
@@ -180,7 +181,7 @@ def _strategy_diatonic(
         weights = [3.0, 1.0, 2.0, 2.0, 3.0, 3.0, 1.0]
 
     chords = [
-        _diatonic_chord(root, _pick_weighted(degrees, weights), is_minor, flats, genre)
+        _diatonic_chord(root, _pick_weighted(degrees, weights, rng), is_minor, flats, genre, rng=rng)
         for _ in range(n_slots)
     ]
 
@@ -191,6 +192,7 @@ def _strategy_diatonic(
 def _strategy_tritone_sub(
     root: int, is_minor: bool, flats: bool, n_slots: int,
     genre: str | None, _preceding: list[str], position: float,
+    rng: random.Random,
 ) -> StrategyResult:
     """Tritone substitution: ii — bII7 instead of ii — V7."""
     chords: list[str] = []
@@ -204,7 +206,7 @@ def _strategy_tritone_sub(
             chords.append(f"{_note_name(ii_semi, flats)}m7")
         else:
             fill_degrees = [0, 3, 5] if not is_minor else [0, 2, 5]
-            chords.append(_diatonic_chord(root, random.choice(fill_degrees), is_minor, flats, genre))
+            chords.append(_diatonic_chord(root, rng.choice(fill_degrees), is_minor, flats, genre, rng=rng))
 
     # At song end, resolve tritone sub to tonic
     if position >= 0.85 and len(chords) >= 1:
@@ -217,6 +219,7 @@ def _strategy_tritone_sub(
 def _strategy_modal_interchange(
     root: int, is_minor: bool, flats: bool, n_slots: int,
     genre: str | None, _preceding: list[str], position: float,
+    rng: random.Random,
 ) -> StrategyResult:
     """Borrow chords from parallel major/minor."""
     parallel = not is_minor
@@ -225,12 +228,12 @@ def _strategy_modal_interchange(
 
     chords = []
     for _ in range(n_slots):
-        if random.random() < 0.5:
-            deg = random.choice(borrow_degrees)
-            chords.append(_diatonic_chord(root, deg, parallel, flats, genre))
+        if rng.random() < 0.5:
+            deg = rng.choice(borrow_degrees)
+            chords.append(_diatonic_chord(root, deg, parallel, flats, genre, rng=rng))
         else:
-            deg = random.choice(home_degrees)
-            chords.append(_diatonic_chord(root, deg, is_minor, flats, genre))
+            deg = rng.choice(home_degrees)
+            chords.append(_diatonic_chord(root, deg, is_minor, flats, genre, rng=rng))
 
     chords = _cadence_ending(root, is_minor, flats, chords, position)
     return "Modal interchange", chords
@@ -249,13 +252,19 @@ def generate_suggestions(
     selected_measures: list[int],
     time_signature: tuple[int, int] = (4, 4),
     position_ratio: float = 0.5,
+    seed: int | None = None,
 ) -> list[Suggestion]:
     """Generate 3 chord suggestions for selected measures.
 
     Args:
         position_ratio: Where the selection sits in the song (0.0=start, 1.0=end).
             Affects cadence decisions — near the end, strategies resolve to tonic.
+        seed: Request-local RNG seed; None uses fresh system entropy. Neither
+            path mutates the process-wide Python random state.
     """
+    if seed is not None and (type(seed) is not int or not 0 <= seed <= 0xFFFFFFFF):
+        raise ValueError("seed must be an integer from 0 to 4294967295")
+    rng = random.Random(seed)
     root, is_minor = _parse_key(key)
     key_root = key.strip().split()[0]
     flats = _prefer_flats(key_root)
@@ -264,7 +273,7 @@ def generate_suggestions(
 
     suggestions: list[Suggestion] = []
     for idx, strategy in enumerate(_STRATEGIES):
-        label, flat_chords = strategy(root, is_minor, flats, n_slots, genre, preceding, position_ratio)
+        label, flat_chords = strategy(root, is_minor, flats, n_slots, genre, preceding, position_ratio, rng)
 
         chord_map: dict[str, list[str]] = {}
         for i, m_idx in enumerate(selected_measures):

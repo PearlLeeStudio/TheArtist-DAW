@@ -486,6 +486,7 @@ def generate_with_model(
     top_p: float = 0.9,
     repetition_penalty: float = 1.3,
     no_repeat_ngram_size: int = 3,
+    seed: int | None = None,
 ) -> list[list[str]]:
     """Run model inference, return list of bars (each bar = list of chord strings).
 
@@ -493,8 +494,18 @@ def generate_with_model(
     [PAD] and empty bars are banned until that many bars are complete, and
     sampling stops once they are. It still comes back short when it runs out
     of token budget first.
+
+    A seed owns a separate CPU/CUDA Generator for this pass. No global
+    torch, Python or NumPy state is reseeded, so concurrent requests do not
+    consume one another's seeded stream. Reproducibility is scoped to the
+    same checkpoint, runtime, device and sampling parameters.
     """
     device = loaded.device
+    generator = None
+    if seed is not None:
+        if type(seed) is not int or not 0 <= seed <= 0xFFFFFFFF:
+            raise ValueError("seed must be an integer from 0 to 4294967295")
+        generator = torch.Generator(device=device).manual_seed(seed)
     prompt = torch.tensor([prompt_ids], device=device)
     # BAR + 2 chords per bar, plus slack so a few extra chords or other
     # non-chord tokens cannot cut the section short
@@ -520,6 +531,7 @@ def generate_with_model(
         bar_id=tokenizer.bar_id,
         chord_ids={i for tok, i in tokenizer.token2id.items() if not tok.startswith("[")},
         end_ids={tokenizer.pad_id},
+        generator=generator,
     )
 
     gen_ids = output[0, len(prompt_ids):].tolist()

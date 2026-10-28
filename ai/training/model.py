@@ -271,6 +271,7 @@ class MusicTransformer(nn.Module):
         bar_id: int = 3,
         chord_ids: set[int] | None = None,
         end_ids: set[int] | None = None,
+        generator: torch.Generator | None = None,
     ) -> torch.Tensor:
         """Autoregressive generation from a prompt.
 
@@ -307,6 +308,8 @@ class MusicTransformer(nn.Module):
             chord_ids: the chord token ids; required with ``n_bars``.
             end_ids: other tokens that would end the sequence (e.g. [PAD]),
                 banned with ``eos_id`` under ``n_bars``.
+            generator: request-local sampling RNG on the same device as the
+                model. None retains the caller's normal unseeded sampling.
 
         Returns:
             (1, L') full sequence including prompt and generated tokens.
@@ -380,7 +383,7 @@ class MusicTransformer(nn.Module):
                 logits = sorted_logits.scatter(1, sorted_idx, sorted_logits)
 
             probs = F.softmax(logits, dim=-1)
-            next_id = torch.multinomial(probs, num_samples=1)
+            next_id = torch.multinomial(probs, num_samples=1, generator=generator)
             ids = torch.cat([ids, next_id], dim=-1)
 
             if (next_id == eos_id).all():

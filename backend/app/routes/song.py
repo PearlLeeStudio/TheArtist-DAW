@@ -7,6 +7,8 @@ checkpoint, then layers harmony + bass + drum into 3 symbolic tracks
 (melody track was dropped 2026-05-10) and ships a MIDI render along.
 The optional `harmony_rhythm` / `drum_pattern` / `harmony_instrument`
 make the editor's Play-panel choices; null keeps the genre's own.
+An optional seed controls sampling without reseeding global RNG state.
+This composite endpoint returns one arrangement: n_candidates must be 1.
 
 Response shape (per `SongGenerateResponse`):
     {genre, key, bpm, time_signature,
@@ -14,7 +16,7 @@ Response shape (per `SongGenerateResponse`):
      bars: [{"chords": [...]}, ...],
      tracks: {harmony, bass, drum},   # each: {events, instrument, source}
      midi_b64,
-     model_used}
+     model_used, seed}
 """
 
 from __future__ import annotations
@@ -24,7 +26,6 @@ import logging
 from fastapi import APIRouter, HTTPException
 
 from app.models.schemas import (
-    ChordGenerateRequest,
     ContextMeasure,
     SongGenerateRequest,
     SongGenerateResponse,
@@ -70,6 +71,7 @@ def _generate_bars(
     bpm: int,
     time_signature: tuple[int, int],
     n_bars: int,
+    seed: int | None = None,
 ) -> tuple[list[dict], str]:
     """Run the existing chord-generation chain (AI when available, rules
     otherwise) and return (bars, model_used): `n_bars` bars of two chords.
@@ -77,6 +79,7 @@ def _generate_bars(
     candidate fan-out. A model pass is fitted like the editor's
     (`_bars_to_chord_map`): a short one repeats its own bars, each bar
     keeps two chords; a pass with no bars falls back to the rules.
+    Both paths use the request's seed; model_used identifies a rule fallback.
     """
     model_key = dispatch_model_for_genre(genre)
     selected = list(range(n_bars))
@@ -96,6 +99,7 @@ def _generate_bars(
                 bars = generate_with_model(
                     loaded, tokenizer, prompt_ids, n_bars,
                     temperature=0.8,
+                    seed=seed,
                 )
                 if bars:
                     chord_map = _bars_to_chord_map(bars, selected)
@@ -109,6 +113,7 @@ def _generate_bars(
     suggestions = generate_suggestions(
         key=key, genre=genre, context=full_context,
         selected_measures=selected, time_signature=time_signature,
+        seed=seed,
     )
     if suggestions:
         sug = suggestions[0]
@@ -162,6 +167,7 @@ def generate_song(req: SongGenerateRequest) -> SongGenerateResponse:
         bpm=bpm,
         time_signature=time_signature,
         n_bars=req.length_bars,
+        seed=req.seed,
     )
 
     h_events = build_harmony_events(bars, req.genre, beats_per_measure=beats_per_measure,
@@ -194,4 +200,5 @@ def generate_song(req: SongGenerateRequest) -> SongGenerateResponse:
         },
         midi_b64=midi_to_b64(midi),
         model_used=model_used,
+        seed=req.seed,
     )
