@@ -79,6 +79,11 @@ export interface PlaySettings {
   /** Bass layer (chord root on the genre's bass rhythm) on or off. */
   bassEnabled: boolean;
   visualMode: VisualMode;
+  /** Overall output gain 0..1, applied after the individual parts. */
+  masterVolume: number;
+  /** Harmony and bass gains 0..1, independent of instrument and rhythm. */
+  harmonyVolume: number;
+  bassVolume: number;
   /** Drum bus gain 0..1. */
   drumVolume: number;
 }

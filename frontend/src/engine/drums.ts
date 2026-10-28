@@ -15,6 +15,7 @@
 import * as Tone from 'tone';
 import { drumPatternById, hitPos, hitVel } from './drumPatterns';
 import type { DrumHit, DrumVoice } from './drumPatterns';
+import { getMasterInput } from './mixer';
 
 export { DRUM_PATTERNS, getDrumPatternForGenre } from './drumPatterns';
 export type { DrumHit, DrumPattern } from './drumPatterns';
@@ -32,7 +33,7 @@ let crashNoise: Tone.NoiseSynth | null = null;
 let tomHi: Tone.MembraneSynth | null = null;
 let tomMid: Tone.MembraneSynth | null = null;
 let tomLo: Tone.MembraneSynth | null = null;
-let drumBus: Tone.Gain | null = null;
+let drumBus: GainNode | null = null;
 /** Drum bus gain; kept here so it can be set before the bus exists. */
 let drumVolume = 0.6;
 
@@ -70,7 +71,8 @@ function getDrumMachine(name: string): DrumMachine | null {
   if (!drumMachines[name]) {
     try {
       const audioCtx = Tone.getContext().rawContext as AudioContext;
-      const dm = new DrumMachine(audioCtx, { instrument: name, volume: 100 });
+      ensureSynths();
+      const dm = new DrumMachine(audioCtx, { instrument: name, volume: 100, destination: drumBus! });
       drumMachines[name] = { dm, ready: false };
       dm.load.then(() => { drumMachines[name].ready = true; })
         .catch((err) => console.warn(`smplr ${name} failed:`, err));
@@ -90,8 +92,10 @@ function ensureSynths(): void {
   if (drumBus) return;
 
   // Output chain: drum sources → busGain → HPF (removes sub rumble below 50 Hz)
-  // → Compressor (tight 4:1 glue for punch without being louder) → destination.
-  drumBus = new Tone.Gain(drumVolume);
+  // → Compressor (tight 4:1 glue for punch without being louder) → master.
+  // A native input also routes smplr through the same gain and effects.
+  drumBus = (Tone.getContext().rawContext as AudioContext).createGain();
+  drumBus.gain.value = drumVolume;
   const hpf = new Tone.Filter({ type: 'highpass', frequency: 50, Q: 0.7 });
   const glue = new Tone.Compressor({
     threshold: -18,
@@ -100,7 +104,8 @@ function ensureSynths(): void {
     release: 0.12,
     knee: 6,
   });
-  drumBus.chain(hpf, glue, Tone.getDestination());
+  Tone.connect(drumBus, hpf);
+  hpf.chain(glue, getMasterInput());
 
   // Kick: snappy transient, less boom, shorter tail.
   kickSynth = new Tone.MembraneSynth({

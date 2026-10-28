@@ -4,6 +4,7 @@ import { resolvePianoVoicing, generateGuitarVoicing } from './voicingEngine';
 import { scheduleDrumMeasure, clearDrumSchedule, setCurrentDrumPattern, setDrumVolume, swingDelay } from './drums';
 import { playChordOnInstrument, preloadInstruments } from './instruments';
 import { scheduleBassSlot, setBassEnabled } from './arrangement';
+import { getInstrumentOutput, setMixerVolumes } from './mixer';
 import {
   HARMONY_GRID,
   autoRhythmPreset,
@@ -48,6 +49,7 @@ export function setHarmonyRhythmOverride(pattern: number[] | null): void {
 
 /** Apply every Play-panel setting at once (playSettings.ts enginePlayConfig). */
 export function applyPlayConfig(config: EnginePlayConfig): void {
+  setMixerVolumes(config);
   setHarmonyOverride(config.harmonyOverride);
   setHarmonyRhythmOverride(config.harmonyRhythmOverride);
   currentInstrument = config.voicingMode;
@@ -58,7 +60,8 @@ export function applyPlayConfig(config: EnginePlayConfig): void {
 
 /** Sampled instruments the current schedule needs; awaited by
  *  startPlayback(). Set by schedulePlayback(). */
-let pendingInstruments: (string | null)[] = [];
+let pendingHarmonyInstrument: string | null = null;
+let pendingBassInstrument: string | null = null;
 /** The schedule's harmony is the built-in piano (no genre, no pick), whose
  *  samples startPlayback() waits for as well. */
 let pendingPiano = false;
@@ -133,7 +136,7 @@ function getPianoSynth(): Tone.Sampler {
       },
       baseUrl: 'https://tonejs.github.io/audio/salamander/',
       release: 1,
-    }).toDestination();
+    }).connect(getInstrumentOutput('harmony'));
     pianoSampler.volume.value = -6;
   }
   return pianoSampler;
@@ -158,7 +161,7 @@ function getGuitarSynth(): Tone.PolySynth {
         sustain: 0.0,
         release: 0.5,
       },
-    }).toDestination();
+    }).connect(getInstrumentOutput('harmony'));
     guitarSynth.volume.value = -8;
   }
   return guitarSynth;
@@ -273,7 +276,8 @@ export function schedulePlayback(
   // Transport. Resolved here rather than at trigger time because the
   // Transport callback runs too late to await anything.
   const harmonyInstrument = harmonyOverride ?? genreHarmonyInstrument(genre);
-  pendingInstruments = [harmonyInstrument, arrangement?.bassInstrument ?? null];
+  pendingHarmonyInstrument = harmonyInstrument;
+  pendingBassInstrument = arrangement?.bassInstrument ?? null;
   pendingPiano = harmonyInstrument === null && currentInstrument === 'piano';
 
   let time = 0;
@@ -358,7 +362,11 @@ export async function startPlayback(): Promise<boolean> {
   // Wait for the schedule's sampled instruments before rolling the
   // Transport, so bar 1 plays on the real instrument instead of the synth
   // fallback. Bounded internally — a 404 name or dead CDN still starts.
-  await Promise.all([preloadInstruments(pendingInstruments), pendingPiano ? pianoLoaded() : undefined]);
+  await Promise.all([
+    preloadInstruments([pendingHarmonyInstrument]),
+    preloadInstruments([pendingBassInstrument], 8000, 'bass'),
+    pendingPiano ? pianoLoaded() : undefined,
+  ]);
   if (generation !== scheduleGeneration) return false;
   Tone.getTransport().start();
   isPlaying = true;

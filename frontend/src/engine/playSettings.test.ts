@@ -109,6 +109,9 @@ test('the engine config keeps Auto overrides null so the played song decides', (
     voicingMode: 'guitar',
     drumPatternId: 9,
     bassEnabled: true,
+    masterVolume: 1,
+    harmonyVolume: 1,
+    bassVolume: 1,
     drumVolume: 0.6,
   });
   const cfg = enginePlayConfig(
@@ -217,6 +220,37 @@ test('sessions saved before the Play panel replay the way MyPage played them', (
   // A current session keeps drums off.
   const off = settings({ drumMode: 'manual', drumPatternId: null, bassEnabled: false, visualMode: 'piano' });
   assert.deepEqual(playSettingsFromSession({ ...legacy, ...off }), off);
+});
+
+test('controller levels keep saved mutes and migrate old mixes without changing their volume', () => {
+  const oldMix = { model: 'ft_f1', genre: 'pop', drumMode: 'manual' as const, drumPatternId: 4, drumVolume: 0.35 };
+  const restored = playSettingsFromSession(oldMix);
+  assert.deepEqual(
+    [restored.masterVolume, restored.harmonyVolume, restored.bassVolume, restored.drumVolume],
+    [1, 1, 1, 0.35],
+  );
+  const mix = settings({ masterVolume: 0.7, harmonyVolume: 0, bassVolume: 0.4, drumVolume: 0.2 });
+  const saved = JSON.parse(JSON.stringify({ ...oldMix, ...mix }));
+  assert.deepEqual(playSettingsFromSession(saved), mix);
+  for (const genre of ['pop', 'jazz', null]) {
+    const config = enginePlayConfig(playSettingsFromSession(saved), genre);
+    assert.deepEqual(
+      [config.masterVolume, config.harmonyVolume, config.bassVolume, config.drumVolume],
+      [0.7, 0, 0.4, 0.2],
+    );
+  }
+  const muted = sanitizePlaySettings({ masterVolume: 0, harmonyVolume: 0, bassVolume: 0, drumVolume: 0 });
+  assert.deepEqual([muted.masterVolume, muted.harmonyVolume, muted.bassVolume, muted.drumVolume], [0, 0, 0, 0]);
+});
+
+test('controller levels clamp imported values and reject non-finite or non-number values', () => {
+  const normalized = sanitizePlaySettings({ masterVolume: -1, harmonyVolume: 2, bassVolume: NaN, drumVolume: Infinity });
+  assert.deepEqual(
+    [normalized.masterVolume, normalized.harmonyVolume, normalized.bassVolume, normalized.drumVolume],
+    [0, 1, 1, 0.6],
+  );
+  const invalid = sanitizePlaySettings({ masterVolume: '0', harmonyVolume: null, bassVolume: false, drumVolume: {} });
+  assert.deepEqual(invalid, DEFAULT_PLAY_SETTINGS);
 });
 
 test('every harmony instrument is unique and every genre default is pickable', () => {

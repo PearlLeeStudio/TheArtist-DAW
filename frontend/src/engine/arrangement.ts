@@ -112,7 +112,7 @@ export function scheduleBassSlot(
       if (!bassEnabled) return;
       // ~a quarter at the tempo playing now (the BPM knob changes it live).
       const dur = 0.9 * (60 / Tone.getTransport().bpm.value);
-      playChordOnInstrument(arrangement.bassInstrument, [bassMidi], t + swingDelay(pos), dur, 0.6);
+      playChordOnInstrument(arrangement.bassInstrument, [bassMidi], t + swingDelay(pos), dur, 0.6, 'bass');
     }, slotTime + (pos - slotStartBeat) * secondsPerBeat);
     scheduledIds.push(id);
   }

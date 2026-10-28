@@ -1,7 +1,7 @@
 /**
  * Play-panel settings resolved against a song's genre: which harmony
  * instrument and comping rhythm, keyboard or guitar voicing, which drum
- * pattern, bass on or off. Pure — the store, the playback engine, MyPage and
+ * pattern, bass on or off, and master/part levels. Pure — the store, the playback engine, MyPage and
  * the node tests all resolve through here, which is what makes a saved
  * session replay exactly like the editor.
  */
@@ -38,6 +38,9 @@ export const DEFAULT_PLAY_SETTINGS: PlaySettings = {
   drumPatternId: null,
   bassEnabled: true,
   visualMode: 'auto',
+  masterVolume: 1,
+  harmonyVolume: 1,
+  bassVolume: 1,
   drumVolume: 0.6,
 };
 
@@ -116,6 +119,9 @@ export interface EnginePlayConfig {
   voicingMode: VoicingMode;
   drumPatternId: number | null;
   bassEnabled: boolean;
+  masterVolume: number;
+  harmonyVolume: number;
+  bassVolume: number;
   drumVolume: number;
 }
 
@@ -126,6 +132,9 @@ export function enginePlayConfig(settings: PlaySettings, genre: string | null | 
     voicingMode: resolveVoicingMode(settings, genre),
     drumPatternId: resolveDrumPatternId(settings, genre),
     bassEnabled: settings.bassEnabled,
+    masterVolume: settings.masterVolume,
+    harmonyVolume: settings.harmonyVolume,
+    bassVolume: settings.bassVolume,
     drumVolume: settings.drumVolume,
   };
 }
@@ -190,6 +199,13 @@ const DRUM_MODES: DrumMode[] = ['auto', 'manual'];
 const HARMONY_NAMES = new Set(HARMONY_INSTRUMENTS.map((i) => i.name));
 const DRUM_IDS = new Set(DRUM_PATTERNS.map((p) => p.id));
 
+/** Preserve a deliberate mute (0); old or invalid values use the previous mix. */
+export function sanitizeVolume(value: unknown, fallback: number): number {
+  return typeof value === 'number' && Number.isFinite(value)
+    ? Math.max(0, Math.min(1, value))
+    : fallback;
+}
+
 /** PlaySettings from untrusted JSON (localStorage, an imported session file):
  *  every missing, unknown or malformed field falls back to its default. */
 export function sanitizePlaySettings(raw: unknown): PlaySettings {
@@ -209,9 +225,10 @@ export function sanitizePlaySettings(raw: unknown): PlaySettings {
       : d.drumPatternId,
     bassEnabled: typeof r.bassEnabled === 'boolean' ? r.bassEnabled : d.bassEnabled,
     visualMode: pick(r.visualMode, VISUAL_MODES, d.visualMode),
-    drumVolume: typeof r.drumVolume === 'number' && Number.isFinite(r.drumVolume)
-      ? Math.max(0, Math.min(1, r.drumVolume))
-      : d.drumVolume,
+    masterVolume: sanitizeVolume(r.masterVolume, d.masterVolume),
+    harmonyVolume: sanitizeVolume(r.harmonyVolume, d.harmonyVolume),
+    bassVolume: sanitizeVolume(r.bassVolume, d.bassVolume),
+    drumVolume: sanitizeVolume(r.drumVolume, d.drumVolume),
   };
 }
 

@@ -6,7 +6,7 @@
  * instrument. Replaces the previous piano/guitar/vocal-only palette.
  *
  * Architecture:
- *   - One Soundfont instance per GM instrument name, lazy-loaded from
+ *   - One Soundfont instance per layer and GM instrument name, lazy-loaded from
  *     gleitz/midi-js-soundfonts CDN (~100KB-1MB per instrument).
  *   - Shares Tone's AudioContext for unified scheduling with the rest of
  *     playback (drums, MIDI input, etc.).
@@ -21,6 +21,8 @@
 import * as Tone from 'tone';
 import { Soundfont, SplendidGrandPiano, ElectricPiano } from 'smplr';
 import { GENRE_BASS_INSTRUMENT, GENRE_HARMONY_INSTRUMENT } from './genreTables';
+import { getInstrumentOutput } from './mixer';
+import type { InstrumentLayer } from './audioMixer';
 
 // The genre → instrument tables live in genreTables.ts (pure data).
 export { GENRE_BASS_INSTRUMENT, GENRE_HARMONY_INSTRUMENT } from './genreTables';
@@ -48,18 +50,18 @@ function getAudioContext(): AudioContext {
 /** Curated smplr classes for high-quality samples (Logic Pro-equivalent
  *  free options). Falls through to FluidR3 GM Soundfont for everything else.
  *
- *  Connects to audioCtx.destination by default (not Tone.getDestination().input
- *  which can throw "value with key not found" on some Tone v15 versions).
+ *  Both smplr and Tone sources use native layer gains in the same context.
+ *  A layer owns its instance, so changing harmony gain never changes bass.
  */
-function buildCuratedInstrument(name: string): InstrumentLike | null {
+function buildCuratedInstrument(name: string, destination: AudioNode): InstrumentLike | null {
   const ctx = getAudioContext();
   if (name === 'acoustic_grand_piano') {
-    return new SplendidGrandPiano(ctx) as unknown as InstrumentLike;
+    return new SplendidGrandPiano(ctx, { destination }) as unknown as InstrumentLike;
   }
   if (name === 'electric_piano_1') {
     // smplr's ElectricPiano accepts 'CP80' (no hyphen) — 'CP-80' throws.
     // Other valid names: PianetT, WurlitzerEP200, TX81Z.
-    return new ElectricPiano(ctx, { instrument: 'CP80' }) as unknown as InstrumentLike;
+    return new ElectricPiano(ctx, { instrument: 'CP80', destination }) as unknown as InstrumentLike;
   }
   return null;
 }
@@ -73,32 +75,35 @@ function buildCuratedInstrument(name: string): InstrumentLike | null {
  * un-ready, i.e. silent — validate additions against
  * https://gleitz.github.io/midi-js-soundfonts/FluidR3_GM/names.json.
  */
-export function getInstrument(name: string): InstrumentLike | null {
-  if (!registry[name]) {
+export function getInstrument(name: string, layer: InstrumentLayer = 'harmony'): InstrumentLike | null {
+  const key = `${layer}:${name}`;
+  if (!registry[key]) {
     try {
       // Try curated high-quality class first (SplendidGrandPiano,
       // ElectricPiano CP-80 etc. — closest free thing to Logic Pro
       // built-in samples). Falls back to FluidR3_GM Soundfont.
-      let inst = buildCuratedInstrument(name);
+      const destination = getInstrumentOutput(layer);
+      let inst = buildCuratedInstrument(name, destination);
       if (inst === null) {
         inst = new Soundfont(getAudioContext(), {
           instrument: name,
           kit: 'FluidR3_GM',
+          destination,
         }) as unknown as InstrumentLike;
       }
-      registry[name] = { sf: inst, ready: false };
-      inst.load.then(() => { registry[name].ready = true; })
+      registry[key] = { sf: inst, ready: false };
+      inst.load.then(() => { registry[key].ready = true; })
         .catch((err) => console.warn(`Instrument '${name}' failed:`, err));
     } catch (err) {
       console.warn(`Instrument '${name}' init failed:`, err);
       return null;
     }
   }
-  return registry[name].sf;
+  return registry[key].sf;
 }
 
-export function isInstrumentReady(name: string): boolean {
-  return registry[name]?.ready ?? false;
+export function isInstrumentReady(name: string, layer: InstrumentLayer = 'harmony'): boolean {
+  return registry[`${layer}:${name}`]?.ready ?? false;
 }
 
 /**
@@ -118,11 +123,12 @@ export function isInstrumentReady(name: string): boolean {
 export function preloadInstruments(
   names: (string | null | undefined)[],
   timeoutMs = 8000,
+  layer: InstrumentLayer = 'harmony',
 ): Promise<void> {
   const wanted = [...new Set(names.filter((n): n is string => !!n))];
   if (wanted.length === 0) return Promise.resolve();
   const loads = wanted.map((name) => {
-    const inst = getInstrument(name);
+    const inst = getInstrument(name, layer);
     // getInstrument() already attached a .catch, so this .then chain only
     // has to swallow the rejection a second time for Promise.all's sake.
     return inst ? Promise.resolve(inst.load).then(() => undefined, () => undefined) : Promise.resolve();
@@ -161,9 +167,10 @@ export function playChordOnInstrument(
   time: number,
   duration: number,
   velocity: number = 1.0,
+  layer: InstrumentLayer = 'harmony',
 ): boolean {
-  const inst = getInstrument(instrumentName);
-  if (!inst || !isInstrumentReady(instrumentName)) return false;
+  const inst = getInstrument(instrumentName, layer);
+  if (!inst || !isInstrumentReady(instrumentName, layer)) return false;
   const vel = Math.round(Math.max(0, Math.min(1, velocity)) * 127);
   for (const note of midiNotes) {
     inst.start({ note, velocity: vel, time, duration });
