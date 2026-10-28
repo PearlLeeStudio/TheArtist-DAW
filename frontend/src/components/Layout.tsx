@@ -24,6 +24,7 @@ import { useSongStore } from '../store/songStore';
 import { useSessionStore } from '../store/sessionStore';
 import { useGenerationStore } from '../store/generationStore';
 import { usePlayStore } from '../store/playStore';
+import { playSettingsFromSession } from '../engine/playSettings';
 import type { Song } from '../models/types';
 
 /** The Play panel needs this much width for its rail and one pane. */
@@ -93,6 +94,19 @@ export default function Layout() {
   }, []);
 
   const handleImported = useCallback((imported: Song) => {
+    const current = useSongStore.getState().song;
+    const model = useGenerationStore.getState().modelKey;
+    const settings = usePlayStore.getState().settings;
+    const songJson = JSON.stringify(current);
+    const settingsJson = JSON.stringify(settings);
+    const alreadyKept = useSessionStore.getState().sessions.some((saved) =>
+      JSON.stringify(saved.song) === songJson && saved.generation.model === model &&
+      JSON.stringify(playSettingsFromSession(saved.generation)) === settingsJson);
+    if (!alreadyKept) {
+      // A storage failure leaves the reviewed import open and the current
+      // score intact. Undo remains available after a successful import.
+      useSessionStore.getState().add(current, { model, genre: current.genre, ...settings }, current.title.trim() || 'Untitled');
+    }
     importSong(imported);
     setPanelOpen(true);
     setPanelMode('input');
