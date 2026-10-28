@@ -1,6 +1,7 @@
 interface PianoKeyboardProps {
   activeNotes: number[]; // MIDI note numbers
   highlightColor?: string;
+  height?: number;
 }
 
 // Render 2 octaves (C3-B4, MIDI 48-71)
@@ -15,7 +16,7 @@ const BLACK_KEY_OFFSETS: Record<number, number> = {
   1: 0.6, 3: 1.6, 6: 3.6, 8: 4.6, 10: 5.6,
 };
 
-export default function PianoKeyboard({ activeNotes, highlightColor = 'var(--text-accent)' }: PianoKeyboardProps) {
+export default function PianoKeyboard({ activeNotes, highlightColor = 'var(--text-accent)', height }: PianoKeyboardProps) {
   // Fold every active note into the visible 2-octave window (C3..B4) by
   // octave shifting so chords whose voicing extends outside (e.g. Bmaj9
   // → MIDI 73, Gmaj11 → MIDI 72) still light up every chord tone — only
@@ -71,8 +72,8 @@ export default function PianoKeyboard({ activeNotes, highlightColor = 'var(--tex
     <svg
       viewBox={`0 0 ${totalWidth} ${totalHeight}`}
       width="100%"
-      preserveAspectRatio="xMidYMid meet"
-      style={{ height: 'auto', display: 'block' }}
+      preserveAspectRatio={height ? 'none' : 'xMidYMid meet'}
+      style={{ height: height ?? 'auto', display: 'block' }}
     >
       {/* Subtle gradients to give a hint of dimension without going full
           3-D — light-from-above on white keys, top-sheen on black keys,

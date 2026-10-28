@@ -1,12 +1,13 @@
 .te-toggle {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
+  gap: 5px;
   width: 100%;
   min-width: 0;
-  height: 40px;
-  padding: 0 1px;
+  min-height: 36px;
+  padding: 2px;
   border: 0;
   border-radius: 3px;
   background: transparent;
@@ -24,6 +25,8 @@
 .te-toggle__mechanism {
   display: block;
   flex-shrink: 0;
+  width: 24px;
+  height: 20px;
   overflow: visible;
 }
 
@@ -40,11 +43,13 @@
 .te-toggle__label {
   display: block;
   max-width: 100%;
-  overflow: hidden;
-  font-size: 8.5px;
-  line-height: 10px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  min-width: 0;
+  flex: 1;
+  font-size: 13px;
+  line-height: 16px;
+  text-align: left;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .te-toggle[aria-checked='true'] .te-toggle__label {

@@ -1,5 +1,5 @@
 /**
- * Play-panel transport, one row of keys: stop and go to start, back 4
+ * Play-panel transport: stop and go to start, back 4
  * measures, play/pause, forward 4 measures, loop, play the whole song.
  * Play follows the staff selection: it pauses while playing, resumes a
  * paused schedule while the selection and the score are unchanged, and
@@ -25,21 +25,20 @@ import {
   stopPlayback,
 } from '../../../engine/playback';
 import KeyButton from './ui/KeyButton';
+import './Transport.css';
 
 /** Measures the back and forward keys move. */
 const JUMP = 4;
-
-// Key widths: play/pause takes 2.4 shares of the row, the other five 1 each.
-const COLUMNS = 'repeat(2, minmax(0, 1fr)) minmax(0, 2.4fr) repeat(3, minmax(0, 1fr))';
+const COLUMNS = 'repeat(2, minmax(0, 1fr)) minmax(0, 1.35fr) repeat(3, minmax(0, 1fr))';
+const KEY_STYLE = { height: 42 };
 
 // Monochrome 16×16 glyphs in currentColor; play/pause draws a little larger.
-const ICON = 14;
-const MAIN_ICON = 16;
+const ICON = 16;
+const MAIN_ICON = 18;
 
-const GO_START_ICON = (
+const STOP_ICON = (
   <svg width={ICON} height={ICON} viewBox="0 0 16 16" fill="currentColor" aria-hidden>
-    <rect x="2.5" y="3" width="2" height="10" rx="0.5" />
-    <path d="M14 3v10L6 8l8-5z" />
+    <rect x="3" y="3" width="10" height="10" rx="0.5" />
   </svg>
 );
 const BACK_ICON = (
@@ -81,7 +80,7 @@ const LOOP_ICON = (
     <polyline points="13.5,2 13.5,5 10.5,5" />
   </svg>
 );
-// Start bar + right triangle: plays from bar 1 (GO_START goes there silently).
+// Start bar + right triangle: plays from bar 1 (stop goes there silently).
 const PLAY_FULL_ICON = (
   <svg width={ICON} height={ICON} viewBox="0 0 16 16" fill="currentColor" aria-hidden>
     <rect x="2" y="3" width="2" height="10" rx="0.5" />
@@ -246,45 +245,54 @@ export default function Transport() {
     <div
       role="group"
       aria-label="Transport"
-      className="shrink-0 grid gap-1"
-      style={{ gridTemplateColumns: COLUMNS }}
+      className="te-transport"
+      data-playing={playing ? 'true' : 'false'}
     >
-      <KeyButton size="md" onClick={handleStop} title="Stop and go to start" ariaLabel="Stop and go to start">
-        {GO_START_ICON}
-      </KeyButton>
-      <KeyButton size="md" onClick={handleBack} title={`Back ${JUMP} measures`} ariaLabel={`Back ${JUMP} measures`}>
-        {BACK_ICON}
-      </KeyButton>
-      <KeyButton
-        size="md"
-        onClick={handlePlay}
-        title={playTitle}
-        ariaLabel={playTitle}
-        led={playing ? 'on' : 'off'}
-      >
-        {playing ? PAUSE_ICON : PLAY_ICON}
-      </KeyButton>
-      <KeyButton size="md" onClick={handleForward} title={`Forward ${JUMP} measures`} ariaLabel={`Forward ${JUMP} measures`}>
-        {FORWARD_ICON}
-      </KeyButton>
-      <KeyButton
-        size="md"
-        onClick={handleLoop}
-        title={loop ? 'Loop on' : 'Loop off'}
-        ariaLabel="Loop"
-        active={loop}
-        led={loop ? 'on' : 'off'}
-      >
-        {LOOP_ICON}
-      </KeyButton>
-      <KeyButton
-        size="md"
-        onClick={handlePlayFullSong}
-        title="Play full song (ignore selection)"
-        ariaLabel="Play full song from the start"
-      >
-        {PLAY_FULL_ICON}
-      </KeyButton>
+      <div className="te-transport__keys" style={{ gridTemplateColumns: COLUMNS }}>
+        <KeyButton className="te-transport__key" size="md" style={KEY_STYLE} onClick={handleStop} title="Stop and go to start" ariaLabel="Stop and go to start">
+          {STOP_ICON}
+        </KeyButton>
+        <KeyButton className="te-transport__key" size="md" style={KEY_STYLE} onClick={handleBack} title={`Back ${JUMP} measures`} ariaLabel={`Back ${JUMP} measures`}>
+          {BACK_ICON}
+        </KeyButton>
+        <KeyButton
+          className="te-transport__key te-transport__key--play"
+          size="md"
+          style={KEY_STYLE}
+          onClick={handlePlay}
+          title={playTitle}
+          ariaLabel={playTitle}
+        >
+          {playing ? PAUSE_ICON : PLAY_ICON}
+        </KeyButton>
+        <KeyButton className="te-transport__key" size="md" style={KEY_STYLE} onClick={handleForward} title={`Forward ${JUMP} measures`} ariaLabel={`Forward ${JUMP} measures`}>
+          {FORWARD_ICON}
+        </KeyButton>
+        <KeyButton
+          className="te-transport__key"
+          size="md"
+          style={KEY_STYLE}
+          onClick={handleLoop}
+          title={loop ? 'Loop on' : 'Loop off'}
+          ariaLabel="Loop"
+          active={loop}
+        >
+          {LOOP_ICON}
+        </KeyButton>
+        <KeyButton
+          className="te-transport__key"
+          size="md"
+          style={KEY_STYLE}
+          onClick={handlePlayFullSong}
+          title="Play full song (ignore selection)"
+          ariaLabel="Play full song from the start"
+        >
+          {PLAY_FULL_ICON}
+        </KeyButton>
+      </div>
+      <div className="te-transport__disc" aria-hidden="true">
+        <span className="te-transport__disc-core" />
+      </div>
     </div>
   );
 }

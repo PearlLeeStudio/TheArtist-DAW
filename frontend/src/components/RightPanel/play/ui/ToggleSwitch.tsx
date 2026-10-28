@@ -7,15 +7,16 @@ interface ToggleSwitchProps {
   onSelect: () => void;
   title?: string;
   ariaLabel?: string;
+  kind?: 'radio' | 'switch';
 }
 
 /** One latched choice: a brushed circular mount and a metal lever. The
  *  selected radio points up; choosing it never turns the radio group off. */
-export default function ToggleSwitch({ label, checked, onSelect, title, ariaLabel }: ToggleSwitchProps) {
+export default function ToggleSwitch({ label, checked, onSelect, title, ariaLabel, kind = 'radio' }: ToggleSwitchProps) {
   const id = `toggle-${useId().replaceAll(':', '')}`;
   return (
-    <button type="button" role="radio" aria-checked={checked} aria-label={ariaLabel ?? label}
-      tabIndex={checked ? 0 : -1} onClick={onSelect} title={title} className="te-toggle">
+    <button type="button" role={kind} aria-checked={checked} aria-label={ariaLabel ?? label}
+      tabIndex={kind === 'switch' || checked ? 0 : -1} onClick={onSelect} title={title} className="te-toggle">
       <svg className="te-toggle__mechanism" width="34" height="28" viewBox="0 0 44 36" aria-hidden="true" focusable="false">
         <defs>
           <linearGradient id={`${id}-mount`} x1="0" y1="0" x2="1" y2="1">

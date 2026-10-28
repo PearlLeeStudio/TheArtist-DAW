@@ -72,20 +72,33 @@ unimplemented and are not part of the completed-feature checks.
 ## Play and controller
 
 - [ ] At 1366×768 and 1366×660, with panel width 300–320 px, the active chord and
-  Piano/Guitar switch remain below transport on every Play tab. Switch only the
+  compact Piano/Guitar selector remain below transport on every Play tab. Switch only the
   drawing and confirm the sound does not change. Check the matte hardware panel
-  against both app themes. Short screens scroll only the lower control area.
-- [ ] Instrument exposes Auto and all 31 sounds as mechanical switches. Exactly
-  one is up; selecting a new sound lowers the previous one. Reach the whole list,
-  including its last row, with pointer and keyboard. The selected sound is saved.
-- [ ] Rhythm has no duplicate selected-preset readout; its preset keys and Bass
-  toggle remain. Rhythm and Drums show their live green steps in recessed black
-  meters above the pattern controls. Muted rows stay distinguishable.
+  against both app themes. The taller device scrolls vertically; the selection
+  list has a fixed height so the bottom faders do not move when changing tabs.
+- [ ] All six black transport keys stay in one row beside the disc. The disc
+  rotates only while actual playback runs, pauses at its current angle and respects
+  reduced-motion preferences. Play uses the app's original typeface.
+- [ ] Instrument exposes Auto and all 31 sounds as readable name buttons grouped
+  under keyboard, guitar, strings, woodwind and brass emoji headings. Reach every
+  group with pointer and keyboard, verify the selected highlight and saved sound.
+- [ ] Below the keyboard/guitar drawing, Rhythm and Drums each have a full-width
+  black status row inside one deep full-width display, with 24px names matching
+  the larger chord readout. Rhythm HARM/BASS
+  and drum K/S/H steps remain visible when any selection tab is open. Tabs sit
+  below both windows. Muted rows remain distinguishable.
+- [ ] Rhythm and drum choices use a small lever beside a larger readable name;
+  exactly one preset per group is up, including Auto/Off. Bass has an independent
+  on/off lever. Arrow/Home/End selection still works. No extra status windows appear
+  inside the selection tabs.
 - [ ] First Play works in Safari. Adjust Master/Harmony/Bass/Drums while notes ring;
   each part at zero mutes independently, and Master at zero mutes everything.
-  All four volume controls are vertical faders with names below and no visible
+  Bottom controls have no tab. BPM and all four volume controls are vertical faders
+  with small rectangular metal caps,
+  names below and no visible
   numbers, percent values or scales. Check pointer/touch drag, Up/Down, Home/End
   and double-click defaults. Saving and reopening retains the actual levels.
+  BPM spans 20–300 in steps of one and resets to 80 on double-click.
 - [ ] Compare all 13 harmony rhythms using different first/second chords, especially
   Charleston and Half. Check slash bass, second-slot-only preview, 3/4 and 6/8 tempo,
   swing, live preset changes, pause/resume, seek, stop and loop.

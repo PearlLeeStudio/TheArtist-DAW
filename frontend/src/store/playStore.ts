@@ -18,9 +18,9 @@ import {
 import { applyPlayConfig } from '../engine/playback';
 import { useSongStore } from './songStore';
 
-export type PlayPane = 'instrument' | 'rhythm' | 'drums' | 'controller';
+export type PlayPane = 'instrument' | 'rhythm' | 'drums';
 export type VisualDisplayMode = 'piano' | 'guitar';
-const PANES: PlayPane[] = ['instrument', 'rhythm', 'drums', 'controller'];
+const PANES: PlayPane[] = ['instrument', 'rhythm', 'drums'];
 
 const STORAGE_KEY = 'theartist-play';
 /** The drum pick saved before the Play panel existed: an id, or 'null' (off). */

@@ -53,10 +53,15 @@ remain on the [manual checklist](docs/manual-checks.md).
   Loading another score first preserves the current work. There is no account or
   cloud synchronization.
 - **Play** keeps the active chord and its Piano/Guitar display directly below
-  transport. Instrument offers all 31 sounds with mechanical switches; Rhythm and
-  Drums show live green steps in black recessed meters. **CTRL** balances Master,
-  Harmony, Bass and Drums with four vertical faders labeled below, without numeric
-  readouts. The 13 harmony rhythms and 15 drum patterns retain their playback behavior.
+  transport. Full-width Rhythm and Drums status windows remain underneath,
+  above the selection tabs, with names matching the chord display size.
+  Instrument groups all 31 sounds under emoji family headings and readable name
+  buttons. Rhythm and drum choices use small levers beside larger names; their
+  green step meters remain visible across every tab. The bottom controls stay
+  present without a tab: BPM plus Master, Harmony, Bass and Drums use five vertical
+  faders with small metal caps and names below. Playback keys sit in one row beside
+  a disc that rotates only during playback. The 13 harmony rhythms and 15 drum patterns
+  retain their playback behavior.
 - **Export** downloads editable, three-part MIDI with tempo, meter, section markers
   and mixer levels, or an A4 score PDF. Local Logic opening and Ableton file reveal
   use the local backend; hosted clients can download MIDI.
@@ -118,7 +123,7 @@ Baseline editor screenshot: interactive staff, voicing and MIDI / AI / manual in
 | **Voice-leading inversions** | Post-process injects slash-chord inversions (e.g. `Am7/C`) where they smooth the bass line — the LM only emits root-position chords, voice leading is added on top |
 | **MIDI input with confirm flow** | Hold a chord ≥3 s → auto-commit · release early → Confirm card with root-cycling chips, slash-chord inversion detection, and a 3-chord transition view (prev → curr → next + voice-leading arrows) |
 | **Audio playback** | Tone.js + smplr — sampled piano, GM guitars / keys / strings, and 15 drum pattern presets. Switch instruments live mid-playback. |
-| **Controller mixer** | Play → CTRL: separate Master, Harmony, Bass and Drums volume knobs. Live output gains, saved with each session; 0% mutes the part, Master 0% mutes the whole mix. |
+| **Controller mixer** | Always at the bottom of Play: separate BPM, Master, Harmony, Bass and Drums faders. Live output gains are saved with each session; the lowest volume position mutes the part, Master mutes the whole mix. |
 | **Dark + light theme** | Classical staff with an editorial dark/light palette; a tactile Play panel with raised keys, shaded knobs and coloured mixer rings. |
 | **Resizable right panel** | Drag the boundary 300–640 px wide; collapse with a short tab-aligned toggle. |
 | **Rule-based fallback** | If models or chromadb fail to load, the API drops to a rule-based generator so the staff always responds. |
@@ -145,12 +150,11 @@ Whichever chord is active (selected on the staff, currently playing back, or und
 
 ### Controller — master and part levels
 
-Open **Play → CTRL** to balance **Master**, **Harmony**, **Bass** and **Drums**
-with four 48px knobs. The other Play panes keep the instrument, rhythm and drum
-presets within reach, and the BPM knob stays on the left rail.
+The bottom of **Play** always shows **BPM**, **Master**, **Harmony**, **Bass**
+and **Drums** as five vertical faders, independently of the selected preset tab.
 
-Drag vertically, scroll, or use the arrow keys to change a level; hold Shift
-while dragging for fine adjustment. Double-click a knob to restore its default.
+Drag a metal cap or use the arrow keys to change a value; Home/End reach the
+range limits. Double-click a fader to restore its default.
 Levels change the audio output, including notes already ringing. Harmony and
 Bass remain independent even when they use the same instrument. Save preserves
 the mix for Projects playback, Open and project JSON export/import; old sessions

@@ -19,6 +19,7 @@ interface StepRowProps {
   group?: number;
   /** LED cell height in px; the recessed frame adds six pixels. */
   height?: number;
+  labelSize?: number;
 }
 
 /** Fits a four-letter label in 9px device type. */
@@ -55,7 +56,7 @@ function cellStyle(cell: StepCell, here: boolean, groupStart: boolean, radius: n
 }
 
 /** Horizontal green LEDs in a black recessed meter, with the live beat marked. */
-export default function StepRow({ cells, playhead = null, label, dim = false, group = 4, height = 10 }: StepRowProps) {
+export default function StepRow({ cells, playhead = null, label, dim = false, group = 4, height = 10, labelSize = 9 }: StepRowProps) {
   const radius = Math.min(2, height / 4);
   const onSteps = cells.flatMap((cell, i) => (cell.level > 0 ? [i + 1] : []));
   const name = `${label ? `${label}: ` : ''}${onSteps.length > 0 ? `steps ${onSteps.join(' ')}` : 'no steps'}${dim ? ', muted' : ''}`;
@@ -76,10 +77,10 @@ export default function StepRow({ cells, playhead = null, label, dim = false, gr
         <span
           className="shrink-0 truncate uppercase"
           style={{
-            width: LABEL_WIDTH,
+            width: labelSize > 9 ? 34 : LABEL_WIDTH,
             marginRight: LABEL_GAP,
             fontFamily: 'var(--font-device)',
-            fontSize: 9,
+            fontSize: labelSize,
             lineHeight: 1,
             letterSpacing: '0.06em',
             color: 'var(--key-text-dim)',

@@ -1,4 +1,4 @@
-// Compact mode: 28px chord display + 4px gap + 100px drawing / shape switch.
+// The chord readout and drawing remain above every selection tab.
 import { usePlayStore } from '../../../store/playStore';
 import type { KeyboardEvent } from 'react';
 import { useSongStore } from '../../../store/songStore';
@@ -10,7 +10,7 @@ import { chordToString } from '../../../engine/chordParser';
 import type { Chord, Measure, SlotAddress } from '../../../models/types';
 import PianoKeyboard from '../PianoKeyboard';
 import GuitarFretboard from '../GuitarFretboard';
-import ToggleSwitch from './ui/ToggleSwitch';
+import KeyButton from './ui/KeyButton';
 import Screen from './ui/Screen';
 
 const SCREEN_HEIGHT = 56;
@@ -117,8 +117,8 @@ export default function VisualPane({ midiActiveNotes, compact = false }: { midiA
   };
 
   return (
-    <div role="group" aria-label="Visual voicing" className="flex flex-col min-w-0" style={{ gap: compact ? 4 : 8, height: compact ? 132 : undefined }}>
-      <Screen style={{ height: compact ? 28 : SCREEN_HEIGHT, padding: compact ? '4px 6px' : undefined }}>
+    <div role="group" aria-label="Visual voicing" className="flex flex-col min-w-0" style={{ gap: 8, height: compact ? 196 : undefined }}>
+      <Screen style={{ height: compact ? 48 : SCREEN_HEIGHT, padding: compact ? '8px' : undefined }}>
         {/* Header in the look of Screen's label row: source (or the pane name), rule, instrument. */}
         {!compact && <div
           className="flex items-center uppercase"
@@ -146,34 +146,37 @@ export default function VisualPane({ midiActiveNotes, compact = false }: { midiA
           <span className="flex-1" style={{ height: 1, background: 'currentColor', opacity: 0.3 }} />
           <span className="min-w-0 truncate" title="Harmony instrument">{instrumentName}</span>
         </div>}
-        <div className="flex items-center gap-1.5" style={{ height: compact ? 20 : 28 }}>
-          {compact && <span className="shrink-0 text-[9px] uppercase" style={{ color: highlight }}>{source ? SOURCE_TAG[source] : 'Visual'}</span>}
+        <div className="flex items-center gap-2" style={{ height: compact ? 32 : 28 }}>
+          {compact && <span className="shrink-0 text-[11px] uppercase" style={{ color: highlight }}>{source ? SOURCE_TAG[source] : 'Visual'}</span>}
           {showHint ? (
             <span style={{ color: 'var(--screen-text-dim)' }}>Select a chord</span>
           ) : source === 'midi-raw' ? (
             <span className="min-w-0 flex-1 truncate" style={{ fontSize: 13 }}>{noteNames(midiActiveNotes)}</span>
           ) : chordName ? (
-            <span className="min-w-0 flex-1 truncate" style={{ fontSize: compact ? 17 : 22, lineHeight: compact ? '20px' : '28px', fontWeight: 600 }}>
+            <span className="min-w-0 flex-1 truncate" style={{ fontSize: 24, lineHeight: '32px', fontWeight: 600 }}>
               {chordName}
             </span>
           ) : (
             // an empty slot under the playhead
             <span style={{ fontSize: 22, lineHeight: '28px', color: 'var(--screen-text-dim)' }}>—</span>
           )}
-          {compact && <span className="min-w-0 ml-auto truncate text-[8px] uppercase" style={{ maxWidth: 72, color: 'var(--screen-text-dim)' }} title={instrumentName}>{instrumentName}</span>}
+          {compact && <span className="ml-auto min-w-0 truncate" style={{ maxWidth: 78, fontSize: 12, color: 'var(--screen-text-dim)' }} title={instrumentName}>{instrumentName}</span>}
         </div>
       </Screen>
 
-      <div className={compact ? 'grid min-w-0 items-center gap-2' : 'flex min-w-0 flex-col gap-2'} style={compact ? { gridTemplateColumns: 'minmax(0, 1fr) 58px', height: 100 } : undefined}>
-      <div className={`grid gap-[4px] ${compact ? 'grid-cols-1' : 'grid-cols-2'}`} role="radiogroup" aria-label="Piano or guitar display" onKeyDown={handleDisplayKey} style={compact ? { gridColumn: 2, gridRow: 1 } : undefined}>
+      <div className={compact ? 'grid min-w-0 items-center gap-1.5' : 'flex min-w-0 flex-col gap-2'} style={compact ? { gridTemplateColumns: 'minmax(0, 1fr) 36px', height: 140 } : undefined}>
+      <div className={`te-visual-selector grid gap-[3px] ${compact ? 'grid-cols-1' : 'grid-cols-2'}`} role="radiogroup" aria-label="Piano or guitar display" onKeyDown={handleDisplayKey} style={compact ? { gridColumn: 2, gridRow: 1 } : undefined}>
         {MODES.map(({ mode, label }) => {
           const chosen = shape === mode;
           return (
-            <ToggleSwitch
+            <KeyButton
               key={mode}
               label={label}
-              checked={chosen}
-              onSelect={() => setDisplayMode(mode)}
+              active={chosen}
+              role="radio"
+              tabIndex={chosen ? 0 : -1}
+              onClick={() => setDisplayMode(mode)}
+              className="te-visual-key"
               title={modeTitle(mode)}
             />
           );
@@ -185,7 +188,7 @@ export default function VisualPane({ midiActiveNotes, compact = false }: { midiA
         role="img"
         aria-label={`${shape === 'guitar' ? 'Guitar shape' : 'Keyboard voicing'}${chordName ? ` of ${chordName}` : ''}`}
         style={{
-          maxWidth: compact && shape === 'guitar' ? 180 : DRAWING_MAX_WIDTH,
+          maxWidth: compact && shape === 'guitar' ? 220 : DRAWING_MAX_WIDTH,
           padding: compact ? 4 : 6,
           gridColumn: compact ? 1 : undefined,
           gridRow: compact ? 1 : undefined,
@@ -196,7 +199,7 @@ export default function VisualPane({ midiActiveNotes, compact = false }: { midiA
         {shape === 'guitar' ? (
           <GuitarFretboard frets={guitarFrets} highlightColor={highlight} />
         ) : (
-          <PianoKeyboard activeNotes={pianoNotes} highlightColor={highlight} />
+          <PianoKeyboard activeNotes={pianoNotes} highlightColor={highlight} height={compact ? 112 : undefined} />
         )}
       </div>
       </div>
