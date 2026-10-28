@@ -5,6 +5,8 @@ import { useGenerationStore } from '../../store/generationStore';
 import { useSessionStore, selectStarredSessions } from '../../store/sessionStore';
 import GenerateProgress from './GenerateProgress';
 import { getChordDisplayParts } from '../../engine/chordDisplay';
+import { parseSuggestionChords } from '../../engine/chordGenerator';
+import { canApplyComparison, compareCandidate, matchesCapturedRange, slotKey } from '../../engine/generationComparison';
 import {
   MAX_SECTION_BARS,
   SECTION_GROUPS,
@@ -44,6 +46,13 @@ function measureRangeLabel(slots: SlotAddress[]): string {
   const first = Math.min(...measures);
   const last = Math.max(...measures);
   return first === last ? `M${first}` : `M${first}–M${last}`;
+}
+
+function comparisonChordLabel(chord: Chord | null): string {
+  if (!chord) return '—';
+  const quality = chord.quality === 'maj' ? '' : chord.quality === 'min' ? 'm' : chord.quality;
+  const extensions = chord.extensions.length > 0 ? `(${chord.extensions.join(',')})` : '';
+  return `${chord.root}${quality}${extensions}${chord.bass ? `/${chord.bass}` : ''}`;
 }
 
 const BASE_QUALITIES = [
@@ -88,7 +97,7 @@ const ALTERATIONS = [
   { label: 'b13', value: 'b13' },
 ];
 
-function resolveQuality(base: string, ext: string, add: string, sus: string, _alts: string[]): string {
+function resolveQuality(base: string, ext: string, add: string, sus: string): string {
   if (sus) return ext ? `${ext}${sus}` : sus;
   if (add) return base === 'min' ? `m(${add})` : add;
   if (base === '5') return ext === '7' ? '7(no3)' : '5';
@@ -134,12 +143,15 @@ interface ChordActionsProps {
 export default function ChordActions({ view = 'all' }: ChordActionsProps) {
   const selectedSlots = useSongStore((s) => s.selectedSlots);
   const song = useSongStore((s) => s.song);
+  const songEpoch = useSongStore((s) => s.songEpoch);
   const setGenre = useSongStore((s) => s.setGenre);
   const setChord = useSongStore((s) => s.setChord);
   const resetPlayback = useSongStore((s) => s.resetPlayback);
 
   // In tab-mode 'manual', the builder is the entire view, so always open.
-  const [expanded, setExpanded] = useState(view === 'manual');
+  const [expandedState, setExpandedState] = useState({ songEpoch, open: view === 'manual' });
+  const expanded = expandedState.songEpoch === songEpoch && expandedState.open;
+  const setExpanded = useCallback((open: boolean) => setExpandedState({ songEpoch, open }), [songEpoch]);
   const [root, setRoot] = useState('C');
   const [base, setBase] = useState('maj');
   const [ext, setExt] = useState('');
@@ -160,7 +172,9 @@ export default function ChordActions({ view = 'all' }: ChordActionsProps) {
   const activeSuggestionIdx = useGenerationStore((s) => s.activeSuggestionIdx);
   const source = useGenerationStore((s) => s.source);
   const targetSlots = useGenerationStore((s) => s.targetSlots);
+  const comparison = useGenerationStore((s) => s.comparison);
   const applySuggestion = useGenerationStore((s) => s.applySuggestion);
+  const restoreOriginal = useGenerationStore((s) => s.restoreOriginal);
   const clearSuggestions = useGenerationStore((s) => s.clearSuggestions);
   const runGenerate = useGenerationStore((s) => s.runGenerate);
   const runFavoriteGenerate = useGenerationStore((s) => s.runFavoriteGenerate);
@@ -211,14 +225,6 @@ export default function ChordActions({ view = 'all' }: ChordActionsProps) {
       .catch(() => { /* fallback: model list unavailable */ });
   }, [setModelKey, setGenre]);
 
-  // Collapse the manual builder whenever the song is replaced (e.g. Clear).
-  // The suggestions tied to the old song are dropped by generationStore on
-  // every replacement (songStore.songEpoch) — not here, so a remount of this
-  // panel (tab switch, or the jump here after New from Song Form) keeps them.
-  useEffect(() => {
-    setExpanded(false);
-  }, [song.id]);
-
   // Mount-time genre sync. song.genre and modelKey both persist across
   // reloads, so they normally come back in step; a song without a genre
   // (first visit, after ?reset=1 or Initialize) takes the one the
@@ -241,8 +247,11 @@ export default function ChordActions({ view = 'all' }: ChordActionsProps) {
   const resolvedSectionType: SectionType | null =
     generateSectionType === 'auto' ? autoSection?.type ?? null : generateSectionType;
   const tooManyMeasures = selectedMeasures.length > MAX_SECTION_BARS;
-  const quality = resolveQuality(base, ext, add, sus, alts);
+  const quality = resolveQuality(base, ext, add, sus);
   const previewParts = getChordDisplayParts({ root, quality, bass: bass || undefined, romanNumeral: '', voicing: [], extensions: alts });
+  const comparisonReady = comparison !== null && canApplyComparison(comparison, song, songEpoch);
+  const originalActive = activeSuggestionIdx === null && comparison !== null && matchesCapturedRange(comparison, song, songEpoch);
+  const originalEmptySection = comparison?.kind === 'section' && comparison.original.every((slot) => slot.chord === null);
 
   const handleSet = useCallback(() => {
     if (!firstSlot) return;
@@ -253,7 +262,7 @@ export default function ChordActions({ view = 'all' }: ChordActionsProps) {
     };
     setChord(firstSlot, chord);
     setExpanded(false);
-  }, [firstSlot, root, quality, bass, alts, setChord]);
+  }, [firstSlot, root, quality, bass, alts, setChord, setExpanded]);
 
   const toggleAlt = (alt: string) => {
     setAlts(prev => prev.includes(alt) ? prev.filter(a => a !== alt) : [...prev, alt]);
@@ -282,9 +291,9 @@ export default function ChordActions({ view = 'all' }: ChordActionsProps) {
 
   const slotLabel = selectedSlots.length === 1
     ? `M${firstSlot!.measureIndex + 1} Beat ${firstSlot!.slotIndex === 0 ? 1 : 3}`
-    : `${selectedSlots.length} slots`;
+    : selectedSlots.length > 0 ? `${selectedSlots.length} slots` : 'no selection';
 
-  if (!firstSlot) {
+  if (!firstSlot && !loading && !(view !== 'manual' && showSuggestions && suggestions.length > 0)) {
     return (
       <div className="space-y-2">
         <h3 className="text-xs uppercase tracking-wide font-semibold" style={{ color: 'var(--text-heading)' }}>Chords</h3>
@@ -350,7 +359,7 @@ export default function ChordActions({ view = 'all' }: ChordActionsProps) {
           className="flex-1 min-w-0 px-2 py-1 text-xs"
           style={{ background: 'var(--btn-bg)', color: 'var(--text-primary)', border: '1px solid var(--border)' }}
         >
-          <option value="auto">Auto ({autoSection ? sectionLabel(autoSection.type) : 'none'})</option>
+          <option value="auto">Auto ({autoSection?.type ? sectionLabel(autoSection.type) : 'none'})</option>
           {SECTION_GROUPS.map((group) => (
             <optgroup key={group.id} label={group.label}>
               {sectionsInGroup(group.id).map((type) => (
@@ -369,9 +378,9 @@ export default function ChordActions({ view = 'all' }: ChordActionsProps) {
 
       <button
         onClick={handleGenerate}
-        disabled={loading || tooManyMeasures}
+        disabled={loading || tooManyMeasures || !firstSlot}
         className="w-full px-3 py-2  text-sm font-bold"
-        style={{ background: 'var(--text-heading)', color: 'var(--bg-primary)', opacity: loading || tooManyMeasures ? 0.6 : 1 }}
+        style={{ background: 'var(--text-heading)', color: 'var(--bg-primary)', opacity: loading || tooManyMeasures || !firstSlot ? 0.6 : 1 }}
       >
         {loading ? 'Generating...' : `Generate ${selectedSlots.length > 1 ? `(${selectedSlots.length} slots)` : 'Chord'}`}
       </button>
@@ -382,12 +391,12 @@ export default function ChordActions({ view = 'all' }: ChordActionsProps) {
       {starredSessions.length > 0 && (
         <button
           onClick={handleFavoriteGenerate}
-          disabled={loading || tooManyMeasures}
+          disabled={loading || tooManyMeasures || !firstSlot}
           className="w-full px-3 py-2 text-sm font-bold"
           style={{
             background: 'var(--brand-yellow)',
             color: '#1a1a1a',
-            opacity: loading || tooManyMeasures ? 0.6 : 1,
+            opacity: loading || tooManyMeasures || !firstSlot ? 0.6 : 1,
           }}
           title={`Generate one option per starred preset (${starredSessions.length})`}
         >
@@ -405,9 +414,34 @@ export default function ChordActions({ view = 'all' }: ChordActionsProps) {
       {showSuggestions && suggestions.length > 0 && (
         <div className="space-y-1.5" style={{ borderTop: '1px solid var(--border)', paddingTop: '8px' }}>
           <p className="text-[10px] uppercase tracking-wide font-semibold" style={{ color: 'var(--text-muted)' }}>
-            {activeSuggestionIdx === null ? 'Pick a suggestion' : 'Tap to swap'}
+            Compare versions
             {targetSlots.length > 0 && <span className="normal-case"> · {measureRangeLabel(targetSlots)}</span>}
           </p>
+          <p className="text-[11px]" role="status" aria-live="polite" style={{ color: 'var(--text-soft)' }}>
+            {originalActive
+              ? originalEmptySection ? 'Original empty section is on the score.' : 'Original is on the score.'
+              : activeSuggestionIdx !== null
+                ? `${suggestions[activeSuggestionIdx]?.label ?? 'Candidate'} is on the score.`
+                : 'The score has your own edits in this range.'}
+            {' '}Pick a version, then play the range to compare.
+          </p>
+          {comparison && (
+            <button
+              onClick={restoreOriginal}
+              disabled={!comparisonReady || loading}
+              aria-pressed={originalActive}
+              className="w-full text-left px-3 py-2 text-xs font-semibold"
+              style={{ ...btnStyle(originalActive), opacity: comparisonReady && !loading ? 1 : 0.5 }}
+              title={`Restore the chords in ${measureRangeLabel(targetSlots)} as they were before this generation`}
+            >
+              {originalActive ? '▸ ' : ''}Original{originalEmptySection ? ' · empty section' : ''}
+            </button>
+          )}
+          {originalEmptySection && (
+            <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
+              Original clears these generated chords and keeps the section.
+            </p>
+          )}
           {source === 'rules' && (
             <p
               className="text-[11px]"
@@ -417,10 +451,9 @@ export default function ChordActions({ view = 'all' }: ChordActionsProps) {
             </p>
           )}
           {suggestions.map((s, idx) => {
-            const chordPreview = Object.entries(s.chords)
-              .sort(([a], [b]) => Number(a) - Number(b))
-              .map(([, pair]) => pair.join(' | '))
-              .join('  ');
+            const rows = comparison ? compareCandidate(comparison, parseSuggestionChords(s)) : [];
+            const changes = rows.filter((row) => row.changed);
+            const chordPreview = rows.map((row) => comparisonChordLabel(row.after)).join(' | ');
             const isActive = idx === activeSuggestionIdx;
             return (
               <div
@@ -434,6 +467,8 @@ export default function ChordActions({ view = 'all' }: ChordActionsProps) {
               >
                 <button
                   onClick={() => applySuggestion(idx)}
+                  disabled={!comparisonReady || loading}
+                  aria-pressed={isActive}
                   className="w-full text-left px-3 py-2"
                 >
                   <div
@@ -454,7 +489,34 @@ export default function ChordActions({ view = 'all' }: ChordActionsProps) {
                   >
                     {chordPreview}
                   </div>
+                  <div className="text-[10px] mt-1" style={{ opacity: 0.8 }}>
+                    {changes.length} of {rows.length} chord symbols changed
+                  </div>
                 </button>
+                {changes.length > 0 && (
+                  <details className="px-3 pb-2 text-[10px]">
+                    <summary className="cursor-pointer">Changes from Original</summary>
+                    <table className="w-full mt-1 table-fixed text-left" aria-label={`${s.label}: changes from Original`}>
+                      <thead>
+                        <tr>
+                          <th className="w-12 font-normal">Slot</th>
+                          <th className="font-normal">Original</th>
+                          <th className="font-normal">Candidate</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {changes.slice(0, 4).map((row) => (
+                          <tr key={slotKey(row.address)}>
+                            <td className="py-0.5">{row.address.measureIndex + 1}.{row.address.slotIndex + 1}</td>
+                            <td className="truncate pr-1" title={comparisonChordLabel(row.before)}>{comparisonChordLabel(row.before)}</td>
+                            <td className="truncate" title={comparisonChordLabel(row.after)}>{comparisonChordLabel(row.after)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    {changes.length > 4 && <p className="mt-1">And {changes.length - 4} more changed slots.</p>}
+                  </details>
+                )}
                 {s.explanations && s.explanations.length > 0 && (
                   <details className="px-3 pb-2">
                     <summary
@@ -497,8 +559,9 @@ export default function ChordActions({ view = 'all' }: ChordActionsProps) {
             onClick={() => clearSuggestions()}
             className="w-full px-3 py-1  text-xs"
             style={{ background: 'var(--btn-bg)', color: 'var(--text-muted)' }}
+            title="Keep the chords currently on the score and close this comparison"
           >
-            Dismiss
+            Keep current version
           </button>
         </div>
       )}
