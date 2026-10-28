@@ -51,3 +51,6 @@ model/**/embedding_extension.pt
 .env
 .env.*
 !.env.example
+
+# Local LLM spend ledger (request ids, token counts, costs)
+backend/.ledger/
