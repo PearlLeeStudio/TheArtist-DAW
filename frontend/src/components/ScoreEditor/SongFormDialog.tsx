@@ -7,24 +7,23 @@
  *
  *   Section    pick a song-form section and how many bars it gets, then
  *              generate it after the last used measure.
- *   Full form  "Complete the form": Muse Spark plans the rest of the form
- *              after the sketch and the author's model writes every
- *              section (planStore); the run shows in the band above the
- *              staff and lands only on Apply there. "Genre default form"
- *              runs the same with the rules planner and no Meta call.
+ *   Full form  Muse Spark plans the rest of the form after the sketch;
+ *              section generation uses the chord model and song-form rules.
+ *              A successful run is applied before the dialog closes.
+ *              "Genre template" uses a rules plan without a Meta call.
  *
  * Native <dialog> opened with showModal(), so Esc, focus trapping and the
  * inert page behind it come from the browser. Mount it to open it; it
  * calls onClose once it has closed (Esc, Cancel, after a successful
- * generate, or once a plan run started). Closing while a section
- * generation runs cancels that generation and takes its placement back
- * off the staff.
+ * generation). Closing during a run cancels it. Run details stay inside
+ * this dialog, so the staff shows only the score and its section labels.
  */
 import { useEffect, useId, useRef, useState } from 'react';
 import { useSongStore } from '../../store/songStore';
 import { useGenerationStore } from '../../store/generationStore';
 import { usePlanStore } from '../../store/planStore';
 import GenerateProgress from '../RightPanel/GenerateProgress';
+import PlanRunBand from './PlanRunBand';
 import { GENRE_OPTIONS, genreForModel, genreOptionValue } from '../../engine/genres';
 import { STANDARD_KEYS } from '../../engine/keySignatures';
 import {
@@ -131,12 +130,14 @@ interface SongFormDialogProps {
   onClose: () => void;
   /** Called after the new section's chords landed on the staff. */
   onGenerated: () => void;
+  onEditSections: () => void;
 }
 
-export default function SongFormDialog({ onClose, onGenerated }: SongFormDialogProps) {
+export default function SongFormDialog({ onClose, onGenerated, onEditSections }: SongFormDialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const sectionRef = useRef<HTMLSelectElement>(null);
   const runningRef = useRef(false);
+  const planRunningRef = useRef(false);
   const id = useId();
   const headingId = `${id}-heading`;
   const sectionId = `${id}-section`;
@@ -155,8 +156,12 @@ export default function SongFormDialog({ onClose, onGenerated }: SongFormDialogP
   const runSectionGenerate = useGenerationStore((s) => s.runSectionGenerate);
   const cancelSectionGenerate = useGenerationStore((s) => s.cancelSectionGenerate);
   const startPlan = usePlanStore((s) => s.startPlan);
+  const planStatus = usePlanStore((s) => s.status);
+  const planError = usePlanStore((s) => s.error);
+  const cancelPlan = usePlanStore((s) => s.cancelPlan);
+  const planning = planStatus === 'running';
 
-  const [tab, setTab] = useState<FormTab>('section');
+  const [tab, setTab] = useState<FormTab>(() => planStatus === 'idle' ? 'section' : 'full');
   const [sectionType, setSectionType] = useState<SectionType>(DEFAULT_SECTION);
   const [barsText, setBarsText] = useState(String(defaultSectionBars(DEFAULT_SECTION)));
   // Once the user types a length, picking another section keeps it.
@@ -164,6 +169,7 @@ export default function SongFormDialog({ onClose, onGenerated }: SongFormDialogP
   const [running, setRunning] = useState(false);
   const [runStart, setRunStart] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const busy = running || planning;
   // The models this install has, and the model each genre is served by (GET /api/genres/list)
   const [models, setModels] = useState<ModelOption[]>([]);
   const [genreModels, setGenreModels] = useState<Record<string, string>>({});
@@ -177,7 +183,7 @@ export default function SongFormDialog({ onClose, onGenerated }: SongFormDialogP
   const [wantOutro, setWantOutro] = useState(true);
   const [contrast, setContrast] = useState<PlanContrast>('medium');
   // null until /api/capabilities answers (or when it does not): a run then
-  // shows the server's own answer in the band.
+  // shows the server's own answer in this dialog.
   const [meta, setMeta] = useState<MetaCapability | null>(null);
 
   useEffect(() => {
@@ -219,11 +225,11 @@ export default function SongFormDialog({ onClose, onGenerated }: SongFormDialogP
   const startMeasure = running
     ? runStart
     : check.ok ? sectionPlacement(song, check.bars).startMeasure : null;
-  const generateDisabled = !check.ok || running;
+  const generateDisabled = !check.ok || busy;
 
   const blocker = planBlocker(song);
   const metaOff = meta?.enabled === false;
-  const planDisabled = blocker !== null || metaOff;
+  const planDisabled = blocker !== null || metaOff || busy;
   const sectionCount = song.sections?.length ?? 0;
 
   const handleSectionChange = (value: string) => {
@@ -270,16 +276,29 @@ export default function SongFormDialog({ onClose, onGenerated }: SongFormDialogP
     }
   };
 
-  // The run shows in the band above the staff; the dialog has nothing left to do.
-  const startRun = (planner: PlannerKind) => {
-    if (blocker !== null || (planner === 'meta' && metaOff)) return;
-    void startPlan({ targetBars, wantOutro, contrast, planner, modelKey });
-    dialogRef.current?.close();
+  const startRun = async (planner: PlannerKind) => {
+    if (blocker !== null || busy || planRunningRef.current || (planner === 'meta' && metaOff)) return;
+    planRunningRef.current = true;
+    await startPlan({ targetBars, wantOutro, contrast, planner, modelKey });
+    if (!planRunningRef.current) return;
+    planRunningRef.current = false;
+    const result = usePlanStore.getState();
+    if (result.status !== 'done') return;
+    result.applyPlan();
+    // Applying can reject an obsolete result if the score changed during the run.
+    if (usePlanStore.getState().applied) {
+      onGenerated();
+      dialogRef.current?.close();
+    }
   };
 
   // The one exit path: Esc and close() both end up here via the native
   // 'close' event.
   const handleClose = () => {
+    if (planRunningRef.current) {
+      planRunningRef.current = false;
+      cancelPlan();
+    }
     if (runningRef.current) {
       runningRef.current = false;
       cancelSectionGenerate();
@@ -303,11 +322,11 @@ export default function SongFormDialog({ onClose, onGenerated }: SongFormDialogP
     >
       <form
         className="p-5 space-y-4"
-        aria-busy={running}
+        aria-busy={busy}
         onSubmit={(e) => {
           e.preventDefault();
           if (tab === 'section') void handleGenerate();
-          else startRun('meta');
+          else void startRun('meta');
         }}
       >
         <div>
@@ -318,11 +337,19 @@ export default function SongFormDialog({ onClose, onGenerated }: SongFormDialogP
           >
             New from Song Form
           </h2>
-          <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
-            {tab === 'section'
-              ? 'Pick a part of the song form and how many bars it gets; it is written after the last bar that has chords.'
-              : 'Muse Spark plans the rest of the form after the sketch and the author’s model writes it section by section; nothing lands until Apply.'}
-          </p>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => {
+              dialogRef.current?.close();
+              onEditSections();
+            }}
+            className="mt-2 px-2 py-1 text-xs btn-hover disabled:opacity-40"
+            style={{ background: 'var(--btn-bg)', color: 'var(--text-primary)' }}
+            aria-haspopup="dialog"
+          >
+            Edit Song Form
+          </button>
         </div>
 
         {/* Section / Full form tabs, in the Input sub-tab style. Locked
@@ -336,7 +363,7 @@ export default function SongFormDialog({ onClose, onGenerated }: SongFormDialogP
                 type="button"
                 role="tab"
                 aria-selected={active}
-                disabled={running}
+                disabled={busy}
                 onClick={() => setTab(t.id)}
                 className="flex-1 px-3 py-2 text-xs font-semibold uppercase tracking-wide transition-colors btn-hover"
                 style={{
@@ -359,7 +386,7 @@ export default function SongFormDialog({ onClose, onGenerated }: SongFormDialogP
             id={keyId}
             value={song.key}
             onChange={(e) => setKey(e.target.value)}
-            disabled={running}
+            disabled={busy}
             className="w-full px-2 py-1.5 text-sm"
             style={fieldStyle}
             title="The song's key, as the Key above the staff sets it: a new key transposes the score"
@@ -378,7 +405,7 @@ export default function SongFormDialog({ onClose, onGenerated }: SongFormDialogP
             id={genreId}
             value={genreOptionValue(song.genre)}
             onChange={(e) => pickGenre(e.target.value)}
-            disabled={running}
+            disabled={busy}
             className="w-full px-2 py-1.5 text-sm"
             style={fieldStyle}
             title="The song's genre: it picks the model it is served by, and Full form follows it"
@@ -393,10 +420,10 @@ export default function SongFormDialog({ onClose, onGenerated }: SongFormDialogP
             id={modelId}
             value={modelKey}
             onChange={(e) => pickModel(e.target.value)}
-            disabled={running}
+            disabled={busy}
             className="w-full px-2 py-1.5 text-sm"
             style={fieldStyle}
-            title="The author's model that writes the chords, as picked in Input → Generate; a model sets its genre"
+            title="Chord generation model"
           >
             {!models.some((m) => m.key === modelKey) && <option value={modelKey}>{modelLabel ?? modelKey}</option>}
             {models.map((m) => (
@@ -514,7 +541,7 @@ export default function SongFormDialog({ onClose, onGenerated }: SongFormDialogP
 
         {tab === 'full' && (
           <>
-            <div className="grid grid-cols-[auto_1fr] items-center gap-x-3 gap-y-2.5">
+            <fieldset disabled={planning} className="grid grid-cols-[auto_1fr] items-center gap-x-3 gap-y-2.5">
               <ChoiceRow
                 label="Length"
                 options={TARGET_BARS.map((bars) => ({ value: bars, label: `${bars} bars`, disabled: !targets.includes(bars) }))}
@@ -533,7 +560,7 @@ export default function SongFormDialog({ onClose, onGenerated }: SongFormDialogP
                 value={contrast}
                 onChange={setContrast}
               />
-            </div>
+            </fieldset>
 
             {/* The sketch as the planner sees it: the song up to its last used bar. */}
             <p className="text-xs" style={labelStyle}>
@@ -544,9 +571,18 @@ export default function SongFormDialog({ onClose, onGenerated }: SongFormDialogP
               </span>
             </p>
 
-            <p className="text-xs" style={{ color: 'var(--text-soft)' }}>
-              Muse Spark plans the form; the author&apos;s model ({modelLabel ?? modelKey}) writes every chord.
-            </p>
+            {planning && <p role="status" className="text-xs" style={labelStyle}>Generating song form…</p>}
+            {planStatus === 'failed' && (
+              <p role="alert" className="text-xs" style={{ color: 'var(--text-heading)' }}>
+                {planError ?? 'The song form could not be generated.'}
+              </p>
+            )}
+            {planStatus !== 'idle' && (
+              <details className="text-xs" style={labelStyle}>
+                <summary className="cursor-pointer">Run details</summary>
+                <div className="mt-2"><PlanRunBand /></div>
+              </details>
+            )}
 
             {(blocker || (meta?.enabled && !meta.configured)) && (
               <p
@@ -558,20 +594,20 @@ export default function SongFormDialog({ onClose, onGenerated }: SongFormDialogP
                   borderLeft: '3px solid var(--brand-yellow)',
                 }}
               >
-                {blocker ?? 'No Meta key is configured on this server, so a Muse Spark run will fail; the genre default form still works.'}
+                {blocker ?? 'Muse Spark is not configured. Use Genre template.'}
               </p>
             )}
 
             <div className="flex flex-wrap items-center justify-between gap-2">
               <button
                 type="button"
-                onClick={() => startRun('rules')}
-                disabled={blocker !== null}
+                onClick={() => void startRun('rules')}
+                disabled={blocker !== null || busy}
                 className="px-3 py-1.5 text-xs btn-hover disabled:opacity-40 disabled:cursor-not-allowed"
                 style={{ background: 'var(--btn-bg)', color: 'var(--text-primary)', border: '1px solid var(--border)' }}
-                title="The genre's default form through the song-form rules, written by the author's model; no Meta call, labelled rules"
+                title="Use the genre template"
               >
-                Genre default form (own model only, no planner)
+                Genre template
               </button>
               <div className="flex gap-2">
                 <button
@@ -579,7 +615,7 @@ export default function SongFormDialog({ onClose, onGenerated }: SongFormDialogP
                   onClick={() => dialogRef.current?.close()}
                   className="px-3 py-1.5 text-xs btn-hover"
                   style={{ background: 'var(--btn-bg)', color: 'var(--text-primary)', border: '1px solid var(--border)' }}
-                  title="Close without planning"
+                  title={planning ? 'Stop generating and close' : 'Close without planning'}
                 >
                   Cancel
                 </button>
@@ -593,9 +629,9 @@ export default function SongFormDialog({ onClose, onGenerated }: SongFormDialogP
                     // undefined when enabled, so btn-hover's hover dimming applies
                     opacity: planDisabled ? 0.6 : undefined,
                   }}
-                  title={metaOff ? 'THEARTIST_META_ENABLED=0 on the server' : 'Muse Spark plans the form; the run shows above the staff'}
+                  title={metaOff ? 'Meta features are disabled on this server' : 'Plan with Muse Spark'}
                 >
-                  {metaOff ? 'Meta features are disabled on this server' : sketch === 0 ? 'Plan a new song' : 'Complete the form'}
+                  {planning ? 'Generating…' : metaOff ? 'Muse Spark unavailable' : 'Muse Spark'}
                 </button>
               </div>
             </div>

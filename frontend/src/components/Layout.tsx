@@ -3,7 +3,6 @@ import Staff from './ScoreEditor/Staff';
 import SongFormDialog from './ScoreEditor/SongFormDialog';
 import ImportScoreDialog from './ScoreEditor/ImportScoreDialog';
 import SectionsDialog from './ScoreEditor/SectionsDialog';
-import PlanRunBand from './ScoreEditor/PlanRunBand';
 import ExportMenu from './ScoreEditor/ExportMenu';
 import PlayPanel from './RightPanel/play/PlayPanel';
 import SongSettings from './RightPanel/SongSettings';
@@ -14,7 +13,6 @@ import ThemeToggle from './RightPanel/ThemeToggle';
 import { useSongStore } from '../store/songStore';
 import { useSessionStore } from '../store/sessionStore';
 import { useGenerationStore } from '../store/generationStore';
-import { usePlanStore } from '../store/planStore';
 import { usePlayStore } from '../store/playStore';
 import { playSettingsFromSession } from '../engine/playSettings';
 import type { PlaySettings, SessionGenerationContext, Song } from '../models/types';
@@ -59,7 +57,6 @@ export default function Layout() {
   const addSession = useSessionStore((s) => s.add);
   const sessionCount = useSessionStore((s) => s.sessions.length);
   const modelKey = useGenerationStore((s) => s.modelKey);
-  const planStatus = usePlanStore((s) => s.status);
   const playSettings = usePlayStore((s) => s.settings);
   const resetPlayback = useSongStore((s) => s.resetPlayback);
   const importSong = useSongStore((s) => s.importSong);
@@ -73,7 +70,7 @@ export default function Layout() {
   const handleSaveSession = useCallback(() => {
     try {
       addSession(song, generationContext(song, modelKey, playSettings));
-      setSaveMessage('Saved in this browser. Open Projects to download a backup.');
+      setSaveMessage('');
     } catch (error) {
       setSaveMessage(error instanceof Error ? error.message : 'The project could not be saved.');
     }
@@ -249,6 +246,11 @@ export default function Layout() {
                 to Initialize (the whole song) so the two destructive actions
                 are co-located. */}
             <div className="flex-1 flex items-center justify-end gap-2">
+              {previousImportSong && (
+                <button onClick={handleUndoImport} className="px-2 py-1 text-xs btn-hover" style={{ background: 'var(--btn-bg)' }}>
+                  Undo import
+                </button>
+              )}
               <ExportMenu />
               <button
                 onClick={handleSaveSession}
@@ -279,7 +281,7 @@ export default function Layout() {
             </div>
           </div>
 
-          {saveMessage && <p role="status" className="text-xs mb-3" style={{ color: 'var(--text-soft)' }}>{saveMessage}</p>}
+          {saveMessage && <p role="alert" className="text-xs mb-3" style={{ color: 'var(--text-soft)' }}>{saveMessage}</p>}
 
           {/* Inline song settings — sits above the staff so the user can
               click straight on BPM / Time / Key / Genre to change them
@@ -288,18 +290,6 @@ export default function Layout() {
             <SongSettings />
           </div>
 
-          {song.importSource && <p className="mb-3 break-words text-xs" style={{ color: 'var(--text-muted)' }}>Imported from {song.importSource.filename}</p>}
-
-          <div className="flex flex-wrap items-center justify-between gap-2 mb-2 text-xs" style={{ color: 'var(--text-muted)' }}>
-            <span>{song.sections?.length ? 'Click a section name or drag across chords to select a range.' : 'Drag across chords to generate a variation.'}</span>
-            <div className="flex gap-2">
-              {previousImportSong && <button onClick={handleUndoImport} className="px-2 py-1 btn-hover" style={{ background: 'var(--btn-bg)' }}>Undo import</button>}
-              <button onClick={() => setSectionsOpen(true)} className="px-2 py-1 btn-hover" style={{ background: 'var(--btn-bg)' }} aria-haspopup="dialog">Edit Song Form</button>
-            </div>
-          </div>
-          {/* The Complete-the-form run, while one is shown; it lands on
-              the staff only through its Apply button. */}
-          {planStatus !== 'idle' && <PlanRunBand />}
           <Staff />
         </div>
 
@@ -418,6 +408,10 @@ export default function Layout() {
         <SongFormDialog
           onClose={() => setSongFormOpen(false)}
           onGenerated={handleSongFormGenerated}
+          onEditSections={() => {
+            setSongFormOpen(false);
+            setSectionsOpen(true);
+          }}
         />
       )}
       {importOpen && <ImportScoreDialog onClose={() => setImportOpen(false)} onImported={handleImported} />}

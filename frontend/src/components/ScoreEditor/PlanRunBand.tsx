@@ -1,12 +1,12 @@
 /**
- * PlanRunBand — the "Complete the form" run above the staff: one wrapping
+ * PlanRunBand — the "Complete the form" details inside the song-form dialog:
  * row of chips in run order (plan, validate, revise, each section, judge),
  * each with its source badge, latency, cost and request id, then the
  * outcome line and Apply / Undo / Export trace / Dismiss.
  *
- * Mounted by Layout only while the plan store is not idle. A failed run
- * ends in a red chip with the spend so far; the staff changes only on
- * Apply.
+ * Mounted in the dialog's collapsed details while the plan store is not idle.
+ * A failed run ends in a red chip with the spend so far. Successful dialog
+ * runs apply automatically; Undo, reapply and trace export remain here.
  */
 import { usePlanStore, type PlanChip } from '../../store/planStore';
 import { downloadExportBlob } from '../../engine/exportSpec';
@@ -77,7 +77,7 @@ export default function PlanRunBand() {
 
   const bars = sections.reduce((sum, section) => sum + section.bars, 0);
   const outcome =
-    status === 'running' ? `Running${planner === 'rules' ? ' the genre default form (rules)' : ''} · spent ${usd(spendUsd)} so far` :
+    status === 'running' ? `Running${planner === 'rules' ? ' the genre template' : ''} · spent ${usd(spendUsd)} so far` :
     status === 'failed' ? `${error ?? 'The run failed'} · spent ${usd(spendUsd)} · the staff is unchanged` :
     `Done: ${sections.length} ${sections.length === 1 ? 'section' : 'sections'}, ${bars} bars · ${usd(spendUsd)}` +
       `${trace ? ` · ${seconds(trace.elapsedMs)}` : ''} · ${applied ? 'applied to the staff' : 'nothing applied yet'}`;
