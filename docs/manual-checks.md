@@ -183,10 +183,12 @@ unimplemented and are not part of the completed-feature checks.
 - [ ] Use Open in Logic and Ableton reveal/drag. Test a missing DAW and a backend
   error. Hosted clients must still offer MIDI download.
 - [ ] Export → **Logic Scripter script**: in Logic, MIDI FX ▸ Scripter ▸ Open Script
-  in Editor, paste, Run Script. Play from bar 1 and from a later locator; cycle a
-  region; stop mid-chord (no stuck notes); check 3/4 or 6/8 timing against the MIDI
-  export and switch **Beat unit** if it drifts; Transpose and the Harmony/Bass
-  switches; incoming keyboard notes pass through. See
+  in Editor, paste, Run Script. Play the **Whole form** from bar 1 and check it stops
+  at the form's last bar; pick one **Section**, set **Start bar** and **Loop**, and
+  check only that section repeats; cycle a region; stop mid-chord (no stuck notes);
+  check 3/4 or 6/8 timing against the MIDI export and switch **Beat unit** if it
+  drifts; Transpose and the Harmony/Bass switches; incoming keyboard notes pass
+  through. See
   [plugin/logic-scripter/README.md](../plugin/logic-scripter/README.md).
 - [ ] Export PDF with 4/8/28/29/64 bars in light, dark and current themes. Inspect
   first cold load, all keys, slash chords, diminished/half-diminished symbols, Korean
