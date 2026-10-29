@@ -9,6 +9,8 @@ from pydantic import BaseModel, ConfigDict
 
 from app.models.export import MAX_EXPORT_BYTES, MAX_EXPORT_MEASURES, MIN_MIDI_BYTES
 from app.models.score_import import MAX_SCORE_BYTES, MAX_SCORE_MEASURES
+from app.services.env_flags import meta_enabled
+from app.services.llm import LLMConfig
 
 SCHEMA_VERSION = "1.0"
 MAX_JSON_STATE_BYTES = 1024 * 1024
@@ -60,10 +62,31 @@ def contract_result(data: BaseModel | dict) -> ContractEnvelope:
     return envelope
 
 
+def _meta_status() -> dict[str, Any]:
+    """Whether Meta-backed features can run here: the flag, a key's presence, the provider and model.
+
+    Never the key, where it came from, or an error: discovery must answer even on a broken
+    configuration, which then shows as configured false with no provider.
+    """
+    try:
+        enabled = meta_enabled()
+    except ValueError:
+        enabled = False  # a typo in the flag refuses every Meta call
+    provider = model = None
+    configured = False
+    try:
+        config = LLMConfig.from_env()
+        provider, model, configured = config.provider, config.model, bool(config.api_key)
+    except Exception:  # an LLMConfigError, or a malformed URL that urlsplit rejects
+        pass
+    return {"enabled": enabled, "configured": configured, "provider": provider, "model": model}
+
+
 def capabilities() -> ContractEnvelope:
     return contract_result({
         "name": "TheArtist", "transport": "streamable-http", "endpoint": "/mcp/",
         "tools": list(TOOLS),
+        "meta": _meta_status(),
         "contracts": {
             "generate_section": "SectionGenerateRequest / SectionGenerateResponse",
             "build_song": "SongGenerateRequest / SongGenerateResponse",
@@ -84,7 +107,8 @@ def capabilities() -> ContractEnvelope:
                              "measures.*.writtenNotes", "measures.*.bassNotes", "measures.*.noChord"],
         },
         "limitations": ["build_song returns one arrangement; candidate fan-out is not implemented.",
-                        "Score import defaults to local vector-PDF reading. Meta/auto requires explicit selection and may incur API cost.",
+                        "Score import defaults to local vector-PDF reading. Meta/auto requires explicit selection and may incur API cost; "
+                        "with THEARTIST_META_ENABLED=0 (meta.enabled false) those engines return HTTP 503 and only the local reader runs.",
                         "Note-based harmony analysis is opt-in and returns reviewable interpretations, not verified original chords or imported melody notes.",
                         "export_daw requires a loopback request, server opt-in, and explicit per-call confirmation.",
                         "Song planning and theory explanation are not MCP tools yet."],

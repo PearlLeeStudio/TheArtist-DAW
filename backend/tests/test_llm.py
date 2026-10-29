@@ -24,10 +24,12 @@ import openai
 from app.services import llm
 from app.services.llm import (
     BudgetExceeded, Ledger, LedgerError, LLMClient, LLMConfig, LLMConfigError, LLMConnectionError,
-    LLMError, LLMResponseError, LLMSchemaError, LLMTimeout, OpenAITransport, strict_schema,
+    LLMDisabled, LLMError, LLMResponseError, LLMSchemaError, LLMTimeout, OpenAITransport, strict_schema,
 )
 
 KEY = "sk-test-0123456789-never-log-this"
+BASETEN = dict(provider="baseten", base_url="https://inference.baseten.co/v1",
+               model="meta-models/muse-spark-open-1026", key_source="BASETEN_API_KEY")
 SCHEMA = {
     "type": "object",
     "properties": {
@@ -74,15 +76,28 @@ def response(content, *, usage=USAGE, finish_reason="stop"):
 class FakeTransport:
     """Returns (or raises) the same result on every call and records each request."""
 
-    def __init__(self, result):
+    def __init__(self, result, headers=None):
         self.result = result
+        self.headers = headers
         self.calls = []
 
     def __call__(self, request):
         self.calls.append(request)
         if isinstance(self.result, BaseException):
             raise self.result
-        return self.result, {"X-Request-Id": f"req_{len(self.calls)}"}
+        return self.result, self.headers or {"X-Request-Id": f"req_{len(self.calls)}"}
+
+
+class Replies(FakeTransport):
+    """Returns each result in turn, the last one for every later call."""
+
+    def __init__(self, *results):
+        super().__init__(results[0])
+        self.results = list(results)
+
+    def __call__(self, request):
+        self.result = self.results[min(len(self.calls), len(self.results) - 1)]
+        return super().__call__(request)
 
 
 class LLMTestCase(unittest.TestCase):
@@ -99,9 +114,9 @@ class LLMTestCase(unittest.TestCase):
     def client(self, transport, *, cap=25.0, **config):
         return LLMClient(self.config(**config), Ledger(self.ledger_path, cap), transport)
 
-    def sdk_client(self, handler):
+    def sdk_client(self, handler, **config):
         """A client whose real OpenAITransport talks to an in-process httpx mock."""
-        config = self.config()
+        config = self.config(**config)
         http_client = httpx.Client(transport=httpx.MockTransport(handler))
         self.addCleanup(http_client.close)
         return LLMClient(config, Ledger(self.ledger_path, 25.0), OpenAITransport(config, http_client=http_client))
@@ -299,12 +314,75 @@ class LedgerTests(LLMTestCase):
     def test_get_client_is_one_client_per_process_built_from_env(self):
         env = {"MODEL_API_KEY": KEY, "THEARTIST_META_LEDGER": str(self.ledger_path),
                "THEARTIST_META_BUDGET_USD": "40"}
-        with mock.patch.dict(os.environ, env, clear=True), mock.patch.object(llm, "_client", None):
+        with mock.patch.dict(os.environ, env, clear=True), mock.patch.object(llm, "_clients", {}):
             client = llm.get_client()
             self.assertIs(llm.get_client(), client)
+            judge = llm.get_client("judge")  # no LLM_JUDGE_PROVIDER: the judge is the default client's twin
+            self.assertIsNot(judge, client)
+            self.assertIs(llm.get_client("judge"), judge)
         self.assertEqual((client.config.model, client.ledger.cap_usd), ("muse-spark-1.3", 40.0))
         self.assertEqual(client.ledger.path, self.ledger_path.resolve())
+        self.assertEqual((judge.config, judge.ledger.path, judge.ledger.cap_usd),
+                         (client.config, client.ledger.path, 40.0))  # the same config and ledger file
         self.assertFalse(self.ledger_path.parent.exists())  # nothing is created until a request
+
+    def test_get_client_builds_the_judge_role_from_its_own_variables_and_ledger(self):
+        judge_path = self.ledger_path.with_name("judge_ledger.json")
+        env = {"MODEL_API_KEY": KEY, "THEARTIST_META_LEDGER": str(self.ledger_path),
+               "LLM_JUDGE_PROVIDER": "baseten", "BASETEN_API_KEY": KEY, "THEARTIST_JUDGE_LEDGER": str(judge_path),
+               "THEARTIST_JUDGE_BUDGET_USD": "3.5"}
+        with mock.patch.dict(os.environ, env, clear=True), mock.patch.object(llm, "_clients", {}):
+            client, judge = llm.get_client(), llm.get_client("judge")
+            self.assertIs(llm.get_client("judge"), judge)
+            with self.assertRaises(ValueError):
+                llm.get_client("critic")
+        self.assertEqual((client.config.provider, client.ledger.path, client.ledger.cap_usd),
+                         ("meta", self.ledger_path.resolve(), 25.0))
+        self.assertEqual((judge.config.provider, judge.config.model, judge.config.role),
+                         ("baseten", "meta-models/muse-spark-open-1026", "judge"))
+        self.assertEqual((judge.ledger.path, judge.ledger.cap_usd), (judge_path.resolve(), 3.5))
+
+    def test_the_meta_flag_refuses_get_client_for_every_role_but_not_a_direct_client(self):
+        env = {"MODEL_API_KEY": KEY, "THEARTIST_META_LEDGER": str(self.ledger_path), "LLM_JUDGE_PROVIDER": "baseten",
+               "BASETEN_API_KEY": KEY, "THEARTIST_JUDGE_LEDGER": str(self.ledger_path.with_name("judge.json"))}
+        for value in ("0", "false", " OFF "):
+            with self.subTest(value=value), mock.patch.dict(os.environ, {**env, "THEARTIST_META_ENABLED": value},
+                                                            clear=True), mock.patch.object(llm, "_clients", {}):
+                for role in ("default", "judge"):
+                    with self.assertRaises(LLMDisabled) as ctx:
+                        llm.get_client(role)
+                    self.assertIsInstance(ctx.exception, LLMConfigError)
+                    self.assertIn("THEARTIST_META_ENABLED=0", str(ctx.exception))
+                self.assertEqual(llm._clients, {})  # refused before anything was built
+                self.assertEqual(self.call(self.client(FakeTransport(response(json.dumps(GOOD))))).data, GOOD)
+        with mock.patch.dict(os.environ, {**env, "THEARTIST_META_ENABLED": "maybe"}, clear=True), \
+                mock.patch.object(llm, "_clients", {}):
+            with self.assertRaises(LLMConfigError) as ctx:  # a typo refuses too, visibly
+                llm.get_client()
+            self.assertNotIsInstance(ctx.exception, LLMDisabled)
+            self.assertIn("THEARTIST_META_ENABLED", str(ctx.exception))
+        for value in ("1", "yes", ""):
+            with self.subTest(value=value), mock.patch.dict(os.environ, {**env, "THEARTIST_META_ENABLED": value},
+                                                            clear=True), mock.patch.object(llm, "_clients", {}):
+                self.assertEqual(llm.get_client().config.provider, "meta")
+        self.assertFalse(llm.meta_enabled({"THEARTIST_META_ENABLED": "0"}))  # the flag also reads a dict env
+        self.assertTrue(llm.meta_enabled({}))
+
+    def test_the_judge_ledger_has_its_own_variables_and_defaults_unless_the_judge_is_the_default_client(self):
+        judge = Ledger.from_env({"LLM_JUDGE_PROVIDER": "baseten"}, role="judge")
+        self.assertEqual((judge.path, judge.cap_usd), (llm.DEFAULT_JUDGE_LEDGER_PATH, 10.0))
+        self.assertEqual(judge.path.name, "judge_ledger.json")
+        self.assertEqual(judge.path.parent, llm.DEFAULT_LEDGER_PATH.parent)
+        own = Ledger.from_env({"LLM_JUDGE_PROVIDER": "baseten", "THEARTIST_JUDGE_LEDGER": str(self.ledger_path),
+                               "THEARTIST_JUDGE_BUDGET_USD": "2", "THEARTIST_META_BUDGET_USD": "40"}, role="judge")
+        self.assertEqual((own.path, own.cap_usd), (self.ledger_path.resolve(), 2.0))
+        shared = Ledger.from_env({"THEARTIST_META_BUDGET_USD": "40", "THEARTIST_JUDGE_BUDGET_USD": "2",
+                                  "THEARTIST_JUDGE_LEDGER": str(self.ledger_path)}, role="judge")
+        self.assertEqual((shared.path, shared.cap_usd), (llm.DEFAULT_LEDGER_PATH, 40.0))  # the Meta ledger and cap
+        with self.assertRaises(ValueError):
+            Ledger.from_env({}, role="critic")
+        with self.assertRaises(LLMConfigError):
+            Ledger.from_env({"LLM_JUDGE_PROVIDER": "baseten", "THEARTIST_JUDGE_BUDGET_USD": "ten"}, role="judge")
 
 
 class ConfigTests(unittest.TestCase):
@@ -338,9 +416,14 @@ class ConfigTests(unittest.TestCase):
         self.assertEqual((fireworks.price_output_per_m, fireworks.reasoning_effort), (4.25, None))
         baseten = LLMConfig.from_env({"LLM_PROVIDER": "baseten", "BASETEN_API_KEY": KEY})
         self.assertEqual(baseten.model, "meta-models/muse-spark-open-1026")
+        self.assertEqual((baseten.price_input_per_m, baseten.price_cached_per_m, baseten.price_output_per_m,
+                          baseten.price_source), (1.25, 0.15, 4.25, "baseten muse-spark-open-1026 list price"))
+        other = LLMConfig.from_env({"LLM_PROVIDER": "baseten", "BASETEN_API_KEY": KEY, "LLM_MODEL": "meta-models/other"})
+        self.assertEqual(other.price_source, "unknown model price, Spark Standard assumed")
         priced = LLMConfig.from_env({"MODEL_API_KEY": KEY, "LLM_PRICE_OUTPUT_PER_M": "5", "LLM_TIMEOUT_S": "12.5",
                                      "LLM_PRICE_INPUT_PER_M": ""})
         self.assertEqual((priced.price_input_per_m, priced.price_output_per_m, priced.timeout_s), (1.25, 5.0, 12.5))
+        self.assertEqual(priced.price_source, "LLM_PRICE_*_PER_M")
         custom = LLMConfig.from_env({"LLM_PROVIDER": "custom", "LLM_BASE_URL": "https://llm.example/v1",
                                      "LLM_MODEL": "some-model", "LLM_API_KEY": KEY})
         self.assertEqual((custom.api_key, custom.price_output_per_m), (KEY, 4.25))
@@ -351,8 +434,10 @@ class ConfigTests(unittest.TestCase):
                 "custom": {"LLM_BASE_URL": "https://llm.example/v1", "LLM_MODEL": "some-model", "LLM_API_KEY": KEY}}
         defaults = {"meta": "low", "baseten": "low", "fireworks": "low", "ollama": None, "custom": None}
         for provider, env in envs.items():
+            # Baseten documents low / medium / high / xhigh; the others take minimal / low / medium / high
+            own = "XHigh" if provider == "baseten" else "Minimal"
             for value, expected in ((None, defaults[provider]), ("", defaults[provider]), ("none", None),
-                                    ("None", None), ("high", "high"), ("Minimal", "minimal")):
+                                    ("None", None), ("high", "high"), (own, own.lower())):
                 with self.subTest(provider=provider, LLM_REASONING_EFFORT=value):
                     given = {**env, "LLM_PROVIDER": provider}
                     if value is not None:  # None: the variable is unset
@@ -361,6 +446,44 @@ class ConfigTests(unittest.TestCase):
                     body = LLMClient(config, mock.Mock(spec=Ledger)).prepare(MESSAGES, SCHEMA, name="song_form").body
                     self.assertEqual(config.reasoning_effort, expected)
                     self.assertEqual(body.get("reasoning_effort", "not sent"), expected or "not sent")
+            with self.subTest(provider=provider, LLM_REASONING_EFFORT="the other provider's value"):
+                other = "minimal" if provider == "baseten" else "xhigh"
+                with self.assertRaises(LLMConfigError):
+                    LLMConfig.from_env({**env, "LLM_PROVIDER": provider, "LLM_REASONING_EFFORT": other})
+
+    def test_the_judge_role_reads_its_own_variables_or_is_exactly_the_default_config(self):
+        env = {"MODEL_API_KEY": KEY, "LLM_TIMEOUT_S": "30", "LLM_REASONING_EFFORT": "high",
+               "LLM_PRICE_OUTPUT_PER_M": "9", "BASETEN_API_KEY": "sk-baseten-0123456789"}
+        default = LLMConfig.from_env(env)
+        self.assertEqual(LLMConfig.from_env(env, role="judge"), default)  # no LLM_JUDGE_PROVIDER
+        self.assertEqual(LLMConfig.from_env({**env, "LLM_JUDGE_PROVIDER": " "}, role="judge"), default)
+        self.assertEqual((default.role, default.timeout_s, default.price_output_per_m), ("default", 30.0, 9.0))
+        judge = LLMConfig.from_env({**env, "LLM_JUDGE_PROVIDER": "Baseten", "LLM_JUDGE_TIMEOUT_S": "90",
+                                    "LLM_JUDGE_REASONING_EFFORT": "xhigh", "LLM_JUDGE_PRICE_CACHED_PER_M": "0.1"},
+                                   role="judge")
+        self.assertEqual((judge.role, judge.provider, judge.base_url, judge.model),
+                         ("judge", "baseten", "https://inference.baseten.co/v1", "meta-models/muse-spark-open-1026"))
+        self.assertEqual((judge.api_key, judge.key_source), ("sk-baseten-0123456789", "BASETEN_API_KEY"))
+        self.assertEqual((judge.timeout_s, judge.reasoning_effort), (90.0, "xhigh"))  # not the LLM_* values
+        self.assertEqual((judge.price_input_per_m, judge.price_cached_per_m, judge.price_output_per_m,
+                          judge.price_source), (1.25, 0.1, 4.25, "LLM_JUDGE_PRICE_*_PER_M"))
+        overridden = LLMConfig.from_env({**env, "LLM_JUDGE_PROVIDER": "baseten", "LLM_JUDGE_API_KEY": KEY,
+                                         "LLM_JUDGE_BASE_URL": "https://inference.baseten.co/v1/",
+                                         "LLM_JUDGE_MODEL": "meta-models/muse-spark-open-1026"}, role="judge")
+        self.assertEqual((overridden.api_key, overridden.key_source), (KEY, "LLM_JUDGE_API_KEY"))
+        self.assertEqual(overridden.base_url, "https://inference.baseten.co/v1/")
+        self.assertEqual(LLMConfig.from_env({**env, "LLM_JUDGE_PROVIDER": "meta"}, role="judge").api_key, KEY)
+        for judge_env, named in (({"LLM_JUDGE_PROVIDER": "baseten", "LLM_JUDGE_BASE_URL": "https://api.meta.ai/v1"},
+                                  "LLM_JUDGE_BASE_URL"),
+                                 ({"LLM_JUDGE_PROVIDER": "custom"}, "LLM_JUDGE_MODEL"),
+                                 ({"LLM_JUDGE_PROVIDER": "nope"}, "LLM_JUDGE_PROVIDER"),
+                                 ({"LLM_JUDGE_PROVIDER": "baseten", "LLM_JUDGE_PRICE_INPUT_PER_M": "x"},
+                                  "LLM_JUDGE_PRICE_INPUT_PER_M")):
+            with self.subTest(env=judge_env), self.assertRaises(LLMConfigError) as ctx:
+                LLMConfig.from_env({**env, **judge_env}, role="judge")
+            self.assertIn(named, str(ctx.exception))  # errors name the judge's variables
+        with self.assertRaises(ValueError):
+            LLMConfig.from_env(env, role="critic")
 
     def test_bad_configurations_fail_at_config_time(self):
         for env in ({"LLM_PROVIDER": "custom", "LLM_BASE_URL": "https://llm.example/v1"},
@@ -441,6 +564,145 @@ class SchemaTests(unittest.TestCase):
                     {"type": "object", "properties": {"x": {"type": "string"}}, "required": ["y"]}):
             with self.subTest(bad=bad), self.assertRaises(LLMSchemaError):
                 strict_schema(bad)
+
+
+class OpenWeightTests(LLMTestCase):
+    """What differs for the endpoints that do not enforce json_schema; meta stays byte for byte."""
+
+    def test_baseten_sends_max_tokens_and_states_the_schema_in_the_system_message(self):
+        system = {"role": "system", "content": "You plan song forms.  "}
+        for provider, settings in (("baseten", BASETEN),
+                                   ("fireworks", dict(provider="fireworks", base_url="https://api.fireworks.ai/inference/v1",
+                                                      model="accounts/fireworks/models/muse-glimmer-30b")),
+                                   ("ollama", dict(provider="ollama", base_url="http://localhost:11434/v1", model="llama3.2:3b",
+                                                   reasoning_effort=None)),
+                                   ("custom", dict(provider="custom", base_url="https://llm.example/v1", model="m",
+                                                   reasoning_effort=None))):
+            with self.subTest(provider=provider):
+                client = self.client(FakeTransport(response(json.dumps(GOOD))), **settings)
+                body = client.prepare([system, *MESSAGES], SCHEMA, name="song_form", max_completion_tokens=512).body
+                limit = "max_tokens" if provider == "baseten" else "max_completion_tokens"
+                self.assertEqual(body[limit], 512)
+                self.assertNotIn("max_completion_tokens" if provider == "baseten" else "max_tokens", body)
+                self.assertEqual(len(body["messages"]), 2)  # the schema joins the existing system message
+                guard = body["messages"][0]["content"]
+                self.assertTrue(guard.startswith("You plan song forms.\n\n"))
+                self.assertIn("Reply with a single JSON object matching this schema; no prose, no code fences", guard)
+                self.assertIn(json.dumps(strict_schema(SCHEMA), ensure_ascii=False), guard)
+                self.assertEqual(body["messages"][1], MESSAGES[0])
+                self.assertEqual(body["response_format"]["json_schema"]["strict"], True)
+                # No system message: one is added in front of the user turn
+                body = client.prepare(MESSAGES, SCHEMA, name="song_form").body
+                self.assertEqual([m["role"] for m in body["messages"]], ["system", "user"])
+                self.assertEqual(body["messages"][1], MESSAGES[0])
+                prepared = client.prepare(MESSAGES, SCHEMA, name="song_form")
+                self.assertEqual(prepared.input_tokens_estimate,  # the guard text is part of the estimate
+                                 math.ceil((len(json.dumps(body["messages"], ensure_ascii=False))
+                                            + len(json.dumps(strict_schema(SCHEMA), ensure_ascii=False))) / 3))
+        meta = self.client(FakeTransport(response(json.dumps(GOOD)))).prepare([system, *MESSAGES], SCHEMA,
+                                                                              name="song_form", max_completion_tokens=512)
+        self.assertEqual(meta.body["messages"], [system, *MESSAGES])  # unchanged
+        self.assertEqual(meta.body["max_completion_tokens"], 512)
+        self.assertNotIn("max_tokens", meta.body)
+
+    def test_the_request_id_also_comes_from_the_baseten_header_on_success_and_on_a_429(self):
+        transport = FakeTransport(response(json.dumps(GOOD)), headers={"X-Baseten-Request-Id": "bt_ok"})
+        result = self.call(self.client(transport, **BASETEN))
+        self.assertEqual(result.request_id, "bt_ok")
+        self.assertEqual(self.ledger()["entries"][-1]["request_id"], "bt_ok")
+        both = FakeTransport(response(json.dumps(GOOD)), headers={"x-baseten-request-id": "bt", "x-request-id": "req"})
+        self.assertEqual(self.call(self.client(both, **BASETEN)).request_id, "req")
+
+        def limited(request):
+            return httpx.Response(429, json={"error": {"message": "rate limited"}},
+                                  headers={"x-baseten-request-id": "bt_429", "x-ratelimit-remaining-requests": "0",
+                                           "X-RateLimit-Reset-Requests": "12s", "retry-after": "12"})
+
+        client = self.sdk_client(limited, **BASETEN)
+        with self.assertRaises(LLMResponseError) as ctx:
+            self.call(client)
+        exc = ctx.exception
+        self.assertEqual((exc.kind, exc.status_code, exc.request_id), ("http", 429, "bt_429"))
+        self.assertIn("x-ratelimit-remaining-requests=0; x-ratelimit-reset-requests=12s", str(exc))
+        entry = self.ledger()["entries"][-1]
+        self.assertEqual((entry["status"], entry["request_id"], entry["settled_usd"]), ("failed", "bt_429", 0.0))
+        self.assertIn("x-ratelimit-remaining-requests=0", entry["error"])
+        self.assertIn("x-ratelimit-reset-requests=12s", entry["error"])
+        self.assertNotIn("retry-after", entry["error"])
+
+    def test_fenced_json_is_accepted_from_open_weight_providers_and_still_refused_from_meta(self):
+        fenced = "```json\n" + json.dumps(GOOD, indent=1) + "\n```"
+        for content in (fenced, "\n```\n" + json.dumps(GOOD) + "```  \n", "```json" + json.dumps(GOOD) + "```"):
+            with self.subTest(content=content[:12]):
+                result = self.call(self.client(FakeTransport(response(content)), **BASETEN))
+                self.assertEqual((result.data, result.attempts), (GOOD, 1))
+                self.assertEqual(json.loads(result.text), GOOD)  # the text is what was parsed
+        with self.assertRaises(LLMResponseError) as ctx:
+            self.call(self.client(FakeTransport(response(fenced))))
+        self.assertEqual(ctx.exception.kind, "invalid_json")
+        # Prose around a fence is not JSON either: that is what the retry is for
+        with self.assertRaises(LLMResponseError) as ctx:
+            self.call(self.client(Replies(response("Here it is:\n" + fenced), response("still prose")), **BASETEN))
+        self.assertEqual(ctx.exception.kind, "invalid_json")
+
+    def test_open_weight_providers_retry_exactly_once_after_a_bad_reply_and_meta_never(self):
+        bad = response(json.dumps({"title": "x", "sections": [{"type": "drop", "chordCount": 8}]}))
+        transport = Replies(bad, response(json.dumps(GOOD)))
+        with self.assertLogs("app.services.llm", "WARNING") as logs:
+            result = self.call(self.client(transport, **BASETEN), input_token_upper_bound=1000)
+        self.assertEqual((result.data, result.attempts, len(transport.calls)), (GOOD, 2, 2))
+        first, second = transport.calls
+        self.assertEqual(second["messages"][:-1], first["messages"])  # the same request, plus the rejection
+        feedback = second["messages"][-1]
+        self.assertEqual(feedback["role"], "user")
+        self.assertIn("rejected (schema_mismatch)", feedback["content"])
+        self.assertIn("$.sections[0].type: 'drop' is not one of the allowed values", feedback["content"])
+        self.assertNotIn("req_1", feedback["content"])  # the error text, not the request id
+        self.assertTrue(any("retrying" in r.getMessage() and "schema_mismatch" in r.getMessage() for r in logs.records))
+        state = self.ledger()
+        self.assertEqual([(e["status"], e["request_id"]) for e in state["entries"]], [("failed", "req_1"), ("settled", "req_2")])
+        self.assertTrue(state["entries"][0]["error"].startswith("schema_mismatch"))
+        self.assertAlmostEqual(state["spent_usd"], 2 * USAGE_COST, places=8)
+        self.assertEqual(Ledger(self.ledger_path).snapshot()["outstanding_usd"], 0)
+        self.assertGreater(state["entries"][1]["reserved_usd"], state["entries"][0]["reserved_usd"])  # the bound grew
+        self.assertEqual(result.request_id, "req_2")
+
+        for kind, replies in (("schema_mismatch", (bad, bad)), ("invalid_json", (response("not json"), response("{")))):
+            with self.subTest(second_failure=kind):
+                transport = Replies(*replies)
+                with self.assertRaises(LLMResponseError) as ctx:
+                    self.call(self.client(transport, **BASETEN))
+                self.assertEqual((ctx.exception.kind, ctx.exception.request_id, len(transport.calls)), (kind, "req_2", 2))
+        for kind, reply in (("length", response('{"title": "Sun', finish_reason="length")), ("empty", response(None))):
+            with self.subTest(not_retried=kind):
+                transport = Replies(reply, response(json.dumps(GOOD)))
+                with self.assertRaises(LLMResponseError) as ctx:
+                    self.call(self.client(transport, **BASETEN))
+                self.assertEqual((ctx.exception.kind, len(transport.calls)), (kind, 1))
+        transport = Replies(bad, response(json.dumps(GOOD)))
+        with self.assertRaises(LLMResponseError) as ctx:  # meta: one request, no second chance
+            self.call(self.client(transport))
+        self.assertEqual((ctx.exception.kind, len(transport.calls)), ("schema_mismatch", 1))
+
+    def test_reasoning_effort_can_be_set_per_call_and_none_removes_it(self):
+        client = self.client(FakeTransport(response(json.dumps(GOOD))))
+        self.assertEqual(client.prepare(MESSAGES, SCHEMA, name="s").body["reasoning_effort"], "low")
+        self.assertEqual(client.prepare(MESSAGES, SCHEMA, name="s", reasoning_effort="Medium").body["reasoning_effort"],
+                         "medium")
+        self.assertNotIn("reasoning_effort", client.prepare(MESSAGES, SCHEMA, name="s", reasoning_effort="none").body)
+        for bad in ("xhigh", "extreme", ""):
+            with self.subTest(bad=bad), self.assertRaises(ValueError):
+                client.prepare(MESSAGES, SCHEMA, name="s", reasoning_effort=bad)
+        baseten = self.client(FakeTransport(response(json.dumps(GOOD))), **BASETEN)
+        self.assertEqual(baseten.prepare(MESSAGES, SCHEMA, name="s", reasoning_effort="xhigh").body["reasoning_effort"],
+                         "xhigh")
+        with self.assertRaises(ValueError):
+            baseten.prepare(MESSAGES, SCHEMA, name="s", reasoning_effort="minimal")
+        transport = FakeTransport(response(json.dumps(GOOD)))
+        self.call(self.client(transport), reasoning_effort="high")
+        self.call(self.client(transport), reasoning_effort="none")
+        self.call(self.client(transport))
+        self.assertEqual([call.get("reasoning_effort") for call in transport.calls], ["high", None, "low"])
 
 
 class ReplyTests(LLMTestCase):

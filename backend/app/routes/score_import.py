@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 
 from app.models.score_import import ScoreImportRequest, ScoreImportResponse
-from app.services.llm import BudgetExceeded, LedgerError, LLMConfigError, LLMError, LLMTimeout
+from app.services.llm import BudgetExceeded, LedgerError, LLMConfigError, LLMDisabled, LLMError, LLMTimeout
 from app.services.score_import import ScoreInputError, import_score
 
 router = APIRouter()
@@ -16,6 +16,9 @@ def import_score_route(req: ScoreImportRequest) -> ScoreImportResponse:
     except BudgetExceeded:
         raise HTTPException(status_code=429, detail="Score import would exceed the Meta API cost limit. "
                             "Check the request limit and remaining API budget.") from None
+    except LLMDisabled:  # before its base class LLMConfigError, which keeps the configuration message
+        raise HTTPException(status_code=503, detail="Meta features are disabled on this server; "
+                            "the local reader is still available.") from None
     except (LLMConfigError, LedgerError):
         raise HTTPException(status_code=503, detail="Meta assistance is not configured: check MODEL_API_KEY, "
                             "Meta Standard settings and the cost ledger, or select local analysis.") from None

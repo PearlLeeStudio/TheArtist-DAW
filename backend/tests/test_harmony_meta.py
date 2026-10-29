@@ -24,6 +24,7 @@ class HarmonyMetaTest(unittest.TestCase):
         self.data = copy.deepcopy(GOOD)
         self.transport_error = None
         self.finish_reason = "stop"
+        self.reply_model = "muse-spark-1.3"
         self.ledger = mock.Mock(spec=Ledger)
         self.ledger.cap_usd = 25.0
         self.ledger.reserve.return_value = "notes-reservation"
@@ -40,19 +41,22 @@ class HarmonyMetaTest(unittest.TestCase):
         if self.transport_error:
             raise self.transport_error
         content = self.data if isinstance(self.data, str) else json.dumps(self.data)
-        return {"id": "completion-notes", "model": "muse-spark-1.3", "choices": [
+        return {"id": "completion-notes", "model": self.reply_model, "choices": [
             {"finish_reason": self.finish_reason, "message": {"content": content}}],
             "usage": {"prompt_tokens": 1000, "completion_tokens": 500}}, {"x-request-id": "req-notes"}
 
     def test_single_text_turn_uses_shared_ledger_and_returns_reviewable_indexed_proposals(self):
         result = harmony_meta.propose_harmony(MEASURES, "C major", context=[{"index": 2, "chords": ["G7"]}])
+        self.get_client.assert_called_once_with()
         self.assertEqual(len(self.requests), 1)
         request = self.requests[0]
         self.assertEqual((request["model"], request["timeout"], request["max_completion_tokens"]),
                          ("muse-spark-1.3", 45.0, 4096))
         self.assertEqual(len(request["messages"]), 2)
+        self.assertEqual(request["messages"][0]["content"], harmony_meta.SYSTEM_PROMPT)  # meta: no schema guard
         self.assertTrue(all(isinstance(message["content"], str) for message in request["messages"]))
-        self.assertEqual((result.model, result.request_id), ("muse-spark-1.3", "req-notes"))
+        self.assertEqual((result.provider, result.model, result.request_id), ("meta", "muse-spark-1.3", "req-notes"))
+        self.assertEqual(result.cost_usd, .003375)
         self.assertEqual(result.measures[0].chords, ("Dm7b5",))
         self.assertTrue(result.measures[0].needs_review)
         self.assertEqual(result.measures[0].confidence, "low")
@@ -115,6 +119,36 @@ class HarmonyMetaTest(unittest.TestCase):
                     harmony_meta.propose_harmony(MEASURES, None)
         self.assertEqual(self.requests, [])
         self.ledger.reserve.assert_not_called()
+
+    def test_an_injected_client_is_used_as_given_and_its_provider_is_recorded(self):
+        self.reply_model = "meta-models/muse-spark-open-1026"
+        judge = LLMClient(LLMConfig(provider="baseten", base_url="https://inference.baseten.co/v1",
+                                    model="meta-models/muse-spark-open-1026", api_key=KEY, key_source="BASETEN_API_KEY"),
+                          self.ledger, self.transport)
+        result = harmony_meta.propose_harmony(MEASURES, "C major", context=[{"index": 2, "chords": ["G7"]}], client=judge)
+        self.get_client.assert_not_called()
+        self.assertEqual(len(self.requests), 1)
+        request = self.requests[0]
+        self.assertEqual((request["model"], request["timeout"], request["max_tokens"]),
+                         ("meta-models/muse-spark-open-1026", 45.0, 4096))
+        self.assertNotIn("max_completion_tokens", request)
+        self.assertTrue(request["messages"][0]["content"].startswith(harmony_meta.SYSTEM_PROMPT.rstrip()))
+        self.assertIn("no code fences", request["messages"][0]["content"])  # the client's own JSON guard
+        self.assertEqual(json.loads(request["messages"][1]["content"])["key"], "C major")
+        self.assertEqual((result.provider, result.model, result.request_id),
+                         ("baseten", "meta-models/muse-spark-open-1026", "req-notes"))
+        self.assertEqual(result.measures[0].chords, ("Dm7b5",))
+        self.assertEqual(self.ledger.reserve.call_args.kwargs["provider"], "baseten")
+        self.assertLessEqual(self.ledger.reserve.call_args.kwargs["reserved_usd"], .10)
+        # The Meta Standard checks apply to the shared client only: an injected local client needs none of them
+        local = LLMClient(LLMConfig(provider="ollama", base_url="http://localhost:11434/v1", model="llama3.2:3b",
+                                    api_key="ollama", key_source="placeholder", reasoning_effort=None,
+                                    price_input_per_m=0, price_cached_per_m=0, price_output_per_m=0),
+                          self.ledger, self.transport)
+        result = harmony_meta.propose_harmony(MEASURES, None, client=local)
+        self.assertEqual((result.provider, result.cost_usd), ("ollama", 0.0))
+        self.assertEqual(len(self.requests), 2)
+        self.get_client.assert_not_called()
 
     def test_budget_and_timeout_failures_stay_visible_without_a_success_fallback(self):
         self.ledger.reserve.side_effect = BudgetExceeded("budget exhausted", spent_usd=25, outstanding_usd=0,

@@ -3,7 +3,9 @@
 This is not OCR. Callers must select this assistance path explicitly and retain
 local reading/analysis failures. Only whitelisted musical data is serialized;
 documents, images, filenames, lyrics and arbitrary staff names are not sent.
-There is one Standard Muse Spark turn, no retry, and no success-like fallback.
+The product path is one Standard Muse Spark turn, no retry, and no success-like
+fallback; evaluation and the judge role pass their own client, which is used as
+given (an open-weight client may retry once, inside the client's own ledger).
 """
 
 from __future__ import annotations
@@ -14,7 +16,7 @@ from math import isfinite
 import re
 from typing import Literal
 
-from app.services.llm import LLMConfigError, LLMResponseError, SPARK_PRICES, get_client, strict_schema
+from app.services.llm import LLMClient, LLMConfigError, LLMResponseError, SPARK_PRICES, get_client, strict_schema
 
 MODEL = "muse-spark-1.3"
 MAX_MEASURES = 8
@@ -68,6 +70,7 @@ class HarmonyProposal:
     model: str
     request_id: str | None
     cost_usd: float
+    provider: str
 
 
 SCHEMA = {
@@ -284,13 +287,27 @@ def _measure_proposal(answer: dict, target: dict, request_id: str | None) -> Mea
     return MeasureProposal(target["index"], chords, confidence, evidence.strip())
 
 
-def propose_harmony(measures: list[dict], key: str | None, *, context: list[dict] | None = None) -> HarmonyProposal:
+def _standard_meta_client() -> LLMClient:
+    """The shared client, which the product path accepts only as Meta Standard at Standard prices."""
+    client = get_client()
+    cfg = client.config
+    if cfg.provider != "meta" or cfg.model != MODEL:
+        raise LLMConfigError("Harmony assistance requires Meta Standard muse-spark-1.3.")
+    if (cfg.price_input_per_m, cfg.price_cached_per_m, cfg.price_output_per_m) != SPARK_PRICES:
+        raise LLMConfigError("Harmony assistance requires Standard prices; remove LLM_PRICE_* overrides.")
+    return client
+
+
+def propose_harmony(measures: list[dict], key: str | None, *, context: list[dict] | None = None,
+                    client: LLMClient | None = None) -> HarmonyProposal:
     """One bounded Standard Meta turn over whitelisted local note evidence.
 
     The caller, not this helper, selects an explicitly authorized assistance
     mode and limits batches per import. No files, documents or note OCR are
     requested here. Result order matches the target order, regardless of model
     ordering. All results require review, and empty answers remain explicit.
+    An explicit client (evaluation, the judge role) is used as given, without
+    the Meta Standard checks of the shared client.
     """
     payload = _payload(measures, key, context)
     messages = [{"role": "system", "content": SYSTEM_PROMPT},
@@ -299,12 +316,8 @@ def propose_harmony(measures: list[dict], key: str | None, *, context: list[dict
     byte_count = len(serialized.encode("utf-8"))
     if byte_count > MAX_SERIALIZED_BYTES:
         raise ValueError("harmony assistance musical data and schema must fit within 64 KiB")
-    client = get_client()
-    cfg = client.config
-    if cfg.provider != "meta" or cfg.model != MODEL:
-        raise LLMConfigError("Harmony assistance requires Meta Standard muse-spark-1.3.")
-    if (cfg.price_input_per_m, cfg.price_cached_per_m, cfg.price_output_per_m) != SPARK_PRICES:
-        raise LLMConfigError("Harmony assistance requires Standard prices; remove LLM_PRICE_* overrides.")
+    if client is None:
+        client = _standard_meta_client()
     # Text only: every serialized UTF-8 byte is reserved as a token, plus role/
     # schema overhead. Even the 64 KiB maximum stays under the $0.10 cap with
     # the whole 4096-token completion (including reasoning) charged as output.
@@ -315,4 +328,4 @@ def propose_harmony(measures: list[dict], key: str | None, *, context: list[dict
     answers = _answers_by_index(result.data.get("measures"), [target["index"] for target in targets],
                                 result.request_id)
     proposals = tuple(_measure_proposal(answers[target["index"]], target, result.request_id) for target in targets)
-    return HarmonyProposal(proposals, result.model, result.request_id, result.cost_usd)
+    return HarmonyProposal(proposals, result.model, result.request_id, result.cost_usd, result.provider)

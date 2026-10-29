@@ -1,13 +1,19 @@
 """OpenAI-compatible LLM client for the Meta Model API and partner endpoints.
 
-chat_json() sends exactly one strict-JSON Chat Completions request (SDK retries
-off) and returns the checked object or raises a typed LLMError; it never returns
-a fallback that looks like a model answer. Each request first reserves its
+chat_json() sends one strict-JSON Chat Completions request (SDK retries off) and
+returns the checked object or raises a typed LLMError; it never returns a
+fallback that looks like a model answer. Each request first reserves its
 worst-case cost in a JSON ledger and is refused before any network I/O when
 spent + outstanding reservations + this reservation would pass the cap; the
-ledger then records the request id, token usage and settled cost.
+ledger then records the request id, token usage and settled cost. The meta
+provider enforces the JSON schema server-side; the open-weight endpoints
+(baseten, fireworks, ollama, custom) do not, so there the schema is also stated
+in the system message, code fences are stripped from the reply, and one reply
+that is not the requested JSON earns exactly one retry (a second ledgered call).
 
 Environment (names in deploy/env.example):
+  THEARTIST_META_ENABLED  1 (default) | 0: off makes get_client() raise LLMDisabled for
+                        every role, so each Meta-backed path reports itself disabled
   LLM_PROVIDER          meta (default) | baseten | fireworks | ollama | custom
   LLM_BASE_URL, LLM_MODEL, LLM_API_KEY
                         override the provider defaults; custom needs all three.
@@ -17,13 +23,22 @@ Environment (names in deploy/env.example):
                         only from MODEL_API_KEY, so the meta provider ignores
                         LLM_API_KEY.
   LLM_TIMEOUT_S         per-request timeout in seconds (default 60)
-  LLM_REASONING_EFFORT  minimal | low | medium | high, sent as given; none = not sent; unset or
-                        empty = the provider default (low; ollama and custom: not sent)
+  LLM_REASONING_EFFORT  minimal | low | medium | high (baseten: low | medium | high | xhigh),
+                        sent as given; none = not sent; unset or empty = the provider
+                        default (low; ollama and custom: not sent)
   LLM_PRICE_INPUT_PER_M / LLM_PRICE_CACHED_PER_M / LLM_PRICE_OUTPUT_PER_M
                         USD per 1M tokens; unknown models use the Spark prices,
                         and ollama is free only on a loopback host
   THEARTIST_META_BUDGET_USD   spend cap in USD (default 25)
   THEARTIST_META_LEDGER       ledger path (default backend/.ledger/meta_ledger.json)
+  LLM_JUDGE_PROVIDER, LLM_JUDGE_BASE_URL, LLM_JUDGE_MODEL, LLM_JUDGE_API_KEY,
+  LLM_JUDGE_TIMEOUT_S, LLM_JUDGE_REASONING_EFFORT, LLM_JUDGE_PRICE_*_PER_M
+                        the same settings for the judge role (get_client("judge")); an
+                        empty LLM_JUDGE_PROVIDER makes the judge the default client
+  THEARTIST_JUDGE_BUDGET_USD  the judge's own cap in USD (default 10), so partner credits
+                        never mix with the Meta cap; shared with the default client only
+                        when LLM_JUDGE_PROVIDER is empty
+  THEARTIST_JUDGE_LEDGER      judge ledger path (default backend/.ledger/judge_ledger.json)
 """
 
 from __future__ import annotations
@@ -50,6 +65,8 @@ from urllib.parse import urlsplit
 
 import openai
 
+from app.services.env_flags import meta_enabled
+
 log = logging.getLogger(__name__)
 
 
@@ -69,6 +86,10 @@ class LLMError(Exception):
 
 class LLMConfigError(LLMError):
     """Invalid or incomplete provider configuration."""
+
+
+class LLMDisabled(LLMConfigError):
+    """Every Meta Model API feature is switched off on this server (THEARTIST_META_ENABLED=0)."""
 
 
 class LLMSchemaError(LLMError, ValueError):
@@ -117,12 +138,20 @@ class LLMResponseError(LLMError):
 
 # USD per 1M tokens (input, cached input, output) for Muse Spark 1.x Standard
 SPARK_PRICES = (1.25, 0.15, 4.25)
+# USD per 1M tokens, Baseten's list price for meta-models/muse-spark-open-1026
+BASETEN_PRICES = (1.25, 0.15, 4.25)
 _SPARK_STANDARD = re.compile(r"muse-spark-1(\.\d+)*")
 PRICE_ENV = ("LLM_PRICE_INPUT_PER_M", "LLM_PRICE_CACHED_PER_M", "LLM_PRICE_OUTPUT_PER_M")
+_PRICE_NAMES = ("PRICE_INPUT_PER_M", "PRICE_CACHED_PER_M", "PRICE_OUTPUT_PER_M")
 REASONING_EFFORTS = ("minimal", "low", "medium", "high")
+BASETEN_REASONING_EFFORTS = ("low", "medium", "high", "xhigh")  # Baseten's documented values
 DEFAULT_TIMEOUT_S = 60.0
 DEFAULT_REASONING_EFFORT = "low"
 OLLAMA_KEY = "ollama"  # ollama ignores the key, but the SDK needs one
+# Client roles: the default client, and the judge (U6), which may run on an open-weight endpoint
+# with its own variables (LLM_JUDGE_*) and its own ledger
+ROLES = ("default", "judge")
+_RETRIED_KINDS = ("invalid_json", "schema_mismatch")
 
 
 @dataclass(frozen=True)
@@ -146,6 +175,27 @@ PROVIDERS: dict[str, _Provider] = {
 def _round_usd(amount: float) -> float:
     """Every USD amount (costs, reservations and ledger totals) is kept to 8 decimal places."""
     return round(amount, 8)
+
+
+def _var(role: str, name: str) -> str:
+    """The role's environment variable for `name`: LLM_<name>, or LLM_JUDGE_<name> for the judge."""
+    if role not in ROLES:
+        raise ValueError(f"unknown client role {role!r}; expected one of {', '.join(ROLES)}")
+    return f"LLM_{name}" if role == "default" else f"LLM_{role.upper()}_{name}"
+
+
+def _allowed_efforts(provider: str) -> tuple[str, ...]:
+    return BASETEN_REASONING_EFFORTS if provider == "baseten" else REASONING_EFFORTS
+
+
+def _limit_field(provider: str) -> str:
+    """Baseten's spec has no max_completion_tokens; every other provider takes the OpenAI name."""
+    return "max_tokens" if provider == "baseten" else "max_completion_tokens"
+
+
+def _guards_json(provider: str) -> bool:
+    """Whether the provider leaves response_format unenforced, so the client must guard the JSON itself."""
+    return provider != "meta"
 
 
 def _env_str(env: Mapping[str, str], name: str) -> str:
@@ -178,13 +228,15 @@ def _is_loopback(host: str) -> bool:
 _PROVIDER_BY_HOST = {_host(spec.base_url): name for name, spec in PROVIDERS.items() if spec.key_env}
 
 
-def _check_endpoint(provider: str, base_url: str) -> None:
+def _check_endpoint(provider: str, base_url: str, role: str = "default") -> None:
     """Keep every key on the endpoint it was meant for, whichever variable it came from.
 
     meta, baseten and fireworks take only their own https host; ollama and custom take
     any host but those three. So a copied template that still carries the Meta URL
     cannot send a partner key, or LLM_API_KEY, to Meta under another provider's name.
     """
+    url_var, model_var, provider_var, key_var = (_var(role, name)
+                                                 for name in ("BASE_URL", "MODEL", "PROVIDER", "API_KEY"))
     host, scheme = _host(base_url), urlsplit(base_url).scheme
     shown = f"{scheme}://{host}" if host else "a URL with no host"  # never a path or credentials
     owner = _PROVIDER_BY_HOST.get(host)
@@ -192,41 +244,42 @@ def _check_endpoint(provider: str, base_url: str) -> None:
         if owner == provider and scheme == "https":
             return
         if owner is None:
-            hint = ", or use LLM_PROVIDER=custom with LLM_API_KEY for another endpoint"
+            hint = f", or use {provider_var}=custom with {key_var} for another endpoint"
         elif owner != provider:
-            hint = f", or set LLM_PROVIDER={owner}"
+            hint = f", or set {provider_var}={owner}"
         else:
             hint = ""  # its own host, but over plain http
-        raise LLMConfigError(f"LLM_BASE_URL is {shown}, not the {provider} endpoint "
-                             f"{PROVIDERS[provider].base_url}: clear LLM_BASE_URL and LLM_MODEL to use the "
+        raise LLMConfigError(f"{url_var} is {shown}, not the {provider} endpoint "
+                             f"{PROVIDERS[provider].base_url}: clear {url_var} and {model_var} to use the "
                              f"{provider} defaults{hint}")
     if owner is not None:  # any other provider: any host but the hosted ones
-        hint = ", or clear LLM_BASE_URL and LLM_MODEL for the local defaults" if provider == "ollama" else ""
-        raise LLMConfigError(f"LLM_BASE_URL {shown} is the {owner} endpoint, reached only with "
-                             f"LLM_PROVIDER={owner}{hint}")
+        hint = f", or clear {url_var} and {model_var} for the local defaults" if provider == "ollama" else ""
+        raise LLMConfigError(f"{url_var} {shown} is the {owner} endpoint, reached only with "
+                             f"{provider_var}={owner}{hint}")
 
 
-def _provider_key(env: Mapping[str, str], provider: str, key_override: str) -> tuple[str, str]:
+def _provider_key(env: Mapping[str, str], provider: str, key_override: str,
+                  role: str = "default") -> tuple[str, str]:
     """The API key of a listed provider, and where it came from (safe to show).
 
     For meta, LLM_API_KEY is ignored (a warning is logged when it is set): the Meta key is
     read only from MODEL_API_KEY.
     """
+    key_var = _var(role, "API_KEY")
     if provider == "meta":
         if key_override:
-            log.warning("LLM_API_KEY is ignored for provider meta: the Meta key is read "
-                        "only from MODEL_API_KEY")
+            log.warning("%s is ignored for provider meta: the Meta key is read only from MODEL_API_KEY", key_var)
         return _env_str(env, "MODEL_API_KEY"), "MODEL_API_KEY"
     if key_override:
-        return key_override, "LLM_API_KEY"
+        return key_override, key_var
     key_env = PROVIDERS[provider].key_env
     if key_env:
         return _env_str(env, key_env), key_env
     return OLLAMA_KEY, "placeholder"
 
 
-def _token_prices(env: Mapping[str, str], provider: str, base_url: str,
-                  model: str) -> tuple[tuple[float, ...], str]:
+def _token_prices(env: Mapping[str, str], provider: str, base_url: str, model: str,
+                  role: str = "default") -> tuple[tuple[float, ...], str]:
     """USD per 1M (input, cached input, output) tokens, and where those prices came from.
 
     Each LLM_PRICE_*_PER_M variable that is set replaces its own price.
@@ -235,12 +288,14 @@ def _token_prices(env: Mapping[str, str], provider: str, base_url: str,
         prices, price_source = (0.0, 0.0, 0.0), "ollama (local)"
     elif _SPARK_STANDARD.fullmatch(model):
         prices, price_source = SPARK_PRICES, "muse-spark-1.x Standard"
+    elif provider == "baseten" and model == PROVIDERS["baseten"].model:
+        prices, price_source = BASETEN_PRICES, "baseten muse-spark-open-1026 list price"
     else:
         prices, price_source = SPARK_PRICES, "unknown model price, Spark Standard assumed"
-    overrides = [_env_float(env, name) for name in PRICE_ENV]
+    overrides = [_env_float(env, _var(role, name)) for name in _PRICE_NAMES]
     if any(value is not None for value in overrides):
         prices = tuple(o if o is not None else p for o, p in zip(overrides, prices))
-        price_source = "LLM_PRICE_*_PER_M"
+        price_source = _var(role, "PRICE_*_PER_M")
     return prices, price_source
 
 
@@ -269,6 +324,7 @@ class LLMConfig:
     price_cached_per_m: float = SPARK_PRICES[1]
     price_output_per_m: float = SPARK_PRICES[2]
     price_source: str = "muse-spark-1.x Standard"
+    role: str = "default"  # which LLM_* variables built it, so its errors name them
 
     def __post_init__(self) -> None:
         if "contributor" in self.model.lower():
@@ -277,11 +333,12 @@ class LLMConfig:
                 "train Meta models; use a Standard id such as muse-spark-1.3")
         if not self.base_url or not self.model:
             raise LLMConfigError("base_url and model must both be set")
-        _check_endpoint(self.provider, self.base_url)
+        _check_endpoint(self.provider, self.base_url, self.role)
         if not (math.isfinite(self.timeout_s) and self.timeout_s > 0):
             raise LLMConfigError(f"timeout must be a positive number of seconds, got {self.timeout_s!r}")
-        if self.reasoning_effort is not None and self.reasoning_effort not in REASONING_EFFORTS:
-            raise LLMConfigError(f"reasoning effort must be one of {', '.join(REASONING_EFFORTS)}, none "
+        efforts = _allowed_efforts(self.provider)
+        if self.reasoning_effort is not None and self.reasoning_effort not in efforts:
+            raise LLMConfigError(f"reasoning effort must be one of {', '.join(efforts)}, none "
                                  f"(not sent) or empty (the provider default), got {self.reasoning_effort!r}")
         for name in ("price_input_per_m", "price_cached_per_m", "price_output_per_m"):
             value = getattr(self, name)
@@ -296,36 +353,41 @@ class LLMConfig:
         return _round_usd(total / 1_000_000)
 
     @classmethod
-    def from_env(cls, env: Mapping[str, str] | None = None) -> LLMConfig:
+    def from_env(cls, env: Mapping[str, str] | None = None, role: str = "default") -> LLMConfig:
+        """The role's configuration from its LLM_* (default) or LLM_JUDGE_* (judge) variables."""
         env = os.environ if env is None else env
-        provider = _env_str(env, "LLM_PROVIDER").lower() or "meta"
-        base_url, model = _env_str(env, "LLM_BASE_URL"), _env_str(env, "LLM_MODEL")
-        key_override = _env_str(env, "LLM_API_KEY")
+        provider = _env_str(env, _var(role, "PROVIDER")).lower()
+        if role != "default" and not provider:
+            return cls.from_env(env)  # no provider of its own: the judge is the default client
+        provider = provider or "meta"
+        url_var, model_var, key_var = _var(role, "BASE_URL"), _var(role, "MODEL"), _var(role, "API_KEY")
+        base_url, model = _env_str(env, url_var), _env_str(env, model_var)
+        key_override = _env_str(env, key_var)
         if provider == "custom":
-            missing = [name for name, value in (("LLM_BASE_URL", base_url), ("LLM_MODEL", model),
-                                                ("LLM_API_KEY", key_override)) if not value]
+            missing = [name for name, value in ((url_var, base_url), (model_var, model),
+                                                (key_var, key_override)) if not value]
             if missing:
-                raise LLMConfigError(f"LLM_PROVIDER=custom needs {', '.join(missing)}")
-            api_key, key_source = key_override, "LLM_API_KEY"
+                raise LLMConfigError(f"{_var(role, 'PROVIDER')}=custom needs {', '.join(missing)}")
+            api_key, key_source = key_override, key_var
         elif provider in PROVIDERS:
             spec = PROVIDERS[provider]
-            api_key, key_source = _provider_key(env, provider, key_override)
+            api_key, key_source = _provider_key(env, provider, key_override, role)
             # __post_init__ then checks the host, whichever variable the key came from
             base_url, model = base_url or spec.base_url, model or spec.model
         else:
-            raise LLMConfigError(f"unknown LLM_PROVIDER {provider!r}; expected one of "
+            raise LLMConfigError(f"unknown {_var(role, 'PROVIDER')} {provider!r}; expected one of "
                                  f"{', '.join([*PROVIDERS, 'custom'])}")
 
-        prices, price_source = _token_prices(env, provider, base_url, model)
-        timeout = _env_float(env, "LLM_TIMEOUT_S")
-        effort = _reasoning_effort(provider, _env_str(env, "LLM_REASONING_EFFORT"))
+        prices, price_source = _token_prices(env, provider, base_url, model, role)
+        timeout = _env_float(env, _var(role, "TIMEOUT_S"))
+        effort = _reasoning_effort(provider, _env_str(env, _var(role, "REASONING_EFFORT")))
         return cls(
             provider=provider, base_url=base_url, model=model, api_key=api_key,
             key_source=key_source,
             timeout_s=DEFAULT_TIMEOUT_S if timeout is None else timeout,
             reasoning_effort=effort,
             price_input_per_m=prices[0], price_cached_per_m=prices[1], price_output_per_m=prices[2],
-            price_source=price_source,
+            price_source=price_source, role=role,
         )
 
 
@@ -445,6 +507,15 @@ def schema_errors(value: Any, schema: Mapping[str, Any], path: str = "$") -> lis
 
 DEFAULT_BUDGET_USD = 25.0
 DEFAULT_LEDGER_PATH = Path(__file__).resolve().parents[2] / ".ledger" / "meta_ledger.json"
+DEFAULT_JUDGE_BUDGET_USD = 10.0
+DEFAULT_JUDGE_LEDGER_PATH = DEFAULT_LEDGER_PATH.with_name("judge_ledger.json")
+# Each role's ledger variables and defaults: the judge's own file and cap keep partner credits
+# (Baseten) apart from the Meta cap
+_LEDGER_ENV = {
+    "default": ("THEARTIST_META_LEDGER", "THEARTIST_META_BUDGET_USD", DEFAULT_LEDGER_PATH, DEFAULT_BUDGET_USD),
+    "judge": ("THEARTIST_JUDGE_LEDGER", "THEARTIST_JUDGE_BUDGET_USD", DEFAULT_JUDGE_LEDGER_PATH,
+              DEFAULT_JUDGE_BUDGET_USD),
+}
 WARN_FRACTION = 0.8
 _CAP_TOLERANCE_USD = 1e-9  # float slack, so a reservation that exactly fills the cap still fits
 _warned_ledgers: set[str] = set()  # ledgers that already logged the 80 % warning in this process
@@ -478,10 +549,14 @@ class Ledger:
         self._lock = threading.Lock()
 
     @classmethod
-    def from_env(cls, env: Mapping[str, str] | None = None) -> Ledger:
+    def from_env(cls, env: Mapping[str, str] | None = None, role: str = "default") -> Ledger:
+        """The role's ledger; a judge without a provider of its own shares the default ledger."""
         env = os.environ if env is None else env
-        path = _env_str(env, "THEARTIST_META_LEDGER") or None
-        return cls(path, _env_float(env, "THEARTIST_META_BUDGET_USD"))
+        if role != "default" and not _env_str(env, _var(role, "PROVIDER")):
+            return cls.from_env(env)
+        path_var, cap_var, default_path, default_cap = _LEDGER_ENV[role]
+        cap = _env_float(env, cap_var)
+        return cls(_env_str(env, path_var) or default_path, default_cap if cap is None else cap)
 
     def snapshot(self) -> dict[str, Any]:
         """Current totals, read without locking or creating anything (writes replace the file whole)."""
@@ -599,6 +674,10 @@ Transport = Callable[[dict[str, Any]], tuple[dict[str, Any], Mapping[str, str]]]
 CHARS_PER_TOKEN = 3  # conservative; English chat text averages nearer 4 characters per token
 _SCHEMA_NAME = re.compile(r"[A-Za-z0-9_-]{1,64}")
 _SCHEMA_ERRORS_SHOWN = 5  # a schema_mismatch message lists at most this many problems
+_REQUEST_ID_HEADERS = ("x-request-id", "x-baseten-request-id")
+_JSON_GUARD = "Reply with a single JSON object matching this schema; no prose, no code fences:"
+# A reply that is nothing but one fenced block, with or without a language tag
+_FENCED = re.compile(r"\A\s*```[\w-]*[ \t]*\r?\n?(.*?)\r?\n?[ \t]*```\s*\Z", re.S)
 
 
 @dataclass(frozen=True)
@@ -622,15 +701,41 @@ class LLMResult:
     cost_usd: float
     latency_ms: int
     label: str
+    attempts: int = 1  # 2 when an open-weight provider's first reply was not the requested JSON
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
 
 
+def _lower_headers(headers: Mapping[str, Any] | None) -> dict[str, str]:
+    return {str(k).lower(): str(v) for k, v in dict(headers or {}).items()}
+
+
+def _request_id(headers: Mapping[str, Any] | None) -> str | None:
+    """The request id from whichever header the provider sets (Baseten uses its own name)."""
+    lowered = _lower_headers(headers)
+    return next((lowered[name] for name in _REQUEST_ID_HEADERS if lowered.get(name)), None)
+
+
+def _strip_fences(text: str) -> str:
+    """The content of a reply that is one fenced code block; anything else unchanged."""
+    match = _FENCED.match(text)
+    return match[1] if match else text
+
+
+def _with_schema_guard(messages: list[dict[str, Any]], schema: dict[str, Any]) -> list[dict[str, Any]]:
+    """The messages with the schema stated in the system message, for endpoints that do not enforce it."""
+    guard = f"{_JSON_GUARD}\n{json.dumps(schema, ensure_ascii=False)}"
+    first = messages[0]
+    if first.get("role") == "system" and isinstance(first.get("content"), str):
+        return [{**first, "content": f"{first['content'].rstrip()}\n\n{guard}"}, *messages[1:]]
+    return [{"role": "system", "content": guard}, *messages]
+
+
 class OpenAITransport:
     """Default transport: one request through the openai SDK with retries off.
 
-    with_raw_response keeps the HTTP headers, so the x-request-id is captured, also for a
+    with_raw_response keeps the HTTP headers, so the request id is captured, also for a
     success status whose body is not a JSON chat completion (raised as bad_response).
     """
 
@@ -638,6 +743,7 @@ class OpenAITransport:
         self._client = openai.OpenAI(api_key=config.api_key, base_url=config.base_url,
                                      timeout=config.timeout_s, max_retries=0, http_client=http_client)
         self._where = f"{config.provider} ({config.model})"
+        self._url_var = _var(config.role, "BASE_URL")
 
     def __call__(self, request: dict[str, Any]) -> tuple[dict[str, Any], Mapping[str, str]]:
         raw = self._client.chat.completions.with_raw_response.create(**request)
@@ -652,8 +758,8 @@ class OpenAITransport:
             content_type = raw.headers.get("content-type", "").split(";")[0].strip()[:80] or "not set"
             raise LLMResponseError(
                 f"HTTP {raw.status_code} from {self._where} is not a JSON chat completion (content type "
-                f"{content_type}); check that LLM_BASE_URL is the API root, usually ending in /v1",
-                kind="bad_response", request_id=raw.headers.get("x-request-id"), status_code=raw.status_code)
+                f"{content_type}); check that {self._url_var} is the API root, usually ending in /v1",
+                kind="bad_response", request_id=_request_id(raw.headers), status_code=raw.status_code)
         return completion, dict(raw.headers)
 
 
@@ -709,13 +815,14 @@ class LLMClient:
     def prepare(self, messages: Sequence[Mapping[str, Any]], schema: Mapping[str, Any], *, name: str,
                 max_completion_tokens: int = 2048, timeout_s: float | None = None,
                 input_token_upper_bound: int | None = None,
-                max_request_usd: float | None = None) -> PreparedRequest:
+                max_request_usd: float | None = None, reasoning_effort: str | None = None) -> PreparedRequest:
         """Build the request and reservation without sending anything.
 
         Text-only input is estimated from its character count. Media requires a caller-supplied
         bound for ALL input tokens, including extracted text, images, and schema;
         base64 character length cannot bound a document's tokenized representation.
         A model's full context window is a conservative bound for accepted requests.
+        reasoning_effort None sends the configured effort; "none" sends no effort field.
         """
         if not _SCHEMA_NAME.fullmatch(name):
             raise LLMSchemaError(f"schema name {name!r} must be 1-64 letters, digits, _ or -")
@@ -726,17 +833,20 @@ class LLMClient:
         timeout = self.config.timeout_s if timeout_s is None else float(timeout_s)
         if not (math.isfinite(timeout) and timeout > 0):
             raise ValueError(f"timeout_s must be a positive number, got {timeout_s!r}")
+        effort = self._effort(reasoning_effort)
         strict = strict_schema(schema)
         msgs = [dict(m) for m in messages]
+        if _guards_json(self.config.provider):
+            msgs = _with_schema_guard(msgs, strict)
         body: dict[str, Any] = {
             "model": self.config.model,
             "messages": msgs,
             "response_format": {"type": "json_schema",
                                 "json_schema": {"name": name, "strict": True, "schema": strict}},
-            "max_completion_tokens": max_completion_tokens,
+            _limit_field(self.config.provider): max_completion_tokens,
         }
-        if self.config.reasoning_effort:
-            body["reasoning_effort"] = self.config.reasoning_effort
+        if effort:
+            body["reasoning_effort"] = effort
         has_media = _has_media(msgs)
         if input_token_upper_bound is not None:
             if not _is_positive_int(input_token_upper_bound):
@@ -759,18 +869,54 @@ class LLMClient:
                     spent_usd=0.0, outstanding_usd=0.0, request_usd=reserve, cap_usd=max_request_usd)
         return PreparedRequest(body, timeout, strict, input_tokens, reserve)
 
+    def _effort(self, override: str | None) -> str | None:
+        """The reasoning_effort to send: the configured one, or the caller's ("none": not sent)."""
+        if override is None:
+            return self.config.reasoning_effort
+        effort = override.lower()
+        if effort == "none":
+            return None
+        allowed = _allowed_efforts(self.config.provider)
+        if effort not in allowed:
+            raise ValueError(f"reasoning_effort must be one of {', '.join(allowed)} or none, got {override!r}")
+        return effort
+
     def chat_json(self, messages: Sequence[Mapping[str, Any]], schema: Mapping[str, Any], *, name: str,
                   label: str, max_completion_tokens: int = 2048, timeout_s: float | None = None,
                   input_token_upper_bound: int | None = None,
-                  max_request_usd: float | None = None) -> LLMResult:
-        """Send one strict-JSON request; return the checked object or raise an LLMError."""
+                  max_request_usd: float | None = None, reasoning_effort: str | None = None) -> LLMResult:
+        """Send one strict-JSON request; return the checked object or raise an LLMError.
+
+        A provider that does not enforce json_schema gets exactly one retry after a reply that is
+        not JSON or not the schema, with the rejection appended as a user message and ledgered
+        as a second call; meta never retries.
+        """
         cfg = self.config
-        prepared = self.prepare(messages, schema, name=name, max_completion_tokens=max_completion_tokens,
-                                timeout_s=timeout_s, input_token_upper_bound=input_token_upper_bound,
-                                max_request_usd=max_request_usd)
+        options = dict(name=name, max_completion_tokens=max_completion_tokens, timeout_s=timeout_s,
+                       max_request_usd=max_request_usd, reasoning_effort=reasoning_effort)
+        prepared = self.prepare(messages, schema, input_token_upper_bound=input_token_upper_bound, **options)
         if not cfg.api_key:
             raise LLMConfigError(f"{cfg.key_source} is not set, so provider {cfg.provider} cannot be called")
         transport = self._get_transport()
+        try:
+            return self._attempt(transport, prepared, label, 1)
+        except LLMResponseError as exc:
+            if not _guards_json(cfg.provider) or exc.kind not in _RETRIED_KINDS:
+                raise
+            rejected = exc
+        log.warning("llm retrying provider=%s model=%s label=%s once after %s", cfg.provider, cfg.model, label,
+                    rejected.kind)
+        feedback = {"role": "user", "content": f"Your previous reply was rejected ({rejected.kind}): "
+                                               f"{rejected.args[0]}. Reply again with a single JSON object matching "
+                                               "the schema; no prose, no code fences."}
+        # A caller's bound covers the first request's input; the added turn counts a token per character
+        bound = None if input_token_upper_bound is None else input_token_upper_bound + len(feedback["content"])
+        prepared = self.prepare([*messages, feedback], schema, input_token_upper_bound=bound, **options)
+        return self._attempt(transport, prepared, label, 2)
+
+    def _attempt(self, transport: Transport, prepared: PreparedRequest, label: str, attempts: int) -> LLMResult:
+        """Reserve, send and settle one request; every failure is settled, then raised as an LLMError."""
+        cfg = self.config
         try:
             entry_id = self.ledger.reserve(label=label, provider=cfg.provider, model=cfg.model,
                                            reserved_usd=prepared.reserve_usd)
@@ -802,8 +948,7 @@ class LLMClient:
         usage: dict[str, int] | None = None
         cost = prepared.reserve_usd
         try:
-            headers = {str(k).lower(): str(v) for k, v in dict(headers or {}).items()}
-            request_id = headers.get("x-request-id")
+            request_id = _request_id(headers)
             response_id = response.get("id") if isinstance(response, dict) else None
             usage, cost = self._usage_and_cost(response, prepared)
             data, text, model = self._parse(response, prepared, request_id)
@@ -822,7 +967,8 @@ class LLMClient:
                         response_id=response_id, usage=usage)
             return LLMResult(
                 data=data, text=text, provider=cfg.provider, model=model, request_id=request_id,
-                response_id=response_id, usage=usage or {}, cost_usd=cost, latency_ms=latency_ms, label=label)
+                response_id=response_id, usage=usage or {}, cost_usd=cost, latency_ms=latency_ms, label=label,
+                attempts=attempts)
         self._close(entry_id, label, cost, "failed", latency_ms, request_id=request_id,
                     response_id=response_id, usage=usage, error=error)
         raise error
@@ -859,8 +1005,8 @@ class LLMClient:
         finish = choice.get("finish_reason")
         message = choice.get("message") if isinstance(choice.get("message"), dict) else {}
         if finish == "length":
-            raise fail("length", f"the output hit max_completion_tokens="
-                                 f"{prepared.body['max_completion_tokens']} (reasoning tokens count toward it)")
+            limit = _limit_field(self.config.provider)
+            raise fail("length", f"the output hit {limit}={prepared.body[limit]} (reasoning tokens count toward it)")
         if finish == "content_filter":
             raise fail("content_filter", "the provider's content filter stopped the output")
         if message.get("refusal"):
@@ -870,6 +1016,8 @@ class LLMClient:
         text = message.get("content")
         if not isinstance(text, str) or not text.strip():
             raise fail("empty", "the response has no message content")
+        if _guards_json(self.config.provider):
+            text = _strip_fences(text)
         try:
             data = json.loads(text)
         except json.JSONDecodeError as exc:
@@ -897,11 +1045,19 @@ class LLMClient:
             return LLMTimeout(f"{where} did not answer within {prepared.timeout_s:g}s"), full
         if isinstance(exc, openai.APIStatusError):
             status = exc.status_code
+            headers = _lower_headers(getattr(exc.response, "headers", None))
             # A 5xx, or a 408 request timeout, may have generated tokens first, so it keeps the safe
             # over-count; any other 4xx rejects the request before generation, so nothing is billed.
             billed = full if status >= 500 or status == 408 else 0.0
-            return LLMResponseError(f"HTTP {status} from {where}: {self._scrub(_api_message(exc))}",
-                                    kind="http", request_id=exc.request_id, status_code=status), billed
+            detail = self._scrub(_api_message(exc))
+            if status == 429:
+                # The provider's rate-limit headers say when to try again; they go ahead of the provider
+                # text so the ledger note's length cut cannot drop them
+                limits = "; ".join(f"{k}={v}" for k, v in sorted(headers.items()) if k.startswith("x-ratelimit-"))
+                if limits:
+                    detail = f"{limits}: {detail}"
+            return LLMResponseError(f"HTTP {status} from {where}: {detail}", kind="http",
+                                    request_id=_request_id(headers), status_code=status), billed
         if isinstance(exc, (openai.APIConnectionError, ConnectionError)):
             detail = self._scrub(str(exc.__cause__ or exc))
             return LLMConnectionError(f"cannot reach {where} at {self.config.base_url}: {detail}"), full
@@ -938,14 +1094,24 @@ class LLMClient:
         return spent
 
 
-_client: LLMClient | None = None
+_clients: dict[str, LLMClient] = {}
 _client_lock = threading.Lock()
 
 
-def get_client() -> LLMClient:
-    """Process-wide client, built from the environment on first use."""
-    global _client
+def get_client(role: str = "default") -> LLMClient:
+    """One process-wide client per role, built from the environment on first use.
+
+    The Meta flag is checked on every call, for every role, before anything is built; a direct
+    LLMClient(...) is not subject to it (tests, evaluation scripts).
+    """
+    try:
+        enabled = meta_enabled()
+    except ValueError as exc:  # a typo in the flag refuses, as the LLMError the routes already map
+        raise LLMConfigError(str(exc)) from None
+    if not enabled:
+        raise LLMDisabled("Meta Model API features are disabled on this server (THEARTIST_META_ENABLED=0)")
     with _client_lock:
-        if _client is None:
-            _client = LLMClient()
-        return _client
+        client = _clients.get(role)
+        if client is None:
+            client = _clients[role] = LLMClient(LLMConfig.from_env(role=role), Ledger.from_env(role=role))
+        return client
