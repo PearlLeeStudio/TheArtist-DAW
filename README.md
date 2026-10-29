@@ -111,8 +111,11 @@ remain on the [manual checklist](docs/manual-checks.md).
 - **Export** downloads editable, three-part MIDI with tempo, meter, section markers
   and mixer levels, or an A4 score PDF. Local Logic opening and Ableton file reveal
   use the local backend; hosted clients can download MIDI.
+- **Logic Scripter script**: the same arrangement as a Logic Pro Scripter MIDI FX
+  script that plays the harmony and bass inside Logic, following its transport,
+  locate and cycle ([plugin/logic-scripter](plugin/logic-scripter/README.md)).
 - The same service is available through [REST and MCP](docs/mcp.md). TheVoyager has
-  a thin MCP adapter; a native DAW plugin is a future separate client.
+  a thin MCP adapter; a native AU/VST3 plugin is a future separate client.
 
 The [local analysis implementation](docs/score-analysis.md) separates PDF glyph
 reading from duration/bass/voice-aware chord and Roman-numeral analysis. Original
@@ -239,6 +242,7 @@ flowchart LR
   Editor --> Planner["Complete the form: Muse Spark plans, validator checks, own model writes"]
   Editor --> Rest["REST / streaming"]
   Voyager["TheVoyager thin client"] --> MCP["MCP /mcp/"]
+  Scripter["Logic Pro Scripter script"] -.-> Rest
   Rest --> Music["Shared inference and arrangement services"]
   MCP --> Music
   Planner --> Music
@@ -480,8 +484,13 @@ Vite proxies `/api` requests to the backend automatically. Open `http://localhos
 To preload AI models on startup:
 
 ```bash
-THEARTIST_WARMUP=1 uv run uvicorn app.main:app --reload
+THEARTIST_WARMUP=1 uv run uvicorn app.main:app --reload            # every checkpoint
+THEARTIST_WARMUP_KEYS=ft_f1,ft_f4 uv run uvicorn app.main:app      # only these
 ```
+
+For a public judge server, `THEARTIST_PUBLIC_HOST=1` turns off DAW handoff, the warmup
+route and MCP, keeps score import local, and puts the Meta-calling routes behind
+per-session and daily spend limits; see `deploy/env.example`.
 
 ## AI Model
 

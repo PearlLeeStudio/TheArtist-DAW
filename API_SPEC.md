@@ -461,7 +461,7 @@ If `modelKey` is `null` or unknown and `genre` is provided, the backend uses `di
 | Endpoint | Response | Purpose |
 |---|---|---|
 | `GET /api/models/status` | `{torch_available, models: {<key>: bool}}` | Per-checkpoint loaded state in the model registry. |
-| `POST /api/models/warmup` | `{torch_available, loaded: {...}}` | Preload checkpoints into memory. |
+| `POST /api/models/warmup` | `{torch_available, loaded: {...}, unknown: [...]}` | Preload every checkpoint, or only those named in `THEARTIST_WARMUP_KEYS`; names that are no checkpoint come back in `unknown`. 403 under `THEARTIST_PUBLIC_HOST=1`. |
 | `GET /api/models/list` | `{default, models: [...], groups: {paper, lora}}` — each entry `{key, label, available, recommended}` | Populates the frontend model dropdown; the frontend filters out `available: false` keys. `recommended` = F1 + F1 v2 + F4. |
 | `GET /api/genres/list` | `{default_genre, genres: [...]}` — each entry `{key, label, model_key, served_by, lora_ready}` | 13-genre vocabulary; `served_by` = actual checkpoint each genre routes to (LoRA fallback to F1). |
 
@@ -759,6 +759,12 @@ Success returns **binary** `audio/midi`, with an attachment filename and `Cache-
 
 The render is limited to 100,000 notes and 4 MiB. Invalid export data returns 422 with a field location; excessive render size returns 413. This route writes no server-side file. PDF export is a separate browser-rendered score document and does not use this endpoint.
 
+### POST `/api/export/scripter` — Logic Pro Scripter script
+
+The same `ExportSpec` body as `/api/export/midi`. The response (`text/javascript; charset=utf-8`, `Content-Disposition: attachment; filename*=UTF-8''<title>.theartist.js`, `Cache-Control: no-store`) is a Logic Pro Scripter MIDI FX script that carries the song's harmony and bass notes — the same notes, quarter-note times and velocities the MIDI export writes — and plays them inside Logic following its transport, locate and cycle. Drums stay with the MIDI file or Logic's own drummer. Script parameters: Start bar, Transpose (±12), Harmony and Bass on/off, Velocity %, Loop song, and Beat unit (Logic's ruler counts the meter's denominator as one beat).
+
+In Logic: MIDI FX ▸ Scripter ▸ Open Script in Editor, paste the file, Run Script. Errors match the MIDI route: 422 for an invalid spec, 413 over the note limit or over 4 MiB of script. See [plugin/logic-scripter/README.md](plugin/logic-scripter/README.md).
+
 ### GET `/api/daw/targets` and POST `/api/daw/open` — Local handoff
 
 `GET /api/daw/targets` returns the backend machine's installed applications:
@@ -773,6 +779,17 @@ The render is limited to 100,000 notes and 4 MiB. Invalid export data returns 42
 On non-macOS both targets are unavailable. `POST /api/daw/open` takes `{"target":"logic"|"ableton","spec":<ExportSpec>}` and returns `{"action":"open"|"reveal","path":"<saved MIDI path>"}`. It writes a uniquely named MIDI under `backend/.exports/`, then opens it in Logic or reveals it in Finder for dragging into Ableton. It does not insert tracks directly into an existing DAW project.
 
 This is an explicit side effect on the **backend computer**. The browser enables automatic handoff only from a loopback hostname; hosted users download `.mid` instead. Keep this local backend bound to loopback. Errors are 409 for a missing application, 501 on non-macOS, and 500 for file/open failures (an already saved file remains available). Export validation/size errors remain 422/413.
+
+### Judge-server lockdown and Meta spend limits
+
+Off by default. `THEARTIST_PUBLIC_HOST=1`: `GET /api/daw/targets`, `POST /api/daw/open` and `POST /api/models/warmup` answer 403 with a reason, `/mcp/` is not mounted, and `POST /api/import/score` accepts only `engine: "local"` (403 otherwise). The Meta-calling routes — planner runs with `planner: "meta"`, and a score import that is about to call Meta — are then admitted against limits (also available alone with `THEARTIST_META_LIMITS=1`):
+
+| Header | Meaning |
+|---|---|
+| `X-TheArtist-Session` | Required; a stable per-browser id (≤ 128 characters). Its pool allows `THEARTIST_META_SESSION_LIMIT_USD` per UTC day (default 1.00). |
+| `X-TheArtist-Judge-Code` | Optional; equal to `THEARTIST_JUDGE_CODE`, it draws from one shared judge pool of `THEARTIST_JUDGE_CODE_DAILY_USD` (default 5.00). |
+
+A request is charged its worst case (a planner run $0.10, a Meta score reading $1.35, note assistance $0.20) and settled at what the ledger recorded; an `auto` import the local reader finishes is never charged. The global cap `THEARTIST_META_DAILY_LIMIT_USD` (default 10.00) counts today's ledger entries. Statuses: 400 missing or over-long session header, 403 wrong judge code, 429 a limit reached (with `Retry-After` to UTC midnight), 503 a misconfigured limit variable or unreadable ledger.
 
 ### GET `/api/capabilities` and `/mcp/` — Shared contract discovery
 
