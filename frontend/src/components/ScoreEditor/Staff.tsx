@@ -6,6 +6,7 @@ import { getChordDisplayParts } from '../../engine/chordDisplay';
 import { sectionColor, sectionDisplayLabel } from '../../engine/songForm';
 import type { Measure, SlotAddress, SongSection } from '../../models/types';
 import { scoreMeasureLayout } from '../../engine/scoreLayout';
+import { selectAllScore } from '../../engine/scoreShortcuts';
 import { keySignatureFor } from '../../engine/keySignatures';
 import ImportedMeasureReview from './ImportedMeasureReview';
 import { hasEmptySlot, isExplicitNoChord, needsSourceReview } from './importedBars';
@@ -107,6 +108,18 @@ export default function Staff() {
   const [dragStart, setDragStart] = useState<SlotAddress | null>(null);
   const [containerWidth, setContainerWidth] = useState(960);
   const [theme, setTheme] = useState(document.documentElement.className);
+
+  useEffect(() => {
+    const handleKeyDown = (event: globalThis.KeyboardEvent) => {
+      const target = event.target instanceof Element ? event.target : null;
+      const textControl = target?.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"]), [role="textbox"], [role="combobox"]');
+      const blocked = Boolean(textControl || document.querySelector('dialog[open]'));
+      selectAllScore(event, useSongStore.getState().song.measures.length, blocked, selectSlotRange);
+    };
+    // Staff mounts only in the editor, so Projects keeps its browser shortcuts.
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectSlotRange]);
 
   // Watch for theme class changes
   useEffect(() => {
