@@ -1,9 +1,9 @@
 /**
  * Play-panel settings resolved against a song's genre: which harmony
  * instrument and comping rhythm, keyboard or guitar voicing, which drum
- * pattern, bass on or off, and master/part levels. Pure — the store, the playback engine, MyPage and
- * the node tests all resolve through here, which is what makes a saved
- * session replay exactly like the editor.
+ * pattern, bass on or off, and master/part levels. Pure — the store, the
+ * playback engine, MyPage and the node tests all resolve through here,
+ * which is what makes a saved session replay exactly like the editor.
  */
 import type {
   Chord,
@@ -52,6 +52,13 @@ export function normalizeGenre(genre: string | null | undefined): string | null 
   return g || null;
 }
 
+/** A per-genre table's entry for `genre`, looked up by its canonical key;
+ *  undefined without a genre or for one the table lacks. */
+function genreEntry<T>(table: Record<string, T>, genre: string | null | undefined): T | undefined {
+  const g = normalizeGenre(genre);
+  return g ? table[g] : undefined;
+}
+
 export function rhythmPresetById(id: string | null | undefined): HarmonyRhythmPreset | null {
   if (!id) return null;
   return HARMONY_RHYTHM_PRESETS.find((p) => p.id === id) ?? null;
@@ -73,8 +80,7 @@ export function resolveHarmonyRhythm(settings: PlaySettings, genre: string | nul
 /** The genre's default harmony instrument; null without a genre (the engine
  *  then plays its built-in piano). */
 export function genreHarmonyInstrument(genre: string | null | undefined): string | null {
-  const g = normalizeGenre(genre);
-  return g ? GENRE_HARMONY_INSTRUMENT[g] ?? null : null;
+  return genreEntry(GENRE_HARMONY_INSTRUMENT, genre) ?? null;
 }
 
 /** The harmony instrument that plays: the pick, else the genre default. */
@@ -91,8 +97,7 @@ export function resolveVoicingMode(settings: PlaySettings, genre: string | null 
 
 /** The genre's drum pattern id; null without a genre. */
 export function genreDrumPatternId(genre: string | null | undefined): number | null {
-  const g = normalizeGenre(genre);
-  return g ? GENRE_TO_DRUM_PATTERN_ID[g] ?? null : null;
+  return genreEntry(GENRE_TO_DRUM_PATTERN_ID, genre) ?? null;
 }
 
 /** The drum pattern that plays; null = no drums. */
@@ -102,13 +107,11 @@ export function resolveDrumPatternId(settings: PlaySettings, genre: string | nul
 
 /** The genre's 1-bar bass rhythm (the bass follows the genre; no override). */
 export function bassPatternFor(genre: string | null | undefined): number[] {
-  const g = normalizeGenre(genre);
-  return (g ? GENRE_BASS_RHYTHM[g] : undefined) ?? DEFAULT_BASS_RHYTHM;
+  return genreEntry(GENRE_BASS_RHYTHM, genre) ?? DEFAULT_BASS_RHYTHM;
 }
 
 export function bassInstrumentFor(genre: string | null | undefined): string {
-  const g = normalizeGenre(genre);
-  return (g ? GENRE_BASS_INSTRUMENT[g] : undefined) ?? DEFAULT_BASS_INSTRUMENT;
+  return genreEntry(GENRE_BASS_INSTRUMENT, genre) ?? DEFAULT_BASS_INSTRUMENT;
 }
 
 /** What the playback engine reads when a note fires (playback.ts
@@ -140,14 +143,20 @@ export function enginePlayConfig(settings: PlaySettings, genre: string | null | 
   };
 }
 
+/** One strike of a 1-bar rhythm: where it falls and how long it lasts, both in beats. */
+export interface HarmonyStrike {
+  pos: number;
+  dur: number;
+}
+
 /**
- * The strikes of a 1-bar rhythm with their lengths, both in beats. A strike
- * lasts 0.85 × the pattern's average spacing (sparse patterns sustain, dense
- * ones stab), clamped to 0.85 × the gap before the next strike — wrapping
- * into the next bar — so a chord never runs into its own re-strike.
- * Positions outside the bar are dropped.
+ * The strikes of a 1-bar rhythm with their lengths. A strike lasts 0.85 ×
+ * the pattern's average spacing (sparse patterns sustain, dense ones stab),
+ * clamped to 0.85 × the gap before the next strike — wrapping into the next
+ * bar — so a chord never runs into its own re-strike. Positions outside the
+ * bar are dropped.
  */
-export function harmonyStrikes(pattern: number[], beatsPerMeasure: number): { pos: number; dur: number }[] {
+export function harmonyStrikes(pattern: number[], beatsPerMeasure: number): HarmonyStrike[] {
   const positions = [...new Set(pattern)]
     .filter((p) => p >= 0 && p < beatsPerMeasure)
     .sort((a, b) => a - b);
@@ -159,21 +168,27 @@ export function harmonyStrikes(pattern: number[], beatsPerMeasure: number): { po
   });
 }
 
+/** What a chord slot sounds: root, quality, slash bass and extensions; '' when empty. */
+function chordIdentity(chord: Chord | null | undefined): string {
+  return chord ? [chord.root, chord.quality, chord.bass ?? '', ...chord.extensions].join('|') : '';
+}
+
 /** Sparse presets keep their feel, but never omit a different second chord. */
 export function harmonyStrikesForChords(
   pattern: number[], beatsPerMeasure: number, chords: readonly (Chord | null)[],
-): { pos: number; dur: number }[] {
+): HarmonyStrike[] {
   const positions = meterRhythm(pattern, beatsPerMeasure).filter((p) => p >= 0 && p < beatsPerMeasure);
   if (!positions.length) return [];
-  const half = beatsPerMeasure / 2;
-  const identity = (chord: Chord | null | undefined) => chord
-    ? [chord.root, chord.quality, chord.bass ?? '', ...chord.extensions].join('|') : '';
-  const changed = identity(chords[0]) !== identity(chords[1]);
-  if (chords[0] && !positions.some((p) => p < half)) positions.push(0);
-  if (chords[1] && changed && !positions.some((p) => p >= half)) positions.push(half);
+  const secondSlotStart = beatsPerMeasure / 2;
+  const secondChordDiffers = chordIdentity(chords[0]) !== chordIdentity(chords[1]);
+  // A slot whose chord the rhythm misses is struck on its first beat; the
+  // second slot only for a new chord (a repeated one keeps ringing).
+  if (chords[0] && !positions.some((p) => p < secondSlotStart)) positions.push(0);
+  if (chords[1] && secondChordDiffers && !positions.some((p) => p >= secondSlotStart)) positions.push(secondSlotStart);
+  // A first-slot strike is cut at a chord change.
   return harmonyStrikes(positions, beatsPerMeasure).map((strike) => ({
     ...strike,
-    dur: changed && strike.pos < half ? Math.min(strike.dur, half - strike.pos) : strike.dur,
+    dur: secondChordDiffers && strike.pos < secondSlotStart ? Math.min(strike.dur, secondSlotStart - strike.pos) : strike.dur,
   }));
 }
 
@@ -230,29 +245,32 @@ export function sanitizeVolume(value: unknown, fallback: number): number {
     : fallback;
 }
 
+/** `value` when it is one of `allowed`, else `fallback`. */
+function oneOf<T>(value: unknown, allowed: readonly T[], fallback: T): T {
+  return allowed.includes(value as T) ? (value as T) : fallback;
+}
+
 /** PlaySettings from untrusted JSON (localStorage, an imported session file):
  *  every missing, unknown or malformed field falls back to its default. */
 export function sanitizePlaySettings(raw: unknown): PlaySettings {
-  const r = (typeof raw === 'object' && raw !== null ? raw : {}) as Record<string, unknown>;
-  const d = DEFAULT_PLAY_SETTINGS;
-  const pick = <T>(value: unknown, allowed: readonly T[], fallback: T): T =>
-    allowed.includes(value as T) ? (value as T) : fallback;
+  const saved = (typeof raw === 'object' && raw !== null ? raw : {}) as Record<string, unknown>;
+  const defaults = DEFAULT_PLAY_SETTINGS;
   return {
-    harmonyOverride: typeof r.harmonyOverride === 'string' && HARMONY_NAMES.has(r.harmonyOverride)
-      ? r.harmonyOverride
-      : d.harmonyOverride,
-    harmonyRhythmId: rhythmPresetById(typeof r.harmonyRhythmId === 'string' ? r.harmonyRhythmId : null)?.id
-      ?? d.harmonyRhythmId,
-    drumMode: pick(r.drumMode, DRUM_MODES, d.drumMode),
-    drumPatternId: typeof r.drumPatternId === 'number' && DRUM_IDS.has(r.drumPatternId)
-      ? r.drumPatternId
-      : d.drumPatternId,
-    bassEnabled: typeof r.bassEnabled === 'boolean' ? r.bassEnabled : d.bassEnabled,
-    visualMode: pick(r.visualMode, VISUAL_MODES, d.visualMode),
-    masterVolume: sanitizeVolume(r.masterVolume, d.masterVolume),
-    harmonyVolume: sanitizeVolume(r.harmonyVolume, d.harmonyVolume),
-    bassVolume: sanitizeVolume(r.bassVolume, d.bassVolume),
-    drumVolume: sanitizeVolume(r.drumVolume, d.drumVolume),
+    harmonyOverride: typeof saved.harmonyOverride === 'string' && HARMONY_NAMES.has(saved.harmonyOverride)
+      ? saved.harmonyOverride
+      : defaults.harmonyOverride,
+    harmonyRhythmId: rhythmPresetById(typeof saved.harmonyRhythmId === 'string' ? saved.harmonyRhythmId : null)?.id
+      ?? defaults.harmonyRhythmId,
+    drumMode: oneOf(saved.drumMode, DRUM_MODES, defaults.drumMode),
+    drumPatternId: typeof saved.drumPatternId === 'number' && DRUM_IDS.has(saved.drumPatternId)
+      ? saved.drumPatternId
+      : defaults.drumPatternId,
+    bassEnabled: typeof saved.bassEnabled === 'boolean' ? saved.bassEnabled : defaults.bassEnabled,
+    visualMode: oneOf(saved.visualMode, VISUAL_MODES, defaults.visualMode),
+    masterVolume: sanitizeVolume(saved.masterVolume, defaults.masterVolume),
+    harmonyVolume: sanitizeVolume(saved.harmonyVolume, defaults.harmonyVolume),
+    bassVolume: sanitizeVolume(saved.bassVolume, defaults.bassVolume),
+    drumVolume: sanitizeVolume(saved.drumVolume, defaults.drumVolume),
   };
 }
 

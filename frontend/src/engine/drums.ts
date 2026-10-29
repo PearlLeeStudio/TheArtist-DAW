@@ -2,7 +2,7 @@
  * Drum playback (Tone.js).
  *
  * Primary path: Tone.Sampler instances loaded from `/drums/*.flac` —
- * samples are MuldjordKit (FreePats edition, CC BY 4.0). One Sampler per voice
+ * samples are DrumGizmo Aasimonster v2.1 (GPL-3.0). One Sampler per voice
  * so each can have its own volume balance and release tail (long for cymbals,
  * short for shells). Attribution + sample provenance: see public/drums/LICENSE.txt.
  *
@@ -16,9 +16,6 @@ import * as Tone from 'tone';
 import { drumPatternById, hitPos, hitVel } from './drumPatterns';
 import type { DrumHit, DrumVoice } from './drumPatterns';
 import { getMasterInput } from './mixer';
-
-export { DRUM_PATTERNS, getDrumPatternForGenre } from './drumPatterns';
-export type { DrumHit, DrumPattern } from './drumPatterns';
 
 // ---------- Synthesized drum voices (fallback while samples load) ----------
 
@@ -42,10 +39,13 @@ let drumVolume = 0.6;
 //   round 1 (synth 808)   → too thin
 //   round 2 (smplr TR-808) → kept for hip-hop (classic boom-bap)
 //   round 3 (LM-2 for EDM) → still missing 비트감
-//   round 4 (this commit)  → smplr only ships 5 vintage machines (no TR-909!).
+//   round 4 (MFB for EDM)  → smplr only ships 5 vintage machines (no TR-909!).
 //     Switched electronic LM-2 → MFB-512 (raw analog Berlin synth, much
 //     punchier kick + crisper hat than the dry Linn LM-2). Kept LM-2/CR-8000
 //     in the dispatch for future variety.
+//   round 5 (2026-05-10)   → all rejected (TR-808 thin, MFB-512 clicky, LM-2
+//     dry): every built-in pattern plays the Aasimonster acoustic kit, and
+//     none selects a machine (DrumPattern.kit).
 // Tone.js synth versions stay live as fallback while CDN samples decode.
 import { DrumMachine } from 'smplr';
 
@@ -191,11 +191,10 @@ function ensureSynths(): void {
   }).connect(drumBus);
 
   // ---------- smplr drum machines (Pearl 2026-05-09) ----------
-  // TR-808 (hip-hop) + LM-2 (electronic, Linn drum machine — crisper modern
-  // beat character per Pearl 비트감 feedback) lazy-load on first pattern
-  // play via getDrumMachine().
+  // TR-808, MFB-512 and LM-2 lazy-load via getDrumMachine() on the first hit
+  // of a pattern whose `kit` selects one; no built-in pattern does.
 
-  // ---------- Real samples (MuldjordKit, CC BY 4.0) ----------
+  // ---------- Real samples (DrumGizmo Aasimonster v2.1, GPL-3.0) ----------
   // One Sampler per voice so we can tune per-voice mix volume and release.
   // Each sample is mapped to a single note (C2) — we always trigger that note,
   // so no pitch shifting happens.
@@ -258,11 +257,12 @@ export function playDrum(
 
   // smplr drum machines (real samples from smpldsnds.github.io CDN):
   //   '808'  → TR-808 (hip-hop classic, sub kick + click snare)
-  //   'MFB'  → MFB-512 (Berlin analog, punchy kick + crisp hat — EDM default)
+  //   'MFB'  → MFB-512 (Berlin analog, punchy kick + crisp hat)
   //   'LM-2' → Linn LM-2 (vintage drier electro, kept for variety)
-  // Pattern.kit selects. Velocity jitter ±8% per trigger avoids machine-gun
-  // repetition (same trick we use on the acoustic Sampler kit). Falls through
-  // to synth fallback below if the chosen machine isn't loaded yet.
+  // Pattern.kit selects (no built-in pattern does). Velocity jitter ±8% per
+  // trigger avoids machine-gun repetition (same trick we use on the acoustic
+  // Sampler kit). Falls through to synth fallback below if the chosen machine
+  // isn't loaded yet.
   if (kit === '808' || kit === 'MFB' || kit === 'LM-2') {
     const machineName = kit === '808' ? 'TR-808' : kit === 'MFB' ? 'MFB-512' : 'LM-2';
     const dm = getDrumMachine(machineName);
@@ -381,6 +381,9 @@ export function swingDelay(beatInBar: number, beatUnit = 1): number {
 
 // ---------- Scheduling ----------
 
+/** Drum steps per beat of the song's meter: 16ths in x/4, 32nds in x/8. */
+export const DRUM_STEPS_PER_BEAT = 4;
+
 let drumScheduledIds: number[] = [];
 
 export function clearDrumSchedule(): void {
@@ -405,15 +408,15 @@ export function scheduleDrumMeasure(
   beatUnit = 1,
 ): void {
   ensureSynths();
-  const sixteenthDur = secondsPerBeat / 4;
-  const totalSixteenths = beatsPerMeasure * 4;
+  const sixteenthDur = secondsPerBeat / DRUM_STEPS_PER_BEAT;
+  const totalSixteenths = beatsPerMeasure * DRUM_STEPS_PER_BEAT;
 
   for (let pos = startStep; pos < totalSixteenths; pos++) {
     const baseTime = measureStart + (pos - startStep) * sixteenthDur;
     const id = Tone.getTransport().schedule((t) => {
       const pattern = drumPatternById(currentPatternId);
       if (!pattern) return;  // drums off
-      const when = t + swingDelay(pos / 4, beatUnit);
+      const when = t + swingDelay(pos / DRUM_STEPS_PER_BEAT, beatUnit);
       const kit = pattern.kit ?? 'acoustic';
       for (const [voice, hits] of Object.entries(pattern.voices) as [DrumVoice, DrumHit[]][]) {
         if (!hits) continue;

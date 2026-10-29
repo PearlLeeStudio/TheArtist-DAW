@@ -12,7 +12,8 @@ export type DrumVoice = 'K' | 'S' | 'H' | 'O' | 'R' | 'X' | 'C' | 'T' | 'M' | 'L
 
 // ---------- Patterns ----------
 // Each pattern is keyed by 16th-note grid position within a 4/4 measure (0..15).
-// For 3/4 we use the first 12 positions; for 6/8 the first 12.
+// drums.ts plays 4 steps per beat of the song's meter, so a 3/4 bar plays the
+// first 12 positions and a 6/8 bar (24 steps) all 16.
 
 /**
  * Hit: a 16th-position plus optional velocity.
@@ -29,16 +30,17 @@ export interface DrumPattern {
   /** Beats the off-beat 8ths of every layer land late (drums.ts swingDelay):
    *  1/6 = a triplet 8th, a full shuffle. Omitted = straight. */
   swing?: number;
-  /** Pearl 2026-05-09: each pattern is the canonical drum for one genre
-   *  in the 13-genre vocabulary. getDrumPatternForGenre() resolves by
-   *  this field. Variants (e.g. Funk Show, Samba, Rock Anthem) share a
-   *  genre with another pattern; the helper picks the lower-id primary. */
+  /** The genre whose Auto pattern this is (GENRE_TO_DRUM_PATTERN_ID routes
+   *  each of the 13 genres to one pattern). The pick-only variants Funk Show
+   *  and Samba have none. */
   genre?: string;
   /** Drum kit dispatch (Pearl 2026-05-09).
-   *  - 'acoustic' (default): Aasimonster multi-mic samples via Tone.Sampler
-   *  - '808':  smplr TR-808 (Roland classic, hip-hop boom-bap default)
-   *  - 'MFB':  smplr MFB-512 (Berlin analog, electronic default — punchy)
-   *  - 'LM-2': smplr LM-2 (Linn vintage electro, available alternate) */
+   *  - 'acoustic' (default, used by every built-in pattern): Aasimonster
+   *    multi-mic samples via Tone.Sampler
+   *  - '808':  smplr TR-808 (Roland classic)
+   *  - 'MFB':  smplr MFB-512 (Berlin analog, punchy)
+   *  - 'LM-2': smplr LM-2 (Linn vintage electro)
+   *  drums.ts can play the three drum machines, but no pattern picks one. */
   kit?: 'acoustic' | '808' | 'MFB' | 'LM-2';
 }
 
@@ -69,12 +71,10 @@ export const DRUM_PATTERNS: DrumPattern[] = [
     },
   },
   {
-    // Half-time HIP-HOP — Aasimonster acoustic kit (Pearl 2026-05-10 round 5:
-    // smplr drum machines all rejected — TR-808 thin, MFB-512 "띡띡" clicky,
-    // LM-2 dry. Falling back to Aasimonster which Pearl has consistently
-    // liked. Pattern keeps the boom-bap shape: snare ONLY on beat 3 (pos 8),
-    // sparse kick, ghost cloud — bar feels twice as long because backbeat
-    // is singular.
+    // Half-time HIP-HOP on the Aasimonster acoustic kit (the smplr drum
+    // machines sounded thin, clicky or dry here: TR-808, MFB-512, LM-2).
+    // Boom-bap shape: snare ONLY on beat 3 (pos 8), sparse kick, ghost
+    // cloud — bar feels twice as long because backbeat is singular.
     id: 2,
     name: 'Hip-hop',
     emoji: '🎤',
@@ -89,12 +89,11 @@ export const DRUM_PATTERNS: DrumPattern[] = [
     },
   },
   {
-    // Modern EDM beat — Aasimonster acoustic kit (Pearl 2026-05-10 round 5:
-    // MFB-512 sounded "띡띡" clicky-thin, LM-2 dry, no TR-909 in smplr).
-    // Falling back to Aasimonster which Pearl has consistently liked. The
-    // electronic feel comes from the *pattern*, not the kit color: 4-on-
-    // floor kick on every quarter + ghost "and-of-1", 16th hats with trap-
-    // style accents, ghost snares for groove.
+    // Modern EDM beat on the Aasimonster acoustic kit (MFB-512 sounded
+    // clicky-thin, LM-2 dry, and smplr has no TR-909). The electronic feel
+    // comes from the *pattern*, not the kit color: 4-on-floor kick on every
+    // quarter + ghost "and-of-1", 16th hats with trap-style accents, ghost
+    // snares for groove.
     id: 3,
     name: 'Electronic',
     emoji: '⚡',

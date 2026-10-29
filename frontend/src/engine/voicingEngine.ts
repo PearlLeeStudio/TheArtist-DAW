@@ -50,6 +50,9 @@ export const QUALITY_INTERVALS: Record<string, number[]> = {
   '7b13':   [0, 4, 10, 20],
 };
 
+/** MIDI middle C: an inverted slash chord whose bass lands at or above it drops an octave. */
+const MIDDLE_C = 60;
+
 /** Slash bass as a pitch class, or null when the chord has none (or it is the root). */
 function slashBassPc(chord: Chord): number | null {
   if (!chord.bass) return null;
@@ -85,7 +88,7 @@ export function generatePianoVoicing(chord: Chord): number[] {
       inverted.push(inverted.shift()! + 12);
       inverted.sort((a, b) => a - b);
     }
-    return inverted[0] >= 60 ? inverted.map(m => m - 12) : inverted;
+    return inverted[0] >= MIDDLE_C ? inverted.map(m => m - 12) : inverted;
   }
 
   const fifth = voicing[0] + 7;
@@ -101,16 +104,26 @@ export function generatePianoVoicing(chord: Chord): number[] {
 export function resolvePianoVoicing(chord: Chord): number[] {
   const stored = chord.voicing ?? [];
   if (stored.length === 0) return generatePianoVoicing(chord);
-  if (slashBassPc(chord) !== null) {
-    const legacy = rootPositionVoicing(chord);
-    if (legacy.length === stored.length && legacy.every((m, i) => m === stored[i])) {
-      return generatePianoVoicing(chord);
-    }
-  }
-  return stored;
+  const savedBeforeSlashBasses = slashBassPc(chord) !== null && sameNotes(rootPositionVoicing(chord), stored);
+  return savedBeforeSlashBasses ? generatePianoVoicing(chord) : stored;
+}
+
+function sameNotes(expected: number[], actual: number[]): boolean {
+  return expected.length === actual.length && expected.every((m, i) => m === actual[i]);
 }
 
 const OPEN_STRINGS = [40, 45, 50, 55, 59, 64]; // E A D G B E
+/** Guitar shapes stay in the open position: frets 0 (open) to 5. */
+const HIGHEST_FRET = 5;
+
+/** The lowest fret on a string tuned to `openMidi` whose pitch class
+ *  `wanted` accepts, or -1 (the string is muted). */
+function lowestFret(openMidi: number, wanted: (pitchClass: number) => boolean): number {
+  for (let fret = 0; fret <= HIGHEST_FRET; fret++) {
+    if (wanted((openMidi + fret) % 12)) return fret;
+  }
+  return -1;
+}
 
 export function generateGuitarVoicing(chord: Chord): number[] {
   const rootValue = NOTE_VALUES[chord.root];
@@ -118,40 +131,24 @@ export function generateGuitarVoicing(chord: Chord): number[] {
 
   const intervals = QUALITY_INTERVALS[chord.quality] || QUALITY_INTERVALS['maj'];
   const chordNotes = new Set(intervals.map(i => (rootValue + i) % 12));
+  const isChordTone = (pitchClass: number) => chordNotes.has(pitchClass);
 
   // Slash chord: the named bass goes on the lowest string that reaches it
   // within the first five frets (F/C = x33211, C/E = 032010, G/B = x20003);
   // strings below it are muted and the rest take the lowest-fret chord tone.
   const bass = slashBassPc(chord);
   if (bass !== null) {
-    const bassString = OPEN_STRINGS.findIndex(open => {
-      for (let fret = 0; fret <= 5; fret++) if ((open + fret) % 12 === bass) return true;
-      return false;
-    });
+    const isBass = (pitchClass: number) => pitchClass === bass;
+    const bassString = OPEN_STRINGS.findIndex(open => lowestFret(open, isBass) >= 0);
     if (bassString >= 0) {
       return OPEN_STRINGS.map((open, i) => {
         if (i < bassString) return -1;
-        for (let fret = 0; fret <= 5; fret++) {
-          const note = (open + fret) % 12;
-          if (i === bassString ? note === bass : chordNotes.has(note)) return fret;
-        }
-        return -1;
+        return lowestFret(open, i === bassString ? isBass : isChordTone);
       });
     }
   }
 
-  const frets: number[] = [];
-  for (const openMidi of OPEN_STRINGS) {
-    let bestFret = -1;
-    for (let fret = 0; fret <= 5; fret++) {
-      const note = (openMidi + fret) % 12;
-      if (chordNotes.has(note)) {
-        bestFret = fret;
-        break; // prefer lowest fret
-      }
-    }
-    frets.push(bestFret);
-  }
+  const frets = OPEN_STRINGS.map(open => lowestFret(open, isChordTone));
 
   // Ensure root is in the bass — mute strings below the lowest root occurrence
   let rootStringIndex = -1;
@@ -174,6 +171,11 @@ export function generateGuitarVoicing(chord: Chord): number[] {
   // If no root found, keep all voiced strings (don't mute everything)
 
   return frets;
+}
+
+/** The MIDI notes of the guitar voicing, low string first; muted strings are left out. */
+export function guitarVoicingNotes(chord: Chord): number[] {
+  return generateGuitarVoicing(chord).flatMap((fret, i) => (fret >= 0 ? [OPEN_STRINGS[i] + fret] : []));
 }
 
 export function midiToNoteName(midi: number): string {

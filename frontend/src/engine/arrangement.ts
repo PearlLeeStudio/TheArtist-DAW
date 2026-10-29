@@ -24,8 +24,13 @@ import { swingDelay } from './drums';
 import { bassInstrumentFor, bassPatternFor, meterRhythm } from './playSettings';
 
 export type { Arrangement } from '../models/types';
-// The rhythm tables live in genreTables.ts (pure data).
-export { GENRE_BASS_RHYTHM, GENRE_HARMONY_RHYTHM } from './genreTables';
+
+/** Longest bass note, in beats; the next bass note or the end of the chord
+ *  slot can cut it shorter. */
+const MAX_BASS_NOTE_BEATS = 0.9;
+/** Shortest bass note, in seconds, once its swing delay is taken off. */
+const MIN_BASS_NOTE_SECONDS = 0.01;
+const BASS_VELOCITY = 0.6;
 
 /** Read when each bass note fires, so the Play panel's Bass key mutes or
  *  unmutes the bass mid-playback without a reschedule. */
@@ -64,6 +69,11 @@ function bassNoteFor(chord: Chord): number | null {
   if (v === undefined) return null;
   // C2 base (MIDI 36) — chord root in standard electric-bass register.
   return 36 + v;
+}
+
+/** The pattern's first position after `pos` inside the bar, else the bar's end. */
+function nextPatternPos(pattern: number[], pos: number, beatsPerMeasure: number): number {
+  return pattern.filter((p) => p > pos && p < beatsPerMeasure).sort((a, b) => a - b)[0] ?? beatsPerMeasure;
 }
 
 /**
@@ -106,17 +116,19 @@ export function scheduleBassSlot(
   if (bassMidi === null) return;
   const beatsPerSlot = beatsPerMeasure / 2;
   const slotStartBeat = slotIndex * beatsPerSlot;
+  const slotEndBeat = slotStartBeat + beatsPerSlot;
   const pattern = meterRhythm(arrangement.bassPattern, beatsPerMeasure);
   for (const { pos, slotIdx } of expandPatternPerSlot(pattern, beatsPerSlot, beatsPerMeasure)) {
     if (slotIdx !== slotIndex) continue;
     const id = Tone.getTransport().schedule((t) => {
       if (!bassEnabled) return;
-      // ~a quarter at the tempo playing now (the BPM knob changes it live).
-      const next = pattern.filter((p) => p > pos && p < beatsPerMeasure).sort((a, b) => a - b)[0] ?? beatsPerMeasure;
-      const seconds = (60 * beatUnit) / Tone.getTransport().bpm.value;
+      // The length follows the tempo playing now (the BPM knob changes it
+      // live); a swung "&" starts late and still ends on time.
+      const beats = Math.min(MAX_BASS_NOTE_BEATS, nextPatternPos(pattern, pos, beatsPerMeasure) - pos, slotEndBeat - pos);
+      const secondsPerBeatNow = (60 * beatUnit) / Tone.getTransport().bpm.value;
       const delay = swingDelay(pos, beatUnit);
-      const dur = Math.max(0.01, Math.min(0.9, next - pos, slotStartBeat + beatsPerSlot - pos) * seconds - delay);
-      playChordOnInstrument(arrangement.bassInstrument, [bassMidi], t + delay, dur, 0.6, 'bass');
+      const dur = Math.max(MIN_BASS_NOTE_SECONDS, beats * secondsPerBeatNow - delay);
+      playChordOnInstrument(arrangement.bassInstrument, [bassMidi], t + delay, dur, BASS_VELOCITY, 'bass');
     }, slotTime + (pos - slotStartBeat) * secondsPerBeat);
     scheduledIds.push(id);
   }

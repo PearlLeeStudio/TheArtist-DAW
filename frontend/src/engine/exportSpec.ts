@@ -1,6 +1,7 @@
-import type { Chord, PlaySettings, Song } from '../models/types';
+import type { Chord, PlaySettings, Song, SongSection } from '../models/types';
 import { resolveVoicingMode, sanitizePlaySettings } from './playSettings.ts';
-import { generateGuitarVoicing, resolvePianoVoicing } from './voicingEngine.ts';
+import type { VoicingMode } from './playSettings.ts';
+import { guitarVoicingNotes, resolvePianoVoicing } from './voicingEngine.ts';
 import { checkSectionRanges, sectionDisplayLabel } from './songForm.ts';
 
 export interface ExportChord { symbol: string; voicing: number[] }
@@ -15,80 +16,146 @@ export interface ExportSpec {
   play: Omit<PlaySettings, 'visualMode'>;
 }
 
-const OPEN_STRINGS = [40, 45, 50, 55, 59, 64];
+// The backend's ExportSpec limits (backend/app/models/export.py).
+const MAX_EXPORT_BARS = 512;
+const MAX_EXPORT_SECTIONS = 128;
+const MAX_VOICING_NOTES = 16;
+const MAX_MIDI_NOTE = 127;
+
+/** How long the backend may take to render a MIDI file. */
+const MIDI_EXPORT_TIMEOUT_MS = 60_000;
+/** The chunk id every Standard MIDI File starts with. */
+const MIDI_FILE_HEADER = 'MThd';
+
+const WINDOWS_RESERVED_NAME = /^(con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)/i;
+const MAX_FILENAME_STEM_CHARS = 100;
+const LOOPBACK_NAMES = new Set(['localhost', '::1', '[::1]']);
 
 export function exportChordSymbol(chord: Chord): string {
   const quality = chord.quality === 'maj' ? '' : chord.quality === 'min' ? 'm' : chord.quality;
   const extensions = chord.extensions.length ? `(${chord.extensions.join(',')})` : '';
-  return `${chord.root}${quality}${extensions}${chord.bass ? `/${chord.bass}` : ''}`;
+  const bass = chord.bass ? `/${chord.bass}` : '';
+  return `${chord.root}${quality}${extensions}${bass}`;
+}
+
+/** The backend takes 1–16 whole MIDI note numbers per chord. */
+function isExportableVoicing(voicing: number[]): boolean {
+  return voicing.length > 0 && voicing.length <= MAX_VOICING_NOTES &&
+    voicing.every((note) => Number.isInteger(note) && note >= 0 && note <= MAX_MIDI_NOTE);
+}
+
+/** One chord slot with the notes the editor plays for it in `voicingMode`. */
+function exportChord(chord: Chord | null, voicingMode: VoicingMode): ExportChord | null {
+  if (!chord) return null;
+  // A copy: the piano voicing may be the chord's own stored array.
+  const voicing = voicingMode === 'guitar' ? guitarVoicingNotes(chord) : [...resolvePianoVoicing(chord)];
+  if (!isExportableVoicing(voicing)) {
+    throw new Error(`Cannot export the voicing for ${exportChordSymbol(chord)}.`);
+  }
+  return { symbol: exportChordSymbol(chord), voicing };
+}
+
+/** Throws the reason the song cannot be exported (yet), if there is one. */
+function assertExportable(song: Song, sections: SongSection[]): void {
+  if (!song.measures.length || song.measures.length > MAX_EXPORT_BARS) {
+    throw new Error(`Export supports 1–${MAX_EXPORT_BARS} bars.`);
+  }
+  if (sections.some((section) => section.pending)) throw new Error('Wait for section generation to finish before exporting.');
+  if (sections.length > MAX_EXPORT_SECTIONS) throw new Error(`Export supports up to ${MAX_EXPORT_SECTIONS} sections.`);
+  const sectionError = checkSectionRanges(sections, song.measures.length);
+  if (sectionError) throw new Error(sectionError);
+}
+
+/** The Play settings sent with the export. visualMode is not part of the
+ *  wire format: it only decides the voicings. */
+function exportPlaySettings(settings: PlaySettings): ExportSpec['play'] {
+  return {
+    harmonyOverride: settings.harmonyOverride,
+    harmonyRhythmId: settings.harmonyRhythmId,
+    bassEnabled: settings.bassEnabled,
+    drumMode: settings.drumMode,
+    drumPatternId: settings.drumPatternId,
+    masterVolume: settings.masterVolume,
+    harmonyVolume: settings.harmonyVolume,
+    bassVolume: settings.bassVolume,
+    drumVolume: settings.drumVolume,
+  };
 }
 
 /** Snapshot the editor's actual voicings; later edits cannot change an in-flight export. */
 export function buildExportSpec(song: Song, settings: PlaySettings): ExportSpec {
-  if (!song.measures.length || song.measures.length > 512) throw new Error('Export supports 1–512 bars.');
   const sections = song.sections ?? [];
-  if (sections.some((section) => section.pending)) throw new Error('Wait for section generation to finish before exporting.');
-  if (sections.length > 128) throw new Error('Export supports up to 128 sections.');
-  const sectionError = checkSectionRanges(sections, song.measures.length);
-  if (sectionError) throw new Error(sectionError);
-  const clean = sanitizePlaySettings(settings);
-  const mode = resolveVoicingMode(clean, song.genre);
-  const convert = (chord: Chord | null): ExportChord | null => {
-    if (!chord) return null;
-    const voicing = mode === 'guitar'
-      ? generateGuitarVoicing(chord).flatMap((fret, i) => fret >= 0 ? [OPEN_STRINGS[i] + fret] : [])
-      : [...resolvePianoVoicing(chord)];
-    if (!voicing.length || voicing.length > 16 || voicing.some((note) => !Number.isInteger(note) || note < 0 || note > 127)) {
-      throw new Error(`Cannot export the voicing for ${exportChordSymbol(chord)}.`);
-    }
-    return { symbol: exportChordSymbol(chord), voicing };
-  };
+  assertExportable(song, sections);
+  const playSettings = sanitizePlaySettings(settings);
+  const voicingMode = resolveVoicingMode(playSettings, song.genre);
   return {
-    title: song.title.trim() || 'Untitled', bpm: song.bpm, key: song.key,
-    timeSignature: [...song.timeSignature], genre: song.genre,
-    measures: song.measures.map((measure) => ({ chords: [convert(measure.chords[0]), convert(measure.chords[1])] })),
-    sections: [...sections].sort((a, b) => a.startMeasure - b.startMeasure)
+    title: song.title.trim() || 'Untitled',
+    bpm: song.bpm,
+    key: song.key,
+    timeSignature: [...song.timeSignature],
+    genre: song.genre,
+    measures: song.measures.map((measure) => ({
+      chords: [exportChord(measure.chords[0], voicingMode), exportChord(measure.chords[1], voicingMode)],
+    })),
+    sections: [...sections]
+      .sort((a, b) => a.startMeasure - b.startMeasure)
       .map((section) => ({ label: sectionDisplayLabel(section), startMeasure: section.startMeasure, length: section.length })),
-    play: {
-      harmonyOverride: clean.harmonyOverride, harmonyRhythmId: clean.harmonyRhythmId,
-      bassEnabled: clean.bassEnabled, drumMode: clean.drumMode, drumPatternId: clean.drumPatternId,
-      masterVolume: clean.masterVolume, harmonyVolume: clean.harmonyVolume,
-      bassVolume: clean.bassVolume, drumVolume: clean.drumVolume,
-    },
+    play: exportPlaySettings(playSettings),
   };
+}
+
+/** Not an ASCII control character (U+0000–U+001F, U+007F). */
+function isNotAsciiControl(char: string): boolean {
+  const code = char.codePointAt(0)!;
+  return code >= 32 && code !== 127;
 }
 
 export function safeExportFilename(title: string, extension: 'mid' | 'pdf'): string {
   // Preserve readable Unicode titles while excluding path separators and OS-reserved names.
-  let stem = Array.from(title.normalize('NFKC'))
-    .filter((char) => char.codePointAt(0)! >= 32 && char.codePointAt(0)! !== 127)
-    .join('').replace(/[\\/:*?"<>|]/g, '-').replace(/\s+/g, ' ').replace(/^[. ]+|[. ]+$/g, '');
-  stem = Array.from(stem).slice(0, 100).join('').replace(/[. ]+$/g, '') || 'Untitled';
-  if (/^(con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)/i.test(stem)) stem = `_${stem}`;
+  const cleaned = Array.from(title.normalize('NFKC'))
+    .filter(isNotAsciiControl)
+    .join('')
+    .replace(/[\\/:*?"<>|]/g, '-')
+    .replace(/\s+/g, ' ')
+    .replace(/^[. ]+|[. ]+$/g, '');
+  // Cut by code point so no surrogate pair is split, then trim the new end.
+  let stem = Array.from(cleaned).slice(0, MAX_FILENAME_STEM_CHARS).join('').replace(/[. ]+$/g, '') || 'Untitled';
+  if (WINDOWS_RESERVED_NAME.test(stem)) stem = `_${stem}`;
   return `${stem}.${extension}`;
+}
+
+/** 127.x.y.z with every part at most 255. */
+function isIpv4Loopback(host: string): boolean {
+  return /^127(?:\.(?:\d{1,3})){3}$/.test(host) && host.split('.').every((part) => Number(part) <= 255);
 }
 
 export function isLoopbackHostname(hostname: string): boolean {
   const host = hostname.toLowerCase();
-  return host === 'localhost' || host === '::1' || host === '[::1]' ||
-    /^127(?:\.(?:\d{1,3})){3}$/.test(host) && host.split('.').every((part) => Number(part) <= 255);
+  return LOOPBACK_NAMES.has(host) || isIpv4Loopback(host);
+}
+
+/** The message in a FastAPI error body: `detail` itself, or the joined
+ *  `msg`s of a validation-error list; null when there is none. */
+function errorDetail(body: unknown): string | null {
+  if (typeof body !== 'object' || body === null || !('detail' in body)) return null;
+  const detail = body.detail;
+  if (typeof detail === 'string') return detail;
+  if (!Array.isArray(detail)) return null;
+  const reasons = detail.flatMap((item) => typeof item === 'object' && item !== null &&
+    'msg' in item && typeof item.msg === 'string' ? [item.msg] : []);
+  return reasons.length ? reasons.join('; ') : null;
 }
 
 export async function exportResponseError(response: Response): Promise<Error> {
   let message = `Export failed (${response.status}).`;
   try {
-    const body: unknown = await response.json();
-    if (typeof body === 'object' && body !== null && 'detail' in body) {
-      const detail = (body as { detail: unknown }).detail;
-      if (typeof detail === 'string') message = detail;
-      else if (Array.isArray(detail)) {
-        const reasons = detail.flatMap((item) => typeof item === 'object' && item !== null &&
-          'msg' in item && typeof item.msg === 'string' ? [item.msg] : []);
-        if (reasons.length) message = reasons.join('; ');
-      }
-    }
+    message = errorDetail(await response.json()) ?? message;
   } catch { /* A non-JSON server error still gets a visible status. */ }
   return new Error(message);
+}
+
+function isMidiFileHeader(bytes: Uint8Array): boolean {
+  return bytes.length === MIDI_FILE_HEADER.length && String.fromCharCode(...bytes) === MIDI_FILE_HEADER;
 }
 
 export async function requestMidiExport(spec: ExportSpec, signal?: AbortSignal): Promise<Blob> {
@@ -97,7 +164,7 @@ export async function requestMidiExport(spec: ExportSpec, signal?: AbortSignal):
   if (signal?.aborted) cancel();
   else signal?.addEventListener('abort', cancel, { once: true });
   let timedOut = false;
-  const timer = setTimeout(() => { timedOut = true; controller.abort(); }, 60_000);
+  const timer = setTimeout(() => { timedOut = true; controller.abort(); }, MIDI_EXPORT_TIMEOUT_MS);
   try {
     const response = await fetch('/api/export/midi', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -105,10 +172,8 @@ export async function requestMidiExport(spec: ExportSpec, signal?: AbortSignal):
     });
     if (!response.ok) throw await exportResponseError(response);
     const blob = await response.blob();
-    const header = new Uint8Array(await blob.slice(0, 4).arrayBuffer());
-    if (header.length !== 4 || String.fromCharCode(...header) !== 'MThd') {
-      throw new Error('The server did not return a MIDI file.');
-    }
+    const header = new Uint8Array(await blob.slice(0, MIDI_FILE_HEADER.length).arrayBuffer());
+    if (!isMidiFileHeader(header)) throw new Error('The server did not return a MIDI file.');
     return blob;
   } catch (error) {
     if (timedOut) throw new Error('MIDI export timed out. Please try again.', { cause: error });

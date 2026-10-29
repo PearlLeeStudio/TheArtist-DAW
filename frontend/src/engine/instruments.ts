@@ -16,16 +16,14 @@
  * Boundary (revised 2026-05-09):
  *   Artist owns the genre→instrument decision. Voyager only sends genre.
  *   GENRE_HARMONY_INSTRUMENT / GENRE_BASS_INSTRUMENT (genreTables.ts) are
- *   the authoritative maps for the harmony and bass layers.
+ *   the authoritative maps for the harmony and bass layers; playSettings.ts
+ *   resolves a song's genre through them.
  */
 import * as Tone from 'tone';
 import { Soundfont, SplendidGrandPiano, ElectricPiano } from 'smplr';
 import { GENRE_BASS_INSTRUMENT, GENRE_HARMONY_INSTRUMENT } from './genreTables';
 import { getInstrumentOutput } from './mixer';
 import type { InstrumentLayer } from './audioMixer';
-
-// The genre → instrument tables live in genreTables.ts (pure data).
-export { GENRE_BASS_INSTRUMENT, GENRE_HARMONY_INSTRUMENT } from './genreTables';
 
 /**
  * Pearl 2026-05-09 — Logic Pro 퀄리티 요청. Tier-1 (curated, high quality):
@@ -35,13 +33,19 @@ export { GENRE_BASS_INSTRUMENT, GENRE_HARMONY_INSTRUMENT } from './genreTables';
  * Tier-2 (FluidR3_GM Soundfont — solid GM but not Logic Pro level):
  *   everything else (acoustic_guitar_steel, drawbar_organ, sax, etc.)
  *
- * For drums see drums.ts (smplr DrumMachine TR-808 + MuldjordKit acoustic).
+ * For drums see drums.ts (DrumGizmo Aasimonster v2.1 acoustic samples, GPL-3.0;
+ * its smplr drum machines are picked by no built-in pattern).
  */
 type InstrumentLike = {
   load: Promise<unknown>;
   start: (args: { note: number | string; velocity?: number; time?: number; duration?: number }) => unknown;
 };
 const registry: Record<string, { sf: InstrumentLike; ready: boolean }> = {};
+
+/** Each layer gets its own instance of an instrument, wired to that layer's gain. */
+function registryKey(name: string, layer: InstrumentLayer): string {
+  return `${layer}:${name}`;
+}
 
 function getAudioContext(): AudioContext {
   return Tone.getContext().rawContext as AudioContext;
@@ -76,7 +80,7 @@ function buildCuratedInstrument(name: string, destination: AudioNode): Instrumen
  * https://gleitz.github.io/midi-js-soundfonts/FluidR3_GM/names.json.
  */
 export function getInstrument(name: string, layer: InstrumentLayer = 'harmony'): InstrumentLike | null {
-  const key = `${layer}:${name}`;
+  const key = registryKey(name, layer);
   if (!registry[key]) {
     try {
       // Try curated high-quality class first (SplendidGrandPiano,
@@ -103,7 +107,7 @@ export function getInstrument(name: string, layer: InstrumentLayer = 'harmony'):
 }
 
 export function isInstrumentReady(name: string, layer: InstrumentLayer = 'harmony'): boolean {
-  return registry[`${layer}:${name}`]?.ready ?? false;
+  return registry[registryKey(name, layer)]?.ready ?? false;
 }
 
 /**
