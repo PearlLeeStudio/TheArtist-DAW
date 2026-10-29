@@ -24,6 +24,7 @@ import logging
 import os
 import sys
 import threading
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -124,6 +125,18 @@ CHECKPOINTS = {
     "ft_f1_lora_blues":      _AI_CKPT / "ft_f1_lora_blues",
     "ft_f1_lora_bossa":      _AI_CKPT / "ft_f1_lora_bossa",
 }
+
+WARMUP_KEYS_VAR = "THEARTIST_WARMUP_KEYS"
+
+
+def warmup_keys(env: Mapping[str, str] | None = None) -> tuple[list[str] | None, list[str]]:
+    """(checkpoint keys named by THEARTIST_WARMUP_KEYS, names that are no checkpoint); keys None = every checkpoint."""
+    raw = (os.environ if env is None else env).get(WARMUP_KEYS_VAR, "")
+    names = list(dict.fromkeys(name.strip() for name in raw.split(",") if name.strip()))
+    if not names:
+        return None, []
+    return [name for name in names if name in CHECKPOINTS], [name for name in names if name not in CHECKPOINTS]
+
 
 # Human-readable labels for UI
 MODEL_LABELS = {
@@ -429,9 +442,10 @@ class ModelRegistry:
             log.info(f"Loaded model '{name}' on {device} ({params:.1f}M params)")
             return loaded
 
-    def warmup(self) -> dict[str, bool]:
+    def warmup(self, keys: Iterable[str] | None = None) -> dict[str, bool]:
+        """Load every checkpoint, or only `keys`; a key without a checkpoint is False, never fatal."""
         results = {}
-        for name in CHECKPOINTS:
+        for name in (CHECKPOINTS if keys is None else keys):
             results[name] = self.load_model(name) is not None
         return results
 

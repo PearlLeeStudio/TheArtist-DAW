@@ -11,6 +11,7 @@ from __future__ import annotations
 import base64
 import binascii
 import re
+from collections.abc import Callable
 from pathlib import PurePath
 from typing import Any
 
@@ -212,21 +213,28 @@ def _attachment(req: ScoreImportRequest) -> dict[str, Any]:
     return {"type": "image_url", "image_url": {"url": data_url}}
 
 
-def import_score(req: ScoreImportRequest) -> ScoreImportResponse:
+def import_score(req: ScoreImportRequest, *,
+                 before_meta: Callable[[float], None] | None = None) -> ScoreImportResponse:
+    """Read the score; `before_meta(worst_case_usd)` runs right before a Meta call, and never when the
+    local reader is enough (the route admits the spend there)."""
     attachment = _attachment(req)
     if req.engine == "meta":
+        if before_meta is not None:
+            before_meta(SCORE_MAX_REQUEST_USD)
         return _import_meta_score(req, attachment)
     from app.services.score_analysis import LocalScoreUnsupported, analyze_local_score
     try:
         response = analyze_local_score(req)
         if req.engine == "auto" and req.mode == "infer_harmony":
             from app.services.score_assistance import enrich_local_harmony
-            return enrich_local_harmony(req, response)
+            return enrich_local_harmony(req, response, before_meta=before_meta)
         return response
     except LocalScoreUnsupported as exc:
         if req.engine == "local":
             raise ScoreInputError(f"{exc} This format is not supported by local score import. Try a supported vector PDF.", 422) from None
         # engine=auto: Meta reads the whole file instead, and the first warning says so.
+        if before_meta is not None:
+            before_meta(SCORE_MAX_REQUEST_USD)
         response = _import_meta_score(req, attachment)
         response.warnings = [f"Local reading was unsupported: {str(exc)[:220]}. Meta processed this file.",
                              *response.warnings][:MAX_SCORE_WARNINGS]

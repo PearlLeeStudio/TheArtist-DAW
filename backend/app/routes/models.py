@@ -1,13 +1,17 @@
 """Model management endpoints."""
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
+from app.services import limits
 from app.services.inference import (
     TORCH_AVAILABLE, ModelRegistry, CHECKPOINTS, MODEL_LABELS, DEFAULT_MODEL,
-    GENRE_MODEL_DISPATCH, dispatch_model_for_genre,
+    GENRE_MODEL_DISPATCH, dispatch_model_for_genre, warmup_keys,
 )
 
 router = APIRouter()
+_warmup_lockdown = limits.refuse_on_public_host(
+    "Model warmup is not available on this public server; checkpoints load at startup (THEARTIST_WARMUP_KEYS) "
+    "or on first use.")
 
 
 def _checkpoint_available(key: str) -> bool:
@@ -43,13 +47,14 @@ def model_status() -> dict:
     }
 
 
-@router.post("/models/warmup")
+@router.post("/models/warmup", dependencies=[Depends(_warmup_lockdown)])
 def warmup_models() -> dict:
+    """Preload every checkpoint, or the THEARTIST_WARMUP_KEYS list; names that are no checkpoint are reported."""
+    keys, unknown = warmup_keys()  # a misspelled key is reported on every server, with or without torch
     if not TORCH_AVAILABLE:
-        return {"torch_available": False, "loaded": {}}
-    registry = ModelRegistry.get()
-    results = registry.warmup()
-    return {"torch_available": True, "loaded": results}
+        return {"torch_available": False, "loaded": {}, "unknown": unknown}
+    results = ModelRegistry.get().warmup(keys)
+    return {"torch_available": True, "loaded": results, "unknown": unknown}
 
 
 @router.get("/models/list")

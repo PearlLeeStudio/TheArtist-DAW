@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import base64
+from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 from app.models.score_import import MAX_NOTE_CHARS, ImportedMeasure, ScoreImportRequest, ScoreImportResponse
@@ -70,8 +71,12 @@ def _apply_proposal(measure: ImportedMeasure, source: ScoreMeasure, result: Meas
                     " Reading evidence: " + reading_note[:100])[:MAX_NOTE_CHARS]
 
 
-def enrich_local_harmony(req: ScoreImportRequest, draft: ScoreImportResponse) -> ScoreImportResponse:
-    """Only engine=auto authorizes a call; confidently read printed chords stay intact."""
+def enrich_local_harmony(req: ScoreImportRequest, draft: ScoreImportResponse, *,
+                         before_meta: Callable[[float], None] | None = None) -> ScoreImportResponse:
+    """Only engine=auto authorizes a call; confidently read printed chords stay intact.
+
+    `before_meta(worst_case_usd)` runs once, right before the first Meta call (none when nothing needs one).
+    """
     if req.engine != "auto":
         raise ValueError("Meta assistance requires an explicitly selected auto engine")
     pending = [i for i, measure in enumerate(draft.measures) if not measure.chords and not measure.noChord]
@@ -97,6 +102,10 @@ def enrich_local_harmony(req: ScoreImportRequest, draft: ScoreImportResponse) ->
         if not batch:
             break
         context = _printed_context(draft, batch)
+        if calls == 0 and before_meta is not None:
+            # The caller's spend admission, once, only when Meta is really about to be called
+            from app.services.harmony_meta import MAX_REQUEST_USD
+            before_meta(MAX_ASSIST_CALLS * MAX_REQUEST_USD)
         # Provider/config/budget failures propagate as failures. They never
         # turn into a successful-looking local result or an invented chord.
         proposal = propose_harmony(batch, draft.key, context=context)

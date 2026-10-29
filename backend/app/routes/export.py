@@ -2,11 +2,12 @@ from collections.abc import Callable, Coroutine
 from typing import Any
 from urllib.parse import quote
 
-from fastapi import APIRouter, HTTPException, Request, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.routing import APIRoute
 
 from app.models.export import DawOpenRequest, DawOpenResponse, DawTargetsResponse, ExportSpec
+from app.services import limits
 from app.services.daw_launcher import DawError, daw_targets, open_daw
 from app.services.smf_export import ExportError, render_midi, safe_title
 
@@ -29,6 +30,9 @@ class ExportRoute(APIRoute):
 
 
 router = APIRouter(route_class=ExportRoute)
+_daw_lockdown = limits.refuse_on_public_host(
+    "No DAW on this server: Open in DAW works with a backend on your own Mac. Download the MIDI file "
+    "(POST /api/export/midi) instead.")
 
 
 @router.post("/export/midi")
@@ -45,12 +49,12 @@ def export_midi_route(spec: ExportSpec) -> Response:
     })
 
 
-@router.get("/daw/targets", response_model=DawTargetsResponse)
+@router.get("/daw/targets", response_model=DawTargetsResponse, dependencies=[Depends(_daw_lockdown)])
 def daw_targets_route() -> DawTargetsResponse:
     return daw_targets()
 
 
-@router.post("/daw/open", response_model=DawOpenResponse)
+@router.post("/daw/open", response_model=DawOpenResponse, dependencies=[Depends(_daw_lockdown)])
 def open_daw_route(req: DawOpenRequest) -> DawOpenResponse:
     try:
         return open_daw(req.target, req.spec)

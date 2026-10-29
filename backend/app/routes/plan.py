@@ -8,13 +8,15 @@ one `complete` or `error` frame carrying the trace. Nothing is applied server-si
 
 import asyncio
 import logging
+from typing import Annotated
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import JSONResponse, StreamingResponse
 
 from app.models.plan import PlanError, PlanRequest, PlanTrace
 from app.routes.generate import _sse, _sse_response
-from app.services import planner
+from app.services import limits, planner
+from app.services.limits import Admission, Caller
 
 log = logging.getLogger(__name__)
 
@@ -38,6 +40,13 @@ def error_detail(trace: PlanTrace) -> str:
     return f"{trace.error.message}.{where} Spent ${trace.spendUsd:.4f} over {len(trace.calls)} LLM call(s)."
 
 
+def _admit(req: PlanRequest, caller: Caller | None) -> Admission | None:
+    """The limiter's charge for a Meta run, whose reservations the planner caps at MAX_RUN_USD; none for rules."""
+    if req.planner != "meta":
+        return None
+    return limits.limiter.admit(caller, estimate_usd=planner.MAX_RUN_USD)
+
+
 def plan_only(req: PlanRequest) -> PlanTrace:
     """plan_song as the MCP tool runs it: plan, validate, revise; a failed run is raised with
     its HTTP status so the tool result is an error, never a trace that looks like a plan."""
@@ -52,18 +61,23 @@ def plan_only(req: PlanRequest) -> PlanTrace:
     response_model=PlanTrace,
     responses={code: {"model": PlanTrace} for code in sorted(set(_STATUS.values()))},
 )
-def plan_song_route(req: PlanRequest):
+def plan_song_route(req: PlanRequest, caller: Annotated[Caller | None, Depends(limits.caller)] = None):
     """Plan the rest of the form, generate every planned section, judge once or twice."""
+    admission = _admit(req, caller)
     trace = planner.complete_form(req)
+    limits.limiter.settle(admission, trace.spendUsd)
     if trace.error is not None:
         return JSONResponse(status_code=error_status(trace.error), content=trace.model_dump(mode="json"))
     return trace
 
 
 @router.post("/plan/song/stream")
-async def plan_song_stream(req: PlanRequest) -> StreamingResponse:
+async def plan_song_stream(req: PlanRequest,
+                           caller: Annotated[Caller | None, Depends(limits.caller)] = None) -> StreamingResponse:
     """The same run as SSE: plan, validate, revise, generate_section (one per section, also
     for a regeneration), judge, then one terminal complete or error frame with the trace."""
+    admission = _admit(req, caller)  # refused here, so an over-limit run is a 429, never a stream
+
     async def stream():
         loop = asyncio.get_running_loop()
         queue: asyncio.Queue = asyncio.Queue()
@@ -86,6 +100,7 @@ async def plan_song_stream(req: PlanRequest) -> StreamingResponse:
             log.exception("Song planning failed")
             yield _sse("error", {"detail": "Song planning failed"})
             return
+        limits.limiter.settle(admission, trace.spendUsd)
         yield _sse("error" if trace.error is not None else "complete", trace.model_dump(mode="json"))
 
     return _sse_response(stream())
