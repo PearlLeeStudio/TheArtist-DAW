@@ -71,6 +71,12 @@ class GenerateResponse(BaseModel):
     source: str = "rules"  # "ai", "rules", or "ai+rules"
 
 
+# The endings the song-form rules can write (app/services/song_form.py); "none"
+# keeps the model's own ending. Also the planner's per-section cadence vocabulary.
+CADENCE_TYPES = ("authentic", "plagal", "half", "half_iv_v", "turnaround", "none")
+CadenceType = Literal["authentic", "plagal", "half", "half_iv_v", "turnaround", "none"]
+
+
 class SectionGenerateRequest(BaseModel):
     """One song-form section composed after the measures in `context`."""
     key: str = Field(..., examples=["C major", "A minor"])
@@ -89,6 +95,12 @@ class SectionGenerateRequest(BaseModel):
     modelKey: str | None = Field(
         default=None,
         description="Same checkpoint keys as GenerateRequest.modelKey; null = genre dispatch",
+    )
+    cadence: CadenceType | None = Field(
+        default=None,
+        description="Ending the song-form rules write instead of the section's own (the planner's "
+                    "choice): authentic, plagal, half, half_iv_v, turnaround, or none to keep the "
+                    "model's ending; null = the section's default",
     )
 
 

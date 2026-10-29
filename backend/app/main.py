@@ -11,6 +11,7 @@ from app.routes.models import router as models_router
 from app.routes.song import router as song_router
 from app.routes.score_import import router as score_import_router
 from app.routes.export import router as export_router
+from app.routes.plan import router as plan_router
 from app.mcp_server import create_mcp_server
 from app.services.contracts import ContractEnvelope, capabilities
 
@@ -52,6 +53,7 @@ app.include_router(models_router, prefix="/api")
 app.include_router(song_router, prefix="/api")
 app.include_router(score_import_router, prefix="/api")
 app.include_router(export_router, prefix="/api")
+app.include_router(plan_router, prefix="/api")
 
 
 @app.get("/api/health")

@@ -97,6 +97,7 @@ def apply_song_form(
     section: str,
     key: str,
     is_minor: bool = False,
+    cadence: str | None = None,
 ) -> list[str]:
     """Post-process generated chords based on song section conventions.
 
@@ -106,20 +107,34 @@ def apply_song_form(
             rule (interlude, solo, unknown) pass through unchanged
         key: Key root note (e.g. 'C', 'Bb')
         is_minor: Whether the key is minor
+        cadence: An ending from CADENCE_TYPES that replaces the section's
+            own (the planner's choice); None keeps the section's rule
 
     Returns:
         Adjusted chord list (same length)
     """
-    if not chords or section not in SECTION_RULES:
-        return chords
+    return apply_song_form_with_slots(chords, section, key, is_minor, cadence)[0]
+
+
+def apply_song_form_with_slots(
+    chords: list[str],
+    section: str,
+    key: str,
+    is_minor: bool = False,
+    cadence: str | None = None,
+) -> tuple[list[str], list[int]]:
+    """apply_song_form plus the slot indices its rules decided (rule_slots),
+    so a caller can tell the model's chords from the rules' chords."""
+    rules = _section_rules(section, cadence)
+    if not chords or rules is None:
+        return chords, []
 
     key_root = NOTE_TO_SEMI.get(key)
     if key_root is None:
-        return chords
+        return chords, []
     flats = _spells_with_flats(section, key, is_minor)
 
     result = list(chords)
-    rules = SECTION_RULES[section]
 
     # Static sections: repeat the opening chords across the whole section
     if rules.get("loop"):
@@ -144,7 +159,63 @@ def apply_song_form(
         if current_degree != end_interval:
             result[-1] = _make_chord(key_root, end_interval, end_quality, flats)
 
-    return result
+    return result, rule_slots(section, len(result), cadence)
+
+
+def _section_rules(section: str, cadence: str | None) -> dict | None:
+    """The section's rules, with a chosen cadence in place of the section's own.
+
+    A chosen cadence also drops force_end: authentic and plagal already land on
+    the bare tonic, and the open endings (half, turnaround) must not be
+    overwritten with it. "none" keeps the model's own ending. The section's
+    identity (forced first chord, loop) stays.
+    """
+    rules = SECTION_RULES.get(section)
+    if rules is None or cadence is None:
+        return rules
+    rules = {name: rule for name, rule in rules.items() if name not in ("cadence", "force_end")}
+    if cadence != "none":
+        rules["cadence"] = cadence
+    return rules
+
+
+def _cadence_slots(cadence_type: str, n: int) -> list[int]:
+    """The indices _apply_cadence writes in an n-chord sequence (n >= 2)."""
+    if cadence_type in ("authentic", "plagal", "half_iv_v"):
+        return [n - 2, n - 1]
+    if cadence_type == "half":
+        return [n - 1]
+    if cadence_type == "turnaround":
+        return list(range(n - 4, n)) if n >= 4 else [n - 1]
+    return []
+
+
+def rule_slots(section: str, n: int, cadence: str | None = None) -> list[int]:
+    """The slot indices (0..n-1) the section's rules decide in an n-chord
+    sequence, whether or not the chord there already complied: the loop's
+    copies, the forced first chord, the cadence and the forced last chord.
+    Empty for a section without rules, so a caller can predict the slots
+    before any chord exists."""
+    rules = _section_rules(section, cadence)
+    if not rules or n <= 0:
+        return []
+    slots: set[int] = set()
+    if rules.get("loop"):
+        slots.update(range(rules["loop"], n))
+    if rules.get("force_start"):
+        slots.add(0)
+    if rules.get("cadence") and n >= 2:
+        slots.update(_cadence_slots(rules["cadence"], n))
+    if rules.get("force_end"):
+        slots.add(n - 1)
+    return sorted(slots)
+
+
+def resolves_to_tonic(section: str | None, cadence: str | None = None) -> bool:
+    """Whether the section's effective ending lands on the tonic (the rule
+    behind ROOT_POSITION_ENDINGS, with the planner's cadence taken into account)."""
+    rules = _section_rules(section, cadence) if section else None
+    return bool(rules) and rules.get("cadence") in ("authentic", "plagal")
 
 
 def rewrite_chord_sequence(
@@ -167,6 +238,7 @@ def apply_song_form_to_suggestions(
     section: str | None,
     key_root: str,
     is_minor: bool,
+    cadence: str | None = None,
 ) -> None:
     """Run apply_song_form over each suggestion's whole chord sequence in place,
     keeping every measure's slot count. No-op when ``section`` is empty."""
@@ -174,7 +246,7 @@ def apply_song_form_to_suggestions(
         return
     for suggestion in suggestions:
         rewrite_chord_sequence(
-            suggestion, lambda chords: apply_song_form(chords, section, key_root, is_minor),
+            suggestion, lambda chords: apply_song_form(chords, section, key_root, is_minor, cadence),
         )
 
 

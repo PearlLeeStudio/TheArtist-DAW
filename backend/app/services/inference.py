@@ -32,8 +32,8 @@ from app.models.schemas import MAX_SEED
 from app.services.env_flags import env_bool
 from app.services.key_anchor import anchor_to_key
 from app.services.song_form import (
-    ROOT_POSITION_ENDINGS,
     apply_song_form_to_suggestions,
+    resolves_to_tonic,
     rewrite_chord_sequence,
 )
 from app.services.voice_leading import apply_voice_leading_bass
@@ -981,15 +981,16 @@ def _final_chords(suggestions: list[Suggestion]) -> list[tuple[Suggestion, str, 
 
 def _inject_voice_leading(
     suggestions: list[Suggestion], on_phase, section_type: str | None = None,
+    cadence: str | None = None,
 ) -> list[Suggestion]:
     """Stage 4 — pick inversions for smooth bass motion. Emits `voicing`
-    unless disabled by env var. When the section's rule resolves to the
-    tonic (outro, tag, verse, chorus, ...) that final tonic keeps its root
-    position."""
+    unless disabled by env var. When the section's rule (or the planner's
+    cadence) resolves to the tonic (outro, tag, verse, chorus, ...) that
+    final tonic keeps its root position."""
     if os.getenv("THEARTIST_DISABLE_VOICE_LEADING"):
         return suggestions
     on_phase("voicing", {"label": "Picking inversions for smooth bass motion"})
-    resolving_tonics = _final_chords(suggestions) if section_type in ROOT_POSITION_ENDINGS else []
+    resolving_tonics = _final_chords(suggestions) if resolves_to_tonic(section_type, cadence) else []
     suggestions = apply_voice_leading_bass(suggestions)
     for s, last, tonic in resolving_tonics:
         s.chords[last][-1] = tonic
@@ -1050,6 +1051,7 @@ def generate_ai_result(
     bpm: int | None = None,
     on_phase=None,  # type: ignore[assignment]
     section_type: str | None = None,
+    cadence: str | None = None,
 ) -> AIResult | None:
     """Generate 3 suggestions, then re-rank by sensory consonance + theory.
 
@@ -1058,7 +1060,8 @@ def generate_ai_result(
         2. _compose_candidates       → "composing" ×3
            _anchor_candidates          (only when no chord precedes the selection)
         3. _score_and_rerank         → "ranking"
-           song-form rules for `section_type` (None = no rules)
+           song-form rules for `section_type` (None = no rules), ending
+           with `cadence` when the planner chose one
         4. _inject_voice_leading     → "voicing" (unless disabled)
         5. _explain_each_transition  → "explaining" (when RAG enabled)
 
@@ -1094,8 +1097,8 @@ def generate_ai_result(
         _anchor_candidates(suggestions, key_root, is_minor)
 
     suggestions = _score_and_rerank(suggestions, notify, genre=genre)
-    apply_song_form_to_suggestions(suggestions, section_type, key_root, is_minor)
-    suggestions = _inject_voice_leading(suggestions, notify, section_type=section_type)
+    apply_song_form_to_suggestions(suggestions, section_type, key_root, is_minor, cadence)
+    suggestions = _inject_voice_leading(suggestions, notify, section_type=section_type, cadence=cadence)
     suggestions = _explain_each_transition(suggestions, selected_measures, notify, genre=genre)
 
     notify("complete", {"label": "Done"})
@@ -1112,11 +1115,12 @@ def generate_ai_suggestions(
     bpm: int | None = None,
     on_phase=None,  # type: ignore[assignment]
     section_type: str | None = None,
+    cadence: str | None = None,
 ) -> list[Suggestion] | None:
     """`generate_ai_result` without the checkpoint key. Returns None when the
     caller should fall back to rule-based generation."""
     result = generate_ai_result(
         key, genre, context, selected_measures, time_signature,
-        model_key=model_key, bpm=bpm, on_phase=on_phase, section_type=section_type,
+        model_key=model_key, bpm=bpm, on_phase=on_phase, section_type=section_type, cadence=cadence,
     )
     return result.suggestions if result is not None else None

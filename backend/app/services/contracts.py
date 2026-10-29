@@ -8,16 +8,18 @@ from typing import Any, Literal
 from pydantic import BaseModel, ConfigDict
 
 from app.models.export import MAX_EXPORT_BYTES, MAX_EXPORT_MEASURES, MIN_MIDI_BYTES
+from app.models.plan import MAX_PLAN_SECTION_BARS, MIN_PLAN_SECTION_BARS, TARGET_BARS
 from app.models.score_import import MAX_SCORE_BYTES, MAX_SCORE_MEASURES
 from app.services.env_flags import meta_enabled
 from app.services.llm import LLMConfig
+from app.services.planner import MAX_META_CALLS, MAX_RUN_USD, RUN_BUDGET_S
 
 SCHEMA_VERSION = "1.0"
 MAX_JSON_STATE_BYTES = 1024 * 1024
 MAX_MCP_RESULT_BYTES = 6 * 1024 * 1024
 MAX_MCP_REQUEST_BYTES = 12 * 1024 * 1024
 TOOLS = ("capabilities", "list_models", "list_genres", "get_genre_preset", "generate_section",
-         "build_song", "render_midi", "import_score", "export_daw")
+         "build_song", "render_midi", "import_score", "export_daw", "plan_song", "validate_plan")
 _MIDI_BASE64_KEYS = ("midi_b64", "dataBase64")  # build_song's and render_midi's MIDI bytes
 
 
@@ -92,12 +94,16 @@ def capabilities() -> ContractEnvelope:
             "build_song": "SongGenerateRequest / SongGenerateResponse",
             "render_midi": "ExportSpec / MIDI bytes",
             "import_score": "ScoreImportRequest / ScoreImportResponse",
+            "plan_song": "PlanRequest / PlanTrace (plan, validation, calls; no sections)",
+            "validate_plan": "SongPlan + PlanRequest / {ok, errors: PlanIssue[]}",
         },
         "limits": {
             "jsonStateBytes": MAX_JSON_STATE_BYTES, "midiBytes": MAX_EXPORT_BYTES,
             "toolResultBytes": MAX_MCP_RESULT_BYTES, "requestBytes": MAX_MCP_REQUEST_BYTES,
             "scoreFileBytes": MAX_SCORE_BYTES, "scoreMeasures": MAX_SCORE_MEASURES, "metaScoreMeasures": 128,
             "exportMeasures": MAX_EXPORT_MEASURES, "generatedBars": 64,
+            "planTargetBars": list(TARGET_BARS), "planSectionBars": [MIN_PLAN_SECTION_BARS, MAX_PLAN_SECTION_BARS],
+            "planLlmCalls": MAX_META_CALLS, "planRunUsd": MAX_RUN_USD, "planRunSeconds": RUN_BUDGET_S,
         },
         "sourceFields": {
             "generate_section": ["source", "modelUsed"],
@@ -105,11 +111,14 @@ def capabilities() -> ContractEnvelope:
             "import_score": ["analysisSource", "model", "requestId", "mode", "measures.*.chordBasis",
                              "measures.*.confidence", "measures.*.note", "measures.*.notes",
                              "measures.*.writtenNotes", "measures.*.bassNotes", "measures.*.noChord"],
+            "plan_song": ["planner", "calls.*.provider", "calls.*.model", "calls.*.requestId",
+                          "sections.*.source", "sections.*.modelUsed", "sections.*.rulesSlots"],
         },
         "limitations": ["build_song returns one arrangement; candidate fan-out is not implemented.",
                         "Score import defaults to local vector-PDF reading. Meta/auto requires explicit selection and may incur API cost; "
                         "with THEARTIST_META_ENABLED=0 (meta.enabled false) those engines return HTTP 503 and only the local reader runs.",
                         "Note-based harmony analysis is opt-in and returns reviewable interpretations, not verified original chords or imported melody notes.",
                         "export_daw requires a loopback request, server opt-in, and explicit per-call confirmation.",
-                        "Song planning and theory explanation are not MCP tools yet."],
+                        "plan_song plans only: section chords come from generate_section, and the observe-then-act judgment runs "
+                        "only through POST /api/plan/song. Theory explanation is not an MCP tool yet."],
     })

@@ -105,6 +105,7 @@ def _rule_suggestions(
     section: str | None,
     key_root: str,
     is_minor: bool,
+    cadence: str | None = None,
 ) -> list[Suggestion]:
     """Rule-based fallback, followed by the same song-form rules the AI path applies."""
     suggestions = generate_suggestions(
@@ -115,7 +116,7 @@ def _rule_suggestions(
         time_signature=time_signature,
         position_ratio=position_ratio,
     )
-    apply_song_form_to_suggestions(suggestions, section, key_root, is_minor)
+    apply_song_form_to_suggestions(suggestions, section, key_root, is_minor, cadence)
     return suggestions
 
 
@@ -309,6 +310,7 @@ def _section_ai(
         bpm=req.bpm,
         on_phase=on_phase,
         section_type=req.sectionType,
+        cadence=req.cadence,
     )
 
 
@@ -331,6 +333,7 @@ def _section_response(
             section=req.sectionType,
             key_root=key_root,
             is_minor=is_minor,
+            cadence=req.cadence,
         )
         source, model_used = "rules", None
     bars = len(selected)
@@ -346,6 +349,16 @@ def _section_response(
     )
 
 
+def compose_section(req: SectionGenerateRequest, on_phase: _OnPhase | None = None) -> SectionGenerateResponse:
+    """Compose one song-form section after the given context measures: the
+    service behind POST /generate/section, also run per planned section by
+    the song planner. Raises HTTPException(400) on a bad key."""
+    key_root, is_minor = parse_key(req.key)
+    context, selected = _section_measures(req)
+    ai = _section_ai(req, context, selected, on_phase) if TORCH_AVAILABLE else None
+    return _section_response(req, context, selected, ai, key_root, is_minor)
+
+
 @router.post(
     "/generate/section",
     response_model=SectionGenerateResponse,
@@ -353,10 +366,7 @@ def _section_response(
 )
 def generate_section(req: SectionGenerateRequest) -> SectionGenerateResponse:
     """Compose one song-form section after the given context measures."""
-    key_root, is_minor = parse_key(req.key)
-    context, selected = _section_measures(req)
-    ai = _section_ai(req, context, selected) if TORCH_AVAILABLE else None
-    return _section_response(req, context, selected, ai, key_root, is_minor)
+    return compose_section(req)
 
 
 @router.post("/generate/section/stream")

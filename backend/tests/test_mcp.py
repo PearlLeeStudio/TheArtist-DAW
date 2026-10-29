@@ -20,7 +20,7 @@ from mcp.client.streamable_http import streamable_http_client
 import app.main
 from app import mcp_server
 from app.models.export import DawOpenResponse
-from app.services import contracts
+from app.services import contracts, llm
 from theartist_client import ArtistClient, ArtistClientError
 from theartist_client import client as artist_client
 from tests.test_export import spec
@@ -48,10 +48,14 @@ class MCPProtocolTest(unittest.IsolatedAsyncioTestCase):
             listed = await session.list_tools()
             tools = {tool.name: tool for tool in listed.tools}
             self.assertEqual(set(tools), set(contracts.TOOLS))
-            self.assertNotIn("plan_song", tools)
+            self.assertIn("plan_song", tools)
+            self.assertIn("validate_plan", tools)
             self.assertNotIn("explain_progression", tools)
             self.assertFalse(tools["export_daw"].annotations.readOnlyHint)
             self.assertTrue(tools["import_score"].annotations.openWorldHint)
+            self.assertFalse(tools["plan_song"].annotations.idempotentHint)
+            self.assertTrue(tools["validate_plan"].annotations.readOnlyHint)
+            self.assertIn("PlanRequest", tools["validate_plan"].inputSchema["$defs"])
             self.assertIn("ExportSpec", tools["render_midi"].inputSchema["$defs"])
             self.assertIn("schemaVersion", tools["render_midi"].outputSchema["properties"])
             result = await session.call_tool("capabilities", {})
@@ -94,6 +98,34 @@ class MCPProtocolTest(unittest.IsolatedAsyncioTestCase):
                 self.assertTrue((await session.call_tool("plan_song", {})).isError)
                 self.assertTrue((await session.call_tool("get_genre_preset", {"genre": "unknown"})).isError)
         build.assert_not_called()
+
+    async def test_plan_tools_validate_and_plan_without_generating(self):
+        request = {"genre": "pop", "targetBars": 16, "wantOutro": True, "planner": "rules"}
+        good = {"sections": [{"type": "intro", "bars": 4, "cadence": "none", "reason": "Open", "cites": []},
+                             {"type": "chorus", "bars": 8, "cadence": "authentic", "reason": "Hook", "cites": []},
+                             {"type": "outro", "bars": 4, "cadence": "plagal", "reason": "Close", "cites": []}]}
+        bad = {"sections": [{"type": "chorus", "bars": 40, "cadence": "half", "reason": "", "cites": []}]}
+        with mock.patch.object(mcp_server.planner, "compose_section") as compose:
+            async with connection() as (session, _, _):
+                result = await session.call_tool("validate_plan", {"plan": good, "request": request})
+                self.assertFalse(result.isError)
+                self.assertEqual(result.structuredContent["data"], {"ok": True, "errors": []})
+                result = await session.call_tool("validate_plan", {"plan": bad, "request": request})
+                self.assertFalse(result.isError)
+                self.assertEqual([e["code"] for e in result.structuredContent["data"]["errors"]],
+                                 ["bars", "total_bars", "final_cadence", "outro_wanted"])
+                result = await session.call_tool("plan_song", {"request": request})
+                self.assertFalse(result.isError)
+                data = result.structuredContent["data"]
+                self.assertEqual((data["status"], data["planner"], data["calls"], data["sections"]), ("ok", "rules", [], []))
+                self.assertEqual([s["type"] for s in data["plan"]["sections"]], ["intro", "verse", "outro"])
+                self.assertEqual([v["ok"] for v in data["validation"]], [True])
+                with mock.patch.dict(os.environ, {"THEARTIST_META_ENABLED": "0"}), mock.patch.object(llm, "_clients", {}):
+                    result = await session.call_tool("plan_song", {"request": {**request, "planner": "meta"}})
+                self.assertTrue(result.isError)
+                self.assertIn("HTTP 503", result.content[0].text)
+                self.assertIn("disabled", result.content[0].text)
+        compose.assert_not_called()
 
     async def test_midi_roundtrip_and_wrapper_do_not_duplicate_large_content(self):
         async with connection() as (session, _, _):

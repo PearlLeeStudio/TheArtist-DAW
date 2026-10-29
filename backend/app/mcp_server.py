@@ -16,11 +16,13 @@ from mcp.types import CallToolResult, TextContent, ToolAnnotations
 from pydantic import BaseModel, Field, StrictBool
 
 from app.models.export import DawOpenRequest, ExportSpec
+from app.models.plan import PlanRequest, SongPlan
 from app.models.schemas import SectionGenerateRequest, SongGenerateRequest
 from app.models.score_import import ScoreImportRequest
 from app.routes import generate, models, score_import, song
+from app.routes import plan as plan_routes
 from app.routes.export import open_daw_route
-from app.services import contracts, genre_tables, smf_export
+from app.services import contracts, genre_tables, planner, smf_export
 from app.services.contracts import ContractEnvelope
 
 log = logging.getLogger(__name__)
@@ -127,6 +129,20 @@ def create_mcp_server() -> FastMCP:
         if len(request.context) > _MAX_SECTION_CONTEXT_MEASURES:
             raise ToolError(f"A section request supports at most {_MAX_SECTION_CONTEXT_MEASURES} context measures.")
         return await _invoke(generate.generate_section, request)
+
+    @server.tool(annotations=GENERATE)
+    async def plan_song(request: PlanRequest) -> ContractEnvelope:
+        """Plan the sections after the request's locked sketch: Muse Spark plans (planner "meta"), validate_plan checks, at most two revisions; planner "rules" is the genre-default form without any LLM call. Returns the plan and its trace (validation attempts, request ids, cost); generates no chords, so follow with generate_section per planned section (chordCount = bars x 2, the planned cadence)."""
+        _bounded_state(request)
+        return await _invoke(plan_routes.plan_only, request)
+
+    @server.tool(annotations=READ)
+    async def validate_plan(plan: SongPlan, request: PlanRequest) -> ContractEnvelope:
+        """Check a song plan against the request's sketch, locked sections and chips with the planner's own validator; returns {ok, errors} with machine-readable issues and makes no model call."""
+        _bounded_state(plan)
+        _bounded_state(request)
+        issues = planner.validate_plan(plan, request)
+        return _result(contracts.contract_result({"ok": not issues, "errors": [issue.model_dump() for issue in issues]}))
 
     @server.tool(annotations=GENERATE)
     async def build_song(request: SongGenerateRequest) -> ContractEnvelope:
