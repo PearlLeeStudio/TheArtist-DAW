@@ -113,6 +113,28 @@ function chipSummary() {
   return usePlanStore.getState().chips.map((chip) => [chip.label, chip.badge, chip.note, chip.ok]);
 }
 
+test('a plan cannot apply to a sketch edited after the request, but keeps its trace and spend', async (t) => {
+  t.mock.method(globalThis, 'fetch', async () => streamResponse(completedRun()));
+  const edits = [
+    () => useSongStore.getState().setKey('D major'),
+    () => useSongStore.getState().setGenre('jazz'),
+    () => useSongStore.getState().setChord({ measureIndex: 0, slotIndex: 0 }, chord('F', 'maj7')),
+  ];
+  for (const edit of edits) {
+    useSongStore.getState().setSong(sketchSong());
+    await usePlanStore.getState().startPlan(options);
+    edit();
+    const edited = structuredClone(useSongStore.getState().song);
+    usePlanStore.getState().applyPlan();
+    assert.deepEqual(useSongStore.getState().song, edited);
+    assert.equal(usePlanStore.getState().status, 'failed');
+    assert.match(usePlanStore.getState().error ?? '', /score changed/i);
+    assert.equal(usePlanStore.getState().applied, false);
+    assert.equal(usePlanStore.getState().spendUsd, 0.0054);
+    assert.notEqual(usePlanStore.getState().trace, null);
+  }
+});
+
 test('a run lands nothing until Apply, which appends the sections after the sketch; Undo restores the exact score', async (t) => {
   useSongStore.getState().setSong(sketchSong());
   const before = structuredClone(useSongStore.getState().song);

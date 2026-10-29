@@ -18,6 +18,7 @@ import {
   runPlan,
   type PlanEvent,
   type PlanOptions,
+  type PlanRequest,
   type PlanSectionResult,
   type PlanTrace,
   type PlannerKind,
@@ -55,6 +56,8 @@ interface PlanState {
   error: string | null;
   /** The terminal frame's trace (also of a failed run), for Export trace. */
   trace: PlanTrace | null;
+  /** The sketch and settings the result was made for; checked again before Apply. */
+  request: PlanRequest | null;
   applied: boolean;
   /** The song before Apply; undoPlan restores it. */
   snapshot: Song | null;
@@ -76,9 +79,9 @@ interface PlanState {
 }
 
 /** Store fields of no run at all. */
-function idleState(): Pick<PlanState, 'status' | 'planner' | 'chips' | 'sections' | 'spendUsd' | 'error' | 'trace' | 'applied' | 'snapshot'> {
+function idleState(): Pick<PlanState, 'status' | 'planner' | 'chips' | 'sections' | 'spendUsd' | 'error' | 'trace' | 'request' | 'applied' | 'snapshot'> {
   return {
-    status: 'idle', planner: null, chips: [], sections: [], spendUsd: 0, error: null, trace: null,
+    status: 'idle', planner: null, chips: [], sections: [], spendUsd: 0, error: null, trace: null, request: null,
     applied: false, snapshot: null,
   };
 }
@@ -210,6 +213,7 @@ export const usePlanStore = create<PlanState>((set, get) => {
       set({ ...idleState(), runId, status: 'running', planner: options.planner });
       try {
         const request = buildPlanRequest(useSongStore.getState().song, options);
+        set({ request });
         const trace = await runPlan(request, { signal: current.signal, onEvent: onEventFor(runId) });
         if (!isCurrent(runId)) return;
         if (trace.status === 'ok') {
@@ -239,9 +243,23 @@ export const usePlanStore = create<PlanState>((set, get) => {
     },
 
     applyPlan: () => {
-      const { status, sections, applied } = get();
-      if (status !== 'done' || applied || sections.length === 0) return;
+      const { status, sections, applied, request } = get();
+      if (status !== 'done' || applied || sections.length === 0 || !request) return;
       const { song, placeSection, setChords, commitSection } = useSongStore.getState();
+      let matches = false;
+      try {
+        matches = JSON.stringify(buildPlanRequest(song, request)) === JSON.stringify(request);
+      } catch {
+        // An edit may also make the old request invalid (no genre or no room left).
+      }
+      if (!matches) {
+        const message = 'The score changed after this plan started. Start a new plan before applying it.';
+        set((state) => ({
+          status: 'failed', error: message,
+          chips: [...state.chips, errorChip('score changed', message)],
+        }));
+        return;
+      }
       const snapshot = structuredClone(song);
       for (const section of sections) {
         // After the last used measure, so the sections follow each other.
