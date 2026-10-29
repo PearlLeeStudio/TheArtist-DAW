@@ -22,6 +22,9 @@ interface SessionState {
    *  freshly created entry (caller may want its id for UI feedback). */
   add: (song: Song, generation: SessionGenerationContext, name?: string) => SavedSession;
   remove: (id: string) => void;
+  /** Delete several sessions with one storage write, or none when no id
+   *  matches. The list changes only after that write succeeds; a failed
+   *  write throws and leaves it as is. */
   removeMany: (ids: readonly string[]) => void;
   rename: (id: string, name: string) => void;
   toggleStar: (id: string) => void;

@@ -7,7 +7,7 @@
  * future migration can detect the old shape and upgrade in place.
  */
 import type { SavedSession } from '../models/types';
-import { isSectionType } from '../engine/songForm.ts';
+import { CHORDS_PER_BAR, isSectionType } from '../engine/songForm.ts';
 
 const STORAGE_KEY = 'theartist-sessions';
 export const SCHEMA_VERSION = 1;
@@ -40,115 +40,219 @@ export function saveAll(sessions: SavedSession[]): void {
   }
 }
 
-/** Persist one deletion transaction before publishing its replacement list. */
+/**
+ * Persist one deletion transaction before publishing its replacement list.
+ * When no id matches, nothing is written and `sessions` itself comes back.
+ */
 export function removeSavedSessions(sessions: SavedSession[], ids: readonly string[]): SavedSession[] {
-  const selectedIds = new Set(ids);
-  const remaining = sessions.filter((session) => !selectedIds.has(session.id));
+  const removedIds = new Set(ids);
+  const remaining = sessions.filter((session) => !removedIds.has(session.id));
   if (remaining.length === sessions.length) return sessions;
   saveAll(remaining);
   return remaining;
 }
 
-function record(value: unknown): value is Record<string, unknown> {
+// Shape limits of a saved project, checked on load.
+const MIN_BPM = 20;
+const MAX_BPM = 300;
+const MAX_SONG_MEASURES = 4096;
+/** The largest time-signature numerator; bass-pattern beats fall within such a bar. */
+const MAX_BEATS_PER_MEASURE = 32;
+const TIME_SIGNATURE_DENOMINATORS = [1, 2, 4, 8, 16, 32];
+const MAX_VOICING_NOTES = 32;
+const MAX_MIDI_NOTE = 127;
+
+// Song.importSource: the file a score was read from and how each bar was read.
+const ANALYSIS_SOURCES = ['local', 'meta', 'mixed'];
+const MEASURE_ANALYSIS_SOURCES = ['local', 'meta'];
+const IMPORT_MODES = ['chord_symbols', 'infer_harmony'];
+const CHORD_BASES = ['printed', 'inferred', 'unreadable'];
+const CONFIDENCE_LEVELS = ['high', 'medium', 'low'];
+const MAX_FILENAME_LENGTH = 512;
+/** Measures in an imported score: the same cap as engine/scoreImport.ts. */
+const MAX_SCORE_IMPORT_MEASURES = 512;
+/** Model names and request ids. */
+const MAX_ID_LENGTH = 200;
+/** Evidence and editor-review text. */
+const MAX_EVIDENCE_LENGTH = 400;
+const MAX_MEASURE_CHORDS = 16;
+const MAX_CHORD_SYMBOL_LENGTH = 120;
+const MAX_MEASURE_NOTES = 128;
+const MAX_NOTE_NAME_LENGTH = 80;
+
+function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-function validImportSource(value: unknown): boolean {
-  const source = record(value) ? value.analysisSource ?? 'meta' : null;
-  if (!record(value) || typeof value.filename !== 'string' || value.filename.length > 512 ||
-      !['local', 'meta', 'mixed'].includes(source as string) ||
-      !(source === 'local' ? value.model === null && value.requestId === null : typeof value.model === 'string' && value.model.length <= 200) ||
-      !(value.requestId === null || (typeof value.requestId === 'string' && value.requestId.length <= 200)) ||
-      (value.mode !== undefined && !['chord_symbols', 'infer_harmony'].includes(value.mode as string))) return false;
-  if (value.measures === undefined) return value.mode !== 'infer_harmony';
-  if (!Array.isArray(value.measures) || value.measures.length > 512) return false;
-  return value.measures.every((measure) => record(measure) &&
-    ['printed', 'inferred', 'unreadable'].includes(measure.chordBasis as string) &&
-    ['high', 'medium', 'low'].includes(measure.confidence as string) &&
-    typeof measure.evidence === 'string' && measure.evidence.length <= 400 &&
-    (measure.editorReview === undefined || (typeof measure.editorReview === 'string' && measure.editorReview.length <= 400)) &&
-    Array.isArray(measure.originalChords) && measure.originalChords.length <= 16 &&
-    measure.originalChords.every((symbol) => typeof symbol === 'string' && symbol.length <= 120) &&
-    (measure.sourceMeasureIndex === undefined || (typeof measure.sourceMeasureIndex === 'number' && Number.isInteger(measure.sourceMeasureIndex) && measure.sourceMeasureIndex >= 0 && measure.sourceMeasureIndex < 512)) &&
-    (measure.analysisSource === undefined ? source !== 'mixed' : ['local', 'meta'].includes(measure.analysisSource as string) && (source === 'mixed' || measure.analysisSource === source)) &&
-    (measure.model === undefined || ((measure.analysisSource ?? source) === 'local' ? measure.model === null : typeof measure.model === 'string' && measure.model.length <= 200)) &&
-    (measure.requestId === undefined || measure.requestId === null || (typeof measure.requestId === 'string' && measure.requestId.length <= 200 && (measure.analysisSource ?? source) !== 'local')) &&
-    (measure.notes === undefined || (Array.isArray(measure.notes) && measure.notes.length <= 128 && measure.notes.every((note) => typeof note === 'string' && note.length <= 80))) &&
-    (measure.writtenNotes === undefined || (Array.isArray(measure.writtenNotes) && measure.writtenNotes.length <= 128 && measure.writtenNotes.every((note) => typeof note === 'string' && note.length <= 80))) &&
-    (measure.bassNotes === undefined || (Array.isArray(measure.bassNotes) && measure.bassNotes.length <= 128 && measure.bassNotes.every((note) => typeof note === 'string' && note.length <= 80))) &&
-    (measure.originalNoChord === undefined || (typeof measure.originalNoChord === 'boolean' && (!measure.originalNoChord || measure.originalChords.length === 0))) &&
-    (measure.userNoChord === undefined || (typeof measure.userNoChord === 'boolean' && !(measure.userNoChord && measure.originalNoChord))) &&
-    (measure.timeSignature === undefined || measure.timeSignature === null || (Array.isArray(measure.timeSignature) && measure.timeSignature.length === 2 && Number.isInteger(measure.timeSignature[0]) && measure.timeSignature[0] >= 1 && measure.timeSignature[0] <= 32 && [1, 2, 4, 8, 16, 32].includes(measure.timeSignature[1]))) &&
-    (measure.chordBasis !== 'inferred' || (value.mode === 'infer_harmony' && measure.evidence.trim() !== '')) &&
-    (measure.chordBasis !== 'unreadable' || (measure.confidence === 'low' && measure.originalChords.length === 0)));
+function isTextUpTo(value: unknown, maxLength: number): value is string {
+  return typeof value === 'string' && value.length <= maxLength;
 }
 
-function validSong(value: unknown): boolean {
-  if (!record(value) || typeof value.id !== 'string' || typeof value.title !== 'string' ||
-      typeof value.key !== 'string' || !(value.genre === null || typeof value.genre === 'string') ||
-      typeof value.bpm !== 'number' || !Number.isFinite(value.bpm) || value.bpm < 20 || value.bpm > 300) return false;
-  if (value.importSource !== undefined && !validImportSource(value.importSource)) return false;
-  const ts = value.timeSignature;
-  if (!Array.isArray(ts) || ts.length !== 2 || !Number.isInteger(ts[0]) || ts[0] < 1 || ts[0] > 32 ||
-      ![1, 2, 4, 8, 16, 32].includes(ts[1])) return false;
-  if (!Array.isArray(value.measures) || value.measures.length > 4096) return false;
-  const measureIds = new Set<string>();
-  for (const measure of value.measures) {
-    if (!record(measure) || typeof measure.id !== 'string' || measureIds.has(measure.id) ||
-        !Number.isInteger(measure.index) || !Array.isArray(measure.chords) || measure.chords.length !== 2) return false;
-    measureIds.add(measure.id);
+function isTextList(value: unknown, maxItems: number, maxLength: number): value is string[] {
+  return Array.isArray(value) && value.length <= maxItems && value.every((item) => isTextUpTo(item, maxLength));
+}
+
+function isOneOf(value: unknown, options: readonly unknown[]): boolean {
+  return options.includes(value);
+}
+
+function isIntegerInRange(value: unknown, min: number, max: number): value is number {
+  return typeof value === 'number' && Number.isInteger(value) && value >= min && value <= max;
+}
+
+/** 1–32 beats over a power-of-two note value. */
+function isTimeSignature(value: unknown): boolean {
+  return Array.isArray(value) && value.length === 2 &&
+    isIntegerInRange(value[0], 1, MAX_BEATS_PER_MEASURE) && isOneOf(value[1], TIME_SIGNATURE_DENOMINATORS);
+}
+
+function isOptionalNoteList(value: unknown): boolean {
+  return value === undefined || isTextList(value, MAX_MEASURE_NOTES, MAX_NOTE_NAME_LENGTH);
+}
+
+/**
+ * Every bar of a mixed import names its own analysis source, local or Meta;
+ * a bar of any other import may only repeat the import's. A locally analyzed
+ * bar names no model or request.
+ */
+function hasValidProvenance(measure: Record<string, unknown>, importAnalysisSource: unknown): boolean {
+  const namesValidSource = measure.analysisSource === undefined
+    ? importAnalysisSource !== 'mixed'
+    : isOneOf(measure.analysisSource, MEASURE_ANALYSIS_SOURCES) &&
+      (importAnalysisSource === 'mixed' || measure.analysisSource === importAnalysisSource);
+  if (!namesValidSource) return false;
+  const analyzedLocally = (measure.analysisSource ?? importAnalysisSource) === 'local';
+  if (measure.model !== undefined &&
+      !(analyzedLocally ? measure.model === null : isTextUpTo(measure.model, MAX_ID_LENGTH))) return false;
+  return measure.requestId === undefined || measure.requestId === null ||
+    (isTextUpTo(measure.requestId, MAX_ID_LENGTH) && !analyzedLocally);
+}
+
+/** One source bar of an import, read against the import's analysis source and mode. */
+function isValidImportedMeasure(measure: unknown, importAnalysisSource: unknown, mode: unknown): boolean {
+  return isRecord(measure) &&
+    isOneOf(measure.chordBasis, CHORD_BASES) &&
+    isOneOf(measure.confidence, CONFIDENCE_LEVELS) &&
+    isTextUpTo(measure.evidence, MAX_EVIDENCE_LENGTH) &&
+    (measure.editorReview === undefined || isTextUpTo(measure.editorReview, MAX_EVIDENCE_LENGTH)) &&
+    isTextList(measure.originalChords, MAX_MEASURE_CHORDS, MAX_CHORD_SYMBOL_LENGTH) &&
+    (measure.sourceMeasureIndex === undefined ||
+      isIntegerInRange(measure.sourceMeasureIndex, 0, MAX_SCORE_IMPORT_MEASURES - 1)) &&
+    hasValidProvenance(measure, importAnalysisSource) &&
+    isOptionalNoteList(measure.notes) &&
+    isOptionalNoteList(measure.writtenNotes) &&
+    isOptionalNoteList(measure.bassNotes) &&
+    // A source rest or N.C. holds no chords; the user's own N.C. marks only
+    // a bar the source did not.
+    (measure.originalNoChord === undefined || (typeof measure.originalNoChord === 'boolean' &&
+      (!measure.originalNoChord || measure.originalChords.length === 0))) &&
+    (measure.userNoChord === undefined || (typeof measure.userNoChord === 'boolean' &&
+      !(measure.userNoChord && measure.originalNoChord))) &&
+    (measure.timeSignature === undefined || measure.timeSignature === null || isTimeSignature(measure.timeSignature)) &&
+    // Inferred chords need the infer-harmony mode and stated evidence; an
+    // unreadable bar is low confidence with no chords.
+    (measure.chordBasis !== 'inferred' || (mode === 'infer_harmony' && measure.evidence.trim() !== '')) &&
+    (measure.chordBasis !== 'unreadable' || (measure.confidence === 'low' && measure.originalChords.length === 0));
+}
+
+function isValidImportSource(importSource: unknown): boolean {
+  if (!isRecord(importSource)) return false;
+  // Sources saved before local analysis existed have none: Meta read them.
+  const analysisSource = importSource.analysisSource ?? 'meta';
+  // A local analysis names no model or request; a Meta or mixed one names
+  // its model and may name its request.
+  const modelMatchesSource = analysisSource === 'local'
+    ? importSource.model === null
+    : isTextUpTo(importSource.model, MAX_ID_LENGTH);
+  const requestIdMatchesSource = importSource.requestId === null ||
+    (isTextUpTo(importSource.requestId, MAX_ID_LENGTH) && analysisSource !== 'local');
+  if (!isTextUpTo(importSource.filename, MAX_FILENAME_LENGTH) || !isOneOf(analysisSource, ANALYSIS_SOURCES) ||
+      !modelMatchesSource || !requestIdMatchesSource ||
+      (importSource.mode !== undefined && !isOneOf(importSource.mode, IMPORT_MODES))) return false;
+  // Inferred harmony is kept only together with each bar's evidence.
+  if (importSource.measures === undefined) return importSource.mode !== 'infer_harmony';
+  if (!Array.isArray(importSource.measures) || importSource.measures.length > MAX_SCORE_IMPORT_MEASURES) return false;
+  return importSource.measures.every((measure) => isValidImportedMeasure(measure, analysisSource, importSource.mode));
+}
+
+/** A filled chord slot; an empty slot is null. */
+function isValidChord(chord: unknown): boolean {
+  return isRecord(chord) && typeof chord.root === 'string' && typeof chord.quality === 'string' &&
+    typeof chord.romanNumeral === 'string' && (chord.bass === undefined || typeof chord.bass === 'string') &&
+    Array.isArray(chord.voicing) && chord.voicing.length <= MAX_VOICING_NOTES &&
+    chord.voicing.every((note) => isIntegerInRange(note, 0, MAX_MIDI_NOTE)) &&
+    Array.isArray(chord.extensions) && chord.extensions.every((extension) => typeof extension === 'string');
+}
+
+/** Measures have unique ids and CHORDS_PER_BAR slots, each empty or a chord. */
+function areValidMeasures(measures: unknown[]): boolean {
+  const ids = new Set<string>();
+  for (const measure of measures) {
+    if (!isRecord(measure) || typeof measure.id !== 'string' || ids.has(measure.id) ||
+        !Number.isInteger(measure.index) || !Array.isArray(measure.chords) ||
+        measure.chords.length !== CHORDS_PER_BAR) return false;
+    ids.add(measure.id);
     for (const chord of measure.chords) {
-      if (chord === null) continue;
-      if (!record(chord) || typeof chord.root !== 'string' || typeof chord.quality !== 'string' ||
-          typeof chord.romanNumeral !== 'string' || (chord.bass !== undefined && typeof chord.bass !== 'string') ||
-          !Array.isArray(chord.voicing) || chord.voicing.length > 32 ||
-          !chord.voicing.every((n) => Number.isInteger(n) && n >= 0 && n <= 127) ||
-          !Array.isArray(chord.extensions) || !chord.extensions.every((e) => typeof e === 'string')) return false;
+      if (chord !== null && !isValidChord(chord)) return false;
     }
-  }
-  if (value.sections !== undefined) {
-    if (!Array.isArray(value.sections)) return false;
-    const ranges: Array<{ start: number; end: number }> = [];
-    const ids = new Set<string>();
-    for (const section of value.sections) {
-      if (!record(section) || typeof section.id !== 'string' || ids.has(section.id) ||
-          !(section.type === null || isSectionType(section.type)) ||
-          typeof section.startMeasure !== 'number' || !Number.isInteger(section.startMeasure) || section.startMeasure < 0 ||
-          typeof section.length !== 'number' || !Number.isInteger(section.length) || section.length < 1 ||
-          section.startMeasure + section.length > value.measures.length ||
-          (section.label !== undefined && typeof section.label !== 'string')) return false;
-      ids.add(section.id);
-      ranges.push({ start: section.startMeasure, end: section.startMeasure + section.length });
-    }
-    ranges.sort((a, b) => a.start - b.start);
-    if (ranges.some((r, i) => i > 0 && r.start < ranges[i - 1].end)) return false;
   }
   return true;
 }
 
+/** Sections have unique ids, lie within the song's measures and never overlap. */
+function areValidSections(sections: unknown, measureCount: number): boolean {
+  if (!Array.isArray(sections)) return false;
+  const ranges: Array<{ start: number; end: number }> = [];
+  const ids = new Set<string>();
+  for (const section of sections) {
+    if (!isRecord(section) || typeof section.id !== 'string' || ids.has(section.id) ||
+        !(section.type === null || isSectionType(section.type)) ||
+        typeof section.startMeasure !== 'number' || !Number.isInteger(section.startMeasure) || section.startMeasure < 0 ||
+        typeof section.length !== 'number' || !Number.isInteger(section.length) || section.length < 1 ||
+        section.startMeasure + section.length > measureCount ||
+        (section.label !== undefined && typeof section.label !== 'string')) return false;
+    ids.add(section.id);
+    ranges.push({ start: section.startMeasure, end: section.startMeasure + section.length });
+  }
+  ranges.sort((a, b) => a.start - b.start);
+  return !ranges.some((range, i) => i > 0 && range.start < ranges[i - 1].end);
+}
+
+function isValidSong(song: unknown): boolean {
+  if (!isRecord(song) || typeof song.id !== 'string' || typeof song.title !== 'string' ||
+      typeof song.key !== 'string' || !(song.genre === null || typeof song.genre === 'string') ||
+      typeof song.bpm !== 'number' || !Number.isFinite(song.bpm) || song.bpm < MIN_BPM || song.bpm > MAX_BPM) return false;
+  if (song.importSource !== undefined && !isValidImportSource(song.importSource)) return false;
+  if (!isTimeSignature(song.timeSignature)) return false;
+  if (!Array.isArray(song.measures) || song.measures.length > MAX_SONG_MEASURES || !areValidMeasures(song.measures)) return false;
+  return song.sections === undefined || areValidSections(song.sections, song.measures.length);
+}
+
+/** The bar-long bass pattern computeArrangement caches with a session. */
+function isValidArrangement(arrangement: unknown): boolean {
+  return isRecord(arrangement) && Array.isArray(arrangement.bassPattern) &&
+    arrangement.bassPattern.every((beat) =>
+      typeof beat === 'number' && Number.isFinite(beat) && beat >= 0 && beat < MAX_BEATS_PER_MEASURE) &&
+    typeof arrangement.bassInstrument === 'string' &&
+    isIntegerInRange(arrangement.beatsPerMeasure, 1, MAX_BEATS_PER_MEASURE);
+}
+
 /** Arrangement is a derived cache; a stale cache must not break a valid score. */
 function withValidArrangement(session: SavedSession): SavedSession {
-  const value: unknown = session.arrangement;
-  if (value === undefined || (record(value) && Array.isArray(value.bassPattern) &&
-      value.bassPattern.every((beat) => typeof beat === 'number' && Number.isFinite(beat) && beat >= 0 && beat < 32) &&
-      typeof value.bassInstrument === 'string' && typeof value.beatsPerMeasure === 'number' &&
-      Number.isInteger(value.beatsPerMeasure) && value.beatsPerMeasure > 0 && value.beatsPerMeasure <= 32)) return session;
+  if (session.arrangement === undefined || isValidArrangement(session.arrangement)) return session;
   const repaired = { ...session };
   delete repaired.arrangement;
   return repaired;
 }
 
 /** Invalid saved entries are skipped without hiding neighboring valid scores. */
-function isValidSession(x: unknown): x is SavedSession {
-  if (typeof x !== 'object' || x === null) return false;
-  const s = x as Record<string, unknown>;
-  return (
-    typeof s.id === 'string' &&
-    typeof s.name === 'string' &&
-    typeof s.createdAt === 'number' && Number.isFinite(s.createdAt) &&
-    typeof s.starred === 'boolean' &&
-    validSong(s.song) &&
-    record(s.generation) && typeof s.generation.model === 'string' &&
-    (s.generation.genre === null || typeof s.generation.genre === 'string')
-  );
+function isValidSession(session: unknown): session is SavedSession {
+  return isRecord(session) &&
+    typeof session.id === 'string' &&
+    typeof session.name === 'string' &&
+    typeof session.createdAt === 'number' && Number.isFinite(session.createdAt) &&
+    typeof session.starred === 'boolean' &&
+    isValidSong(session.song) &&
+    isRecord(session.generation) && typeof session.generation.model === 'string' &&
+    (session.generation.genre === null || typeof session.generation.genre === 'string');
 }

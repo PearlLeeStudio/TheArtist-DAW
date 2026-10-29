@@ -1,3 +1,9 @@
+/**
+ * Pure Play-state transitions behind the Harmony and Drums on/off toggles.
+ * Turning a part off keeps what it played (lastHarmonyVolume, resumeDrum),
+ * so turning it on again restores that instead of a default. playStore
+ * applies them to its state.
+ */
 import type { PlaySettings } from '../models/types.ts';
 import { DRUM_PATTERNS } from '../engine/drumPatterns.ts';
 import { DEFAULT_PLAY_SETTINGS, sanitizeVolume } from '../engine/playSettings.ts';
@@ -16,41 +22,59 @@ export interface PlayMuteState extends PlayResumeState {
 
 const DRUM_IDS = new Set(DRUM_PATTERNS.map((pattern) => pattern.id));
 const DEFAULT_DRUM: ResumeDrum = { drumMode: 'auto', drumPatternId: null };
+/** Manual mode without a pattern is how PlaySettings say "no drums". */
+const DRUMS_OFF: ResumeDrum = { drumMode: 'manual', drumPatternId: null };
 
+/** Untrusted JSON as a record; anything that is not an object reads as {}. */
+function asRecord(raw: unknown): Record<string, unknown> {
+  return (typeof raw === 'object' && raw !== null ? raw : {}) as Record<string, unknown>;
+}
+
+/** A Harmony level worth restoring: silence or an invalid value becomes the default. */
 function audibleVolume(value: unknown): number {
   const volume = sanitizeVolume(value, DEFAULT_PLAY_SETTINGS.harmonyVolume);
   return volume > 0 ? volume : DEFAULT_PLAY_SETTINGS.harmonyVolume;
 }
 
 function sanitizeResumeDrum(raw: unknown): ResumeDrum {
-  const value = (typeof raw === 'object' && raw !== null ? raw : {}) as Record<string, unknown>;
-  const validId = typeof value.drumPatternId === 'number' && DRUM_IDS.has(value.drumPatternId);
-  if (value.drumMode === 'auto' && (value.drumPatternId === null || validId)) {
-    return { drumMode: 'auto', drumPatternId: validId ? value.drumPatternId as number : null };
+  const { drumMode, drumPatternId } = asRecord(raw);
+  const validId = typeof drumPatternId === 'number' && DRUM_IDS.has(drumPatternId);
+  if (drumMode === 'auto' && (drumPatternId === null || validId)) {
+    return { drumMode: 'auto', drumPatternId: validId ? drumPatternId : null };
   }
-  if (value.drumMode === 'manual' && validId) {
-    return { drumMode: 'manual', drumPatternId: value.drumPatternId as number };
+  if (drumMode === 'manual' && validId) {
+    return { drumMode: 'manual', drumPatternId };
   }
   return { ...DEFAULT_DRUM };
+}
+
+/** Harmony off is a zero gain; its instrument and rhythm stay picked. */
+function harmonyEnabled(settings: PlaySettings): boolean {
+  return settings.harmonyVolume > 0;
 }
 
 function drumsEnabled(settings: PlaySettings): boolean {
   return settings.drumMode !== 'manual' || settings.drumPatternId !== null;
 }
 
+/** Play `choice` now and keep it as the choice Drums on restores. */
+function withDrumChoice(state: PlayMuteState, choice: ResumeDrum): PlayMuteState {
+  return { ...state, resumeDrum: choice, settings: { ...state.settings, ...choice } };
+}
+
 /** A project replacement passes no raw backup, so restore values cannot leak
  *  from the previously open project. Browser reload may restore validated prefs. */
 export function playResumeState(settings: PlaySettings, raw?: unknown): PlayResumeState {
-  const value = (typeof raw === 'object' && raw !== null ? raw : {}) as Record<string, unknown>;
+  const saved = asRecord(raw);
   return {
-    lastHarmonyVolume: settings.harmonyVolume > 0
-      ? settings.harmonyVolume : audibleVolume(value.lastHarmonyVolume),
-    resumeDrum: sanitizeResumeDrum(drumsEnabled(settings) ? settings : value.resumeDrum),
+    lastHarmonyVolume: harmonyEnabled(settings)
+      ? settings.harmonyVolume : audibleVolume(saved.lastHarmonyVolume),
+    resumeDrum: sanitizeResumeDrum(drumsEnabled(settings) ? settings : saved.resumeDrum),
   };
 }
 
 export function setHarmonyEnabledState(state: PlayMuteState, on: boolean): PlayMuteState {
-  if (on === (state.settings.harmonyVolume > 0)) return state;
+  if (on === harmonyEnabled(state.settings)) return state;
   const lastHarmonyVolume = audibleVolume(on ? state.lastHarmonyVolume : state.settings.harmonyVolume);
   return {
     ...state, lastHarmonyVolume,
@@ -58,6 +82,7 @@ export function setHarmonyEnabledState(state: PlayMuteState, on: boolean): PlayM
   };
 }
 
+/** The Harmony fader; a nonzero level also becomes the one Harmony on restores. */
 export function setHarmonyVolumeState(state: PlayMuteState, volume: number): PlayMuteState {
   const harmonyVolume = sanitizeVolume(volume, DEFAULT_PLAY_SETTINGS.harmonyVolume);
   if (harmonyVolume === state.settings.harmonyVolume) return state;
@@ -73,18 +98,17 @@ export function setDrumsEnabledState(state: PlayMuteState, on: boolean): PlayMut
   const resumeDrum = sanitizeResumeDrum(on ? state.resumeDrum : state.settings);
   return {
     ...state, resumeDrum,
-    settings: { ...state.settings, ...(on ? resumeDrum : { drumMode: 'manual', drumPatternId: null }) },
+    settings: { ...state.settings, ...(on ? resumeDrum : DRUMS_OFF) },
   };
 }
 
 export function setDrumAutoState(state: PlayMuteState): PlayMuteState {
-  const resumeDrum = sanitizeResumeDrum({ drumMode: 'auto', drumPatternId: state.settings.drumPatternId });
-  return { ...state, resumeDrum, settings: { ...state.settings, ...resumeDrum } };
+  return withDrumChoice(state, sanitizeResumeDrum({ drumMode: 'auto', drumPatternId: state.settings.drumPatternId }));
 }
 
+/** A fixed pattern, or null for Drums off; an unknown id changes nothing. */
 export function setDrumPatternState(state: PlayMuteState, id: number | null): PlayMuteState {
   if (id === null) return setDrumsEnabledState(state, false);
   if (!DRUM_IDS.has(id)) return state;
-  const resumeDrum: ResumeDrum = { drumMode: 'manual', drumPatternId: id };
-  return { ...state, resumeDrum, settings: { ...state.settings, ...resumeDrum } };
+  return withDrumChoice(state, { drumMode: 'manual', drumPatternId: id });
 }

@@ -19,16 +19,16 @@
  *     after a newer run started (or after the song was replaced) is dropped.
  */
 import { create } from 'zustand';
-import type { Song, SlotAddress, SectionType } from '../models/types';
+import type { SavedSession, SectionType, SlotAddress, Song } from '../models/types';
 import {
   generateChords,
   generateSection,
   parseSuggestionChords,
   type GeneratePhase,
+  type GenerateResult,
   type Suggestion,
   type SuggestionSource,
 } from '../engine/chordGenerator';
-import type { SavedSession } from '../models/types';
 import { CHORDS_PER_BAR, MAX_SECTION_CHORDS } from '../engine/songForm';
 import {
   canApplyComparison,
@@ -53,8 +53,9 @@ interface GenerationState {
   modelKey: string;
   setModelKey: (key: string) => void;
 
-  /** Section sent by the drag-path Generate. 'auto' = the type of the song
-   *  section that contains the whole selection, else no song-form rules. */
+  /** Section sent by the drag-path Generate (not persisted). 'auto' = the
+   *  type of the song section that contains the whole selection, else no
+   *  song-form rules. */
   generateSectionType: SectionType | 'auto';
   setGenerateSectionType: (choice: SectionType | 'auto') => void;
 
@@ -137,6 +138,63 @@ function persist(state: { modelKey: string }): void {
   }
 }
 
+/** Whether a request's captured range is still in the song as it is now. */
+function canApplyToCurrentSong(comparison: GenerationComparison): boolean {
+  const { song, songEpoch } = useSongStore.getState();
+  return canApplyComparison(comparison, song, songEpoch);
+}
+
+/** State fields of an empty A/B/C list: nothing to show, apply or compare.
+ *  Fresh arrays on every call: restoreList tells one list from another by
+ *  the identity of its targetSlots. */
+function clearedSuggestions(): Partial<GenerationState> {
+  return {
+    suggestions: [],
+    targetSlots: [],
+    comparison: null,
+    appliedSnapshot: null,
+    source: null,
+    modelUsed: null,
+    showSuggestions: false,
+    activeSuggestionIdx: null,
+  };
+}
+
+/** One starred preset's answer to Favorite Generate. */
+interface PresetAnswer {
+  suggestion: Suggestion;
+  source: SuggestionSource | null;
+}
+
+/** A starred preset's top suggestion, labelled with the preset's name;
+ *  null when it returned none. */
+function presetTopSuggestion(
+  session: SavedSession,
+  song: Song,
+  selectedSlots: SlotAddress[],
+  sectionType: SectionType | null,
+): Promise<PresetAnswer | null> {
+  return generateChords(song, selectedSlots, sectionType, session.generation.model).then(({ suggestions, source }) => {
+    const top = suggestions[0];
+    if (!top) return null;
+    return { suggestion: { ...top, label: `${session.name} — ${top.label}` }, source };
+  });
+}
+
+/** The presets' answers as one A/B/C list. One note for the whole list when
+ *  every preset fell back to the rule-based generator; otherwise mark just
+ *  the ones that did. */
+function mergePresetAnswers(answers: Array<PresetAnswer | null>): GenerateResult {
+  const results = answers.filter((answer): answer is PresetAnswer => answer !== null);
+  const allRules = results.length > 0 && results.every((r) => r.source === 'rules');
+  const suggestions = results.map(({ suggestion, source }) =>
+    !allRules && source === 'rules'
+      ? { ...suggestion, label: `${suggestion.label} (rule-based)` }
+      : suggestion,
+  );
+  return { suggestions, source: allRules ? 'rules' : null };
+}
+
 /** Both slots of every measure in [start, start + count). */
 function slotsForMeasures(start: number, count: number): SlotAddress[] {
   const slots: SlotAddress[] = [];
@@ -146,25 +204,64 @@ function slotsForMeasures(start: number, count: number): SlotAddress[] {
   return slots;
 }
 
+/** A section request fills whole measures, up to the size limit. */
+function isValidSectionChordCount(chordCount: number): boolean {
+  return Number.isInteger(chordCount) &&
+    chordCount >= CHORDS_PER_BAR &&
+    chordCount <= MAX_SECTION_CHORDS &&
+    chordCount % CHORDS_PER_BAR === 0;
+}
+
 /** The A/B/C list as it was before beginRequest hid it. */
 type ListView = Pick<GenerationState,
   'targetSlots' | 'showSuggestions' | 'activeSuggestionIdx' | 'comparison' | 'appliedSnapshot'>;
 
-/** The in-flight section request: its fetch, how to take its placed
- *  section back off the staff, and the A/B/C list it hid. Module-level
- *  because it is not UI state. */
-let pendingSection: {
-  controller: AbortController;
-  rollback: () => void;
-  hiddenList: ListView;
-} | null = null;
+function listViewOf(state: GenerationState): ListView {
+  return {
+    targetSlots: state.targetSlots,
+    showSuggestions: state.showSuggestions,
+    activeSuggestionIdx: state.activeSuggestionIdx,
+    comparison: state.comparison,
+    appliedSnapshot: state.appliedSnapshot,
+  };
+}
 
+/** The in-flight section request. */
+interface PendingSection {
+  /** Aborts its fetch. */
+  controller: AbortController;
+  /** Takes its placed section back off the staff. */
+  rollback: () => void;
+  /** The A/B/C list it hid. */
+  hiddenList: ListView;
+}
+
+/** Module-level because it is not UI state. */
+let pendingSection: PendingSection | null = null;
+
+/** Abort the in-flight section request; `rollback` also takes its section
+ *  back off the staff (a replaced song has nothing left to take back). */
 function dropPendingSection(rollback: boolean): void {
   const pending = pendingSection;
   if (!pending) return;
   pendingSection = null;
   pending.controller.abort();
   if (rollback) pending.rollback();
+}
+
+/** Place a pending section on the staff for a section run. Its rollback
+ *  removes the section and the measures appended for it, unless the song
+ *  has been replaced since. */
+function placeSectionForRun(sectionType: SectionType, bars: number) {
+  const songState = useSongStore.getState();
+  const songEpoch = songState.songEpoch;
+  const measuresBefore = songState.song.measures.length;
+  const section = songState.placeSection(sectionType, bars);
+  const rollback = () => {
+    const current = useSongStore.getState();
+    if (current.songEpoch === songEpoch) current.removeSection(section.id, measuresBefore);
+  };
+  return { section, song: useSongStore.getState().song, songEpoch, rollback };
 }
 
 export const useGenerationStore = create<GenerationState>((set, get) => {
@@ -192,11 +289,8 @@ export const useGenerationStore = create<GenerationState>((set, get) => {
   };
   const fail = (requestId: number, error: unknown) => {
     if (!isCurrent(requestId)) return;
-    set({
-      error: `Generation failed. ${error instanceof Error ? error.message : 'Please try again.'} Your score has not changed.`,
-      suggestions: [], targetSlots: [], comparison: null, appliedSnapshot: null,
-      source: null, modelUsed: null, showSuggestions: false, activeSuggestionIdx: null,
-    });
+    const reason = error instanceof Error ? error.message : 'Please try again.';
+    set({ error: `Generation failed. ${reason} Your score has not changed.`, ...clearedSuggestions() });
   };
   /** After a section run that did not land, show the A/B/C list it hid
    *  again, unless those suggestions were replaced meanwhile. */
@@ -239,18 +333,7 @@ export const useGenerationStore = create<GenerationState>((set, get) => {
     setSuggestions: (suggestions) => set({ suggestions }),
     setShowSuggestions: (showSuggestions) => set({ showSuggestions }),
     setActiveSuggestionIdx: (activeSuggestionIdx) => set({ activeSuggestionIdx }),
-    clearSuggestions: () =>
-      set({
-        error: null,
-        suggestions: [],
-        targetSlots: [],
-        comparison: null,
-        appliedSnapshot: null,
-        source: null,
-        modelUsed: null,
-        showSuggestions: false,
-        activeSuggestionIdx: null,
-      }),
+    clearSuggestions: () => set({ error: null, ...clearedSuggestions() }),
 
     applySuggestion: (index) => {
       const { suggestions, comparison, loading } = get();
@@ -297,8 +380,7 @@ export const useGenerationStore = create<GenerationState>((set, get) => {
           modelKey,
           onPhaseFor(requestId),
         );
-        const current = useSongStore.getState();
-        if (!isCurrent(requestId) || !canApplyComparison(comparison, current.song, current.songEpoch)) return;
+        if (!isCurrent(requestId) || !canApplyToCurrentSong(comparison)) return;
         set({ suggestions, source, modelUsed: null, targetSlots, comparison, appliedSnapshot: null, showSuggestions: true });
       } catch (error) {
         fail(requestId, error);
@@ -313,34 +395,11 @@ export const useGenerationStore = create<GenerationState>((set, get) => {
       const targetSlots = selectedSlots.map((s) => ({ ...s }));
       const comparison = captureGenerationComparison(song, targetSlots, useSongStore.getState().songEpoch);
       try {
-        const calls = starredSessions.map((s) =>
-          generateChords(song, selectedSlots, sectionType, s.generation.model).then(({ suggestions, source }) => {
-            const top = suggestions[0];
-            if (!top) return null;
-            return { suggestion: { ...top, label: `${s.name} — ${top.label}` }, source };
-          }),
-        );
-        const settled = await Promise.all(calls);
-        const current = useSongStore.getState();
-        if (!isCurrent(requestId) || !canApplyComparison(comparison, current.song, current.songEpoch)) return;
-        const results = settled.filter((r): r is NonNullable<typeof r> => r !== null);
-        // One note for the whole list when every preset fell back to the
-        // rule-based generator; otherwise mark just the ones that did.
-        const allRules = results.length > 0 && results.every((r) => r.source === 'rules');
-        const merged = results.map(({ suggestion, source }) =>
-          !allRules && source === 'rules'
-            ? { ...suggestion, label: `${suggestion.label} (rule-based)` }
-            : suggestion,
-        );
-        set({
-          suggestions: merged,
-          source: allRules ? 'rules' : null,
-          modelUsed: null,
-          targetSlots,
-          comparison,
-          appliedSnapshot: null,
-          showSuggestions: true,
-        });
+        const answers = await Promise.all(starredSessions.map((session) =>
+          presetTopSuggestion(session, song, selectedSlots, sectionType)));
+        if (!isCurrent(requestId) || !canApplyToCurrentSong(comparison)) return;
+        const { suggestions, source } = mergePresetAnswers(answers);
+        set({ suggestions, source, modelUsed: null, targetSlots, comparison, appliedSnapshot: null, showSuggestions: true });
       } catch (error) {
         fail(requestId, error);
       } finally {
@@ -349,12 +408,7 @@ export const useGenerationStore = create<GenerationState>((set, get) => {
     },
 
     runSectionGenerate: async ({ sectionType, chordCount }) => {
-      if (
-        !Number.isInteger(chordCount) ||
-        chordCount < CHORDS_PER_BAR ||
-        chordCount > MAX_SECTION_CHORDS ||
-        chordCount % CHORDS_PER_BAR !== 0
-      ) {
+      if (!isValidSectionChordCount(chordCount)) {
         return {
           status: 'failed',
           message: `Use an even number of chords from ${CHORDS_PER_BAR} to ${MAX_SECTION_CHORDS}`,
@@ -362,31 +416,20 @@ export const useGenerationStore = create<GenerationState>((set, get) => {
       }
       // beginRequest hides the A/B/C list; remember it so a run that does
       // not land can show it again (restoreList).
-      const before = get();
-      const hiddenList: ListView = {
-        targetSlots: before.targetSlots,
-        showSuggestions: before.showSuggestions,
-        activeSuggestionIdx: before.activeSuggestionIdx,
-        comparison: before.comparison,
-        appliedSnapshot: before.appliedSnapshot,
-      };
+      const hiddenList = listViewOf(get());
       const requestId = beginRequest();
-      const songState = useSongStore.getState();
-      const songEpoch = songState.songEpoch;
-      const measuresBefore = songState.song.measures.length;
-      const section = songState.placeSection(sectionType, chordCount / CHORDS_PER_BAR);
-      const song = useSongStore.getState().song;
+      const { section, song, songEpoch, rollback } = placeSectionForRun(sectionType, chordCount / CHORDS_PER_BAR);
       const targetSlots = slotsForMeasures(section.startMeasure, section.length);
       const comparison = captureGenerationComparison(song, targetSlots, songEpoch, 'section');
-      const pending = {
-        controller: new AbortController(),
-        rollback: () => {
-          const current = useSongStore.getState();
-          if (current.songEpoch === songEpoch) current.removeSection(section.id, measuresBefore);
-        },
-        hiddenList,
-      };
+      const pending: PendingSection = { controller: new AbortController(), rollback, hiddenList };
       pendingSection = pending;
+      /** The run did not land: take its section back, end the request and
+       *  show the hidden list again. */
+      const abandonRun = () => {
+        rollback();
+        finish(requestId);
+        restoreList(hiddenList);
+      };
 
       let message: string;
       try {
@@ -405,11 +448,8 @@ export const useGenerationStore = create<GenerationState>((set, get) => {
         // did that already took the placement back (or the song is gone).
         if (pendingSection !== pending || !isCurrent(requestId)) return { status: 'cancelled' };
         pendingSection = null;
-        const current = useSongStore.getState();
-        if (!canApplyComparison(comparison, current.song, current.songEpoch)) {
-          pending.rollback();
-          finish(requestId);
-          restoreList(hiddenList);
+        if (!canApplyToCurrentSong(comparison)) {
+          abandonRun();
           return { status: 'cancelled' };
         }
         if (res.suggestions.length > 0) {
@@ -436,9 +476,7 @@ export const useGenerationStore = create<GenerationState>((set, get) => {
         pendingSection = null;
         message = err instanceof Error ? err.message : String(err);
       }
-      pending.rollback();
-      finish(requestId);
-      restoreList(hiddenList);
+      abandonRun();
       return { status: 'failed', message };
     },
 
@@ -458,27 +496,20 @@ export const useGenerationStore = create<GenerationState>((set, get) => {
 // songEpoch, not song.id: a loaded session keeps the id of the song it was
 // saved from, and its chords are not the ones the suggestions were made for.
 useSongStore.subscribe((state, prev) => {
-  if (state.songEpoch === prev.songEpoch) {
-    if (state.song.measures === prev.song.measures) return;
+  if (state.songEpoch !== prev.songEpoch) {
+    dropPendingSection(false);
+    useGenerationStore.setState((s) => ({
+      requestId: s.requestId + 1,
+      loading: false,
+      phase: null,
+      error: null,
+      ...clearedSuggestions(),
+    }));
+  } else if (state.song.measures !== prev.song.measures) {
+    // An edit that changed the applied chords leaves no suggestion applied.
     const { appliedSnapshot } = useGenerationStore.getState();
     if (appliedSnapshot && !matchesCapturedRange(appliedSnapshot, state.song, state.songEpoch)) {
       useGenerationStore.setState({ activeSuggestionIdx: null, appliedSnapshot: null });
     }
-    return;
   }
-  dropPendingSection(false);
-  useGenerationStore.setState((s) => ({
-    requestId: s.requestId + 1,
-    loading: false,
-    phase: null,
-    error: null,
-    suggestions: [],
-    targetSlots: [],
-    comparison: null,
-    appliedSnapshot: null,
-    source: null,
-    modelUsed: null,
-    showSuggestions: false,
-    activeSuggestionIdx: null,
-  }));
 });

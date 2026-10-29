@@ -3,7 +3,8 @@
  * visual mode and master/part levels, plus which pane is open. Persisted under
  * `theartist-play` and mirrored into the playback engine on every change —
  * whichever pane is mounted — so the next note that fires already uses it.
- * The separate Piano/Guitar display preference is saved without updating audio.
+ * The separate Piano/Guitar display preference is saved without updating audio,
+ * and so are the on/off toggles' restore values (playMuteState.ts).
  * The engine resolves Auto against the editor song's genre, and re-syncs
  * when that genre changes.
  */
@@ -30,6 +31,8 @@ import type { PlayResumeState } from './playMuteState';
 export type PlayPane = 'instrument' | 'rhythm' | 'drums';
 export type VisualDisplayMode = 'piano' | 'guitar';
 const PANES: PlayPane[] = ['instrument', 'rhythm', 'drums'];
+const DEFAULT_PANE: PlayPane = 'instrument';
+const DISPLAY_MODES: VisualDisplayMode[] = ['piano', 'guitar'];
 
 const STORAGE_KEY = 'theartist-play';
 /** The drum pick saved before the Play panel existed: an id, or 'null' (off). */
@@ -41,39 +44,46 @@ interface Persisted extends PlayResumeState {
   displayMode: VisualDisplayMode;
 }
 
+/** `settings` with fresh resume values, on the first pane with Piano shapes. */
+function freshPersisted(settings: PlaySettings): Persisted {
+  return { settings, ...playResumeState(settings), pane: DEFAULT_PANE, displayMode: 'piano' };
+}
+
+/** The saved Piano/Guitar display. A save from before the display had its
+ *  own setting follows its visual mode: a fixed Guitar showed guitar shapes. */
+function savedDisplayMode(saved: unknown, settings: PlaySettings): VisualDisplayMode {
+  if (DISPLAY_MODES.includes(saved as VisualDisplayMode)) return saved as VisualDisplayMode;
+  return settings.visualMode === 'guitar' ? 'guitar' : 'piano';
+}
+
+/** The saved state; each missing or invalid field falls back on its own. */
+function restorePersisted(saved: { settings?: unknown; pane?: unknown; displayMode?: unknown }): Persisted {
+  const settings = sanitizePlaySettings(saved.settings);
+  return {
+    settings,
+    ...playResumeState(settings, saved),
+    pane: PANES.includes(saved.pane as PlayPane) ? (saved.pane as PlayPane) : DEFAULT_PANE,
+    displayMode: savedDisplayMode(saved.displayMode, settings),
+  };
+}
+
 function load(): Persisted {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw) as { settings?: unknown; pane?: unknown; displayMode?: unknown };
-      const settings = sanitizePlaySettings(parsed.settings);
-      return {
-        settings,
-        ...playResumeState(settings, parsed),
-        pane: PANES.includes(parsed.pane as PlayPane) ? (parsed.pane as PlayPane) : 'instrument',
-        displayMode: parsed.displayMode === 'piano' || parsed.displayMode === 'guitar'
-          ? parsed.displayMode : settings.visualMode === 'guitar' ? 'guitar' : 'piano',
-      };
-    }
+    if (raw) return restorePersisted(JSON.parse(raw));
     // First load with the Play panel: keep a drum pick made before it.
     const legacy = localStorage.getItem(LEGACY_DRUM_KEY);
     if (legacy !== null) {
-      const settings = sanitizePlaySettings({
+      return freshPersisted(sanitizePlaySettings({
         ...DEFAULT_PLAY_SETTINGS,
         drumMode: 'manual',
         drumPatternId: legacy === 'null' ? null : Number(legacy),
-      });
-      return {
-        settings,
-        ...playResumeState(settings),
-        pane: 'instrument',
-        displayMode: 'piano',
-      };
+      }));
     }
   } catch {
     // storage unavailable or corrupt — start from the defaults
   }
-  return { settings: DEFAULT_PLAY_SETTINGS, ...playResumeState(DEFAULT_PLAY_SETTINGS), pane: 'instrument', displayMode: 'piano' };
+  return freshPersisted(DEFAULT_PLAY_SETTINGS);
 }
 
 interface PlayState extends PlayResumeState {
@@ -110,7 +120,7 @@ interface PlayState extends PlayResumeState {
 const initial = load();
 
 export const usePlayStore = create<PlayState>((set) => {
-  const update = (patch: Partial<PlaySettings>) =>
+  const updateSettings = (patch: Partial<PlaySettings>) =>
     set((state) => ({ settings: { ...state.settings, ...patch } }));
   return {
     settings: initial.settings,
@@ -121,18 +131,18 @@ export const usePlayStore = create<PlayState>((set) => {
 
     setPane: (pane) => set({ pane }),
     setDisplayMode: (displayMode) => set({ displayMode }),
-    setHarmonyOverride: (harmonyOverride) => update({ harmonyOverride }),
-    setHarmonyRhythmId: (harmonyRhythmId) => update({ harmonyRhythmId }),
+    setHarmonyOverride: (harmonyOverride) => updateSettings({ harmonyOverride }),
+    setHarmonyRhythmId: (harmonyRhythmId) => updateSettings({ harmonyRhythmId }),
     setDrumAuto: () => set(setDrumAutoState),
     setDrumsEnabled: (on) => set((state) => setDrumsEnabledState(state, on)),
     setDrumPattern: (id) => set((state) => setDrumPatternState(state, id)),
-    setBassEnabled: (bassEnabled) => update({ bassEnabled }),
+    setBassEnabled: (bassEnabled) => updateSettings({ bassEnabled }),
     setHarmonyEnabled: (on) => set((state) => setHarmonyEnabledState(state, on)),
-    setVisualMode: (visualMode) => update({ visualMode }),
-    setMasterVolume: (volume) => update({ masterVolume: sanitizeVolume(volume, DEFAULT_PLAY_SETTINGS.masterVolume) }),
+    setVisualMode: (visualMode) => updateSettings({ visualMode }),
+    setMasterVolume: (volume) => updateSettings({ masterVolume: sanitizeVolume(volume, DEFAULT_PLAY_SETTINGS.masterVolume) }),
     setHarmonyVolume: (volume) => set((state) => setHarmonyVolumeState(state, volume)),
-    setBassVolume: (volume) => update({ bassVolume: sanitizeVolume(volume, DEFAULT_PLAY_SETTINGS.bassVolume) }),
-    setDrumVolume: (volume) => update({ drumVolume: sanitizeVolume(volume, DEFAULT_PLAY_SETTINGS.drumVolume) }),
+    setBassVolume: (volume) => updateSettings({ bassVolume: sanitizeVolume(volume, DEFAULT_PLAY_SETTINGS.bassVolume) }),
+    setDrumVolume: (volume) => updateSettings({ drumVolume: sanitizeVolume(volume, DEFAULT_PLAY_SETTINGS.drumVolume) }),
     replaceSettings: (raw) => {
       const settings = sanitizePlaySettings(raw);
       set({ settings, ...playResumeState(settings) });
@@ -151,6 +161,12 @@ function persist(state: Persisted): void {
   }
 }
 
+/** Whether any field that persist() writes changed. */
+function persistedFieldsChanged(state: Persisted, prev: Persisted): boolean {
+  return state.settings !== prev.settings || state.pane !== prev.pane || state.displayMode !== prev.displayMode
+    || state.lastHarmonyVolume !== prev.lastHarmonyVolume || state.resumeDrum !== prev.resumeDrum;
+}
+
 /**
  * Put the editor's play settings, resolved against the editor song's
  * genre, into the playback engine. Runs on every change; the editor
@@ -162,8 +178,7 @@ export function applyEditorPlayConfig(): void {
 }
 
 usePlayStore.subscribe((state, prev) => {
-  if (state.settings !== prev.settings || state.pane !== prev.pane || state.displayMode !== prev.displayMode
-    || state.lastHarmonyVolume !== prev.lastHarmonyVolume || state.resumeDrum !== prev.resumeDrum) persist(state);
+  if (persistedFieldsChanged(state, prev)) persist(state);
   if (state.settings !== prev.settings) applyEditorPlayConfig();
 });
 

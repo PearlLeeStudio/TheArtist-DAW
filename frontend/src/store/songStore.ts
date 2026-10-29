@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { Song, Measure, Chord, SlotAddress, SectionType, SongSection } from '../models/types';
+import type { TargetChord } from '../engine/generationComparison';
 import { calculateRomanNumeral } from '../engine/romanNumeral';
 import { generatePianoVoicing } from '../engine/voicingEngine';
 import { transposeSongKey } from '../engine/songTranspose';
@@ -38,6 +39,11 @@ function createMeasure(index: number): Measure {
   };
 }
 
+/** `count` empty measures numbered from `firstIndex`. */
+function createMeasures(firstIndex: number, count: number): Measure[] {
+  return Array.from({ length: count }, (_, i) => createMeasure(firstIndex + i));
+}
+
 function createInitialSong(): Song {
   return {
     id: crypto.randomUUID(),
@@ -64,6 +70,45 @@ function analyzeChord(chord: Chord, key: string): Chord {
     romanNumeral: calculateRomanNumeral(chord, key),
     voicing: chord.voicing.length > 0 ? chord.voicing : generatePianoVoicing(chord),
   };
+}
+
+/** The tempo range setBpm and setBpmLive clamp to. SongSettings' BPM input
+ *  and the Play panel's BPM fader (ControllerPane) offer the same 20..300,
+ *  and sessionStorage rejects a saved project outside it: keep them in step. */
+const MIN_BPM = 20;
+const MAX_BPM = 300;
+
+function clampBpm(bpm: number): number {
+  return Math.max(MIN_BPM, Math.min(MAX_BPM, bpm));
+}
+
+/** setChords' updates per measure index, each list in the given order. */
+function groupByMeasure(updates: TargetChord[]): Map<number, TargetChord[]> {
+  const byMeasure = new Map<number, TargetChord[]>();
+  for (const update of updates) {
+    const list = byMeasure.get(update.address.measureIndex) ?? [];
+    list.push(update);
+    byMeasure.set(update.address.measureIndex, list);
+  }
+  return byMeasure;
+}
+
+function byStartMeasure(a: SongSection, b: SongSection): number {
+  return a.startMeasure - b.startMeasure;
+}
+
+/** The song's length once the empty measures outside every section are
+ *  dropped from its end, never going below `minLength`. */
+function lengthWithoutEmptyTail(measures: Measure[], sections: SongSection[], minLength: number): number {
+  let end = measures.length;
+  while (
+    end > Math.max(0, minLength) &&
+    !measures[end - 1].chords.some(Boolean) &&
+    !sectionAt({ sections }, end - 1)
+  ) {
+    end--;
+  }
+  return end;
 }
 
 const STORAGE_KEY = 'theartist-song';
@@ -119,6 +164,8 @@ interface SongState {
   playbackPosition: { measureIndex: number; slotIndex: 0 | 1 } | null;
   isPlaying: boolean;
   midiCandidates: Chord[];
+  /** The song the last import replaced, for undoImport; any other song
+   *  replacement clears it. */
   previousImportSong: Song | null;
 
   // Actions
@@ -126,7 +173,7 @@ interface SongState {
   setTitle: (title: string) => void;
   setBpm: (bpm: number) => void;
   /** Change the tempo without stopping playback (the Play panel's BPM
-   *  knob): the running Transport speeds up or slows down in place. */
+   *  fader): the running Transport speeds up or slows down in place. */
   setBpmLive: (bpm: number) => void;
   setKey: (key: string) => void;
   setTimeSignature: (ts: [number, number]) => void;
@@ -134,8 +181,10 @@ interface SongState {
   selectSlot: (slot: SlotAddress | null) => void;
   selectSlotRange: (from: SlotAddress, to: SlotAddress) => void;
   setChord: (address: SlotAddress, chord: Chord | null) => void;
-  /** Several slots in one song update (applying an A/B/C suggestion). */
-  setChords: (updates: Array<{ address: SlotAddress; chord: Chord | null }>, options?: { preserveAnalysis?: boolean }) => void;
+  /** Several slots in one song update (applying an A/B/C suggestion).
+   *  `preserveAnalysis` writes copies of the chords as given (restoring
+   *  captured originals) instead of running analyzeChord on them. */
+  setChords: (updates: TargetChord[], options?: { preserveAnalysis?: boolean }) => void;
   addMeasures: (count?: number) => void;
   /** Record a song-form section of `bars` measures right after the last
    *  used measure (see sectionPlacement), appending measures only as
@@ -154,14 +203,38 @@ interface SongState {
    *  saved session into the staff. Stops playback and clears
    *  selection / live-MIDI state to match. */
   setSong: (song: Song) => void;
+  /** setSong for an imported score, keeping the replaced song for undoImport. */
   importSong: (song: Song) => void;
+  /** Bring back the song the last import replaced, if any. */
   undoImport: () => void;
+  /** Replace the section list (kept sorted by start measure). Returns
+   *  checkSectionRanges' message, changing nothing, when the sections do
+   *  not fit the song; null once applied. */
   setSections: (sections: SongSection[]) => string | null;
   setPlaybackPosition: (pos: { measureIndex: number; slotIndex: 0 | 1 } | null) => void;
   setIsPlaying: (playing: boolean) => void;
   resetPlayback: () => void;
   recalculateRomanNumerals: () => void;
   setMidiCandidates: (chords: Chord[]) => void;
+}
+
+/**
+ * Store fields for a song that replaces the current one (clearSong,
+ * setSong): a new songEpoch, and no selection, playback, live-MIDI
+ * candidates or import undo left over from the old song. Listeners reset
+ * their own song-bound state on the epoch bump (generationStore drops its
+ * suggestions, useMidiCapture its captured notes).
+ */
+function songReplacement(song: Song, previousEpoch: number): Partial<SongState> {
+  return {
+    song,
+    songEpoch: previousEpoch + 1,
+    selectedSlots: [],
+    playbackPosition: null,
+    isPlaying: false,
+    midiCandidates: [],
+    previousImportSong: null,
+  };
 }
 
 export const useSongStore = create<SongState>((set, get) => ({
@@ -178,7 +251,7 @@ export const useSongStore = create<SongState>((set, get) => ({
   })),
 
   setBpm: (bpm) => {
-    const clamped = Math.max(20, Math.min(300, bpm));
+    const clamped = clampBpm(bpm);
     set((state) => ({
       ...interruptIfPlaying(state),
       song: { ...state.song, bpm: clamped },
@@ -186,7 +259,7 @@ export const useSongStore = create<SongState>((set, get) => ({
   },
 
   setBpmLive: (bpm) => {
-    const clamped = Math.max(20, Math.min(300, Math.round(bpm)));
+    const clamped = clampBpm(Math.round(bpm));
     // Transport events sit at musical positions, so retiming them in place
     // keeps a running (or paused) playback in step with the new tempo.
     setLiveBpm(clamped);
@@ -229,20 +302,15 @@ export const useSongStore = create<SongState>((set, get) => ({
 
   setChords: (updates, options) => set((state) => {
     if (updates.length === 0) return {};
-    const byMeasure = new Map<number, Array<{ address: SlotAddress; chord: Chord | null }>>();
-    for (const update of updates) {
-      const list = byMeasure.get(update.address.measureIndex) ?? [];
-      list.push(update);
-      byMeasure.set(update.address.measureIndex, list);
-    }
+    const updatesByMeasure = groupByMeasure(updates);
+    const slotChord = (chord: Chord) =>
+      options?.preserveAnalysis ? structuredClone(chord) : analyzeChord(chord, state.song.key);
     const measures = state.song.measures.map((m, mi) => {
-      const list = byMeasure.get(mi);
-      if (!list) return m;
+      const measureUpdates = updatesByMeasure.get(mi);
+      if (!measureUpdates) return m;
       const newChords = [...m.chords] as [Chord | null, Chord | null];
-      for (const { address, chord } of list) {
-        newChords[address.slotIndex] = chord
-          ? options?.preserveAnalysis ? structuredClone(chord) : analyzeChord(chord, state.song.key)
-          : null;
+      for (const { address, chord } of measureUpdates) {
+        newChords[address.slotIndex] = chord ? slotChord(chord) : null;
       }
       return { ...m, chords: newChords };
     });
@@ -250,8 +318,7 @@ export const useSongStore = create<SongState>((set, get) => ({
   }),
 
   addMeasures: (count = 4) => set((state) => {
-    const currentLength = state.song.measures.length;
-    const newMeasures = Array.from({ length: count }, (_, i) => createMeasure(currentLength + i));
+    const newMeasures = createMeasures(state.song.measures.length, count);
     return {
       ...interruptIfPlaying(state),
       song: {
@@ -272,10 +339,8 @@ export const useSongStore = create<SongState>((set, get) => ({
       pending: { addedMeasures: measuresToAdd },
     };
     set((state) => {
-      const currentLength = state.song.measures.length;
-      const added = Array.from({ length: measuresToAdd }, (_, i) => createMeasure(currentLength + i));
-      const sections = [...(state.song.sections ?? []), section]
-        .sort((a, b) => a.startMeasure - b.startMeasure);
+      const added = createMeasures(state.song.measures.length, measuresToAdd);
+      const sections = [...(state.song.sections ?? []), section].sort(byStartMeasure);
       return {
         ...interruptIfPlaying(state),
         song: withAutoTitle({
@@ -304,16 +369,9 @@ export const useSongStore = create<SongState>((set, get) => ({
     const current = state.song.sections ?? [];
     const sections = current.filter((s) => s.id !== id);
     if (sections.length === current.length) return {};
-    let end = state.song.measures.length;
-    if (trimToLength !== undefined) {
-      while (
-        end > Math.max(0, trimToLength) &&
-        !state.song.measures[end - 1].chords.some(Boolean) &&
-        !sectionAt({ sections }, end - 1)
-      ) {
-        end--;
-      }
-    }
+    const end = trimToLength === undefined
+      ? state.song.measures.length
+      : lengthWithoutEmptyTail(state.song.measures, sections, trimToLength);
     const measures = end < state.song.measures.length
       ? state.song.measures.slice(0, end)
       : state.song.measures;
@@ -327,34 +385,14 @@ export const useSongStore = create<SongState>((set, get) => ({
   clearSong: () => {
     // Always force-stop playback on full clear — user intent is "reset everything"
     stopPlayback();
-    // Reset store-held transient view state too. Component-local state
-    // (MidiStatus suggestions, …) reacts to the new song.id via its own
-    // useEffect; generationStore drops its suggestions on the songEpoch bump.
     // The fresh song has no sections and an automatic title again.
-    set((state) => ({
-      song: createInitialSong(),
-      songEpoch: state.songEpoch + 1,
-      selectedSlots: [],
-      playbackPosition: null,
-      isPlaying: false,
-      midiCandidates: [],
-      previousImportSong: null,
-    }));
+    set((state) => songReplacement(createInitialSong(), state.songEpoch));
   },
 
   setSong: (song) => {
     stopPlayback();
-    set((state) => ({
-      // Sessions saved before song-form sections existed lack those fields.
-      song: withSongFormDefaults(structuredClone(song)),
-      // A replacement even when the session kept the working song's id.
-      songEpoch: state.songEpoch + 1,
-      selectedSlots: [],
-      playbackPosition: null,
-      isPlaying: false,
-      midiCandidates: [],
-      previousImportSong: null,
-    }));
+    // Sessions saved before song-form sections existed lack those fields.
+    set((state) => songReplacement(withSongFormDefaults(structuredClone(song)), state.songEpoch));
   },
 
   importSong: (song) => {
@@ -372,7 +410,7 @@ export const useSongStore = create<SongState>((set, get) => ({
     const error = checkSectionRanges(sections, get().song.measures.length);
     if (error) return error;
     set((state) => ({
-      song: withAutoTitle({ ...state.song, sections: structuredClone(sections).sort((a, b) => a.startMeasure - b.startMeasure) }),
+      song: withAutoTitle({ ...state.song, sections: structuredClone(sections).sort(byStartMeasure) }),
     }));
     return null;
   },

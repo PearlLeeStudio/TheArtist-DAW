@@ -13,25 +13,38 @@ export interface Measure {
   chords: [Chord | null, Chord | null];
 }
 
+/** Score import (a PDF or image read into a song; see Song.importSource).
+ *  'chord_symbols' transcribes printed chord symbols only; 'infer_harmony'
+ *  may also propose chords from the notes. */
 export type ScoreImportMode = 'chord_symbols' | 'infer_harmony';
+/** Where a bar's chords came from: printed symbols, a proposal read from
+ *  the notes, or nothing readable. */
 export type ImportedChordBasis = 'printed' | 'inferred' | 'unreadable';
 export type ImportConfidence = 'high' | 'medium' | 'low';
+/** Who read the score: the local reader, the Meta model, or each for some bars. */
 export type ScoreAnalysisSource = 'local' | 'meta' | 'mixed';
+/** What the import read in one source bar, kept as provenance. */
 export interface ImportMeasureSource {
   chordBasis: ImportedChordBasis;
   confidence: ImportConfidence;
+  /** The reader's note on the bar: its evidence, rationale or what was unreadable. */
   evidence: string;
   /** Initial recognition/proposal, retained after the user edits the score. */
   originalChords: string[];
   /** Initial import issue to finish in the score editor; source text stays intact. */
   editorReview?: string;
+  /** The bar's position in the source's written order. */
   sourceMeasureIndex?: number;
+  /** Who read this bar; model and requestId stay null for the local reader. */
   analysisSource?: 'local' | 'meta';
   model?: string | null;
   requestId?: string | null;
+  /** Sounding pitches; writtenNotes keeps them as written (under an 8va
+   *  line the written C6 sounds as C7). */
   notes?: string[];
   writtenNotes?: string[];
   bassNotes?: string[];
+  /** The source bar itself is a rest or N.C. */
   originalNoChord?: boolean;
   /** The user explicitly entered N.C. for a bar that had no source rest/N.C. */
   userNoChord?: boolean;
