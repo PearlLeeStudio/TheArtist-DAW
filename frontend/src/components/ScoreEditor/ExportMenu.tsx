@@ -5,10 +5,63 @@ import {
   buildExportSpec, downloadExportBlob, exportResponseError,
   isLoopbackHostname, requestMidiExport, safeExportFilename,
 } from '../../engine/exportSpec';
+import type { ExportSpec } from '../../engine/exportSpec';
 import type { PdfTheme } from '../../engine/pdf';
 
-interface DawTarget { id: 'logic' | 'ableton'; name: string; available: boolean; action: 'open' | 'reveal' }
-type ExportAction = 'midi' | PdfTheme | 'logic' | 'ableton';
+type DawId = 'logic' | 'ableton';
+/** How the server hands the MIDI over: opened in the DAW, or shown in Finder. */
+type DawHandoff = 'open' | 'reveal';
+interface DawTarget { id: DawId; name: string; available: boolean; action: DawHandoff }
+type ExportAction = 'midi' | PdfTheme | DawId;
+
+const DAW_DETECTION_TIMEOUT_MS = 10_000;
+const DAW_HANDOFF_TIMEOUT_MS = 60_000;
+const CHECKING_DAWS = 'Checking installed DAWs…';
+const ERROR_TEXT_COLOR = '#d97070';
+
+/** The DAWs the local server can hand MIDI to. */
+async function fetchDawTargets(signal: AbortSignal): Promise<DawTarget[]> {
+  const response = await fetch('/api/daw/targets', { signal });
+  if (!response.ok) throw await exportResponseError(response);
+  const body: { targets?: DawTarget[] } = await response.json();
+  if (!Array.isArray(body.targets)) throw new Error('Could not read installed DAWs.');
+  return body.targets;
+}
+
+/** Have the local server open the song in a DAW; resolves with how the DAW took it. */
+async function handOffToDaw(target: DawId, spec: ExportSpec, controller: AbortController): Promise<DawHandoff> {
+  let timedOut = false;
+  const timer = setTimeout(() => { timedOut = true; controller.abort(); }, DAW_HANDOFF_TIMEOUT_MS);
+  try {
+    const response = await fetch('/api/daw/open', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ target, spec }), signal: controller.signal,
+    });
+    if (!response.ok) throw await exportResponseError(response);
+    const result: { action?: string; path?: string } = await response.json();
+    if (result.action !== 'open' && result.action !== 'reveal') throw new Error('The DAW did not confirm the handoff.');
+    return result.action;
+  } catch (error) {
+    if (timedOut) throw new Error('DAW handoff timed out. Check the DAW before trying again.', { cause: error });
+    throw error;
+  } finally { clearTimeout(timer); }
+}
+
+/** Tooltip of a DAW button: why it is disabled, or undefined when it can be used. */
+function dawUnavailableReason(onLocalhost: boolean, targets: DawTarget[] | null, targetError: string, target: DawTarget | undefined): string | undefined {
+  if (!onLocalhost) return 'Available on localhost. Download MIDI for use on this computer.';
+  if (targetError) return targetError;
+  if (!targets) return CHECKING_DAWS;
+  return target?.available ? undefined : 'This DAW is not installed on the server computer.';
+}
+
+/** The note under the DAW buttons. */
+function dawHint(onLocalhost: boolean, targets: DawTarget[] | null, targetError: string): string {
+  if (!onLocalhost) return 'Download .mid, then import it into your DAW. Automatic handoff is available on localhost.';
+  if (targetError) return targetError;
+  if (!targets) return CHECKING_DAWS;
+  return 'Local Mac: Logic opens the MIDI; Ableton uses drag from Finder.';
+}
 
 export default function ExportMenu() {
   const [open, setOpen] = useState(false);
@@ -16,48 +69,54 @@ export default function ExportMenu() {
   const [feedback, setFeedback] = useState<{ text: string; error: boolean } | null>(null);
   const [targets, setTargets] = useState<DawTarget[] | null>(null);
   const [targetError, setTargetError] = useState('');
-  const root = useRef<HTMLDivElement>(null);
-  const trigger = useRef<HTMLButtonElement>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
   const busyRef = useRef(false);
   const requestRef = useRef<AbortController | null>(null);
   const panelId = useId();
-  const local = isLoopbackHostname(window.location.hostname);
+  // The server opens the DAW on its own computer, so handoff is offered only on localhost.
+  const onLocalhost = isLoopbackHostname(window.location.hostname);
 
+  // Abort a running export when the menu unmounts.
   useEffect(() => () => requestRef.current?.abort(), []);
+
+  // While open, a pointer press outside the menu or Escape closes it.
   useEffect(() => {
     if (!open) return;
-    const outside = (event: PointerEvent) => {
-      if (event.target instanceof Node && !root.current?.contains(event.target)) setOpen(false);
+    const closeOnOutsidePointer = (event: PointerEvent) => {
+      if (event.target instanceof Node && !rootRef.current?.contains(event.target)) setOpen(false);
     };
-    const escape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') { setOpen(false); trigger.current?.focus(); }
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') { setOpen(false); triggerRef.current?.focus(); }
     };
-    document.addEventListener('pointerdown', outside);
-    document.addEventListener('keydown', escape);
+    document.addEventListener('pointerdown', closeOnOutsidePointer);
+    document.addEventListener('keydown', closeOnEscape);
     return () => {
-      document.removeEventListener('pointerdown', outside);
-      document.removeEventListener('keydown', escape);
+      document.removeEventListener('pointerdown', closeOnOutsidePointer);
+      document.removeEventListener('keydown', closeOnEscape);
     };
   }, [open]);
 
+  // Every opening asks the local server again which DAWs are installed.
   useEffect(() => {
-    if (!open || !local) return;
+    if (!open || !onLocalhost) return;
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 10_000);
+    let timedOut = false;
+    const timer = setTimeout(() => { timedOut = true; controller.abort(); }, DAW_DETECTION_TIMEOUT_MS);
     void (async () => {
       try {
-        const response = await fetch('/api/daw/targets', { signal: controller.signal });
-        if (!response.ok) throw await exportResponseError(response);
-        const body: { targets?: DawTarget[] } = await response.json();
-        if (!Array.isArray(body.targets)) throw new Error('Could not read installed DAWs.');
-        if (!controller.signal.aborted) setTargets(body.targets);
+        const found = await fetchDawTargets(controller.signal);
+        if (!controller.signal.aborted) setTargets(found);
       } catch (error) {
         if (!controller.signal.aborted) setTargetError(error instanceof Error ? error.message : 'Could not check installed DAWs.');
-        else if (!controller.signal.reason || controller.signal.reason.name === 'AbortError') setTargetError('DAW detection did not finish. Download MIDI is still available.');
+        else if (timedOut) setTargetError('DAW detection did not finish. Download MIDI is still available.');
       } finally { clearTimeout(timer); }
     })();
+    // Closing the menu aborts quietly. Of the two abort sources only the timeout
+    // shows a message; the catch checks `timedOut`, so the 'closed' reason is
+    // never read. Failures that are not aborts are still shown.
     return () => { clearTimeout(timer); controller.abort('closed'); };
-  }, [open, local]);
+  }, [open, onLocalhost]);
 
   const runExport = async (action: ExportAction) => {
     if (busyRef.current) return;
@@ -74,25 +133,11 @@ export default function ExportMenu() {
         downloadExportBlob(blob, safeExportFilename(song.title, 'mid'));
         setFeedback({ text: 'MIDI downloaded. Import it into a DAW to choose sounds and continue arranging.', error: false });
       } else if (action === 'logic' || action === 'ableton') {
-        if (!local) throw new Error('Download MIDI and open it on your computer. DAW handoff requires localhost.');
-        const spec = buildExportSpec(song, settings);
-        let timedOut = false;
-        const timer = setTimeout(() => { timedOut = true; controller.abort(); }, 60_000);
-        try {
-          const response = await fetch('/api/daw/open', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ target: action, spec }), signal: controller.signal,
-          });
-          if (!response.ok) throw await exportResponseError(response);
-          const result: { action?: string; path?: string } = await response.json();
-          if (result.action !== 'open' && result.action !== 'reveal') throw new Error('The DAW did not confirm the handoff.');
-          setFeedback({ text: result.action === 'reveal'
-            ? 'MIDI shown in Finder. Drag it into Ableton Live to continue.'
-            : 'MIDI sent to Logic Pro. Choose or create a project there to continue.', error: false });
-        } catch (error) {
-          if (timedOut) throw new Error('DAW handoff timed out. Check the DAW before trying again.', { cause: error });
-          throw error;
-        } finally { clearTimeout(timer); }
+        if (!onLocalhost) throw new Error('Download MIDI and open it on your computer. DAW handoff requires localhost.');
+        const handoff = await handOffToDaw(action, buildExportSpec(song, settings), controller);
+        setFeedback({ text: handoff === 'reveal'
+          ? 'MIDI shown in Finder. Drag it into Ableton Live to continue.'
+          : 'MIDI sent to Logic Pro. Choose or create a project there to continue.', error: false });
       } else {
         const { createSongPdf } = await import('../../engine/pdf');
         const blob = await createSongPdf(song, action);
@@ -108,25 +153,26 @@ export default function ExportMenu() {
     }
   };
 
+  const toggleMenu = () => {
+    // Opening forgets the last DAW check; the detection effect runs a new one.
+    if (!open) { setTargets(null); setTargetError(''); }
+    setOpen(!open);
+  };
+
   const actionButton = (label: string, action: ExportAction, disabled = false, title?: string) => (
     <button type="button" onClick={() => { void runExport(action); }} disabled={busy || disabled} title={title}
       className="block w-full px-3 py-2 text-left text-xs btn-hover disabled:opacity-40 disabled:cursor-not-allowed"
       style={{ color: 'var(--text-primary)' }}>{label}</button>
   );
-  const dawButton = (id: 'logic' | 'ableton', label: string) => {
+  const dawButton = (id: DawId, label: string) => {
     const target = targets?.find((item) => item.id === id);
-    const reason = !local ? 'Available on localhost. Download MIDI for use on this computer.'
-      : targetError || (!targets ? 'Checking installed DAWs…' : !target?.available ? 'This DAW is not installed on the server computer.' : undefined);
-    return actionButton(label, id, !local || !target?.available, reason);
+    return actionButton(label, id, !onLocalhost || !target?.available, dawUnavailableReason(onLocalhost, targets, targetError, target));
   };
 
   return (
-    <div className="relative" ref={root}>
-      <button ref={trigger} type="button" aria-expanded={open} aria-controls={panelId}
-        onClick={() => {
-          if (!open) { setTargets(null); setTargetError(''); }
-          setOpen(!open);
-        }}
+    <div className="relative" ref={rootRef}>
+      <button ref={triggerRef} type="button" aria-expanded={open} aria-controls={panelId}
+        onClick={toggleMenu}
         className="px-3 py-1 text-xs font-bold whitespace-nowrap btn-hover"
         style={{ background: 'var(--btn-bg)', color: 'var(--text-heading)', border: '1px solid var(--border)' }}>
         {busy ? 'Exporting…' : 'Export ▾'}
@@ -146,12 +192,11 @@ export default function ExportMenu() {
           {dawButton('ableton', 'Show MIDI for Ableton Live')}
         </div>
         <p className="px-3 py-2 text-[10px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>
-          {!local ? 'Download .mid, then import it into your DAW. Automatic handoff is available on localhost.'
-            : targetError || (!targets ? 'Checking installed DAWs…' : 'Local Mac: Logic opens the MIDI; Ableton uses drag from Finder.')}
+          {dawHint(onLocalhost, targets, targetError)}
         </p>
         {busy && <p role="status" className="px-3 pb-2 text-xs" style={{ color: 'var(--text-soft)' }}>Preparing export…</p>}
         {feedback && <p role={feedback.error ? 'alert' : 'status'} className="px-3 py-2 text-xs leading-relaxed break-words"
-          style={{ color: feedback.error ? '#d97070' : 'var(--text-accent)', borderTop: '1px solid var(--border)' }}>{feedback.text}</p>}
+          style={{ color: feedback.error ? ERROR_TEXT_COLOR : 'var(--text-accent)', borderTop: '1px solid var(--border)' }}>{feedback.text}</p>}
       </div>}
     </div>
   );

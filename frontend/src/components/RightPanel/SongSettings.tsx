@@ -53,11 +53,13 @@ export default function SongSettings() {
   const setTimeSignature = useSongStore((s) => s.setTimeSignature);
   const setGenre = useSongStore((s) => s.setGenre);
 
+  // BPM text while it is being typed; null means the field shows song.bpm.
+  // Committing keeps a positive number and discards anything else.
   const [bpmDraft, setBpmDraft] = useState<string | null>(null);
 
   const commitBpm = () => {
-    const n = Number(bpmDraft ?? song.bpm);
-    if (Number.isFinite(n) && n > 0) setBpm(n);
+    const bpm = Number(bpmDraft ?? song.bpm);
+    if (Number.isFinite(bpm) && bpm > 0) setBpm(bpm);
     setBpmDraft(null);
   };
 
@@ -106,7 +108,11 @@ export default function SongSettings() {
           className=" px-1.5 py-0.5 text-sm"
           style={fieldStyle}
         >
-          {!STANDARD_KEYS.includes(song.key) && <option value={song.key} disabled>{song.key} — choose a supported key</option>}
+          {/* An unsupported song key stays listed (disabled), so the select
+              does not display a key the song does not have. */}
+          {!STANDARD_KEYS.includes(song.key) && (
+            <option value={song.key} disabled>{song.key} — choose a supported key</option>
+          )}
           {STANDARD_KEYS.map((k) => (
             <option key={k} value={k}>{k}</option>
           ))}

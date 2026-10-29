@@ -11,7 +11,7 @@ import {
 } from '../../engine/playback';
 import { computeArrangement } from '../../engine/arrangement';
 import { enginePlayConfig, playSettingsFromSession, resolveVoicingMode } from '../../engine/playSettings';
-import type { SavedSession } from '../../models/types';
+import type { PlaySettings, SavedSession, Song } from '../../models/types';
 import SessionStaff from './SessionStaff';
 
 const buttonStyle = {
@@ -19,6 +19,70 @@ const buttonStyle = {
 };
 const primaryButtonStyle = { background: 'var(--text-heading)', color: 'var(--bg-primary)' };
 const mutedStyle = { color: 'var(--text-muted)' };
+
+const PLAYBACK_FAILED = 'Playback could not start. Please try again.';
+
+interface Notice { error: boolean; message: string }
+
+/** The thrown Error's own message, or the fallback for anything else. */
+function errorMessage(error: unknown, fallback: string): string {
+  return error instanceof Error ? error.message : fallback;
+}
+
+function errorNotice(error: unknown, fallback: string): Notice {
+  return { error: true, message: errorMessage(error, fallback) };
+}
+
+/** The genre the session was generated with, else the song's own. */
+function sessionGenre(session: SavedSession): string | null {
+  return session.generation.genre ?? session.song.genre ?? null;
+}
+
+/** The saved song with the session's genre, as it opens, plays and exports. */
+function songWithSessionGenre(session: SavedSession): Song {
+  return { ...session.song, genre: sessionGenre(session) };
+}
+
+/** Key · genre · tempo · meter · length, for a project card. */
+function sessionSummary(session: SavedSession): string {
+  const { song } = session;
+  return [
+    song.key, sessionGenre(session)?.replaceAll('_', ' '), `${song.bpm} BPM`,
+    song.timeSignature.join('/'), `${song.measures.length} bars`,
+  ].filter(Boolean).join(' · ');
+}
+
+/**
+ * Schedule one pass of a project with its saved instruments and levels. The
+ * saved bass pattern is used as is (loadAll drops an invalid cache); a
+ * session without one gets a fresh pattern.
+ */
+function scheduleSession(session: SavedSession, onEnd: () => void): void {
+  const song = songWithSessionGenre(session);
+  const genre = song.genre;
+  const settings = playSettingsFromSession(session.generation);
+  const arrangement = session.arrangement ?? computeArrangement(song);
+  applyPlayConfig(enginePlayConfig(settings, genre));
+  schedulePlayback(song, () => {}, undefined, resolveVoicingMode(settings, genre), onEnd, arrangement, false);
+}
+
+/** True when a saved project already holds this song, model and Play settings.
+ *  components/Layout.tsx has the same check (also isAlreadySaved) before an
+ *  import replaces the score; keep the two in step. */
+function isAlreadySaved(song: Song, model: string, settings: PlaySettings): boolean {
+  const songJson = JSON.stringify(song);
+  const settingsJson = JSON.stringify(settings);
+  return useSessionStore.getState().sessions.some((saved) =>
+    JSON.stringify(saved.song) === songJson && saved.generation.model === model &&
+    JSON.stringify(playSettingsFromSession(saved.generation)) === settingsJson);
+}
+
+/** Replace the editor's song, model and Play settings with the project's. */
+function openInEditor(session: SavedSession): void {
+  useSongStore.getState().setSong(songWithSessionGenre(session));
+  useGenerationStore.getState().setModelKey(session.generation.model);
+  usePlayStore.getState().replaceSettings(playSettingsFromSession(session.generation));
+}
 
 interface SessionRowProps {
   session: SavedSession;
@@ -43,11 +107,6 @@ function SessionRow({
   const isActive = activeSessionId === session.id;
   const isLoading = loadingSessionId === session.id;
   const buttonLabel = isLoading ? 'Loading…' : !isActive ? '▶ Play' : isPaused ? '▶ Resume' : '⏸ Pause';
-  const effectiveGenre = session.generation.genre ?? session.song.genre;
-  const meta = [
-    session.song.key, effectiveGenre?.replaceAll('_', ' '), `${session.song.bpm} BPM`,
-    session.song.timeSignature.join('/'), `${session.song.measures.length} bars`,
-  ].filter(Boolean).join(' · ');
 
   return (
     <article className="p-4 space-y-3" style={{
@@ -69,7 +128,7 @@ function SessionRow({
           <h3 className="font-display text-xl break-words" style={{ color: 'var(--text-heading)', fontWeight: 600 }}>
             {session.name}
           </h3>
-          <div className="text-xs mt-1" style={mutedStyle}>{meta}</div>
+          <div className="text-xs mt-1" style={mutedStyle}>{sessionSummary(session)}</div>
         </div>
         <div className="flex flex-wrap gap-2">
           <button onClick={() => onTogglePlay(session)} disabled={loadingSessionId !== null}
@@ -101,11 +160,12 @@ function SessionRow({
 }
 
 interface MyPageProps { onExitToEditor: () => void }
-interface Notice { error: boolean; message: string }
 
 export default function MyPage({ onExitToEditor }: MyPageProps) {
   const sessions = useSessionStore((state) => state.sessions);
   const mountedRef = useRef(true);
+  // Bumped by every play request, stop and mount; an async play step only
+  // applies while its request is still the latest.
   const playSequence = useRef(0);
   const exportController = useRef<AbortController | null>(null);
   const selectAllRef = useRef<HTMLInputElement>(null);
@@ -144,50 +204,53 @@ export default function MyPage({ onExitToEditor }: MyPageProps) {
     setIsPaused(false);
   };
 
+  /** Deleting the playing or loading project stops it; other playback continues. */
+  const stopPlaybackIfDeleted = (deletedIds: readonly string[]) => {
+    if (deletedIds.some((id) => id === activeSessionId || id === loadingSessionId)) stopProjectPlayback();
+  };
+
+  const pauseOrResume = () => {
+    try {
+      if (isPaused) resumePlayback(); else pausePlayback();
+      setIsPaused(!isPaused);
+    } catch (error) {
+      stopProjectPlayback();
+      setNotice(errorNotice(error, PLAYBACK_FAILED));
+    }
+  };
+
   const handleTogglePlay = async (session: SavedSession) => {
     setNotice(null);
     if (activeSessionId === session.id && !loadingSessionId) {
-      try {
-        if (isPaused) resumePlayback(); else pausePlayback();
-        setIsPaused(!isPaused);
-      } catch (error) {
-        stopProjectPlayback();
-        setNotice({ error: true, message: error instanceof Error ? error.message : 'Playback could not start. Please try again.' });
-      }
+      pauseOrResume();
       return;
     }
     const sequence = ++playSequence.current;
+    const isLatestRequest = () => mountedRef.current && sequence === playSequence.current;
     stopPlayback();
     setActiveSessionId(session.id);
     setLoadingSessionId(session.id);
     setIsPaused(false);
     try {
-      const effectiveGenre = session.generation.genre ?? session.song.genre ?? null;
-      const settings = playSettingsFromSession(session.generation);
-      const songForPlay = { ...session.song, genre: effectiveGenre };
-      const stored = session.arrangement;
-      const arrangement = stored && !Array.isArray(stored) && 'bassPattern' in stored
-        ? stored : computeArrangement(songForPlay);
-      applyPlayConfig(enginePlayConfig(settings, effectiveGenre));
-      schedulePlayback(songForPlay, () => {}, undefined, resolveVoicingMode(settings, effectiveGenre), () => {
-        if (mountedRef.current && sequence === playSequence.current) {
+      scheduleSession(session, () => {
+        if (isLatestRequest()) {
           setActiveSessionId(null);
           setIsPaused(false);
         }
-      }, arrangement, false);
+      });
       const started = await startPlayback();
-      if (mountedRef.current && sequence === playSequence.current && !started) {
+      if (isLatestRequest() && !started) {
         setActiveSessionId(null);
         setNotice({ error: true, message: 'Playback could not start. Press Play to try again.' });
       }
     } catch (error) {
-      if (mountedRef.current && sequence === playSequence.current) {
+      if (isLatestRequest()) {
         stopPlayback();
         setActiveSessionId(null);
-        setNotice({ error: true, message: error instanceof Error ? error.message : 'Playback could not start. Please try again.' });
+        setNotice(errorNotice(error, PLAYBACK_FAILED));
       }
     } finally {
-      if (mountedRef.current && sequence === playSequence.current) setLoadingSessionId(null);
+      if (isLatestRequest()) setLoadingSessionId(null);
     }
   };
 
@@ -197,25 +260,18 @@ export default function MyPage({ onExitToEditor }: MyPageProps) {
     const current = useSongStore.getState().song;
     const model = useGenerationStore.getState().modelKey;
     const settings = usePlayStore.getState().settings;
-    const currentJson = JSON.stringify(current);
-    const settingsJson = JSON.stringify(settings);
-    const alreadyKept = useSessionStore.getState().sessions.some((saved) =>
-      JSON.stringify(saved.song) === currentJson && saved.generation.model === model &&
-      JSON.stringify(playSettingsFromSession(saved.generation)) === settingsJson);
+    const alreadyKept = isAlreadySaved(current, model, settings);
     try {
       if (!alreadyKept) {
         useSessionStore.getState().add(current, { model, genre: current.genre, ...settings }, current.title.trim() || 'Untitled');
       }
     } catch (error) {
-      setNotice({ error: true, message: `Your current work could not be saved, so this project was not opened. ${
-        error instanceof Error ? error.message : 'Check browser storage, then try again.'
-      }` });
+      const reason = errorMessage(error, 'Check browser storage, then try again.');
+      setNotice({ error: true, message: `Your current work could not be saved, so this project was not opened. ${reason}` });
       return;
     }
     stopProjectPlayback();
-    useSongStore.getState().setSong({ ...session.song, genre: session.generation.genre ?? session.song.genre ?? null });
-    useGenerationStore.getState().setModelKey(session.generation.model);
-    usePlayStore.getState().replaceSettings(playSettingsFromSession(session.generation));
+    openInEditor(session);
     onExitToEditor();
   };
 
@@ -223,7 +279,7 @@ export default function MyPage({ onExitToEditor }: MyPageProps) {
     if (!window.confirm(`Delete "${session.name}" from this browser?`)) return;
     try {
       useSessionStore.getState().remove(session.id);
-      if (activeSessionId === session.id || loadingSessionId === session.id) stopProjectPlayback();
+      stopPlaybackIfDeleted([session.id]);
       setSelectedIds((previous) => {
         const remaining = new Set(previous);
         remaining.delete(session.id);
@@ -231,7 +287,7 @@ export default function MyPage({ onExitToEditor }: MyPageProps) {
       });
       setNotice({ error: false, message: `Deleted “${session.name}” from this browser.` });
     } catch (error) {
-      setNotice({ error: true, message: error instanceof Error ? error.message : 'The project could not be deleted. Please try again.' });
+      setNotice(errorNotice(error, 'The project could not be deleted. Please try again.'));
     }
   };
 
@@ -242,11 +298,11 @@ export default function MyPage({ onExitToEditor }: MyPageProps) {
     try {
       const ids = selectedSessions.map((session) => session.id);
       useSessionStore.getState().removeMany(ids);
-      if (ids.some((id) => id === activeSessionId || id === loadingSessionId)) stopProjectPlayback();
+      stopPlaybackIfDeleted(ids);
       setSelectedIds(new Set());
       setNotice({ error: false, message: `Deleted ${description} from this browser.` });
     } catch (error) {
-      setNotice({ error: true, message: error instanceof Error ? error.message : 'The selected projects could not be deleted. Please try again.' });
+      setNotice(errorNotice(error, 'The selected projects could not be deleted. Please try again.'));
     }
   };
 
@@ -263,7 +319,7 @@ export default function MyPage({ onExitToEditor }: MyPageProps) {
       useSessionStore.getState().toggleStar(session.id);
       setNotice(null);
     } catch (error) {
-      setNotice({ error: true, message: error instanceof Error ? error.message : 'This change could not be saved. Please try again.' });
+      setNotice(errorNotice(error, 'This change could not be saved. Please try again.'));
     }
   };
 
@@ -274,15 +330,14 @@ export default function MyPage({ onExitToEditor }: MyPageProps) {
     setExportingId(session.id);
     setNotice(null);
     try {
-      const song = { ...session.song, genre: session.generation.genre ?? session.song.genre ?? null };
-      const spec = buildExportSpec(song, playSettingsFromSession(session.generation));
+      const spec = buildExportSpec(songWithSessionGenre(session), playSettingsFromSession(session.generation));
       const blob = await requestMidiExport(spec, controller.signal);
       if (!mountedRef.current || controller.signal.aborted) return;
       downloadExportBlob(blob, safeExportFilename(session.name, 'mid'));
       setNotice({ error: false, message: `MIDI download started for “${session.name}”.` });
     } catch (error) {
       if (mountedRef.current && !controller.signal.aborted) {
-        setNotice({ error: true, message: error instanceof Error ? error.message : 'MIDI export failed. Please try again.' });
+        setNotice(errorNotice(error, 'MIDI export failed. Please try again.'));
       }
     } finally {
       if (exportController.current === controller) exportController.current = null;

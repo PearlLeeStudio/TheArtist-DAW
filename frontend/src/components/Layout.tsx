@@ -1,14 +1,4 @@
 import { useState, useCallback, useRef } from 'react';
-
-type InputMode = 'generate' | 'midi' | 'manual';
-// Order matters — Generate is the default and the most-used path, so it
-// occupies the leftmost tab. MIDI and Set Chord sit in declining-frequency
-// order to its right.
-const INPUT_TABS: { id: InputMode; label: string }[] = [
-  { id: 'generate', label: 'Generate' },
-  { id: 'midi', label: 'MIDI' },
-  { id: 'manual', label: 'Set Chord' },
-];
 import Staff from './ScoreEditor/Staff';
 import SongFormDialog from './ScoreEditor/SongFormDialog';
 import ImportScoreDialog from './ScoreEditor/ImportScoreDialog';
@@ -25,10 +15,38 @@ import { useSessionStore } from '../store/sessionStore';
 import { useGenerationStore } from '../store/generationStore';
 import { usePlayStore } from '../store/playStore';
 import { playSettingsFromSession } from '../engine/playSettings';
-import type { Song } from '../models/types';
+import type { PlaySettings, SessionGenerationContext, Song } from '../models/types';
+
+type InputMode = 'generate' | 'midi' | 'manual';
+// Order matters — Generate is the default and the most-used path, so it
+// occupies the leftmost tab. MIDI and Set Chord sit in declining-frequency
+// order to its right.
+const INPUT_TABS: { id: InputMode; label: string }[] = [
+  { id: 'generate', label: 'Generate' },
+  { id: 'midi', label: 'MIDI' },
+  { id: 'manual', label: 'Set Chord' },
+];
 
 /** The Play panel needs this much width for its rail and one pane. */
 const MIN_PANEL_WIDTH = 300;
+const MAX_PANEL_WIDTH = 640;
+
+/** What a saved project keeps next to its song: the model, the song's genre
+ *  and the Play settings. */
+function generationContext(song: Song, model: string, settings: PlaySettings): SessionGenerationContext {
+  return { model, genre: song.genre, ...settings };
+}
+
+/** True when a saved project already holds this song, model and Play settings.
+ *  MyPage/MyPage.tsx has the same check (also isAlreadySaved) before opening a
+ *  project; keep the two in step. */
+function isAlreadySaved(song: Song, model: string, settings: PlaySettings): boolean {
+  const songJson = JSON.stringify(song);
+  const settingsJson = JSON.stringify(settings);
+  return useSessionStore.getState().sessions.some((saved) =>
+    JSON.stringify(saved.song) === songJson && saved.generation.model === model &&
+    JSON.stringify(playSettingsFromSession(saved.generation)) === settingsJson);
+}
 
 export default function Layout() {
   const song = useSongStore((s) => s.song);
@@ -51,7 +69,7 @@ export default function Layout() {
   // already inside `song`).
   const handleSaveSession = useCallback(() => {
     try {
-      addSession(song, { model: modelKey, genre: song.genre, ...playSettings });
+      addSession(song, generationContext(song, modelKey, playSettings));
       setSaveMessage('Saved in this browser. Open Projects to download a backup.');
     } catch (error) {
       setSaveMessage(error instanceof Error ? error.message : 'The project could not be saved.');
@@ -80,19 +98,16 @@ export default function Layout() {
     setInputMode('generate');
   }, []);
 
+  // After an import, show Input → Set Chord, where imported bars are finished.
   const handleImported = useCallback((imported: Song) => {
     const current = useSongStore.getState().song;
     const model = useGenerationStore.getState().modelKey;
     const settings = usePlayStore.getState().settings;
-    const songJson = JSON.stringify(current);
-    const settingsJson = JSON.stringify(settings);
-    const alreadyKept = useSessionStore.getState().sessions.some((saved) =>
-      JSON.stringify(saved.song) === songJson && saved.generation.model === model &&
-      JSON.stringify(playSettingsFromSession(saved.generation)) === settingsJson);
-    if (!alreadyKept) {
-      // A storage failure leaves the reviewed import open and the current
-      // score intact. Undo remains available after a successful import.
-      useSessionStore.getState().add(current, { model, genre: current.genre, ...settings }, current.title.trim() || 'Untitled');
+    // Keep the current work as a project before the import replaces it. A
+    // storage failure throws here, which leaves the reviewed import open and
+    // the current score intact. Undo remains available after a successful import.
+    if (!isAlreadySaved(current, model, settings)) {
+      useSessionStore.getState().add(current, generationContext(current, model, settings), current.title.trim() || 'Untitled');
     }
     importSong(imported);
     setPanelOpen(true);
@@ -108,7 +123,7 @@ export default function Layout() {
     const onMove = (ev: MouseEvent) => {
       if (!resizingRef.current) return;
       const next = window.innerWidth - ev.clientX - 20;
-      setPanelWidth(Math.min(640, Math.max(MIN_PANEL_WIDTH, next)));
+      setPanelWidth(Math.min(MAX_PANEL_WIDTH, Math.max(MIN_PANEL_WIDTH, next)));
     };
     const onUp = () => {
       resizingRef.current = false;
@@ -135,6 +150,20 @@ export default function Layout() {
     setMidiActiveNotes(notes);
   }, []);
 
+  const toggleProjectsView = () => {
+    // Whatever is playing belongs to the view being left.
+    resetPlayback();
+    setView(view === 'my' ? 'editor' : 'my');
+  };
+
+  const handleUndoImport = () => {
+    if (window.confirm('Restore the song from before the import? Changes made after importing will be replaced.')) undoImport();
+  };
+
+  const playPaneShown = panelOpen && panelMode === 'play';
+  const inputPaneShown = panelOpen && panelMode === 'input';
+  const dialogOpen = songFormOpen || importOpen || sectionsOpen;
+
   return (
     <div className="flex flex-col h-screen" style={{ background: 'var(--bg-primary)', color: 'var(--text-primary)' }}>
       {/* Top header — editorial brand lockup, compact so the right panel
@@ -155,11 +184,7 @@ export default function Layout() {
         <div className="absolute top-3 right-4 flex items-center gap-2">
           <ThemeToggle />
           <button
-            onClick={() => {
-              // Whatever is playing belongs to the view being left.
-              resetPlayback();
-              setView(view === 'my' ? 'editor' : 'my');
-            }}
+            onClick={toggleProjectsView}
             className="px-3 py-1.5 text-sm btn-hover"
             style={{
               background: view === 'my' ? 'var(--text-heading)' : 'var(--btn-bg)',
@@ -178,8 +203,8 @@ export default function Layout() {
       <div className="flex flex-1 min-h-0">
         {/* Left Panel - Score Editor */}
         <div className="flex-1 overflow-y-auto p-4 min-w-0">
-          {/* Top bar: song-form entry left, title centered, Save/Clear
-              right-aligned */}
+          {/* Top bar: import and song-form entry left, title centered,
+              export/save/clear right-aligned */}
           <div className="flex flex-wrap items-center mb-4 gap-3">
             {/* Left group — flex-1 like the right group, so the title
                 stays centered */}
@@ -216,9 +241,10 @@ export default function Layout() {
               aria-label="Song title"
             />
 
-            {/* Save / Clear — right. "Clear selection" only appears when
-                the user has slots selected; it lives next to the global
-                Clear so the two destructive actions are co-located. */}
+            {/* Export / Save / Clear — right. "Clear" (the selected slots)
+                only appears when the user has slots selected; it lives next
+                to Initialize (the whole song) so the two destructive actions
+                are co-located. */}
             <div className="flex-1 flex items-center justify-end gap-2">
               <ExportMenu />
               <button
@@ -264,9 +290,7 @@ export default function Layout() {
           <div className="flex flex-wrap items-center justify-between gap-2 mb-2 text-xs" style={{ color: 'var(--text-muted)' }}>
             <span>{song.sections?.length ? 'Click a section name or drag across chords to select a range.' : 'Drag across chords to generate a variation.'}</span>
             <div className="flex gap-2">
-              {previousImportSong && <button onClick={() => {
-                if (window.confirm('Restore the song from before the import? Changes made after importing will be replaced.')) undoImport();
-              }} className="px-2 py-1 btn-hover" style={{ background: 'var(--btn-bg)' }}>Undo import</button>}
+              {previousImportSong && <button onClick={handleUndoImport} className="px-2 py-1 btn-hover" style={{ background: 'var(--btn-bg)' }}>Undo import</button>}
               <button onClick={() => setSectionsOpen(true)} className="px-2 py-1 btn-hover" style={{ background: 'var(--btn-bg)' }} aria-haspopup="dialog">Edit Song Form</button>
             </div>
           </div>
@@ -305,76 +329,80 @@ export default function Layout() {
         {/* Right Panel — collapsible. A column: the Play/Input tabs, then
             the mode's content filling the rest. Play never scrolls (one
             pane at a time); Input scrolls inside its own area. */}
+        <div
+          className="shrink-0 flex flex-col min-h-0 p-3 gap-3"
+          style={{
+            width: `${panelWidth}px`,
+            borderLeft: '1px solid var(--border)',
+            background: 'var(--bg-surface)',
+            display: panelOpen ? undefined : 'none',
+          }}
+        >
+          {/* Top-level mode tabs — Play / Input. Saved sessions live on
+              their own full-page route (header "Projects" button) so they
+              get room to render each session as a real staff. */}
           <div
-            className="shrink-0 flex flex-col min-h-0 p-3 gap-3"
-            style={{
-              width: `${panelWidth}px`,
-              borderLeft: '1px solid var(--border)',
-              background: 'var(--bg-surface)',
-              display: panelOpen ? undefined : 'none',
-            }}
+            className="shrink-0 flex items-end justify-between"
+            style={{ borderBottom: '1px solid var(--border)' }}
           >
-            {/* Top-level mode tabs — Play / Input. Saved sessions live on
-                their own full-page route (header "My" button) so they get
-                room to render each session as a real staff. */}
-            <div
-              className="shrink-0 flex items-end justify-between"
-              style={{ borderBottom: '1px solid var(--border)' }}
-            >
-              {(['play', 'input'] as const).map((mode) => (
-                <button
-                  key={mode}
-                  onClick={() => setPanelMode(mode)}
-                  className="font-display text-2xl leading-none px-1 pt-1 pb-2 transition-colors btn-hover"
-                  style={{
-                    color: panelMode === mode ? 'var(--brand-yellow)' : 'var(--text-muted)',
-                    borderTop: panelMode === mode ? '3px solid var(--brand-yellow)' : '3px solid transparent',
-                    fontWeight: 700,
-                    background: 'transparent',
-                  }}
-                >
-                  {mode === 'play' ? 'Play' : 'Input'}
-                </button>
-              ))}
+            {(['play', 'input'] as const).map((mode) => (
+              <button
+                key={mode}
+                onClick={() => setPanelMode(mode)}
+                className="font-display text-2xl leading-none px-1 pt-1 pb-2 transition-colors btn-hover"
+                style={{
+                  color: panelMode === mode ? 'var(--brand-yellow)' : 'var(--text-muted)',
+                  borderTop: panelMode === mode ? '3px solid var(--brand-yellow)' : '3px solid transparent',
+                  fontWeight: 700,
+                  background: 'transparent',
+                }}
+              >
+                {mode === 'play' ? 'Play' : 'Input'}
+              </button>
+            ))}
+          </div>
+
+          {/* Mode content */}
+          {playPaneShown && (
+            <div className="flex-1 min-h-0">
+              <PlayPanel midiActiveNotes={midiActiveNotes} />
+            </div>
+          )}
+
+          <div className="flex-1 min-h-0 overflow-y-auto space-y-3" style={{ display: panelMode === 'input' ? undefined : 'none' }}>
+            {/* Sub-tab bar — three input methods. */}
+            <div className="flex" style={{ borderBottom: '1px solid var(--border)' }}>
+              {INPUT_TABS.map((t) => {
+                const active = inputMode === t.id;
+                return (
+                  <button
+                    key={t.id}
+                    onClick={() => setInputMode(t.id)}
+                    className="flex-1 px-3 py-2 text-xs font-semibold uppercase tracking-wide transition-colors btn-hover"
+                    style={{
+                      color: active ? 'var(--text-heading)' : 'var(--text-muted)',
+                      borderTop: active ? '2px solid var(--brand-yellow)' : '2px solid transparent',
+                      background: 'transparent',
+                    }}
+                  >
+                    {t.label}
+                  </button>
+                );
+              })}
             </div>
 
-            {/* Mode content */}
-            {panelOpen && panelMode === 'play' && (
-              <div className="flex-1 min-h-0">
-                <PlayPanel midiActiveNotes={midiActiveNotes} />
-              </div>
-            )}
-
-              <div className="flex-1 min-h-0 overflow-y-auto space-y-3" style={{ display: panelMode === 'input' ? undefined : 'none' }}>
-                {/* Sub-tab bar — three input methods. */}
-                <div className="flex" style={{ borderBottom: '1px solid var(--border)' }}>
-                  {INPUT_TABS.map((t) => {
-                    const active = inputMode === t.id;
-                    return (
-                      <button
-                        key={t.id}
-                        onClick={() => setInputMode(t.id)}
-                        className="flex-1 px-3 py-2 text-xs font-semibold uppercase tracking-wide transition-colors btn-hover"
-                        style={{
-                          color: active ? 'var(--text-heading)' : 'var(--text-muted)',
-                          borderTop: active ? '2px solid var(--brand-yellow)' : '2px solid transparent',
-                          background: 'transparent',
-                        }}
-                      >
-                        {t.label}
-                      </button>
-                    );
-                  })}
-                </div>
-
-                <div hidden={inputMode !== 'midi'}>
-                  <MidiStatus onMidiNotes={handleMidiNotes}
-                    captureActive={panelOpen && panelMode === 'input' && inputMode === 'midi' && !songFormOpen && !importOpen && !sectionsOpen} />
-                </div>
-                {panelOpen && panelMode === 'input' && inputMode === 'generate' && <ChordActions view="generate" />}
-                {panelOpen && panelMode === 'input' && inputMode === 'manual' && <ChordActions view="manual" />}
-              </div>
+            {/* Hidden rather than unmounted, like this pane and the panel
+                itself, so MIDI monitoring stays connected while the panel is
+                closed or on Play. Played chords are captured only while the
+                MIDI tab is in front and no dialog is open. */}
+            <div hidden={inputMode !== 'midi'}>
+              <MidiStatus onMidiNotes={handleMidiNotes}
+                captureActive={inputPaneShown && inputMode === 'midi' && !dialogOpen} />
+            </div>
+            {inputPaneShown && inputMode === 'generate' && <ChordActions view="generate" />}
+            {inputPaneShown && inputMode === 'manual' && <ChordActions view="manual" />}
           </div>
+        </div>
 
       </div>
       )}

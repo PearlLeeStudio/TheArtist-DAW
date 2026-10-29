@@ -4,7 +4,7 @@ import './index.css'
 import App from './App.tsx'
 
 // `?reset=1` wipes everything the app keeps in localStorage (current song,
-// saved sessions, generate settings, drum pick, theme), drops the parameter
+// saved sessions, Generate and Play settings, theme), drops the parameter
 // from the address bar and reloads. The reload matters: the stores already
 // read localStorage while their modules evaluated, before this runs. A
 // plain reload keeps everything.

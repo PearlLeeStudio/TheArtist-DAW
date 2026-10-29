@@ -21,8 +21,9 @@ const PITCH_CLASS_NAMES = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A',
  *     then clicks Confirm (or Cancel to discard). Playing a new chord
  *     during Confirm implicitly cancels.
  *
- * The state machine lives in `useMidiCapture` — this component is a
- * thin presenter that wires the hook's output to UI.
+ * The state machine lives in `engine/midiCaptureState`, wired to the MIDI
+ * connection and the song by `useMidiCapture` — this component is a thin
+ * presenter that wires the hook's output to UI.
  */
 export default function MidiStatus({ onMidiNotes, captureActive }: MidiStatusProps) {
   const {
@@ -86,8 +87,16 @@ export default function MidiStatus({ onMidiNotes, captureActive }: MidiStatusPro
           : 'Hold a chord for 3 s to commit, or release early to review and pick the root. The selection auto-advances — build chords one slot at a time.'}
       </p>
 
-      {error && <p role="alert" className="text-xs leading-snug" style={{ color: 'var(--text-heading)' }}>{error}</p>}
-      {enabled && <p className="text-[11px] leading-snug" style={{ color: 'var(--text-muted)' }}>MIDI stays connected in Play → Visual. Chords are entered only while this input tab is open.</p>}
+      {error && (
+        <p role="alert" className="text-xs leading-snug" style={{ color: 'var(--text-heading)' }}>
+          {error}
+        </p>
+      )}
+      {enabled && (
+        <p className="text-[11px] leading-snug" style={{ color: 'var(--text-muted)' }}>
+          MIDI stays connected in Play → Visual. Chords are entered only while this input tab is open.
+        </p>
+      )}
 
       {enabled && (
         <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
@@ -104,10 +113,20 @@ export default function MidiStatus({ onMidiNotes, captureActive }: MidiStatusPro
         <div className="p-3 space-y-2" style={{ background: 'var(--btn-bg)', border: '1px solid var(--border)' }}>
           <div className="flex items-baseline justify-between">
             <span className="text-[10px] uppercase tracking-wide font-semibold" style={{ color: 'var(--text-muted)' }}>
-              {view.source === 'confirm' ? 'Review chord' : !canEnable ? 'Monitoring' : 'Detected'}
+              {view.source === 'confirm'
+                ? 'Review chord'
+                : !canEnable
+                ? 'Monitoring'
+                : 'Detected'}
             </span>
             <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
-              {view.source === 'confirm' ? 'pick root, then confirm' : !canEnable ? 'select one slot to enter' : awaitingRelease ? 'release notes to begin' : 'hold 3s or release to review'}
+              {view.source === 'confirm'
+                ? 'pick root, then confirm'
+                : !canEnable
+                ? 'select one slot to enter'
+                : awaitingRelease
+                ? 'release notes to begin'
+                : 'hold 3s or release to review'}
             </span>
           </div>
 
@@ -125,7 +144,8 @@ export default function MidiStatus({ onMidiNotes, captureActive }: MidiStatusPro
             </span>
           </div>
 
-          {/* Hold progress bar — only visible in 'live' mode */}
+          {/* Hold progress bar — live chords only; hidden while monitoring
+              or until the held notes are released */}
           {view.source === 'live' && canEnable && !awaitingRelease && (
             <div className="h-1.5" style={{ background: 'var(--bg-surface)', overflow: 'hidden', borderRadius: 1 }}>
               <div

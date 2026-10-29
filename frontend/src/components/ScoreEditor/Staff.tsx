@@ -1,12 +1,14 @@
 import { useEffect, useRef, useMemo, useCallback, useState } from 'react';
+import type { KeyboardEvent } from 'react';
 import { Renderer, Stave } from 'vexflow';
 import { useSongStore, isSlotInList } from '../../store/songStore';
 import { getChordDisplayParts } from '../../engine/chordDisplay';
 import { sectionColor, sectionDisplayLabel } from '../../engine/songForm';
-import type { SlotAddress } from '../../models/types';
+import type { Measure, SlotAddress, SongSection } from '../../models/types';
 import { scoreMeasureLayout } from '../../engine/scoreLayout';
 import { keySignatureFor } from '../../engine/keySignatures';
 import ImportedMeasureReview from './ImportedMeasureReview';
+import { hasEmptySlot, isExplicitNoChord, needsSourceReview } from './importedBars';
 
 const MEASURES_PER_ROW = 4;
 const CHORD_AREA_HEIGHT = 8;
@@ -19,6 +21,10 @@ const ADD_BTN_HEIGHT = 50;
 // this band holds only the label (and the clef, which the label clears by
 // starting at contentX).
 const SECTION_LABEL_DY = 16;
+/** Longest section name drawn on the score; its tooltip has the full name. */
+const SECTION_LABEL_MAX_CHARS = 22;
+/** Baseline of an imported bar's Review/Unresolved marker, below the Roman numerals. */
+const IMPORT_MARKER_DY = 127;
 
 interface StaveLayout {
   x: number;
@@ -27,6 +33,65 @@ interface StaveLayout {
   isFirstInRow: boolean;
   contentX: number;
   midLineY: number; // actual Y of the 3rd (middle) stave line — set after VexFlow render
+}
+
+/** Keyboard activation (Enter or Space) for SVG text that acts as a button. */
+function onEnterOrSpace(action: () => void) {
+  return (event: KeyboardEvent<SVGTextElement>) => {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    event.preventDefault();
+    action();
+  };
+}
+
+/** The bar's first empty chord slot; slot 0 when both hold chords. */
+function firstEmptySlot(measure: Measure): 0 | 1 {
+  return measure.chords[0] === null ? 0 : measure.chords[1] === null ? 1 : 0;
+}
+
+function sectionOriginHint(origin: SongSection['origin']): string {
+  if (origin === 'inferred') return 'Suggested from the score';
+  if (origin === 'explicit') return 'Label read from the score';
+  return 'Click to select this region';
+}
+
+interface ImportPlaceholderProps {
+  /** Left edge and width of the box the label is centred in. */
+  x: number;
+  width: number;
+  midLineY: number;
+  noChord: boolean;
+}
+
+/** Stands in for a missing imported chord: "Unresolved" in one slot, or "N.C."
+ *  across a bar the source marked N.C. */
+function ImportPlaceholder({ x, width, midLineY, noChord }: ImportPlaceholderProps) {
+  return (
+    <>
+      <rect
+        x={x + width * .05}
+        y={midLineY - 12}
+        width={width * .9}
+        height={24}
+        rx={3}
+        fill="var(--bg-primary)"
+        opacity={.85}
+        className="pointer-events-none"
+      />
+      <text
+        x={x + width / 2}
+        y={midLineY}
+        textAnchor="middle"
+        dominantBaseline="central"
+        fill="var(--text-soft)"
+        fontSize={noChord ? 14 : 10}
+        fontFamily="system-ui, sans-serif"
+        className="pointer-events-none"
+      >
+        {noChord ? 'N.C.' : 'Unresolved'}
+      </text>
+    </>
+  );
 }
 
 export default function Staff() {
@@ -141,7 +206,13 @@ export default function Staff() {
   const lastRow = rows - 1;
   const addBtnY = PADDING_Y + CHORD_AREA_HEIGHT + (lastRow + 1) * STAVE_HEIGHT + 8;
 
-  if (!keySignatureFor(song.key)) return <div ref={wrapperRef} role="alert" className="p-3 text-sm">Unsupported key signature: {song.key}. Choose a standard key in the Key control to display the score.</div>;
+  if (!keySignatureFor(song.key)) {
+    return (
+      <div ref={wrapperRef} role="alert" className="p-3 text-sm">
+        Unsupported key signature: {song.key}. Choose a standard key in the Key control to display the score.
+      </div>
+    );
+  }
 
   return (
     <>
@@ -175,8 +246,7 @@ export default function Staff() {
           const contentWidth = layout.x + layout.width - layout.contentX;
           const slotWidth = contentWidth / 2;
           const importSource = song.importSource?.measures?.[mi];
-          const explicitNoChord = !!importSource && measure.chords.every((chord) => chord === null) &&
-            !!(importSource.originalNoChord || importSource.userNoChord);
+          const explicitNoChord = !!importSource && isExplicitNoChord(measure, importSource);
 
           return ([0, 1] as const).map((si) => {
             const chord = measure.chords[si];
@@ -220,31 +290,14 @@ export default function Staff() {
                   />
                 )}
 
+                {/* An N.C. bar gets one label across the whole bar, drawn with slot 0. */}
                 {!chord && importSource && (!explicitNoChord || si === 0) && (
-                  <>
-                  <rect
-                    x={explicitNoChord ? layout.contentX + contentWidth * .05 : slotX + slotWidth * .05}
-                    y={layout.midLineY - 12}
-                    width={(explicitNoChord ? contentWidth : slotWidth) * .9}
-                    height={24}
-                    rx={3}
-                    fill="var(--bg-primary)"
-                    opacity={.85}
-                    className="pointer-events-none"
+                  <ImportPlaceholder
+                    x={explicitNoChord ? layout.contentX : slotX}
+                    width={explicitNoChord ? contentWidth : slotWidth}
+                    midLineY={layout.midLineY}
+                    noChord={explicitNoChord}
                   />
-                  <text
-                    x={explicitNoChord ? layout.contentX + contentWidth / 2 : slotX + slotWidth / 2}
-                    y={layout.midLineY}
-                    textAnchor="middle"
-                    dominantBaseline="central"
-                    fill="var(--text-soft)"
-                    fontSize={explicitNoChord ? 14 : 10}
-                    fontFamily="system-ui, sans-serif"
-                    className="pointer-events-none"
-                  >
-                    {explicitNoChord ? 'N.C.' : 'Unresolved'}
-                  </text>
-                  </>
                 )}
 
                 {chord && (() => {
@@ -358,23 +411,16 @@ export default function Staff() {
         {song.importSource?.measures?.map((source, index) => {
           const measure = song.measures[index];
           const layout = staveLayouts[index];
-          if (!measure || !layout) return null;
-          const explicitNoChord = measure.chords.every((chord) => chord === null) && (source.originalNoChord || source.userNoChord);
-          if (explicitNoChord) return null;
-          const pending = measure.chords.some((chord) => chord === null);
-          const review = !!source.editorReview || source.chordBasis !== 'printed' || source.confidence !== 'high';
-          if (!pending && !review) return null;
-          const select = () => selectSlot({ measureIndex: index, slotIndex: measure.chords[0] === null ? 0 : measure.chords[1] === null ? 1 : 0 });
+          if (!measure || !layout || isExplicitNoChord(measure, source)) return null;
+          const pending = hasEmptySlot(measure);
+          if (!pending && !needsSourceReview(source)) return null;
+          const select = () => selectSlot({ measureIndex: index, slotIndex: firstEmptySlot(measure) });
           return (
-            <text key={`import-review-${index}`} x={layout.x + layout.width - 8} y={layout.y + 127}
+            <text key={`import-review-${index}`} x={layout.x + layout.width - 8} y={layout.y + IMPORT_MARKER_DY}
               textAnchor="end" fill="var(--text-soft)" fontSize={10} fontWeight={600}
               fontFamily="system-ui, sans-serif" className="pointer-events-auto cursor-pointer"
               role="button" tabIndex={0} aria-label={`Review imported bar ${index + 1}${pending ? ', unresolved chord slots' : ''}`}
-              onClick={select} onKeyDown={(event) => {
-                if (event.key !== 'Enter' && event.key !== ' ') return;
-                event.preventDefault();
-                select();
-              }}>
+              onClick={select} onKeyDown={onEnterOrSpace(select)}>
               <title>{source.editorReview || (pending ? 'Choose the unresolved chord slots in the editor.' : 'Compare the imported harmony with its source.')}</title>
               {pending ? 'Unresolved' : 'Review'}
             </text>
@@ -385,6 +431,11 @@ export default function Staff() {
         {(song.sections ?? []).map((section) => {
           const layout = staveLayouts[section.startMeasure];
           if (!layout) return null;
+          const label = sectionDisplayLabel(section);
+          const selectSection = () => selectSlotRange(
+            { measureIndex: section.startMeasure, slotIndex: 0 },
+            { measureIndex: section.startMeasure + section.length - 1, slotIndex: 1 },
+          );
           return (
             <text
               key={section.id}
@@ -398,22 +449,12 @@ export default function Staff() {
               className="pointer-events-auto cursor-pointer"
               role="button"
               tabIndex={0}
-              aria-label={`Select ${sectionDisplayLabel(section)}, bars ${section.startMeasure + 1} to ${section.startMeasure + section.length}`}
-              onClick={() => selectSlotRange(
-                { measureIndex: section.startMeasure, slotIndex: 0 },
-                { measureIndex: section.startMeasure + section.length - 1, slotIndex: 1 },
-              )}
-              onKeyDown={(event) => {
-                if (event.key !== 'Enter' && event.key !== ' ') return;
-                event.preventDefault();
-                selectSlotRange(
-                  { measureIndex: section.startMeasure, slotIndex: 0 },
-                  { measureIndex: section.startMeasure + section.length - 1, slotIndex: 1 },
-                );
-              }}
+              aria-label={`Select ${label}, bars ${section.startMeasure + 1} to ${section.startMeasure + section.length}`}
+              onClick={selectSection}
+              onKeyDown={onEnterOrSpace(selectSection)}
             >
-              <title>{sectionDisplayLabel(section)} · {section.origin === 'inferred' ? 'Suggested from the score' : section.origin === 'explicit' ? 'Label read from the score' : 'Click to select this region'}</title>
-              {sectionDisplayLabel(section).slice(0, 22).toUpperCase()}{section.origin === 'inferred' ? ' ?' : ''}
+              <title>{label} · {sectionOriginHint(section.origin)}</title>
+              {label.slice(0, SECTION_LABEL_MAX_CHARS).toUpperCase()}{section.origin === 'inferred' ? ' ?' : ''}
             </text>
           );
         })}

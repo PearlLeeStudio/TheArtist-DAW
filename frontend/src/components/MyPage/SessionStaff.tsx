@@ -5,6 +5,9 @@ import { scoreMeasureLayout, SCORE_MEASURES_PER_ROW, SCORE_ROW_HEIGHT, SCORE_TOP
 import type { Song } from '../../models/types';
 import { keySignatureFor } from '../../engine/keySignatures';
 
+/** Space below the last row; SCORE_TOP holds the space above the first. */
+const BOTTOM_PADDING = 10;
+
 interface StaveLayout {
   x: number;
   y: number;
@@ -52,7 +55,7 @@ export default function SessionStaff({ song }: SessionStaffProps) {
 
   const rows = Math.ceil(song.measures.length / SCORE_MEASURES_PER_ROW);
   const totalWidth = containerWidth;
-  const totalHeight = rows * SCORE_ROW_HEIGHT + SCORE_TOP + 10;
+  const totalHeight = rows * SCORE_ROW_HEIGHT + SCORE_TOP + BOTTOM_PADDING;
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -91,7 +94,13 @@ export default function SessionStaff({ song }: SessionStaffProps) {
     return () => cancelAnimationFrame(frame);
   }, [song.measures.length, song.key, song.timeSignature, baseLayouts, totalWidth, totalHeight, theme]);
 
-  if (!keySignatureFor(song.key)) return <div ref={wrapperRef} role="alert" className="p-3 text-sm">Unsupported key signature: {song.key}. Open the project and choose a standard key to display the score.</div>;
+  if (!keySignatureFor(song.key)) {
+    return (
+      <div ref={wrapperRef} role="alert" className="p-3 text-sm">
+        Unsupported key signature: {song.key}. Open the project and choose a standard key to display the score.
+      </div>
+    );
+  }
 
   return (
     <div ref={wrapperRef} className="relative select-none w-full pointer-events-none">

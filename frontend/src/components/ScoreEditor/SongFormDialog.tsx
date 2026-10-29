@@ -36,6 +36,10 @@ const labelStyle: React.CSSProperties = {
   color: 'var(--text-muted)',
 };
 
+const valueStyle: React.CSSProperties = {
+  color: 'var(--text-heading)',
+};
+
 function barRange(startMeasure: number, bars: number): string {
   return bars === 1
     ? `Bar ${startMeasure + 1}`
@@ -100,6 +104,7 @@ export default function SongFormDialog({ onClose, onGenerated }: SongFormDialogP
   const startMeasure = running
     ? runStart
     : check.ok ? sectionPlacement(song, check.bars).startMeasure : null;
+  const generateDisabled = !check.ok || running;
 
   const handleSectionChange = (value: string) => {
     if (!isSectionType(value)) return;
@@ -231,13 +236,13 @@ export default function SongFormDialog({ onClose, onGenerated }: SongFormDialogP
           style={{ background: 'var(--btn-bg)', border: '1px solid var(--border)' }}
         >
           <dt style={labelStyle}>Key</dt>
-          <dd style={{ color: 'var(--text-heading)' }}>{song.key}</dd>
+          <dd style={valueStyle}>{song.key}</dd>
           <dt style={labelStyle}>Genre</dt>
-          <dd style={{ color: 'var(--text-heading)' }}>{song.genre ? song.genre.replace(/_/g, ' ') : 'none'}</dd>
+          <dd style={valueStyle}>{song.genre ? song.genre.replace(/_/g, ' ') : 'none'}</dd>
           <dt style={labelStyle}>Model</dt>
-          <dd style={{ color: 'var(--text-heading)' }}>{modelLabel ?? modelKey}</dd>
+          <dd style={valueStyle}>{modelLabel ?? modelKey}</dd>
           <dt style={labelStyle}>Placed at</dt>
-          <dd style={{ color: 'var(--text-heading)' }}>
+          <dd style={valueStyle}>
             {startMeasure !== null && check.ok ? barRange(startMeasure, check.bars) : '—'}
           </dd>
         </dl>
@@ -276,13 +281,13 @@ export default function SongFormDialog({ onClose, onGenerated }: SongFormDialogP
           </button>
           <button
             type="submit"
-            disabled={!check.ok || running}
+            disabled={generateDisabled}
             className="px-4 py-1.5 text-xs font-bold btn-hover"
             style={{
               background: 'var(--text-heading)',
               color: 'var(--bg-primary)',
               // undefined when enabled, so btn-hover's hover dimming applies
-              opacity: !check.ok || running ? 0.6 : undefined,
+              opacity: generateDisabled ? 0.6 : undefined,
             }}
           >
             {running ? 'Generating…' : 'Generate'}

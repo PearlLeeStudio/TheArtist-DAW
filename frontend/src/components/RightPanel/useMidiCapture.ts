@@ -15,11 +15,14 @@ export type ChordView =
   | { source: 'confirm'; candidates: Chord[]; activeIdx: number }
   | null;
 
-export interface UseMidiCaptureResult {
+interface MidiConnection {
   enabled: boolean;
   connected: boolean;
   connecting: boolean;
   error: string | null;
+}
+
+export interface UseMidiCaptureResult extends MidiConnection {
   holdProgress: number;
   confirming: ConfirmState | null;
   awaitingRelease: boolean;
@@ -37,6 +40,12 @@ export interface UseMidiCaptureResult {
   handleCancel: () => void;
 }
 
+/** MIDI turned off, with the reason when connecting failed. */
+function disconnected(error: string | null = null): MidiConnection {
+  return { enabled: false, connected: false, connecting: false, error };
+}
+
+/** Capture target: the one selected slot, or null when zero or several are selected. */
 function targetKey(slots: SlotAddress[]): string | null {
   return slots.length === 1 ? `${slots[0].measureIndex}:${slots[0].slotIndex}` : null;
 }
@@ -44,7 +53,7 @@ function targetKey(slots: SlotAddress[]): string | null {
 /** The connection belongs to the editor. Capture is only armed while the
  *  MIDI input tab is visible; every other editor view only monitors notes. */
 export function useMidiCapture(onMidiNotes: (notes: number[]) => void, captureActive: boolean): UseMidiCaptureResult {
-  const [connection, setConnection] = useState({ enabled: false, connected: false, connecting: false, error: null as string | null });
+  const [connection, setConnection] = useState(disconnected());
   const mountedRef = useRef(false);
   const enabledRef = useRef(false);
   const connectingRef = useRef(false);
@@ -61,6 +70,8 @@ export function useMidiCapture(onMidiNotes: (notes: number[]) => void, captureAc
       clearInterval: (id) => window.clearInterval(id),
     },
     onCandidates: (chords) => useSongStore.getState().setMidiCandidates(chords),
+    // Write into the one selected slot and advance the selection. Refused
+    // after unmount, with MIDI off, or while capture is not armed.
     onCommit: (chord) => {
       const state = useSongStore.getState();
       if (!mountedRef.current || !enabledRef.current || !captureActiveRef.current || state.selectedSlots.length !== 1) return false;
@@ -83,13 +94,15 @@ export function useMidiCapture(onMidiNotes: (notes: number[]) => void, captureAc
     mountedRef.current = true;
     requestRef.current++;
     const unsubscribe = useSongStore.subscribe((state, previous) => {
-      if (state.songEpoch !== previous.songEpoch) {
+      const songReplaced = state.songEpoch !== previous.songEpoch;
+      if (songReplaced) {
         capture.reset();
         resetMidiNotes();
         onMidiNotesRef.current([]);
       }
-      if (state.songEpoch !== previous.songEpoch || targetKey(state.selectedSlots) !== targetKey(previous.selectedSlots)) {
-        capture.setContext(captureActiveRef.current && enabledRef.current, targetKey(state.selectedSlots));
+      const target = targetKey(state.selectedSlots);
+      if (songReplaced || target !== targetKey(previous.selectedSlots)) {
+        capture.setContext(captureActiveRef.current && enabledRef.current, target);
       }
     });
     return () => {
@@ -117,14 +130,20 @@ export function useMidiCapture(onMidiNotes: (notes: number[]) => void, captureAc
 
   const toggleMidi = useCallback(async () => {
     const request = ++requestRef.current;
-    if (enabledRef.current || connectingRef.current) {
+    // A later toggle or an unmount supersedes this request.
+    const isCurrent = () => mountedRef.current && request === requestRef.current;
+    const disable = (error: string | null) => {
       enabledRef.current = false;
       connectingRef.current = false;
       disconnectMidi();
       capture.setContext(false, null);
       capture.reset();
       onMidiNotesRef.current([]);
-      setConnection({ enabled: false, connected: false, connecting: false, error: null });
+      setConnection(disconnected(error));
+    };
+
+    if (enabledRef.current || connectingRef.current) {
+      disable(null);
       return;
     }
     const target = targetKey(useSongStore.getState().selectedSlots);
@@ -135,31 +154,24 @@ export function useMidiCapture(onMidiNotes: (notes: number[]) => void, captureAc
     setConnection({ enabled: true, connected: false, connecting: true, error: null });
     try {
       const connected = await initMidi(handleNotes, handleDetected, (value) => {
-        if (mountedRef.current && request === requestRef.current) {
-          // Port changes can lose note-off events. Discard that press
-          // cycle instead of offering it as a released chord to confirm.
-          capture.reset();
-          onMidiNotesRef.current([]);
-          setConnection((state) => ({ ...state, connected: value }));
-        }
+        if (!isCurrent()) return;
+        // Port changes can lose note-off events. Discard that press
+        // cycle instead of offering it as a released chord to confirm.
+        capture.reset();
+        onMidiNotesRef.current([]);
+        setConnection((state) => ({ ...state, connected: value }));
       });
-      if (!mountedRef.current || request !== requestRef.current) return;
+      if (!isCurrent()) return;
       connectingRef.current = false;
       setConnection({ enabled: true, connected, connecting: false, error: null });
     } catch (error) {
-      if (!mountedRef.current || request !== requestRef.current) return;
-      enabledRef.current = false;
-      connectingRef.current = false;
-      disconnectMidi();
-      capture.setContext(false, null);
-      capture.reset();
-      onMidiNotesRef.current([]);
-      setConnection({ enabled: false, connected: false, connecting: false,
-        error: error instanceof Error ? error.message : 'MIDI could not connect. Please try again.' });
+      if (!isCurrent()) return;
+      disable(error instanceof Error ? error.message : 'MIDI could not connect. Please try again.');
     }
   }, [capture, handleNotes, handleDetected]);
 
   const { candidates, activeIdx, confirming } = snapshot;
+  // A released chord under review takes precedence over the chord being held.
   const view: ChordView = confirming
     ? { source: 'confirm', candidates: confirming.candidates, activeIdx: confirming.activeIdx }
     : candidates.length ? { source: 'live', candidates, activeIdx } : null;
@@ -171,8 +183,11 @@ export function useMidiCapture(onMidiNotes: (notes: number[]) => void, captureAc
     holdProgress: snapshot.holdProgress,
     confirming,
     awaitingRelease: snapshot.awaitingRelease,
+    // While capture is armed, MIDI turns on (and chords are entered) only
+    // with exactly one target slot; with capture off any selection works.
     canEnable: !captureActive || selectedSlots.length === 1,
-    view, active,
+    view,
+    active,
     prevSlotChord: chordAtPrevSlot(song.measures, selection),
     nextSlotChord: chordAtNextSlot(song.measures, selection),
     songKey: song.key,
