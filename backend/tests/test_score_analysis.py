@@ -225,7 +225,8 @@ class ScoreAnalysisTest(unittest.TestCase):
 
     def test_auto_keeps_read_note_evidence_for_assistance_instead_of_repeating_image_ocr(self):
         self.parser.return_value = parsed_score([bar(read_notes=notes([60]))])
-        with mock.patch("app.services.score_assistance.enrich_local_harmony", side_effect=lambda req, draft: draft) as assist:
+        with mock.patch("app.services.score_assistance.enrich_local_harmony",
+                        side_effect=lambda req, draft, **_: draft) as assist:  # before_meta is the route's hook
             draft = score_import.import_score(request(engine="auto"))
         self.assertEqual(draft.measures[0].notes, ["C4"])
         assist.assert_called_once()
