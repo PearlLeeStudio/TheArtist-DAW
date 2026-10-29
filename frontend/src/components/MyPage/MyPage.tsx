@@ -348,7 +348,6 @@ export default function MyPage({ onExitToEditor }: MyPageProps) {
         <div className="flex items-start justify-between flex-wrap gap-4">
           <div className="max-w-xl">
             <h2 className="font-display text-3xl" style={{ color: 'var(--text-heading)', fontWeight: 700 }}>Projects</h2>
-            <p className="text-sm mt-1" style={mutedStyle}>Recent work saved in this browser.</p>
           </div>
         </div>
         {notice && (
@@ -362,7 +361,6 @@ export default function MyPage({ onExitToEditor }: MyPageProps) {
           <>
             <div className="flex justify-between flex-wrap gap-2 text-xs" style={mutedStyle}>
               <span>{sessions.length} saved{starredCount > 0 ? ` · ★ ${starredCount} favorites` : ''}</span>
-              <span>Editing a project keeps unsaved editor work here first.</span>
             </div>
             <div className="flex items-center flex-wrap gap-3 text-xs" style={{ color: 'var(--text-primary)' }}>
               <label className="flex items-center gap-2 cursor-pointer">
