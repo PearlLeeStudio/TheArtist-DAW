@@ -134,13 +134,45 @@ async function _describeHttpError(res: Response): Promise<string> {
     : `Request failed (HTTP ${res.status})`;
 }
 
+/**
+ * POST `body` as JSON, adding the `init` fields (if any) to the request.
+ * A request that cannot reach the server rejects with `unreachableMessage`
+ * (or with the AbortError once `init.signal` has aborted), and an HTTP error
+ * status rejects with the server's error detail, or a generic HTTP-status
+ * message when the body has none (see _describeHttpError).
+ */
+async function _postJson(
+  url: string,
+  body: unknown,
+  unreachableMessage: string,
+  init: { signal?: AbortSignal } = {},
+): Promise<Response> {
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+      ...init,
+    });
+  } catch (err) {
+    if (init.signal?.aborted) throw err;
+    throw new Error(unreachableMessage, { cause: err });
+  }
+  if (!res.ok) throw new Error(await _describeHttpError(res));
+  return res;
+}
+
+const _isChordSymbol = (value: unknown): boolean => typeof value === 'string' && value.trim() !== '';
+
+/** A labelled candidate whose chords map measure indexes to two chord symbols. */
 function _isSuggestion(value: unknown): value is Suggestion {
   if (!value || typeof value !== 'object') return false;
   const { label, chords } = value as Partial<Suggestion>;
-  return typeof label === 'string' && label.trim() !== '' && !!chords && typeof chords === 'object' &&
-    !Array.isArray(chords) && Object.keys(chords).length > 0 &&
-    Object.entries(chords).every(([measure, pair]) => /^\d+$/.test(measure) &&
-      Array.isArray(pair) && pair.length === 2 && pair.every((symbol) => typeof symbol === 'string' && symbol.trim() !== ''));
+  if (typeof label !== 'string' || label.trim() === '') return false;
+  if (!chords || typeof chords !== 'object' || Array.isArray(chords) || Object.keys(chords).length === 0) return false;
+  return Object.entries(chords).every(([measure, pair]) =>
+    /^\d+$/.test(measure) && Array.isArray(pair) && pair.length === 2 && pair.every(_isChordSymbol));
 }
 
 /**
@@ -159,26 +191,17 @@ export async function generateChords(
   onPhase?: (phase: GeneratePhase) => void,
 ): Promise<GenerateResult> {
   const body = _buildBody(song, selectedSlots, sectionType, modelKey);
-  let res: Response;
-  try {
-    res = await fetch('/api/generate/stream', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    });
-  } catch (err) {
-    throw new Error('Could not reach the server. Check the backend connection and try again.', { cause: err });
-  }
-  if (!res.ok) throw new Error(await _describeHttpError(res));
+  const res = await _postJson('/api/generate/stream', body,
+    'Could not reach the server. Check the backend connection and try again.');
 
   let final: GenerateResult | null = null;
   for await (const { event, data } of readSSEFrames<Record<string, unknown>>(res)) {
     if (event === 'result') {
-      const sugs = data?.suggestions;
-      if (!Array.isArray(sugs) || sugs.length === 0 || !sugs.every(_isSuggestion)) {
+      const suggestions = data?.suggestions;
+      if (!Array.isArray(suggestions) || suggestions.length === 0 || !suggestions.every(_isSuggestion)) {
         throw new Error('The server sent an invalid generation result');
       }
-      final = { suggestions: sugs, source: _toSource(data.source) };
+      final = { suggestions, source: _toSource(data.source) };
     } else if (event === 'error') {
       throw new Error(_formatErrorDetail(data?.detail) || 'The server reported a generation error');
     } else if (onPhase) {
@@ -212,20 +235,7 @@ export async function generateSection(
     context: _contextMeasures(song.measures.slice(0, startMeasure)),
     modelKey: modelKey ?? null,
   };
-
-  let res: Response;
-  try {
-    res = await fetch('/api/generate/section/stream', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-      signal,
-    });
-  } catch (err) {
-    if (signal?.aborted) throw err;
-    throw new Error('Could not reach the server', { cause: err });
-  }
-  if (!res.ok) throw new Error(await _describeHttpError(res));
+  const res = await _postJson('/api/generate/section/stream', body, 'Could not reach the server', { signal });
 
   let result: SectionGenerateResponse | null = null;
   for await (const { event, data } of readSSEFrames<Record<string, unknown>>(res)) {

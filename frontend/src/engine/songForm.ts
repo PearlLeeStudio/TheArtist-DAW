@@ -71,19 +71,24 @@ export function sectionDisplayLabel(section: SongSection): string {
   return section.label?.trim() || sectionLabel(section.type);
 }
 
+/** Index of the first measure after `section`. */
+function sectionEnd(section: SongSection): number {
+  return section.startMeasure + section.length;
+}
+
 /** Keep imported regions editable without pretending their musical role is known. */
 export function checkSectionRanges(sections: readonly SongSection[], measureCount: number): string | null {
   const ids = new Set<string>();
-  let end = 0;
+  let previousEnd = 0;
   for (const section of [...sections].sort((a, b) => a.startMeasure - b.startMeasure)) {
     if (!isValidSection(section) || ids.has(section.id)) return 'Each section needs a valid, unique range.';
     ids.add(section.id);
-    if (section.startMeasure + section.length > measureCount) return 'A section extends past the last bar.';
-    if (section.startMeasure < end) return 'Sections must not overlap.';
+    if (sectionEnd(section) > measureCount) return 'A section extends past the last bar.';
+    if (section.startMeasure < previousEnd) return 'Sections must not overlap.';
     if (section.label !== undefined && (typeof section.label !== 'string' || section.label.length > 80)) {
       return 'Section names must be 80 characters or fewer.';
     }
-    end = section.startMeasure + section.length;
+    previousEnd = sectionEnd(section);
   }
   return null;
 }
@@ -105,9 +110,14 @@ export function barsForChords(chordCount: number): number {
   return Math.ceil(chordCount / CHORDS_PER_BAR);
 }
 
+/** '1 bar', '8 bars'. */
+function barsLabel(bars: number): string {
+  return `${bars} ${bars === 1 ? 'bar' : 'bars'}`;
+}
+
 /** Single-section title, e.g. 'Chorus — 8 bars' (em dash, as the backend writes it). */
 export function sectionTitle(type: SectionType, bars: number): string {
-  return `${sectionLabel(type)} — ${bars} ${bars === 1 ? 'bar' : 'bars'}`;
+  return `${sectionLabel(type)} — ${barsLabel(bars)}`;
 }
 
 /**
@@ -120,8 +130,8 @@ export function autoTitle(sections: readonly SongSection[]): string {
   if (sections.length === 0) return DEFAULT_SONG_TITLE;
   const ordered = [...sections].sort((a, b) => a.startMeasure - b.startMeasure);
   if (ordered.length === 1) {
-    const s = ordered[0];
-    return `${sectionDisplayLabel(s)} — ${s.length} ${s.length === 1 ? 'bar' : 'bars'}`;
+    const only = ordered[0];
+    return `${sectionDisplayLabel(only)} — ${barsLabel(only.length)}`;
   }
   const labels = ordered.slice(0, AUTO_TITLE_MAX_LABELS).map(sectionDisplayLabel);
   // U+2013 en dash between labels, U+2026 ellipsis when some are left out.
@@ -147,7 +157,7 @@ export function sectionPlacement(
     if (measure.chords.some(Boolean)) lastUsed = i;
   });
   for (const section of song.sections ?? []) {
-    lastUsed = Math.max(lastUsed, section.startMeasure + section.length - 1);
+    lastUsed = Math.max(lastUsed, sectionEnd(section) - 1);
   }
   const startMeasure = lastUsed + 1;
   return {
@@ -162,7 +172,7 @@ export function sectionAt(
   measureIndex: number,
 ): SongSection | null {
   return (song.sections ?? []).find(
-    (s) => measureIndex >= s.startMeasure && measureIndex < s.startMeasure + s.length,
+    (s) => measureIndex >= s.startMeasure && measureIndex < sectionEnd(s),
   ) ?? null;
 }
 
@@ -174,7 +184,7 @@ export function sectionContaining(
   if (measureIndices.length === 0) return null;
   const section = sectionAt(song, Math.min(...measureIndices));
   if (!section) return null;
-  return Math.max(...measureIndices) < section.startMeasure + section.length ? section : null;
+  return Math.max(...measureIndices) < sectionEnd(section) ? section : null;
 }
 
 function isValidSection(value: unknown): value is SongSection {
@@ -258,6 +268,5 @@ export function checkChordCount(text: string): ChordCountCheck {
 
 /** Live hint for a chord count, e.g. '16 chords = 8 bars'. */
 export function chordCountSummary(count: number): string {
-  const bars = barsForChords(count);
-  return `${count} chords = ${bars} ${bars === 1 ? 'bar' : 'bars'}`;
+  return `${count} chords = ${barsLabel(barsForChords(count))}`;
 }

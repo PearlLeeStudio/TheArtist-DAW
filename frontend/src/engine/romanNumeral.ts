@@ -35,8 +35,9 @@ export function calculateRomanNumeral(chord: Chord, key: string): string {
 
   const expectedInterval = scaleIntervals[degree];
   if (interval !== expectedInterval) {
-    const diff = ((interval - expectedInterval + 18) % 12) - 6;
-    numeral = (diff > 0 ? '#'.repeat(diff) : 'b'.repeat(-diff)) + numeral;
+    // Semitones away from the scale degree, wrapped into -6..+5: sharps above, flats below.
+    const alteration = ((interval - expectedInterval + 18) % 12) - 6;
+    numeral = (alteration > 0 ? '#'.repeat(alteration) : 'b'.repeat(-alteration)) + numeral;
   }
 
   return numeral + getQualitySuffix(chord.quality);
@@ -56,7 +57,6 @@ export function isDiatonic(chord: Chord, key: string): boolean {
  * Rank candidate chord interpretations by harmonic context — diatonic
  * (in-key) interpretations float to the top, then ties break on the
  * candidates' original ordering (note-match score from `detectChordCandidates`).
- *
  */
 export function rankCandidatesByContext(
   candidates: Chord[],

@@ -141,23 +141,24 @@ export async function initMidi(
     midiAccess = access;
     noteCallback = onNotes;
     chordCallback = onChord;
-    let connected = false;
-    const connectInputs = () => {
-      if (request !== requestGeneration || midiAccess !== access) return;
-      for (const input of attachedInputs) input.onmidimessage = null;
-      attachedInputs.clear();
+    // These handlers outlive this call. Each one acts only while its
+    // connection is still the current one.
+    const isCurrent = () => request === requestGeneration && midiAccess === access;
+    const connectInputs = (): boolean => {
+      if (!isCurrent()) return false;
+      detachInputs();
       for (const input of access.inputs.values()) {
-        if (input.state === 'connected') {
-          input.onmidimessage = (event) => {
-            if (request === requestGeneration && midiAccess === access) onMidiMessage(event);
-          };
-          attachedInputs.add(input);
-        }
+        if (input.state !== 'connected') continue;
+        input.onmidimessage = (event) => {
+          if (isCurrent()) onMidiMessage(event);
+        };
+        attachedInputs.add(input);
       }
-      connected = attachedInputs.size > 0;
+      const connected = attachedInputs.size > 0;
       onConnection?.(connected);
+      return connected;
     };
-    connectInputs();
+    const connected = connectInputs();
     access.onstatechange = () => {
       if (request !== requestGeneration) return;
       resetMidiNotes();
@@ -172,9 +173,13 @@ export async function initMidi(
   }
 }
 
-function detachAccess(): void {
+function detachInputs(): void {
   for (const input of attachedInputs) input.onmidimessage = null;
   attachedInputs.clear();
+}
+
+function detachAccess(): void {
+  detachInputs();
   if (midiAccess) midiAccess.onstatechange = null;
   midiAccess = null;
 }

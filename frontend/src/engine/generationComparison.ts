@@ -46,6 +46,16 @@ export function canApplyComparison(comparison: GenerationComparison, song: Song,
     comparison.original.every(({ address, measureId }) => song.measures[address.measureIndex]?.id === measureId);
 }
 
+/** The candidate's chord for `address`, or `original` when the candidate has none there. */
+function candidateChordAt(
+  candidate: ReadonlyMap<string, Chord | null> | undefined,
+  address: SlotAddress,
+  original: Chord | null,
+): Chord | null {
+  const key = slotKey(address);
+  return candidate?.has(key) ? candidate.get(key)! : original;
+}
+
 /** Apply each candidate over the captured original, never over another
  * candidate. Missing/invalid response slots keep their original chord;
  * unselected slots in the server's whole-measure response are ignored. */
@@ -58,7 +68,7 @@ export function comparisonUpdates(
   if (!canApplyComparison(comparison, song, songEpoch)) return [];
   return comparison.original.map(({ address, chord }) => ({
     address: { ...address },
-    chord: structuredClone(candidate?.has(slotKey(address)) ? candidate.get(slotKey(address))! : chord),
+    chord: structuredClone(candidateChordAt(candidate, address, chord)),
   }));
 }
 
@@ -79,7 +89,8 @@ export function matchesCapturedRange(comparison: GenerationComparison, song: Son
  * when applied, so empty voicings from the parser are not counted as edits. */
 export function compareCandidate(comparison: GenerationComparison, candidate: ReadonlyMap<string, Chord | null>) {
   return comparison.original.map(({ address, chord }) => {
-    const after = candidate.has(slotKey(address)) ? candidate.get(slotKey(address))! : chord;
+    const key = slotKey(address);
+    const after = candidate.has(key) ? candidate.get(key)! : chord;
     return { address, before: chord, after, changed: !sameChord(chord, after, false) };
   });
 }
