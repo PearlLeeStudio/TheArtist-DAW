@@ -13,7 +13,9 @@ temperatures, then re-ranks them by a composite score:
 
 Composite = α·R1 + β·R2 (both lower-is-better, currently α=β=1).
 Each axis falls through gracefully if its module is unavailable; if
-both fall through, candidates ship in temperature order.
+both fall through, candidates ship in temperature order. R2, the
+per-transition explanations and the local judge behind them are opt-in
+in this build (THEARTIST_DISABLE_RAG=0, see `rag_disabled`).
 """
 
 from __future__ import annotations
@@ -27,6 +29,7 @@ from pathlib import Path
 
 from app.models.schemas import ContextMeasure, Suggestion, TheoryExplanation
 from app.models.schemas import MAX_SEED
+from app.services.env_flags import env_bool
 from app.services.key_anchor import anchor_to_key
 from app.services.song_form import (
     ROOT_POSITION_ENDINGS,
@@ -192,6 +195,16 @@ JAZZ_FAMILY_GENRES: set[str] = {"jazz", "blues", "bossa", "bossa nova", "rnb_sou
 RAG_ENABLED_GENRES: set[str] = JAZZ_FAMILY_GENRES | {"classical"}
 
 
+def rag_disabled() -> bool:
+    """Whether the R2 rerank, the theory explanations and the local judge stay off.
+
+    Off unless THEARTIST_DISABLE_RAG is explicitly 0: this build's runtime AI is
+    the Music Transformer plus Meta models, and the RAG path would also run the
+    Snowflake embedder and a gemma judge on ollama. An unparseable value raises.
+    """
+    return env_bool("THEARTIST_DISABLE_RAG", True)
+
+
 def _should_use_rag(genre: str | None) -> bool:
     """Centralised gate for the R2 theory-rerank + explanation RAG path.
 
@@ -201,9 +214,7 @@ def _should_use_rag(genre: str | None) -> bool:
     distance, so a query naturally picks the relevant book. Genres outside
     these books' coverage skip RAG to avoid noisy LLM-judge wastage.
     """
-    if not RAG_AVAILABLE:
-        return False
-    if os.getenv("THEARTIST_DISABLE_RAG"):
+    if rag_disabled() or not RAG_AVAILABLE:
         return False
     if genre and genre.lower() not in RAG_ENABLED_GENRES:
         return False
@@ -594,9 +605,7 @@ def _get_rag_services() -> tuple[object, object] | tuple[None, None]:
     bindings get half-initialised.
     """
     global _rag_retriever, _rag_llm_client, _rag_init_failed
-    if os.getenv("THEARTIST_DISABLE_RAG"):
-        return None, None
-    if not RAG_AVAILABLE or _rag_init_failed:
+    if rag_disabled() or not RAG_AVAILABLE or _rag_init_failed:
         return None, None
     if _rag_retriever is not None:
         return _rag_retriever, _rag_llm_client
@@ -650,11 +659,7 @@ def _attach_explanations(suggestions: list[Suggestion], selected_measures: list[
     cache makes repeated (chord_a, chord_b) pairs free across suggestions.
     Falls through unchanged if RAG is unavailable.
     """
-    if (
-        not RAG_AVAILABLE
-        or os.getenv("THEARTIST_DISABLE_RAG")
-        or os.getenv("THEARTIST_DISABLE_EXPLANATIONS")
-    ):
+    if rag_disabled() or not RAG_AVAILABLE or os.getenv("THEARTIST_DISABLE_EXPLANATIONS"):
         return suggestions
     from concurrent.futures import ThreadPoolExecutor
 
@@ -739,7 +744,7 @@ def _theory_rerank_warmup(suggestions: list[Suggestion]) -> None:
     Cuts cold-start cost from ~3×4×100 ms serial to ~300 ms wall-clock
     (4-way thread pool). Free if RAG is disabled.
     """
-    if not RAG_AVAILABLE or os.getenv("THEARTIST_DISABLE_RAG"):
+    if rag_disabled() or not RAG_AVAILABLE:
         return
     pairs: set[tuple[str, str]] = set()
     for s in suggestions:
@@ -772,11 +777,12 @@ def _rerank_composite(
     from the server log.
 
     Safety knobs (env vars, all optional):
+      THEARTIST_DISABLE_RAG         = "0"  # opt in to the R2 rerank and the
+                                            # explanations; unset or "1" keeps
+                                            # both off (see rag_disabled)
       THEARTIST_DISABLE_R2_RERANK   = "1"  # ship R1-only ranking
       THEARTIST_DISABLE_EXPLANATIONS = "1"  # skip per-transition LLM
                                             # explanations (fast path)
-      THEARTIST_DISABLE_RAG         = "1"  # disables both R2 rerank and
-                                            # explanations
       THEARTIST_RERANK_ALPHA        = "1.0"  # weight on Sethares
       THEARTIST_RERANK_BETA         = "1.0"  # weight on Berklee
     """
@@ -795,9 +801,9 @@ def _rerank_composite(
         except ValueError:
             beta = 1.0
 
-    # R2 (Berklee theory) gated on (a) explicit env disable, (b) RAG
-    # availability, (c) genre being in the Berklee Book of Jazz Harmony's
-    # coverage. Pearl 2026-05-09 — non-jazz genres skip the slow LLM judge.
+    # R2 (Berklee theory) gated on (a) the build-level RAG opt-in and the R2
+    # knob, (b) RAG availability, (c) genre being in the Berklee Book of Jazz
+    # Harmony's coverage. Pearl 2026-05-09 — non-jazz genres skip the slow LLM judge.
     r2_disabled = (
         bool(os.getenv("THEARTIST_DISABLE_R2_RERANK"))
         or not _should_use_rag(genre)
