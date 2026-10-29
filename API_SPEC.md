@@ -56,6 +56,7 @@ Vite dev server proxies `/api` → `http://localhost:8000/api` (configured in `v
 | Endpoint | Contract |
 |---|---|
 | `POST /api/import/score` | Explicitly attached score → Meta transcription draft for human review |
+| `POST /api/review/candidates` | A Generate's A/B/C → the judge's choice, its reasons checked against analyzer facts |
 | `POST /api/export/midi` | Edited `ExportSpec` → `audio/midi` bytes |
 | `GET /api/daw/targets` | Installed Logic/Ableton availability on the backend machine |
 | `POST /api/daw/open` | Explicit local file output and Logic open / Ableton reveal |
@@ -362,6 +363,27 @@ The stream variant sends SSE events `plan`, `validate`, `revise`, `generate_sect
 `SectionGenerateRequest` gained an optional `cadence` (same vocabulary) that overrides the section's default cadence.
 
 ---
+
+### POST `/api/review/candidates` — Second ear
+
+The judge role picks one of a Generate's two or three candidates on facts code computed, and code checks every reason it gives against those facts. Nothing is applied: adopting a candidate stays the user's click.
+
+Request (`ReviewRequest`, strict; HTTP 422 before any fact is computed):
+
+| Field | Meaning |
+|---|---|
+| `key` | The song's key, `C major` or `A minor` |
+| `genre` | One of the 13 genres, or `null` |
+| `sectionType` | The section Generate used, whose song-form rules wrote some slots; `null` = no rules |
+| `original` | The bars before the generation: per measure two slots, a symbol or `null` (1–64 measures) |
+| `candidates` | 2–3 `{label, chords}` over the same measures, every slot as Apply would write it; unique labels |
+| `previousSection` | The section before the bars' section, from the same offset; `null` when there is none |
+
+Facts per candidate, computed by code over its filled slots: `outOfKeyRatio` (chords with a tone outside the key), `changedSlots` (slots that differ from `original`), `repetitionVsPrevious` (chords equal to the previous section's at that slot), `r1Roughness` (mean Sethares roughness per chord, as the R1 rerank computes it; flat roots are respelled for music21) and `rulesSlots` (slots the song-form rules write — context, never a reason).
+
+Response (`ReviewResponse`): `choice`, `reasons: [{fact, factName, value, claim, confirmed, analyzerValue}]` (one or two; `confirmed` when the cited value matches the chosen candidate's fact — counts exactly, ratios and roughness within 0.005 or 1% — otherwise the reason is the model's own statement), `facts`, `provider`, `model`, `requestId`, `costUsd`, `latencyMs`, `source: "judge"`.
+
+Limits: one judge call (`LLM_JUDGE_*`, Muse Spark by default), effort `low`, 30 s, 2048 output tokens including reasoning, $0.03 reserved (an open-weight judge's one JSON-guard retry counts twice). Statuses: 503 `THEARTIST_META_ENABLED=0` ("disabled") or missing configuration; 429 budget or a spend limit; 504 timeout; 502 invalid reply. A failure answers `{detail, error: {kind, message, requestId}, provider, model, costUsd, latencyMs}` and never a fallback order.
 
 ### POST `/api/generate/chords`
 
@@ -782,20 +804,20 @@ This is an explicit side effect on the **backend computer**. The browser enables
 
 ### Judge-server lockdown and Meta spend limits
 
-Off by default. `THEARTIST_PUBLIC_HOST=1`: `GET /api/daw/targets`, `POST /api/daw/open` and `POST /api/models/warmup` answer 403 with a reason, `/mcp/` is not mounted, and `POST /api/import/score` accepts only `engine: "local"` (403 otherwise). The Meta-calling routes — planner runs with `planner: "meta"`, and a score import that is about to call Meta — are then admitted against limits (also available alone with `THEARTIST_META_LIMITS=1`):
+Off by default. `THEARTIST_PUBLIC_HOST=1`: `GET /api/daw/targets`, `POST /api/daw/open` and `POST /api/models/warmup` answer 403 with a reason, `/mcp/` is not mounted, and `POST /api/import/score` accepts only `engine: "local"` (403 otherwise). The Meta-calling routes — planner runs with `planner: "meta"`, Second-ear reviews, and a score import that is about to call Meta — are then admitted against limits (also available alone with `THEARTIST_META_LIMITS=1`):
 
 | Header | Meaning |
 |---|---|
 | `X-TheArtist-Session` | Required; a stable per-browser id (≤ 128 characters). Its pool allows `THEARTIST_META_SESSION_LIMIT_USD` per UTC day (default 1.00). |
 | `X-TheArtist-Judge-Code` | Optional; equal to `THEARTIST_JUDGE_CODE`, it draws from one shared judge pool of `THEARTIST_JUDGE_CODE_DAILY_USD` (default 5.00). |
 
-A request is charged its worst case (a planner run $0.10, a Meta score reading $1.35, note assistance $0.20) and settled at what the ledger recorded; an `auto` import the local reader finishes is never charged. The global cap `THEARTIST_META_DAILY_LIMIT_USD` (default 10.00) counts today's ledger entries. Statuses: 400 missing or over-long session header, 403 wrong judge code, 429 a limit reached (with `Retry-After` to UTC midnight), 503 a misconfigured limit variable or unreadable ledger.
+A request is charged its worst case (a planner run $0.10, a review $0.03, a Meta score reading $1.35, note assistance $0.20) and settled at what the ledger recorded; an `auto` import the local reader finishes is never charged. The global cap `THEARTIST_META_DAILY_LIMIT_USD` (default 10.00) counts today's ledger entries. Statuses: 400 missing or over-long session header, 403 wrong judge code, 429 a limit reached (with `Retry-After` to UTC midnight), 503 a misconfigured limit variable or unreadable ledger.
 
 ### GET `/api/capabilities` and `/mcp/` — Shared contract discovery
 
 `GET /api/capabilities` returns `{"schemaVersion":"1.0","data":{...}}`, including implemented tools, contract names, payload limits, source/model fields and known limitations. The MCP `capabilities` tool returns the same envelope. Other REST responses keep their existing shapes; they are not wrapped in this envelope.
 
-The Streamable HTTP endpoint is `/mcp/` on the backend, outside the `/api` prefix. It currently exposes `capabilities`, `list_models`, `list_genres`, `get_genre_preset`, `generate_section`, `build_song`, `render_midi`, `import_score` and `export_daw`. REST and MCP call the same generation/import/export implementations. There is no MCP song planner or theory explanation tool yet.
+The Streamable HTTP endpoint is `/mcp/` on the backend, outside the `/api` prefix. It currently exposes `capabilities`, `list_models`, `list_genres`, `get_genre_preset`, `generate_section`, `plan_song`, `validate_plan`, `build_song`, `render_midi`, `import_score` and `export_daw`. REST and MCP call the same generation, planning, import and export implementations. There is no theory explanation tool, and the Second-ear review is REST only.
 
 Successful MCP results put the versioned envelope in `structuredContent`. Clients must check `isError`, `schemaVersion` and documented size limits, and preserve `source`/`model_used` fields. `import_score` additionally requires explicit attachment confirmation. MCP DAW handoff requires a direct loopback request, server opt-in and explicit per-call confirmation. See [the MCP contract and thin-client example](docs/mcp.md) for exact arguments, safeguards and transport setup.
 

@@ -24,8 +24,8 @@ passage with the author's Music Transformer, and hands the arrangement to the DA
 | | Pre-existing (tag `baseline`) | Hackathon work (commits after the tag) |
 |---|---|---|
 | Models | 25M-parameter Music Transformer, 11 genre LoRAs, R1 rerank | no new weights; Meta Muse Spark as planner / judge / reader |
-| Editor | staff, voicings, Roman numerals, MIDI input, playback | Import Score, Original/A/B/C, Projects, the Play panel and mixer |
-| Service | `/api/generate*` | local vector-PDF reader and harmony analyzer, MIDI/PDF/DAW export, REST + MCP contract, Meta client with ledger, planner |
+| Editor | staff, voicings, Roman numerals, MIDI input, playback | Import Score, Original/A/B/C, Second ear, Complete the form, Projects, the Play panel and mixer |
+| Service | `/api/generate*` | local vector-PDF reader and harmony analyzer, MIDI/PDF/DAW export, Logic Scripter script, REST + MCP contract, Meta client with ledger, planner, Second-ear review |
 
 **Where Meta is used** (every call: Standard model id, timeout, cost reservation, request id and token count in the ledger; a failure is shown as a failure):
 
@@ -34,6 +34,7 @@ passage with the author's Music Transformer, and hands the arrangement to the DA
 | Score import, `engine: "meta"` or `"auto"` (API/MCP) | `backend/app/services/score_import.py` | 1 bounded read of the attachment | `THEARTIST_META_ENABLED` |
 | Note-text assistance for unresolved bars (`engine: "auto"`) | `backend/app/services/harmony_meta.py`, `score_assistance.py` | ≤ 2 calls of ≤ 8 bars | same |
 | Complete the form planner (plan, validate, revise, judge) | `backend/app/services/planner.py`, `routes/plan.py` | ≤ 5 calls per run (1 plan, ≤ 2 revisions, ≤ 2 judgments) | same; judge role via `LLM_JUDGE_*` |
+| Second ear: pick one of a Generate's A/B/C on analyzer facts, each reason checked | `backend/app/services/review.py`, `routes/review.py` | 1 judge call | same; judge role via `LLM_JUDGE_*` |
 
 With `THEARTIST_META_ENABLED=0` these paths answer HTTP 503 "disabled"; the local
 reader, the author's model and every export keep working.
@@ -71,6 +72,11 @@ remain on the [manual checklist](docs/manual-checks.md).
 - **Sections** preserves explicit versus inferred labels, lets you edit boundaries,
   and selects a region by its staff label. **Original/A/B/C** changes only the chosen
   slots and can restore the exact original voicings.
+- **Second ear** under a three-candidate list asks the judge model which candidate
+  fits, on facts code computed (chords outside the key, changed slots, repetition of
+  the previous section, roughness). Each reason shows its fact marked *analyzer
+  confirmed* or *model statement*, plus the request id and cost; picking a version
+  stays your click.
 - **Projects** saves work in this browser. **Edit** returns a saved project to the
   editor; loading another score first preserves the current work. Select individual
   projects or **Select all**, then **Delete selected** after confirmation. There is

@@ -1,0 +1,173 @@
+{
+  "ts": "2026-10-29T11:30:36+00:00",
+  "route": "/api/review/candidates",
+  "statusCode": 200,
+  "request": {
+    "key": "C major",
+    "genre": "pop",
+    "sectionType": "chorus",
+    "original": [
+      [
+        "Cmaj7",
+        "Am7"
+      ],
+      [
+        "Dm7",
+        "G7"
+      ],
+      [
+        "Cmaj7",
+        "Am7"
+      ],
+      [
+        "Dm7",
+        "G7"
+      ]
+    ],
+    "candidates": [
+      {
+        "label": "A",
+        "chords": [
+          [
+            "C",
+            "Am"
+          ],
+          [
+            "F",
+            "G"
+          ],
+          [
+            "C",
+            "Am"
+          ],
+          [
+            "F",
+            "G"
+          ]
+        ]
+      },
+      {
+        "label": "B",
+        "chords": [
+          [
+            "F",
+            "G"
+          ],
+          [
+            "Em",
+            "Am"
+          ],
+          [
+            "Ab",
+            "Bb"
+          ],
+          [
+            "G",
+            "C"
+          ]
+        ]
+      },
+      {
+        "label": "C",
+        "chords": [
+          [
+            "C",
+            "E7"
+          ],
+          [
+            "Am",
+            "C7"
+          ],
+          [
+            "F",
+            "D7"
+          ],
+          [
+            "G7",
+            "C"
+          ]
+        ]
+      }
+    ],
+    "previousSection": [
+      [
+        "C",
+        "Am"
+      ],
+      [
+        "F",
+        "G"
+      ],
+      [
+        "C",
+        "Am"
+      ],
+      [
+        "F",
+        "G"
+      ]
+    ]
+  },
+  "response": {
+    "choice": "B",
+    "reasons": [
+      {
+        "fact": "repetitionVsPrevious=0",
+        "factName": "repetitionVsPrevious",
+        "value": 0.0,
+        "claim": "Gives full contrast to previous section for a chorus lift.",
+        "confirmed": true,
+        "analyzerValue": 0.0
+      },
+      {
+        "fact": "r1Roughness=0.366",
+        "factName": "r1Roughness",
+        "value": 0.366,
+        "claim": "Most consonant chords suit bright pop chorus.",
+        "confirmed": true,
+        "analyzerValue": 0.366
+      }
+    ],
+    "facts": [
+      {
+        "label": "A",
+        "outOfKeyRatio": 0.0,
+        "changedSlots": 8,
+        "repetitionVsPrevious": 1.0,
+        "r1Roughness": 0.386,
+        "rulesSlots": [
+          6,
+          7
+        ]
+      },
+      {
+        "label": "B",
+        "outOfKeyRatio": 0.25,
+        "changedSlots": 8,
+        "repetitionVsPrevious": 0.0,
+        "r1Roughness": 0.366,
+        "rulesSlots": [
+          6,
+          7
+        ]
+      },
+      {
+        "label": "C",
+        "outOfKeyRatio": 0.375,
+        "changedSlots": 8,
+        "repetitionVsPrevious": 0.125,
+        "r1Roughness": 0.635,
+        "rulesSlots": [
+          6,
+          7
+        ]
+      }
+    ],
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "requestId": "bb1c1b0d-648e-4bf3-9bce-a89343ca6ec5",
+    "costUsd": 0.00414825,
+    "latencyMs": 3675,
+    "source": "judge"
+  }
+}
