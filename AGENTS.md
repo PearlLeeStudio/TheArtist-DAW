@@ -12,6 +12,13 @@ Working repository of TheArtist for the Meta Global AI Developer Hackathon
   Inside the project tree, read freely without asking.
 - Everything up to the git tag `baseline` is pre-existing (the public TheArtist release snapshot).
   Hackathon work is every commit after it. Each landed feature gets a row in `HACKATHON.md`.
+- Keep this development repository and its history intact. Before the submission deadline, prepare a
+  separate fresh public repository created on or after October 26 containing only event work, without
+  copying pre-event code or git history. Declare the original core as a separate, versioned dependency
+  with reproducible setup instructions; provide edits to existing files as patches. A newly added file
+  may contain moved pre-event code, so review provenance rather than relying on git's added-file status.
+  Development need not take place in the clean submission repository throughout the event. The
+  three-minute video must open by distinguishing the pre-existing core from the event's new work.
 - Commit here only for files in this repo, when a unit of work is done: `type(scope): description`,
   scopes `frontend` · `backend` · `agent` · `mcp` · `voyager` · `infra` · `docs`; one logical change per commit.
 - This repo is public. Never commit API keys or `.env` files, personal data, model weights, the theory

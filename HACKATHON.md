@@ -5,6 +5,13 @@ project submissions due Nov 4, 9:00 PM ET.
 
 ## Baseline (not hackathon work)
 
+This is the ongoing development repository. The final submission will use a separate fresh public
+repository containing only event work, with changes to existing files supplied as patches and the
+original core declared as a versioned dependency. Its setup instructions must reproduce the finished
+app without copying pre-event code or history into the submission repository. This development
+repository and its history will remain intact. The three-minute demo opens with the distinction
+between the pre-existing core and the work built during the event.
+
 This repository starts from the public release snapshot of
 [PearlLeeStudio/TheArtist](https://github.com/PearlLeeStudio/TheArtist)
 (git tag `baseline`; the code matches the public commit `f043e53` of 2026-08-25).
