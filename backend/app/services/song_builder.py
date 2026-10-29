@@ -85,6 +85,38 @@ def _slot_chord(bar_chords: list[str | None], pos: float, beats_per_slot: float)
     return bar_chords[slot_idx]
 
 
+def _bar_strikes(
+    pattern: list[float],
+    chords: list[str | None],
+    beats_per_measure: int,
+) -> list[tuple[float, float]]:
+    """(position, length) in beats of each harmony strike in one bar of the
+    comping rhythm `pattern` (beat positions, as a preset holds them).
+
+    Positions outside the bar drop out first (a 4/4 preset can reach past a
+    3/4 bar). A rhythm that then skips a chord slot gains a strike at the
+    slot's start: beat 0 for the first chord, the half bar for a different
+    second chord. While the chord changes, a strike in the first slot stops
+    at the half bar.
+    """
+    beats_per_slot = beats_per_measure / 2
+    # The rhythm's positions inside one bar of this meter, sorted and deduplicated.
+    positions = [pos for pos, _ in harmony_strikes(pattern, beats_per_measure)]
+    first = _slot_chord(chords, 0, beats_per_slot)
+    second = _slot_chord(chords, beats_per_slot, beats_per_slot)
+    changed = first != second
+    if positions and first and not any(pos < beats_per_slot for pos in positions):
+        positions.append(0)
+    if positions and second and changed and not any(pos >= beats_per_slot for pos in positions):
+        positions.append(beats_per_slot)
+    strikes: list[tuple[float, float]] = []
+    for pos, dur in harmony_strikes(positions, beats_per_measure):
+        if changed and pos < beats_per_slot:
+            dur = min(dur, beats_per_slot - pos)
+        strikes.append((pos, dur))
+    return strikes
+
+
 def build_harmony_events(
     bars: list[dict],
     genre: str,
@@ -102,18 +134,7 @@ def build_harmony_events(
     events: list[dict] = []
     for bar_idx, bar in enumerate(bars):
         chords = bar.get("chords") or []
-        positions = [pos for pos, _ in harmony_strikes(base_pattern, beats_per_measure)]
-        first = _slot_chord(chords, 0, beats_per_slot)
-        second = _slot_chord(chords, beats_per_slot, beats_per_slot)
-        changed = first != second
-        if positions and first and not any(pos < beats_per_slot for pos in positions):
-            positions.append(0)
-        if positions and second and changed and not any(pos >= beats_per_slot for pos in positions):
-            positions.append(beats_per_slot)
-        strikes = harmony_strikes(positions, beats_per_measure)
-        for pos, dur in strikes:
-            if changed and pos < beats_per_slot:
-                dur = min(dur, beats_per_slot - pos)
+        for pos, dur in _bar_strikes(base_pattern, chords, beats_per_measure):
             chord_sym = _slot_chord(chords, pos, beats_per_slot)
             if not chord_sym:
                 continue
@@ -245,12 +266,12 @@ def render_midi(
         # (funk's bass re-strikes its root 0.5 beats into a 0.9-beat note).
         # The event JSON keeps the editor's lengths.
         notes.sort()
-        next_on: dict[int, int] = {}
+        next_on: dict[int, int] = {}   # pitch -> tick of its next strike, walking backwards
         flat: list[tuple[int, str, int, int]] = []
         for on, off, note, vel in reversed(notes):
-            nxt = next_on.get(note)
-            if nxt is not None and on < nxt < off:
-                off = nxt
+            next_strike = next_on.get(note)
+            if next_strike is not None and on < next_strike < off:
+                off = next_strike
             next_on[note] = on
             flat.append((on,  "on",  note, vel))
             flat.append((off, "off", note, 0))

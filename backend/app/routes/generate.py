@@ -2,7 +2,7 @@ import asyncio
 import json
 import logging
 import time
-from collections.abc import Callable
+from collections.abc import AsyncIterator, Callable
 from typing import Any
 
 from fastapi import APIRouter, HTTPException
@@ -26,6 +26,9 @@ from app.services.song_form import apply_song_form_to_suggestions
 log = logging.getLogger(__name__)
 
 router = APIRouter()
+
+# Progress callback the inference pipeline calls between stages: (stage, payload).
+_OnPhase = Callable[[str, dict], None]
 
 VALID_ROOTS = {
     "C", "C#", "Db", "D", "D#", "Eb", "E", "F",
@@ -112,6 +115,23 @@ def _rule_suggestions(
     return suggestions
 
 
+def _generate_ai(
+    req: GenerateRequest, section: str | None, on_phase: _OnPhase | None = None,
+) -> list[Suggestion] | None:
+    """The AI path for /generate; None tells the caller to fall back to rules."""
+    return generate_ai_suggestions(
+        key=req.key,
+        genre=req.genre,
+        context=req.context,
+        selected_measures=req.selectedMeasures,
+        time_signature=req.timeSignature,
+        model_key=req.modelKey,
+        bpm=req.bpm,
+        on_phase=on_phase,
+        section_type=section,
+    )
+
+
 def _generate_response(
     req: GenerateRequest, suggestions: list[Suggestion] | None,
     section: str | None, key_root: str, is_minor: bool,
@@ -143,18 +163,7 @@ def generate(req: GenerateRequest) -> GenerateResponse:
     log.debug("sectionType=%s positionRatio=%s selectedMeasures=%s", section, req.positionRatio, req.selectedMeasures)
 
     # Try AI inference first, fall back to rule-based
-    suggestions = None
-    if TORCH_AVAILABLE:
-        suggestions = generate_ai_suggestions(
-            key=req.key,
-            genre=req.genre,
-            context=req.context,
-            selected_measures=req.selectedMeasures,
-            time_signature=req.timeSignature,
-            model_key=req.modelKey,
-            bpm=req.bpm,
-            section_type=section,
-        )
+    suggestions = _generate_ai(req, section) if TORCH_AVAILABLE else None
     return _generate_response(req, suggestions, section, key_root, is_minor)
 
 
@@ -163,19 +172,24 @@ def _sse(event: str, data: dict) -> bytes:
     return f"event: {event}\ndata: {json.dumps(data)}\n\n".encode("utf-8")
 
 
+# Disable proxy buffering so each event hits the client immediately.
 _SSE_HEADERS = {"X-Accel-Buffering": "no", "Cache-Control": "no-cache"}
 _STREAM_DONE = object()  # queued once the inference future has completed
+
+
+def _sse_response(frames: AsyncIterator[bytes]) -> StreamingResponse:
+    return StreamingResponse(frames, media_type="text/event-stream", headers=_SSE_HEADERS)
 
 
 def _error_stream(detail: str) -> StreamingResponse:
     """A stream holding a single terminal `error` frame (validation failures)."""
     async def stream():
         yield _sse("error", {"detail": detail})
-    return StreamingResponse(stream(), media_type="text/event-stream", headers=_SSE_HEADERS)
+    return _sse_response(stream())
 
 
 def _event_stream(
-    run_ai: Callable[[Callable[[str, dict], None]], Any],
+    run_ai: Callable[[_OnPhase], Any],
     finish: Callable[[Any], dict],
 ) -> StreamingResponse:
     """Stream one generation as SSE: its phase events live, then one terminal frame.
@@ -190,6 +204,9 @@ def _event_stream(
         loop = asyncio.get_running_loop()
         queue: asyncio.Queue = asyncio.Queue()
         t0 = time.perf_counter()
+
+        def elapsed_ms() -> int:
+            return int((time.perf_counter() - t0) * 1000)
 
         def on_phase(stage: str, payload: dict) -> None:
             """Bridge the worker thread's phase callbacks to the event loop.
@@ -213,10 +230,9 @@ def _event_stream(
 
         while (item := await queue.get()) is not _STREAM_DONE:
             stage, payload = item
-            # t_ms = elapsed since request start; powers the latency
-            # probe (ai/analysis/latency_probe.py) and is ignorable
-            # by the frontend.
-            payload["t_ms"] = int((time.perf_counter() - t0) * 1000)
+            # t_ms = elapsed since request start, for latency probes; the
+            # frontend ignores it.
+            payload["t_ms"] = elapsed_ms()
             yield _sse(stage, payload)
 
         try:
@@ -225,15 +241,10 @@ def _event_stream(
             log.exception("Streaming generation failed")
             yield _sse("error", {"detail": "Chord generation failed"})
             return
-        payload["elapsed_ms"] = int((time.perf_counter() - t0) * 1000)
+        payload["elapsed_ms"] = elapsed_ms()
         yield _sse("result", payload)
 
-    return StreamingResponse(
-        stream(),
-        media_type="text/event-stream",
-        # Disable proxy buffering so each event hits the client immediately.
-        headers=_SSE_HEADERS,
-    )
+    return _sse_response(stream())
 
 
 @router.post("/generate/stream")
@@ -260,21 +271,8 @@ async def generate_stream(req: GenerateRequest):
     except HTTPException as exc:
         return _error_stream(exc.detail)
 
-    def run_ai(on_phase):
-        return generate_ai_suggestions(
-            key=req.key,
-            genre=req.genre,
-            context=req.context,
-            selected_measures=req.selectedMeasures,
-            time_signature=req.timeSignature,
-            model_key=req.modelKey,
-            bpm=req.bpm,
-            on_phase=on_phase,
-            section_type=section,
-        )
-
     return _event_stream(
-        run_ai,
+        lambda on_phase: _generate_ai(req, section, on_phase),
         lambda suggestions: _generate_response(req, suggestions, section, key_root, is_minor).model_dump(),
     )
 
@@ -293,8 +291,10 @@ def _section_measures(req: SectionGenerateRequest) -> tuple[list[ContextMeasure]
 
 
 def _section_ai(
-    req: SectionGenerateRequest, context: list[ContextMeasure], selected: list[int], on_phase=None,
+    req: SectionGenerateRequest, context: list[ContextMeasure], selected: list[int],
+    on_phase: _OnPhase | None = None,
 ) -> AIResult | None:
+    """The AI path for a section; None tells the caller to fall back to rules."""
     return generate_ai_result(
         key=req.key,
         genre=req.genre,
@@ -312,6 +312,8 @@ def _section_response(
     req: SectionGenerateRequest, context: list[ContextMeasure], selected: list[int],
     ai: AIResult | None, key_root: str, is_minor: bool,
 ) -> SectionGenerateResponse:
+    """Wrap the AI result, or fall back to rules cadenced for the section's
+    usual place in a song (SECTION_POSITION)."""
     if ai is not None:
         suggestions, source, model_used = ai.suggestions, "ai", ai.model_key
     else:

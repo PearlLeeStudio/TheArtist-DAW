@@ -64,6 +64,48 @@ log = logging.getLogger(__name__)
 router = APIRouter()
 
 
+def _model_bars(
+    model_key: str,
+    *,
+    genre: str,
+    key: str,
+    bpm: int,
+    time_signature: tuple[int, int],
+    n_bars: int,
+    selected: list[int],
+    seed: int | None,
+) -> list[dict] | None:
+    """One `n_bars`-bar model pass over the `selected` measures, fitted like
+    the editor's (`_bars_to_chord_map`): a short pass repeats its own bars
+    and each bar keeps two chords. None, for the caller's rule fallback,
+    when the checkpoint does not load, the pass fails or it writes no bars.
+    """
+    registry = ModelRegistry.get()
+    tokenizer = registry.tokenizer
+    prompt_ids = build_prompt(
+        tokenizer, key, genre, time_signature,
+        context=[],
+        selected_measures=selected,
+        bpm=bpm,
+    )
+    loaded = registry.load_model(model_key)
+    if loaded is None:
+        return None
+    try:
+        bars = generate_with_model(
+            loaded, tokenizer, prompt_ids, n_bars,
+            temperature=0.8,
+            seed=seed,
+        )
+        if bars:
+            chord_map = _bars_to_chord_map(bars, selected)
+            return [{"chords": chord_map[str(m)]} for m in selected]
+        log.warning("AI inference returned no bars, falling back to rules")
+    except Exception:
+        log.exception("AI inference failed, falling back to rules")
+    return None
+
+
 def _generate_bars(
     *,
     genre: str,
@@ -76,37 +118,19 @@ def _generate_bars(
     """Run the existing chord-generation chain (AI when available, rules
     otherwise) and return (bars, model_used): `n_bars` bars of two chords.
     Mirrors the path in `routes/chords.py:generate_chords` but with no
-    candidate fan-out. A model pass is fitted like the editor's
-    (`_bars_to_chord_map`): a short one repeats its own bars, each bar
-    keeps two chords; a pass with no bars falls back to the rules.
-    Both paths use the request's seed; model_used identifies a rule fallback.
+    candidate fan-out. Both paths use the request's seed; model_used
+    identifies a rule fallback.
     """
     model_key = dispatch_model_for_genre(genre)
     selected = list(range(n_bars))
 
     if TORCH_AVAILABLE:
-        registry = ModelRegistry.get()
-        tokenizer = registry.tokenizer
-        prompt_ids = build_prompt(
-            tokenizer, key, genre, time_signature,
-            context=[],
-            selected_measures=selected,
-            bpm=bpm,
+        ai_bars = _model_bars(
+            model_key, genre=genre, key=key, bpm=bpm,
+            time_signature=time_signature, n_bars=n_bars, selected=selected, seed=seed,
         )
-        loaded = registry.load_model(model_key)
-        if loaded is not None:
-            try:
-                bars = generate_with_model(
-                    loaded, tokenizer, prompt_ids, n_bars,
-                    temperature=0.8,
-                    seed=seed,
-                )
-                if bars:
-                    chord_map = _bars_to_chord_map(bars, selected)
-                    return [{"chords": chord_map[str(m)]} for m in selected], model_key
-                log.warning("AI inference returned no bars, falling back to rules")
-            except Exception:
-                log.exception("AI inference failed, falling back to rules")
+        if ai_bars is not None:
+            return ai_bars, model_key
 
     # Rule fallback
     full_context = [ContextMeasure(measure=m, chords=[None, None]) for m in selected]
@@ -122,6 +146,16 @@ def _generate_bars(
     else:
         bars = [["Cmaj", "Cmaj"]] * n_bars
     return [{"chords": b} for b in bars], "rules"
+
+
+def _drum_pattern_id(req: SongGenerateRequest) -> int | None:
+    """The drum pattern to play: the request's pick, the genre's own when it
+    picks none, and None (no drums) for "off"."""
+    if req.drum_pattern is None:
+        return genre_drum_pattern_id(req.genre)
+    if req.drum_pattern == "off":
+        return None
+    return req.drum_pattern
 
 
 def _events_to_track(events: list[dict], instrument: str) -> Track:
@@ -153,12 +187,7 @@ def generate_song(req: SongGenerateRequest) -> SongGenerateResponse:
 
     # Play-panel choices (ids already validated by the schema); None = the genre's.
     rhythm = harmony_rhythm_preset(req.harmony_rhythm) or genre_rhythm_preset(req.genre)
-    if req.drum_pattern is None:
-        drum_id = genre_drum_pattern_id(req.genre)
-    elif req.drum_pattern == "off":
-        drum_id = None
-    else:
-        drum_id = req.drum_pattern
+    drum_id = _drum_pattern_id(req)
     h_instrument = req.harmony_instrument or harmony_instrument(req.genre)
 
     bars, model_used = _generate_bars(

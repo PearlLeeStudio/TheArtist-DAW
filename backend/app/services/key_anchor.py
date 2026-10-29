@@ -119,6 +119,8 @@ def anchor_to_key(chords: list[str], key_root: str, is_minor: bool) -> list[str]
     roots = [parsed[0] for parsed in (_parse(c) for c in chords) if parsed is not None]
 
     def rank(tonic: int) -> tuple:
+        # Most chord tones first; ties go to the tonic hints, then to the
+        # collection the fewest semitones from the requested one.
         move = (target - tonic) % 12
         return (scores[tonic], *_tonic_hint(tonic, roots), -min(move, 12 - move))
 

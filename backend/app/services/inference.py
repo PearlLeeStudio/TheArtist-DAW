@@ -26,8 +26,13 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from app.models.schemas import ContextMeasure, Suggestion, TheoryExplanation
+from app.models.schemas import MAX_SEED
 from app.services.key_anchor import anchor_to_key
-from app.services.song_form import ROOT_POSITION_ENDINGS, apply_song_form_to_suggestions
+from app.services.song_form import (
+    ROOT_POSITION_ENDINGS,
+    apply_song_form_to_suggestions,
+    rewrite_chord_sequence,
+)
 from app.services.voice_leading import apply_voice_leading_bass
 
 log = logging.getLogger(__name__)
@@ -503,8 +508,8 @@ def generate_with_model(
     device = loaded.device
     generator = None
     if seed is not None:
-        if type(seed) is not int or not 0 <= seed <= 0xFFFFFFFF:
-            raise ValueError("seed must be an integer from 0 to 4294967295")
+        if type(seed) is not int or not 0 <= seed <= MAX_SEED:
+            raise ValueError(f"seed must be an integer from 0 to {MAX_SEED}")
         generator = torch.Generator(device=device).manual_seed(seed)
     prompt = torch.tensor([prompt_ids], device=device)
     # BAR + 2 chords per bar, plus slack so a few extra chords or other
@@ -516,6 +521,9 @@ def generate_with_model(
     exempt = {tokenizer.bar_id}
     if hasattr(tokenizer, "pad_id"):
         exempt.add(tokenizer.pad_id)
+
+    # Every token that is not a bracketed special one ([BAR], [EOS], [KEY:...]) is a chord.
+    chord_ids = {i for tok, i in tokenizer.token2id.items() if not tok.startswith("[")}
 
     output = loaded.model.generate(
         prompt,
@@ -529,7 +537,7 @@ def generate_with_model(
         ignore_repeat_token_ids=exempt,
         n_bars=n_bars,
         bar_id=tokenizer.bar_id,
-        chord_ids={i for tok, i in tokenizer.token2id.items() if not tok.startswith("[")},
+        chord_ids=chord_ids,
         end_ids={tokenizer.pad_id},
         generator=generator,
     )
@@ -952,6 +960,19 @@ def _score_and_rerank(
     return _rerank_composite(suggestions, genre=genre)
 
 
+def _final_chords(suggestions: list[Suggestion]) -> list[tuple[Suggestion, str, str]]:
+    """(suggestion, last measure, that measure's last chord) for every
+    suggestion whose last measure holds a chord."""
+    finals: list[tuple[Suggestion, str, str]] = []
+    for s in suggestions:
+        if not s.chords:
+            continue
+        last = max(s.chords, key=int)
+        if s.chords[last]:
+            finals.append((s, last, s.chords[last][-1]))
+    return finals
+
+
 def _inject_voice_leading(
     suggestions: list[Suggestion], on_phase, section_type: str | None = None,
 ) -> list[Suggestion]:
@@ -962,15 +983,10 @@ def _inject_voice_leading(
     if os.getenv("THEARTIST_DISABLE_VOICE_LEADING"):
         return suggestions
     on_phase("voicing", {"label": "Picking inversions for smooth bass motion"})
-    endings: list[tuple[Suggestion, str, str]] = []
-    if section_type in ROOT_POSITION_ENDINGS:
-        for s in suggestions:
-            last = max(s.chords, key=int) if s.chords else None
-            if last is not None and s.chords[last]:
-                endings.append((s, last, s.chords[last][-1]))
+    resolving_tonics = _final_chords(suggestions) if section_type in ROOT_POSITION_ENDINGS else []
     suggestions = apply_voice_leading_bass(suggestions)
-    for s, last, chord in endings:
-        s.chords[last][-1] = chord
+    for s, last, tonic in resolving_tonics:
+        s.chords[last][-1] = tonic
     return suggestions
 
 
@@ -1003,12 +1019,13 @@ def _has_chords_before(context: list[ContextMeasure], selected_measures: list[in
 def _anchor_candidates(suggestions: list[Suggestion], key_root: str, is_minor: bool) -> None:
     """Transpose each candidate into the requested key (see key_anchor) in place."""
     for s in suggestions:
-        anchored = anchor_to_key(_flatten_suggestion(s), key_root, is_minor)
-        idx = 0
-        for m_str in sorted(s.chords.keys(), key=int):
-            n = len(s.chords[m_str])
-            s.chords[m_str] = anchored[idx : idx + n]
-            idx += n
+        rewrite_chord_sequence(s, lambda chords: anchor_to_key(chords, key_root, is_minor))
+
+
+def _split_key(key: str) -> tuple[str, bool]:
+    """'A minor' -> ('A', True): the key's root and whether it is minor."""
+    parts = key.strip().split()
+    return parts[0], len(parts) > 1 and parts[1].lower().startswith("min")
 
 
 @dataclass
@@ -1065,9 +1082,7 @@ def generate_ai_result(
     if not suggestions:
         return None
 
-    parts = key.strip().split()
-    key_root = parts[0]
-    is_minor = len(parts) > 1 and parts[1].lower().startswith("min")
+    key_root, is_minor = _split_key(key)
     # With no chords to continue from the model ignores the KEY token.
     if not _has_chords_before(context, selected_measures):
         _anchor_candidates(suggestions, key_root, is_minor)

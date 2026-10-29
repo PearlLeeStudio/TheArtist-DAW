@@ -10,6 +10,8 @@ Rules are genre-agnostic and based on relative scale degrees.
 
 from __future__ import annotations
 
+from collections.abc import Callable
+
 from app.models.schemas import Suggestion
 from app.services.key_anchor import uses_sharps
 
@@ -145,6 +147,21 @@ def apply_song_form(
     return result
 
 
+def rewrite_chord_sequence(
+    suggestion: Suggestion,
+    rewrite: Callable[[list[str]], list[str]],
+) -> None:
+    """Replace a suggestion's chords in place with ``rewrite`` applied to its
+    whole chord sequence (measures in order), keeping every measure's slot count."""
+    measures = sorted(suggestion.chords, key=int)
+    rewritten = rewrite([chord for m in measures for chord in suggestion.chords[m]])
+    start = 0
+    for m in measures:
+        n_slots = len(suggestion.chords[m])
+        suggestion.chords[m] = rewritten[start : start + n_slots]
+        start += n_slots
+
+
 def apply_song_form_to_suggestions(
     suggestions: list[Suggestion],
     section: str | None,
@@ -156,21 +173,9 @@ def apply_song_form_to_suggestions(
     if not section:
         return
     for suggestion in suggestions:
-        sorted_keys = sorted(suggestion.chords.keys(), key=int)
-        flat_chords: list[str] = []
-        for k in sorted_keys:
-            flat_chords.extend(suggestion.chords[k])
-        flat_chords = apply_song_form(
-            chords=flat_chords,
-            section=section,
-            key=key_root,
-            is_minor=is_minor,
+        rewrite_chord_sequence(
+            suggestion, lambda chords: apply_song_form(chords, section, key_root, is_minor),
         )
-        idx = 0
-        for k in sorted_keys:
-            n = len(suggestion.chords[k])
-            suggestion.chords[k] = flat_chords[idx : idx + n]
-            idx += n
 
 
 def _apply_cadence(

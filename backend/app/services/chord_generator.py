@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import random
 
-from app.models.schemas import ContextMeasure, Suggestion
+from app.models.schemas import MAX_SEED, ContextMeasure, Suggestion
 
 # ── Note helpers ─────────────────────────────────────────────────────────
 
@@ -262,8 +262,8 @@ def generate_suggestions(
         seed: Request-local RNG seed; None uses fresh system entropy. Neither
             path mutates the process-wide Python random state.
     """
-    if seed is not None and (type(seed) is not int or not 0 <= seed <= 0xFFFFFFFF):
-        raise ValueError("seed must be an integer from 0 to 4294967295")
+    if seed is not None and (type(seed) is not int or not 0 <= seed <= MAX_SEED):
+        raise ValueError(f"seed must be an integer from 0 to {MAX_SEED}")
     rng = random.Random(seed)
     root, is_minor = _parse_key(key)
     key_root = key.strip().split()[0]

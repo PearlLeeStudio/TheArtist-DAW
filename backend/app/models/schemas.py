@@ -166,7 +166,12 @@ class Track(BaseModel):
     source: str = "rule"   # "rule" | "learned"
 
 
+# Sampling seeds are unsigned 32-bit integers, here and in the services that take one.
+MAX_SEED = 0xFFFFFFFF
+
 _RHYTHM_IDS = tuple(p["id"] for p in HARMONY_RHYTHM_PRESETS)
+_RHYTHM_ID_LIST = ", ".join(_RHYTHM_IDS)
+_INSTRUMENT_LIST = ", ".join(HARMONY_INSTRUMENTS)
 _DRUM_ID_RANGE = f"{min(DRUM_PATTERNS)}-{max(DRUM_PATTERNS)}"   # ids are contiguous
 
 
@@ -183,13 +188,13 @@ class SongGenerateRequest(BaseModel):
                     "Use /api/generate/chords for multiple chord candidates.",
     )
     seed: int | None = Field(
-        default=None, ge=0, le=0xFFFFFFFF, strict=True,
-        description="Optional request-local sampling seed (0..4294967295), including rule fallback. "
+        default=None, ge=0, le=MAX_SEED, strict=True,
+        description=f"Optional request-local sampling seed (0..{MAX_SEED}), including rule fallback. "
                     "Reproducible for the same model, device, runtime and request; null stays stochastic.",
     )
     harmony_rhythm: str | None = Field(
         default=None,
-        description=f"Harmony comping rhythm preset id, one of: {', '.join(_RHYTHM_IDS)}. "
+        description=f"Harmony comping rhythm preset id, one of: {_RHYTHM_ID_LIST}. "
                     "Null = the genre's own",
     )
     drum_pattern: int | Literal["off"] | None = Field(
@@ -198,14 +203,14 @@ class SongGenerateRequest(BaseModel):
     )
     harmony_instrument: str | None = Field(
         default=None,
-        description=f"Harmony GM instrument, one of: {', '.join(HARMONY_INSTRUMENTS)}. Null = the genre's own",
+        description=f"Harmony GM instrument, one of: {_INSTRUMENT_LIST}. Null = the genre's own",
     )
 
     @field_validator("harmony_rhythm")
     @classmethod
     def _known_harmony_rhythm(cls, v: str | None) -> str | None:
         if v is not None and v not in _RHYTHM_IDS:
-            raise ValueError(f"unknown harmony_rhythm {v!r}; expected one of: {', '.join(_RHYTHM_IDS)}")
+            raise ValueError(f"unknown harmony_rhythm {v!r}; expected one of: {_RHYTHM_ID_LIST}")
         return v
 
     @field_validator("drum_pattern", mode="before")
@@ -220,7 +225,7 @@ class SongGenerateRequest(BaseModel):
     @classmethod
     def _known_harmony_instrument(cls, v: str | None) -> str | None:
         if v is not None and v not in HARMONY_INSTRUMENTS:
-            raise ValueError(f"unknown harmony_instrument {v!r}; expected one of: {', '.join(HARMONY_INSTRUMENTS)}")
+            raise ValueError(f"unknown harmony_instrument {v!r}; expected one of: {_INSTRUMENT_LIST}")
         return v
 
 
