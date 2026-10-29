@@ -23,12 +23,19 @@ The Streamable HTTP endpoint is `http://127.0.0.1:8000/mcp/`. FastAPI starts and
 | `render_midi` | The same `ExportSpec` as `/api/export/midi` | Returns `mimeType`, `filename`, `byteLength`, `dataBase64` |
 | `import_score` | The same request and review draft as `/api/import/score` | Local by default; explicit attachment confirmation and bounded optional Meta assistance |
 | `export_daw` | The same request as `/api/daw/open` | Explicit local side effect; opt-in required |
+| `plan_song` | `PlanRequest` → the plan and its trace, as `/api/plan/song` without the generation step | Muse Spark plans, `validate_plan` checks, at most two revisions; a Meta failure is a tool error with the request ids and spend, never a plan-shaped fallback |
+| `validate_plan` | A plan and its `PlanRequest` → `{ok, errors}` | Code only, no model call |
 
 The request schemas are the application Pydantic models, advertised by `tools/list`. They are not separately maintained music formats. Section indices are zero based; export measures contain exactly two chord slots, with the actual resolved MIDI voicing for each chord. Score-import drafts preserve their raw chord counts until a user confirms the conversion to those two slots.
 
-`build_song` produces one arrangement (`n_candidates=1`). Optional `seed` is a strict integer in `0..2^32-1`, passed to the shared generator and echoed in the response; seeded generation uses request-local randomness. Candidate fan-out is not implemented. Song planning and theory explanation are not advertised as tools. Existing rule-generation paths remain explicitly labeled `rules` / `rule`; they are never relabeled as model output. Meta failures remain errors.
+`build_song` produces one arrangement (`n_candidates=1`). Optional `seed` is a strict integer in `0..2^32-1`, passed to the shared generator and echoed in the response; seeded generation uses request-local randomness. Candidate fan-out is not implemented. Theory explanation is not advertised as a tool; song planning is (`plan_song`, `validate_plan`), and section generation stays `generate_section` with the planned `cadence`. Existing rule-generation paths remain explicitly labeled `rules` / `rule`; they are never relabeled as model output. Meta failures remain errors.
 
 Limits are 1 MiB of music JSON, 4 MiB of MIDI bytes, a 6 MiB result envelope, and a 12 MiB MCP request body. Score attachments are limited to one 8 MiB PDF/PNG/JPEG/WebP. A generated song has at most 64 bars; score imports allow 128 measures and MIDI export 512. MIDI uses 480 PPQ and the supplied meter, metadata, voicings, rhythm, swing, instruments, and mixer CC7 values.
+
+`THEARTIST_META_ENABLED=0` on the server turns every Meta-backed path off: the
+`capabilities` result then reports `meta.enabled: false`, and `import_score` with
+`engine: "meta"` or `"auto"` fails with HTTP 503 "disabled" instead of calling the
+API. The local engine, generation and export keep working.
 
 The import tool requires `attachmentConfirmed: true`. This asserts that the user explicitly attached this score for analysis. It accepts inline bytes, never filesystem paths or remote URLs. Do not gather journals, photographs, or other private files to supply it. `engine: "local"` is the default and calls no model. `auto` or `meta` explicitly permits the documented API path; timeouts, bounded calls, cost reservation, request IDs and token logging apply.
 

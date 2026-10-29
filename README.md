@@ -16,6 +16,28 @@
 
 ## Hackathon workflow
 
+**Build for Your World.** The author's own problem: a chord sketch stops at eight
+bars, and getting it from a score into an arrangement a DAW can play means
+retyping everything. TheArtist takes a chord score in, lets a musician develop a
+passage with the author's Music Transformer, and hands the arrangement to the DAW.
+
+| | Pre-existing (tag `baseline`) | Hackathon work (commits after the tag) |
+|---|---|---|
+| Models | 25M-parameter Music Transformer, 11 genre LoRAs, R1 rerank | no new weights; Meta Muse Spark as planner / judge / reader |
+| Editor | staff, voicings, Roman numerals, MIDI input, playback | Import Score, Original/A/B/C, Projects, the Play panel and mixer |
+| Service | `/api/generate*` | local vector-PDF reader and harmony analyzer, MIDI/PDF/DAW export, REST + MCP contract, Meta client with ledger, planner |
+
+**Where Meta is used** (every call: Standard model id, timeout, cost reservation, request id and token count in the ledger; a failure is shown as a failure):
+
+| Path | File | Calls per use | Switch |
+|---|---|---|---|
+| Score import, `engine: "meta"` or `"auto"` (API/MCP) | `backend/app/services/score_import.py` | 1 bounded read of the attachment | `THEARTIST_META_ENABLED` |
+| Note-text assistance for unresolved bars (`engine: "auto"`) | `backend/app/services/harmony_meta.py`, `score_assistance.py` | ≤ 2 calls of ≤ 8 bars | same |
+| Complete the form planner (plan, validate, revise, judge) | `backend/app/services/planner.py`, `routes/plan.py` | ≤ 5 calls per run (1 plan, ≤ 2 revisions, ≤ 2 judgments) | same; judge role via `LLM_JUDGE_*` |
+
+With `THEARTIST_META_ENABLED=0` these paths answer HTTP 503 "disabled"; the local
+reader, the author's model and every export keep working.
+
 **Import Score → review chords and song form → select a passage → Original/A/B/C
 → arrange in Play → export MIDI or PDF.** Local code reads supported vector-score
 notation and proposes note-based harmony; the author's Music Transformer generates
@@ -142,7 +164,7 @@ Baseline editor screenshot: interactive staff, voicing and MIDI / AI / manual in
 |---|---|
 | **Compose on a staff** | VexFlow notation, click to select measures, drag-select ranges, slash-chord support |
 | **Generate with a paper-trained model** | F1 default (10K pop mix); the released F1 base is weight-identical to the Phase 0 pop baseline (~84.2% pop / 72.9% jazz top-1 — a checkpoint-selection artifact), and the selection-corrected `ft_f1_v2` retrain (83.7% pop / 80.3% jazz) restores the jazz adaptation; F1–F5 + F1 v2 + Phase 0 baseline + 11 LoRA adapters (13-genre vocabulary) selectable |
-| **Live progress streaming** | `/api/generate/stream` SSE pipeline shows each phase (Read → Load → Compose → Rank → Voice → Theory → Done) as the model thinks |
+| **Live progress streaming** | `/api/generate/stream` SSE pipeline shows each phase (Read → Load → Compose → Rank → Voice → Done) as the model thinks; a Theory phase appears only when the R2 retrieval is opted in with `THEARTIST_DISABLE_RAG=0`, which this build leaves off |
 | **Candidate ranking** | R1 — Sethares sensory roughness. The baseline R2 retrieval pipeline is retained for research; its corpora and indices are not shipped or used in the hackathon demo. |
 | **Voice-leading inversions** | Post-process injects slash-chord inversions (e.g. `Am7/C`) where they smooth the bass line — the LM only emits root-position chords, voice leading is added on top |
 | **MIDI input with confirm flow** | Hold a chord ≥3 s → auto-commit · release early → Confirm card with root-cycling chips, slash-chord inversion detection, and a 3-chord transition view (prev → curr → next + voice-leading arrows) |
@@ -158,7 +180,7 @@ Baseline editor screenshot: interactive staff, voicing and MIDI / AI / manual in
 
 <img src="screenshot/03-generate.png" alt="Generate tab — model selector, slot selected, three suggestions returned">
 
-Click **Generate** with a slot range selected. The right panel streams pipeline phases via SSE — *Read → Compose 1/3 → 2/3 → 3/3 → Rank → Voice → Done* — so the sub-second warm inference window (~0.4–0.9 s warm p50, first progress in ~110 ms; measured CPU-only) narrates itself. Three suggestions land, ranked by R1 (Sethares roughness) + R2 (theory-corpus retrieval) composite score. Click any to apply, swap freely. The model dropdown lists the 11 per-genre LoRA adapters (R4 expansion) alongside the F-series paper checkpoints and the selection-corrected F1 retrain (F1 / F1 v2 ⭐ pop-leaning · F4 ⭐ jazz-leaning recommended).
+Click **Generate** with a slot range selected. The right panel streams pipeline phases via SSE — *Read → Compose 1/3 → 2/3 → 3/3 → Rank → Voice → Done* — so the sub-second warm inference window (~0.4–0.9 s warm p50, first progress in ~110 ms; measured CPU-only) narrates itself. Three suggestions land, ranked by R1 (Sethares roughness); the R2 theory-retrieval term joins the composite only when R2 is opted in (off in this build). Click any to apply, swap freely. The model dropdown lists the 11 per-genre LoRA adapters (R4 expansion) alongside the F-series paper checkpoints and the selection-corrected F1 retrain (F1 / F1 v2 ⭐ pop-leaning · F4 ⭐ jazz-leaning recommended).
 
 ### MIDI input
 
@@ -209,22 +231,26 @@ classical styling.
 
 ```mermaid
 flowchart LR
-  Score["Chord-symbol PDF / image"] --> Meta["Meta Muse Spark · bounded extraction"]
-  Meta --> Review["Review chords and song form"]
+  Score["Chord-symbol PDF"] --> Local["Local vector reader · harmony analyzer"]
+  Local -. "engine: auto / meta, explicit" .-> Meta["Meta Muse Spark · bounded"]
+  Local --> Review["Review chords and song form"]
+  Meta --> Review
   Review --> Editor["Staff · selection · Original/A/B/C"]
+  Editor --> Planner["Complete the form: Muse Spark plans, validator checks, own model writes"]
   Editor --> Rest["REST / streaming"]
   Voyager["TheVoyager thin client"] --> MCP["MCP /mcp/"]
-  Plugin["Future native plugin"] -.-> MCP
   Rest --> Music["Shared inference and arrangement services"]
   MCP --> Music
+  Planner --> Music
   Music --> MT["Own Music Transformer"]
   Music --> MIDI["Editable MIDI · local DAW handoff"]
   Editor --> Play["Play · four-part mixer"]
   Editor --> Files["PDF · local Projects"]
 ```
 
-The MCP tools wrap implemented services, including score import. Planning and
-theory explanation tools are not advertised until implemented. See the
+The MCP tools wrap implemented services, including score import and the
+planner's `plan_song` / `validate_plan`. Theory explanation is not advertised
+because it is not implemented. See the
 [versioned contract and tool list](docs/mcp.md).
 
 ### Baseline model and editor internals
@@ -389,7 +415,7 @@ TheArtist/
     └── checkpoints/                           # gitignored — fetched from HuggingFace
 ```
 
-**Data flow.** User edits chords on the staff → selects measures → frontend POSTs to `/api/generate/stream`. Backend loads the chosen checkpoint, runs the model at three temperatures, scores candidates by α·R1(Sethares) + β·R2(Berklee + Open Music Theory retrieval), injects voice-leading inversions where the bass line wants smoothing, applies song-form cadence rules, and returns three Suggestions. The frontend parses each, computes voicings and Roman numerals client-side, and Tone.js plays the result. SSE phase events drive the progress UI throughout.
+**Data flow.** User edits chords on the staff → selects measures → frontend POSTs to `/api/generate/stream`. Backend loads the chosen checkpoint, runs the model at three temperatures, scores candidates by R1 (Sethares roughness; the α·R1 + β·R2 composite with Open Music Theory retrieval only when R2 is opted in with `THEARTIST_DISABLE_RAG=0`, which this build leaves off), injects voice-leading inversions where the bass line wants smoothing, applies song-form cadence rules, and returns three Suggestions. The frontend parses each, computes voicings and Roman numerals client-side, and Tone.js plays the result. SSE phase events drive the progress UI throughout.
 
 ## Tech Stack
 

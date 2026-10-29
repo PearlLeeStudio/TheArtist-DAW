@@ -336,6 +336,33 @@ Chords a rule writes are spelled for the key. The five original sections (intro,
 
 ---
 
+### POST `/api/plan/song` and `/api/plan/song/stream` — Complete the form
+
+Muse Spark plans the rest of a song form from the user's sketch; code validates the plan and sends errors back for at most two revisions; the author's Music Transformer writes every section (the same service as `/api/generate/section`, with the planned `cadence`); one observe-then-act judgment may send up to two sections back for one regeneration each. The API is stateless: nothing is applied server-side, the client applies the returned sections.
+
+Request (`PlanRequest`, strict):
+
+| Field | Meaning |
+|---|---|
+| `genre` | One of the 13 genres; its defaults fill `key`, `bpm` and `timeSignature` when they are omitted |
+| `key`, `timeSignature`, `bpm` | The song's one key (fixed for every section), meter and tempo |
+| `measures` | The whole sketch: `[{index, chords: [symbol\|null, symbol\|null], roman: [string\|null, string\|null]}]`; the Roman numerals come from the frontend's `romanNumeral.ts` so the staff and the planner agree |
+| `sections` | Existing sections `[{type\|null, start, length, label?}]`; they are locked and the plan only adds sections after the sketch |
+| `targetBars` | 16, 32, 48 or 64, sketch included |
+| `wantOutro`, `contrast` | Chips: an outro is required or forbidden; `low`/`medium`/`high` contrast |
+| `planner` | `meta` (default, Muse Spark) or `rules` (the genre-default form, no Meta call; labelled `rules`) |
+| `modelKey` | Checkpoint for every section, as `SectionGenerateRequest.modelKey` |
+
+Plan output (strict JSON from the model): `{sections: [{type, bars, cadence, reason, cites: [{bar, roman}]}]}` with `cadence` in `authentic`, `plagal`, `half`, `half_iv_v`, `turnaround`, `none`. `validate_plan` rules: section vocabulary; 2–32 bars per section; sketch bars plus planned bars equal `targetBars`; intro only first (empty sketch) and outro only last; the last cadence authentic or plagal; `wantOutro` honoured; every cite's bar exists in the sketch with that Roman numeral; `reason` ≤ 120 characters.
+
+Response (`PlanTrace`): `status`, `plan`, `validation: [{attempt, ok, errors: [{code, section, message}]}]`, `sections` (each a `SectionGenerateResponse` plus `cadence`, `rulesSlots` — section-relative chord slots the song-form rules decided, never counted as the model's —, `reason`, `cites`, `regenerated`), `judge: [{decision, targets, report, provider, model, requestId, costUsd, latencyMs}]`, `calls: [{step, attempt, provider, model, requestId, costUsd, latencyMs, effort, ok}]`, `spendUsd`, `elapsedMs`, and on failure `error: {kind, message, requestId}`. Limits per run: 5 Meta calls (1 plan, ≤ 2 revisions, ≤ 2 judgments), 45 s per call, $0.05 per call and $0.10 reserved per run, 120 s wall clock (75 s Meta, 45 s own model). Effort: plan `medium`, revisions and judgments `low`.
+
+The stream variant sends SSE events `plan`, `validate`, `revise`, `generate_section`, `judge` with `t_ms`, then one `complete` or `error` frame carrying the whole trace. Statuses: 503 `THEARTIST_META_ENABLED=0` ("disabled") or missing configuration; 429 budget; 504 Meta timeout; 502 invalid Meta reply; 500 generation failure. The failed trace still carries request ids and the spend so far. The MCP tools `plan_song` (plan + validate + revise, no generation) and `validate_plan` share this service. One real run is recorded in [experiments/meta/plan_smoke.json](experiments/meta/plan_smoke.json).
+
+`SectionGenerateRequest` gained an optional `cadence` (same vocabulary) that overrides the section's default cadence.
+
+---
+
 ### POST `/api/generate/chords`
 
 Simplified chord-generation endpoint for **programmatic callers** (TheVoyager and similar). Returns a flat list of bars instead of measure-keyed suggestions.
@@ -680,7 +707,7 @@ Inferred chords require nonempty visible-note/bass evidence or an explicit melod
 
 See [local score analysis](docs/score-analysis.md) for the algorithms, supported encoding and confidence limits. Full harmonic proposals can exceed the editor's two slots; review must resolve that conversion. Source meter changes are evidence, while the current editor still plays/exports one global meter.
 
-Service errors use `{"detail": "..."}`; request-schema errors use FastAPI's validation-error list. Statuses are 400 for invalid filename/base64; 413 attachment too large; 415 unsupported/mismatched format; 422 invalid request or incomplete/no-readable-chord extraction; 429 API budget limit; 502 invalid provider response; 503 missing/invalid configuration or ledger; 504 Meta timeout. Provider-output validation errors do not echo extracted score text.
+Service errors use `{"detail": "..."}`; request-schema errors use FastAPI's validation-error list. Statuses are 400 for invalid filename/base64; 413 attachment too large; 415 unsupported/mismatched format; 422 invalid request or incomplete/no-readable-chord extraction; 429 API budget limit; 502 invalid provider response; 503 missing/invalid configuration or ledger, or `THEARTIST_META_ENABLED=0` ("Meta features are disabled on this server; the local reader is still available." — `engine: "auto"` answers this as soon as Meta assistance would be needed, with no silent local fallback); 504 Meta timeout. Provider-output validation errors do not echo extracted score text.
 
 ### POST `/api/export/midi` — Edited arrangement to MIDI
 

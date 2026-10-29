@@ -160,6 +160,21 @@ unimplemented and are not part of the completed-feature checks.
   a changed held voicing, fewer than three held notes, device unplug/reconnect,
   panel collapse, a modal and a new song while notes are held.
 
+## Complete the form
+
+- [ ] New from Song Form → **Full form**: with an empty score pick a Genre above the
+  staff first (a fresh score has none and both run buttons stay disabled until it
+  does), choose target bars, Outro and contrast and run **Plan a new song**; with a
+  sketch run **Complete the form**. The band above the staff shows the chips in order (plan → validate →
+  revise → each section → judge), each with latency, $ and request id.
+- [ ] Nothing changes on the staff until **Apply**; **Undo** restores the exact
+  score; **Export trace** downloads JSON without keys.
+- [ ] Force a failure (stop the backend, or `THEARTIST_META_ENABLED=0`): a red chip,
+  the spend so far, the staff untouched, and the **Genre default form (own model
+  only)** button still works and is labelled as rules.
+- [ ] Sections rewritten by the song-form rules (first chord, final cadence) carry
+  the "cadence: rules" note, never an AI label.
+
 ## Files and DAW
 
 - [ ] Download MIDI; import into Logic. Confirm Harmony/Bass/Drums, tempo, actual
