@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect, useId } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useSongStore } from '../../store/songStore';
 import { useGenerationStore } from '../../store/generationStore';
+import { reasonFact, rulesSlotCount, useReviewStore } from '../../store/reviewStore';
 import { useSessionStore, selectStarredSessions } from '../../store/sessionStore';
 import GenerateProgress from './GenerateProgress';
 import { getChordDisplayParts } from '../../engine/chordDisplay';
@@ -9,6 +10,7 @@ import { parseSuggestionChords } from '../../engine/chordGenerator';
 import type { Suggestion, SuggestionSource } from '../../engine/chordGenerator';
 import { canApplyComparison, compareCandidate, matchesCapturedRange, slotKey } from '../../engine/generationComparison';
 import type { GenerationComparison } from '../../engine/generationComparison';
+import { fetchMetaCapability, type MetaCapability } from '../../engine/planClient';
 import {
   MAX_SECTION_BARS,
   SECTION_GROUPS,
@@ -461,6 +463,92 @@ function TheoryNotes({ explanations }: { explanations: NonNullable<Suggestion['e
   );
 }
 
+/** Whether code confirmed a reason's fact against the analyzer, or it is the judge's own statement. */
+function ReasonBadge({ confirmed }: { confirmed: boolean }) {
+  return (
+    <span
+      className="px-1 uppercase tracking-wide text-[9px] whitespace-nowrap"
+      style={{ border: '1px solid var(--border)', color: confirmed ? 'var(--text-heading)' : 'var(--text-muted)' }}
+    >
+      {confirmed ? 'analyzer confirmed' : 'model statement'}
+    </span>
+  );
+}
+
+/** "Second ear": the judge model picks one of the three candidates on facts the
+ *  analyzer computed, and code checks each reason's fact against them. It only
+ *  reads; picking a version stays the cards' click. */
+function SecondEar({ suggestions, disabled }: { suggestions: Suggestion[]; disabled: boolean }) {
+  const loading = useReviewStore((s) => s.loading);
+  const result = useReviewStore((s) => s.result);
+  const error = useReviewStore((s) => s.error);
+  const runReview = useReviewStore((s) => s.runReview);
+  // null until /api/capabilities answers (or when it does not): a review then shows the server's own answer
+  const [meta, setMeta] = useState<MetaCapability | null>(null);
+  const metaOff = meta?.enabled === false;
+  const blocked = disabled || loading || metaOff;
+  const rules = result ? rulesSlotCount(result) : 0;
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetchMetaCapability(controller.signal)
+      .then((capability) => setMeta(capability))
+      .catch(() => { /* unknown: the button stays enabled */ });
+    return () => controller.abort();
+  }, []);
+  // The review names the cards A, B, C in list order; Favorite Generate's cards carry preset names
+  const pickedLabel = result ? suggestions[result.choice.charCodeAt(0) - 65]?.label : undefined;
+
+  return (
+    <div className="space-y-1.5" style={{ borderTop: '1px solid var(--border)', paddingTop: '8px' }}>
+      <button
+        onClick={() => void runReview()}
+        disabled={blocked}
+        className="w-full px-3 py-1 text-xs"
+        style={{ background: 'var(--btn-bg)', color: 'var(--text-primary)', opacity: blocked ? 0.5 : 1 }}
+        title={metaOff
+          ? 'THEARTIST_META_ENABLED=0 on the server'
+          : "Ask the judge model which candidate fits best; its reasons are checked against the analyzer's facts (one Meta call)"}
+      >
+        {metaOff ? 'Second ear: Meta features are disabled on this server' : loading ? 'Second ear: listening…' : 'Second ear'}
+      </button>
+      {result && (
+        <div
+          className="text-[11px] space-y-0.5"
+          role="status"
+          style={{ color: 'var(--text-soft)', borderLeft: '2px solid var(--border)', paddingLeft: '6px' }}
+        >
+          <p>
+            <span className="font-semibold" style={{ color: 'var(--text-heading)' }} title={pickedLabel}>{result.choice}:</span>{' '}
+            {result.reasons.map((reason, index) => (
+              <span key={index}>
+                {index > 0 && ' · '}
+                {reasonFact(result, reason)} — <ReasonBadge confirmed={reason.confirmed} />
+              </span>
+            ))}
+          </p>
+          {result.reasons.length > 0 && (
+            <p style={{ color: 'var(--text-muted)' }}>{result.reasons.map((reason) => `“${reason.claim}”`).join(' ')}</p>
+          )}
+          {rules > 0 && <p style={{ color: 'var(--text-muted)' }}>cadence: rules ({rules})</p>}
+          <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
+            {result.provider} {result.model} · {result.requestId ?? 'no request id'} · ${result.costUsd.toFixed(4)}
+          </p>
+        </div>
+      )}
+      {error && (
+        <p
+          role="alert"
+          className="text-[11px] px-3 py-2"
+          style={{ background: 'var(--btn-bg)', color: 'var(--text-primary)', borderLeft: '2px solid var(--brand-yellow)' }}
+        >
+          {error}
+        </p>
+      )}
+    </div>
+  );
+}
+
 interface ChordActionsProps {
   /**
    * Which slice of the chord-actions UI to render.
@@ -714,6 +802,12 @@ export default function ChordActions({ view = 'all' }: ChordActionsProps) {
               onApplySuggestion={applySuggestion}
               onRestoreOriginal={restoreOriginal}
               onKeepCurrent={clearSuggestions}
+            />
+          )}
+          {comparisonOpen && suggestions.length === 3 && (
+            <SecondEar
+              suggestions={suggestions}
+              disabled={loading || comparison === null || !canApplyComparison(comparison, song, songEpoch)}
             />
           )}
         </>
