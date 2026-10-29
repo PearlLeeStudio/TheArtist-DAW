@@ -4,7 +4,7 @@ import { useSongStore } from '../../store/songStore';
 import { useGenerationStore } from '../../store/generationStore';
 import { usePlayStore } from '../../store/playStore';
 import {
-  buildExportSpec, downloadExportBlob, requestMidiExport, safeExportFilename,
+  buildExportSpec, downloadExportBlob, requestMidiExport, safeExportFilename, snapshotSessionExport,
 } from '../../engine/exportSpec';
 import {
   applyPlayConfig, schedulePlayback, startPlayback, stopPlayback, pausePlayback, resumePlayback,
@@ -13,6 +13,7 @@ import { computeArrangement } from '../../engine/arrangement';
 import { enginePlayConfig, playSettingsFromSession, resolveVoicingMode } from '../../engine/playSettings';
 import type { PlaySettings, SavedSession, Song } from '../../models/types';
 import SessionStaff from './SessionStaff';
+import ExportMenu from '../ScoreEditor/ExportMenu';
 
 const buttonStyle = {
   background: 'var(--btn-bg)', color: 'var(--text-primary)', border: '1px solid var(--border)',
@@ -103,7 +104,6 @@ function SessionRow({
   session, activeSessionId, loadingSessionId, exportingId, isPaused, selected,
   onSelect, onTogglePlay, onOpen, onDelete, onFavorite, onExportMidi,
 }: SessionRowProps) {
-  const [previewOpen, setPreviewOpen] = useState(false);
   const isActive = activeSessionId === session.id;
   const isLoading = loadingSessionId === session.id;
   const buttonLabel = isLoading ? 'Loading…' : !isActive ? '▶ Play' : isPaused ? '▶ Resume' : '⏸ Pause';
@@ -145,16 +145,12 @@ function SessionRow({
             {exportingId === session.id ? 'Exporting…' : 'MIDI'}
           </button>
           <button onClick={() => onDelete(session)} className="px-3 py-2 text-xs" style={buttonStyle}>Delete</button>
+          <ExportMenu session={session} />
         </div>
       </div>
-      <details onToggle={(event) => setPreviewOpen(event.currentTarget.open)}>
-        <summary className="text-xs cursor-pointer select-none" style={mutedStyle}>Preview score</summary>
-        {previewOpen && (
-          <div className="mt-3 overflow-x-auto" style={{ background: 'var(--bg-primary)', border: '1px solid var(--border)' }}>
-            <SessionStaff song={session.song} />
-          </div>
-        )}
-      </details>
+      <div className="overflow-x-auto" style={{ background: 'var(--bg-primary)', border: '1px solid var(--border)' }}>
+        <SessionStaff song={session.song} />
+      </div>
     </article>
   );
 }
@@ -330,7 +326,8 @@ export default function MyPage({ onExitToEditor }: MyPageProps) {
     setExportingId(session.id);
     setNotice(null);
     try {
-      const spec = buildExportSpec(songWithSessionGenre(session), playSettingsFromSession(session.generation));
+      const { song, settings } = snapshotSessionExport(session);
+      const spec = buildExportSpec(song, settings);
       const blob = await requestMidiExport(spec, controller.signal);
       if (!mountedRef.current || controller.signal.aborted) return;
       downloadExportBlob(blob, safeExportFilename(session.name, 'mid'));

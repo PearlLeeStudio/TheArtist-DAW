@@ -4,9 +4,11 @@ import { usePlayStore } from '../../store/playStore';
 import {
   buildExportSpec, downloadExportBlob, exportResponseError,
   isLoopbackHostname, requestMidiExport, requestScripterExport, safeExportFilename,
+  snapshotSessionExport,
 } from '../../engine/exportSpec';
 import type { ExportSpec } from '../../engine/exportSpec';
 import type { PdfTheme } from '../../engine/pdf';
+import type { SavedSession } from '../../models/types';
 
 type DawId = 'logic' | 'ableton';
 /** How the server hands the MIDI over: opened in the DAW, or shown in Finder. */
@@ -63,7 +65,12 @@ function dawHint(onLocalhost: boolean, targets: DawTarget[] | null, targetError:
   return 'Local Mac: Logic opens the MIDI; Ableton uses drag from Finder.';
 }
 
-export default function ExportMenu() {
+interface ExportMenuProps {
+  /** Export this saved project without replacing or reading the editor's current song. */
+  session?: SavedSession;
+}
+
+export default function ExportMenu({ session }: ExportMenuProps) {
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [feedback, setFeedback] = useState<{ text: string; error: boolean } | null>(null);
@@ -72,13 +79,17 @@ export default function ExportMenu() {
   const rootRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const busyRef = useRef(false);
+  const mountedRef = useRef(true);
   const requestRef = useRef<AbortController | null>(null);
   const panelId = useId();
   // The server opens the DAW on its own computer, so handoff is offered only on localhost.
   const onLocalhost = isLoopbackHostname(window.location.hostname);
 
   // Abort a running export when the menu unmounts.
-  useEffect(() => () => requestRef.current?.abort(), []);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; requestRef.current?.abort(); };
+  }, []);
 
   // While open, a pointer press outside the menu or Escape closes it.
   useEffect(() => {
@@ -125,34 +136,41 @@ export default function ExportMenu() {
     setFeedback(null);
     const controller = new AbortController();
     requestRef.current = controller;
-    const song = structuredClone(useSongStore.getState().song);
-    const settings = { ...usePlayStore.getState().settings };
     try {
+      const { song, settings } = session ? snapshotSessionExport(session) : {
+        song: structuredClone(useSongStore.getState().song),
+        settings: { ...usePlayStore.getState().settings },
+      };
       if (action === 'midi') {
         const blob = await requestMidiExport(buildExportSpec(song, settings), controller.signal);
+        if (controller.signal.aborted) return;
         downloadExportBlob(blob, safeExportFilename(song.title, 'mid'));
         setFeedback({ text: 'MIDI downloaded. Import it into a DAW to choose sounds and continue arranging.', error: false });
       } else if (action === 'scripter') {
         const blob = await requestScripterExport(buildExportSpec(song, settings), controller.signal);
+        if (controller.signal.aborted) return;
         downloadExportBlob(blob, safeExportFilename(song.title, 'js'));
         setFeedback({ text: 'Scripter script downloaded. In Logic: MIDI FX ▸ Scripter ▸ Open Script in Editor, paste, Run Script.', error: false });
       } else if (action === 'logic' || action === 'ableton') {
         if (!onLocalhost) throw new Error('Download MIDI and open it on your computer. DAW handoff requires localhost.');
         const handoff = await handOffToDaw(action, buildExportSpec(song, settings), controller);
+        if (controller.signal.aborted) return;
         setFeedback({ text: handoff === 'reveal'
           ? 'MIDI shown in Finder. Drag it into Ableton Live to continue.'
           : 'MIDI sent to Logic Pro. Choose or create a project there to continue.', error: false });
       } else {
         const { createSongPdf } = await import('../../engine/pdf');
         const blob = await createSongPdf(song, action);
+        if (controller.signal.aborted) return;
         downloadExportBlob(blob, safeExportFilename(song.title, 'pdf'));
         setFeedback({ text: 'PDF downloaded.', error: false });
       }
     } catch (error) {
+      if (!mountedRef.current) return;
       setFeedback({ text: error instanceof Error ? error.message : 'Export failed. Please try again.', error: true });
     } finally {
       busyRef.current = false;
-      setBusy(false);
+      if (mountedRef.current) setBusy(false);
       requestRef.current = null;
     }
   };
@@ -176,8 +194,9 @@ export default function ExportMenu() {
   return (
     <div className="relative" ref={rootRef}>
       <button ref={triggerRef} type="button" aria-expanded={open} aria-controls={panelId}
+        aria-label={session ? `Export ${session.name}` : undefined}
         onClick={toggleMenu}
-        className="px-3 py-1 text-xs font-bold whitespace-nowrap btn-hover"
+        className={`px-3 ${session ? 'py-2' : 'py-1'} text-xs font-bold whitespace-nowrap btn-hover`}
         style={{ background: 'var(--btn-bg)', color: 'var(--text-heading)', border: '1px solid var(--border)' }}>
         {busy ? 'Exporting…' : 'Export ▾'}
       </button>

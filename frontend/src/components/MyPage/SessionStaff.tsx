@@ -27,6 +27,9 @@ export default function SessionStaff({ song }: SessionStaffProps) {
   const [containerWidth, setContainerWidth] = useState(960);
   const [theme, setTheme] = useState(document.documentElement.className);
   const [staveLayouts, setStaveLayouts] = useState<StaveLayout[]>([]);
+  // Project cards always show only the first staff row; exports keep the complete song.
+  const visibleMeasures = song.measures.slice(0, SCORE_MEASURES_PER_ROW);
+  const visibleCount = visibleMeasures.length;
 
   useEffect(() => {
     const observer = new MutationObserver(() => {
@@ -50,11 +53,14 @@ export default function SessionStaff({ song }: SessionStaffProps) {
   }, []);
 
   const baseLayouts = useMemo((): Omit<StaveLayout, 'midLineY'>[] => {
-    return Array.from({ length: song.measures.length }, (_, i) => scoreMeasureLayout(i, containerWidth));
-  }, [song.measures.length, containerWidth]);
+    return Array.from({ length: visibleCount }, (_, i) => scoreMeasureLayout(i, containerWidth));
+  }, [visibleCount, containerWidth]);
 
-  const rows = Math.ceil(song.measures.length / SCORE_MEASURES_PER_ROW);
-  const totalWidth = containerWidth;
+  const rows = visibleCount ? 1 : 0;
+  const lastLayout = baseLayouts.at(-1);
+  // The shared layout keeps bars readable on narrow screens; make that full
+  // width scrollable instead of clipping its rightmost bars inside the SVG.
+  const totalWidth = Math.max(containerWidth, lastLayout ? lastLayout.x + lastLayout.width + 10 : 0);
   const totalHeight = rows * SCORE_ROW_HEIGHT + SCORE_TOP + BOTTOM_PADDING;
 
   useEffect(() => {
@@ -73,7 +79,7 @@ export default function SessionStaff({ song }: SessionStaffProps) {
     context.setFillStyle(staveColor);
 
     const measured: StaveLayout[] = [];
-    for (let i = 0; i < song.measures.length; i++) {
+    for (let i = 0; i < visibleCount; i++) {
       const bl = baseLayouts[i];
       const stave = new Stave(bl.x, bl.y, bl.width);
 
@@ -92,7 +98,7 @@ export default function SessionStaff({ song }: SessionStaffProps) {
     }
     const frame = requestAnimationFrame(() => setStaveLayouts(measured));
     return () => cancelAnimationFrame(frame);
-  }, [song.measures.length, song.key, song.timeSignature, baseLayouts, totalWidth, totalHeight, theme]);
+  }, [visibleCount, song.key, song.timeSignature, baseLayouts, totalWidth, totalHeight, theme]);
 
   if (!keySignatureFor(song.key)) {
     return (
@@ -110,7 +116,7 @@ export default function SessionStaff({ song }: SessionStaffProps) {
         className="absolute top-0 left-0 pointer-events-none"
         style={{ zIndex: 1 }}
       >
-        {song.measures.map((measure, mi) => {
+        {visibleMeasures.map((measure, mi) => {
           const layout = staveLayouts[mi];
           if (!layout) return null;
 

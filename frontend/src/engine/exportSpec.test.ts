@@ -1,9 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import type { Chord, Song } from '../models/types.ts';
+import type { Chord, SavedSession, Song } from '../models/types.ts';
 import { DEFAULT_PLAY_SETTINGS } from './playSettings.ts';
 import {
-  buildExportSpec, isLoopbackHostname, requestMidiExport, requestScripterExport, safeExportFilename,
+  buildExportSpec, isLoopbackHostname, requestMidiExport, requestScripterExport, safeExportFilename, snapshotSessionExport,
 } from './exportSpec.ts';
 
 const chord: Chord = { root: 'C', quality: 'maj', romanNumeral: 'I', extensions: [], voicing: [60, 64, 67] };
@@ -17,6 +17,37 @@ function song(): Song {
     sections: [{ id: 'part', type: null, label: 'A part', startMeasure: 0, length: 2 }],
   };
 }
+
+test('saved project exports keep the complete saved score, name and playback settings in an isolated snapshot', () => {
+  const savedSong = song();
+  savedSong.measures = Array.from({ length: 12 }, (_, index) => ({
+    id: `m${index}`, index, chords: [structuredClone(chord), null],
+  }));
+  const session: SavedSession = {
+    id: 'saved', name: 'Saved project name', createdAt: 0, starred: false, song: savedSong,
+    generation: { model: 'ft_f1', genre: 'jazz', ...DEFAULT_PLAY_SETTINGS,
+      harmonyOverride: 'acoustic_guitar_nylon', bassEnabled: false, drumMode: 'manual', drumPatternId: null,
+      masterVolume: 0, harmonyVolume: 0.25, bassVolume: 0, drumVolume: 0 },
+  };
+  const snapshot = snapshotSessionExport(session);
+  const exported = buildExportSpec(snapshot.song, snapshot.settings);
+  assert.equal(snapshot.song.title, 'Saved project name');
+  assert.equal(exported.title, 'Saved project name');
+  assert.equal(exported.genre, 'jazz');
+  assert.equal(exported.measures.length, 12); // The one-row card preview must not truncate exports.
+  assert.equal(exported.play.harmonyOverride, 'acoustic_guitar_nylon');
+  assert.equal(exported.play.bassEnabled, false);
+  assert.equal(exported.play.drumPatternId, null);
+  assert.equal(exported.play.masterVolume, 0);
+  assert.equal(exported.play.harmonyVolume, 0.25);
+  assert.deepEqual(exported.measures[0].chords[0]?.voicing, [48, 52, 55, 60, 64]);
+  session.song.measures[0].chords[0]!.root = 'D';
+  session.song.title = 'Changed after export started';
+  session.generation.masterVolume = 1;
+  assert.equal(snapshot.song.measures[0].chords[0]?.root, 'C');
+  assert.equal(snapshot.song.title, 'Saved project name');
+  assert.equal(snapshot.settings.masterVolume, 0);
+});
 
 test('export preserves two slots, rests, meter, markers and the played voicings in an owned snapshot', () => {
   const original = song();

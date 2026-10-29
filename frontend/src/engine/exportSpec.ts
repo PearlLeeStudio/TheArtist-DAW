@@ -1,5 +1,5 @@
-import type { Chord, PlaySettings, Song, SongSection } from '../models/types';
-import { resolveVoicingMode, sanitizePlaySettings } from './playSettings.ts';
+import type { Chord, PlaySettings, SavedSession, Song, SongSection } from '../models/types';
+import { playSettingsFromSession, resolveVoicingMode, sanitizePlaySettings } from './playSettings.ts';
 import type { VoicingMode } from './playSettings.ts';
 import { guitarVoicingNotes, resolvePianoVoicing } from './voicingEngine.ts';
 import { checkSectionRanges, sectionDisplayLabel } from './songForm.ts';
@@ -14,6 +14,15 @@ export interface ExportSpec {
   measures: { chords: [ExportChord | null, ExportChord | null] }[];
   sections: { label: string; startMeasure: number; length: number }[];
   play: Omit<PlaySettings, 'visualMode'>;
+}
+
+/** A saved card's complete export input, independent of the active editor and later edits. */
+export function snapshotSessionExport(session: SavedSession): { song: Song; settings: PlaySettings } {
+  const song = structuredClone(session.song);
+  song.genre = session.generation.genre ?? song.genre ?? null;
+  // A renamed project should keep its visible name in both the file and its contents.
+  song.title = session.name.trim() || song.title;
+  return { song, settings: playSettingsFromSession(session.generation) };
 }
 
 // The backend's ExportSpec limits (backend/app/models/export.py).
