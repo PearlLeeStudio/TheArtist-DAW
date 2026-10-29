@@ -62,6 +62,23 @@ class PlanApiTest(unittest.TestCase):
         self.addCleanup(patcher.stop)
         return transport
 
+    def test_the_ai_path_receives_each_planned_cadence(self):
+        from app.models.schemas import Suggestion
+        from app.services.inference import AIResult
+
+        def fake_ai(**kwargs):
+            chords = {str(m): ["Cmaj7", "G7"] for m in kwargs["selected_measures"]}
+            return AIResult(suggestions=[Suggestion(label="Option A — fake", chords=chords)], model_key="ft_f1")
+
+        self.fake_meta(completion(VALID_PLAN), completion(ACCEPT))
+        with mock.patch("app.routes.generate.TORCH_AVAILABLE", True), \
+                mock.patch("app.routes.generate.generate_ai_result", side_effect=fake_ai) as ai:
+            response = CLIENT.post(PLAN, json=body())
+        self.assertEqual(response.status_code, 200, response.text)
+        self.assertEqual([call.kwargs["cadence"] for call in ai.call_args_list],
+                         [section["cadence"] for section in VALID_PLAN["sections"]])
+        self.assertTrue(all(section["source"] == "ai" for section in response.json()["sections"]))
+
     def test_happy_path_returns_the_whole_trace(self):
         self.fake_meta(completion(VALID_PLAN), completion(ACCEPT))
         res = CLIENT.post(PLAN, json=body())

@@ -15,7 +15,7 @@ from app.models.sections import SECTION_TYPES, section_title
 from app.services import planner
 from app.services.genre_tables import GENRE_DEFAULTS
 from app.services.llm import Ledger, LLMClient, LLMConfig
-from app.services.song_form import apply_song_form, apply_song_form_with_slots, rule_slots
+from app.services.song_form import apply_song_form, apply_song_form_with_slots, resolves_to_tonic, rule_slots
 
 KEY = "sk-planner-test-never-log-this"
 _QUIET = logging.NullHandler()
@@ -221,6 +221,13 @@ class RuleSlotsTest(unittest.TestCase):
         self.assertEqual(rule_slots("tag", 8, "none"), [])
         self.assertEqual(rule_slots("solo", 8, "authentic"), [6, 7])
 
+    def test_resolves_to_tonic_follows_the_effective_cadence(self):
+        # The voice-leading pass pins a root-position tonic only where the ending really lands on it
+        for section, cadence, expected in (("verse", None, True), ("verse", "half", False), ("verse", "none", False),
+                                           ("solo", "plagal", True), ("bridge", None, False), (None, "authentic", False)):
+            with self.subTest(section=section, cadence=cadence):
+                self.assertEqual(resolves_to_tonic(section, cadence), expected)
+
 
 class SketchFactsTest(unittest.TestCase):
     def test_cadences_and_repeats_come_from_the_roman_numerals(self):
@@ -243,6 +250,14 @@ class SectionReportTest(unittest.TestCase):
         self.assertEqual(report.outsideKey, round(3 / 6, 3))     # Ebmaj7 twice and F#7
         self.assertEqual(report.repeatRate, round(3 / 6, 3))     # Cmaj7, F#7, Cmaj7 at the same slots
         self.assertIsNone(planner.section_report(0, section, [], "A minor").repeatRate)
+
+    def test_a_minor_key_owns_its_dominant_and_raised_sixth(self):
+        chords = {"8": ["Am7", "E7"], "9": ["Dm7", "E7"], "10": ["Am7", "Fmaj7"], "11": ["Bm7b5", "E7"]}
+        section = PlanSectionResult(sectionType="verse", title="Verse — 4 bars", startMeasure=8, bars=4, chordCount=8,
+                                    suggestions=[Suggestion(label="A", chords=chords)], source="ai", modelUsed="ft_f1",
+                                    cadence="half", rulesSlots=[], reason="", cites=[])
+        self.assertEqual(planner.section_report(0, section, [], "A minor").outsideKey, 0.0)
+        self.assertEqual(planner.section_report(0, section, [], "C major").outsideKey, round(3 / 8, 3))  # the E7s
 
 
 class PlannerRunTest(unittest.TestCase):
@@ -349,6 +364,15 @@ class PlannerRunTest(unittest.TestCase):
         self.assertEqual((trace.status, trace.error.kind, trace.calls, transport.calls), ("error", "budget", [], []))
         self.assertIn("cap $0.00", trace.error.message)
         self.assertNotIn(str(self.ledger.path), trace.error.message)
+
+    def test_an_unexpected_transport_failure_is_still_a_recorded_call(self):
+        # The ledger settled the reservation, so the trace must show the call and the spend
+        self.client(Replies(RuntimeError("socket closed")))
+        trace = planner.complete_form(request(), lambda name, payload: None)
+        self.assertEqual((trace.status, trace.error.kind), ("error", "llm"))
+        self.assertEqual([(c.step, c.ok) for c in trace.calls], [("plan_song", False)])
+        self.assertGreater(trace.spendUsd, 0)
+        self.assertAlmostEqual(trace.spendUsd, self.ledger.snapshot()["spent_usd"], places=8)
 
     def test_a_timeout_leaves_a_failed_trace_with_the_settled_spend(self):
         self.client(Replies(TimeoutError("read timed out")))

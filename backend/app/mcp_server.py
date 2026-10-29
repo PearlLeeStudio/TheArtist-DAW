@@ -29,6 +29,8 @@ log = logging.getLogger(__name__)
 READ = ToolAnnotations(readOnlyHint=True, destructiveHint=False, idempotentHint=True, openWorldHint=False)
 GENERATE = ToolAnnotations(readOnlyHint=True, destructiveHint=False, idempotentHint=False, openWorldHint=False)
 IMPORT = ToolAnnotations(readOnlyHint=False, destructiveHint=False, idempotentHint=False, openWorldHint=True)
+# The meta planner reaches the Meta API and spends from the ledger, like import_score
+PLAN = ToolAnnotations(readOnlyHint=True, destructiveHint=False, idempotentHint=False, openWorldHint=True)
 LOCAL_WRITE = ToolAnnotations(readOnlyHint=False, destructiveHint=False, idempotentHint=False, openWorldHint=False)
 _INSTRUCTIONS = (
     "Shared music services for TheVoyager, the editor, and future plugin clients. "
@@ -130,7 +132,7 @@ def create_mcp_server() -> FastMCP:
             raise ToolError(f"A section request supports at most {_MAX_SECTION_CONTEXT_MEASURES} context measures.")
         return await _invoke(generate.generate_section, request)
 
-    @server.tool(annotations=GENERATE)
+    @server.tool(annotations=PLAN)
     async def plan_song(request: PlanRequest) -> ContractEnvelope:
         """Plan the sections after the request's locked sketch: Muse Spark plans (planner "meta"), validate_plan checks, at most two revisions; planner "rules" is the genre-default form without any LLM call. Returns the plan and its trace (validation attempts, request ids, cost); generates no chords, so follow with generate_section per planned section (chordCount = bars x 2, the planned cadence)."""
         _bounded_state(request)

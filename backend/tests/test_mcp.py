@@ -53,6 +53,7 @@ class MCPProtocolTest(unittest.IsolatedAsyncioTestCase):
             self.assertNotIn("explain_progression", tools)
             self.assertFalse(tools["export_daw"].annotations.readOnlyHint)
             self.assertTrue(tools["import_score"].annotations.openWorldHint)
+            self.assertTrue(tools["plan_song"].annotations.openWorldHint)  # the meta planner is a billed network call
             self.assertFalse(tools["plan_song"].annotations.idempotentHint)
             self.assertTrue(tools["validate_plan"].annotations.readOnlyHint)
             self.assertIn("PlanRequest", tools["validate_plan"].inputSchema["$defs"])

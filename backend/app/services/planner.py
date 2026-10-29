@@ -63,6 +63,7 @@ from app.services.llm import (
     LLMError,
     LLMResponseError,
     LLMResult,
+    LLMSchemaError,
     LLMTimeout,
     get_client,
 )
@@ -131,7 +132,9 @@ PLAN_SCHEMA: dict[str, Any] = {
                 "type": "object",
                 "properties": {
                     "type": {"type": "string", "enum": list(SECTION_TYPES)},
-                    "bars": {"type": "integer", "minimum": MIN_PLAN_SECTION_BARS, "maximum": MAX_PLAN_SECTION_BARS},
+                    # No bounds here: an out-of-range length is a validator issue the model gets to revise,
+                    # not a schema mismatch that ends the run
+                    "bars": {"type": "integer"},
                     "cadence": {"type": "string", "enum": list(CADENCE_TYPES)},
                     "reason": {"type": "string", "maxLength": MAX_REASON_CHARS},
                     "cites": {
@@ -403,10 +406,12 @@ def rules_plan(request: PlanRequest) -> SongPlan:
 
 
 def _key_collection(key: str) -> frozenset[int]:
-    """Pitch classes of the key's diatonic collection (a minor key shares its relative major's)."""
+    """Pitch classes of the key's collection: the major scale, or natural plus harmonic and
+    melodic minor (so a minor key's own V7 and its raised sixth are not 'outside the key')."""
     root, mode = key.split()
-    tonic = (_NOTE_PC[root] + (3 if mode == "minor" else 0)) % 12
-    return frozenset((tonic + step) % 12 for step in (0, 2, 4, 5, 7, 9, 11))
+    steps = (0, 2, 3, 5, 7, 8, 9, 10, 11) if mode == "minor" else (0, 2, 4, 5, 7, 9, 11)
+    tonic = _NOTE_PC[root]
+    return frozenset((tonic + step) % 12 for step in steps)
 
 
 def _symbol(chord: str | None) -> str | None:
@@ -497,15 +502,18 @@ class _Run:
             spent_before = client.ledger.snapshot()["spent_usd"]
         except LLMError as exc:
             raise PlanFailure(_kind(exc), _message(exc), exc.request_id) from None
-        if self.reserved_usd + prepared.reserve_usd > MAX_RUN_USD + 1e-9:
-            raise PlanFailure("budget", f"reserving ${prepared.reserve_usd:.4f} for {step} would take the run's "
+        # An open-weight provider may reserve twice (its one JSON-guard retry)
+        worst_case = prepared.reserve_usd * (1 if client.config.provider == "meta" else 2)
+        if self.reserved_usd + worst_case > MAX_RUN_USD + 1e-9:
+            raise PlanFailure("budget", f"reserving ${worst_case:.4f} for {step} would take the run's "
                                         f"reservations (${self.reserved_usd:.4f}) past its ${MAX_RUN_USD:.2f} cap")
         started = time.perf_counter()
         try:
             result = client.chat_json(messages, schema, label=f"plan.{step}", **options)
         except LLMError as exc:
-            if isinstance(exc, (LLMTimeout, LLMConnectionError, LLMResponseError)):
-                # Sent and settled by the ledger (a timeout at the full reservation): a call of the run
+            if not isinstance(exc, (BudgetExceeded, LLMConfigError, LedgerError, LLMSchemaError)):
+                # Anything else got past the ledger's reservation, so it was sent and settled
+                # (a timeout at the full reservation): a call of the run, whatever the transport raised
                 latency = round((time.perf_counter() - started) * 1000)
                 self.meta_ms += latency
                 self.reserved_usd += prepared.reserve_usd
