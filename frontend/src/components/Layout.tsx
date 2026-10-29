@@ -3,6 +3,7 @@ import Staff from './ScoreEditor/Staff';
 import SongFormDialog from './ScoreEditor/SongFormDialog';
 import ImportScoreDialog from './ScoreEditor/ImportScoreDialog';
 import SectionsDialog from './ScoreEditor/SectionsDialog';
+import PlanRunBand from './ScoreEditor/PlanRunBand';
 import ExportMenu from './ScoreEditor/ExportMenu';
 import PlayPanel from './RightPanel/play/PlayPanel';
 import SongSettings from './RightPanel/SongSettings';
@@ -13,6 +14,7 @@ import ThemeToggle from './RightPanel/ThemeToggle';
 import { useSongStore } from '../store/songStore';
 import { useSessionStore } from '../store/sessionStore';
 import { useGenerationStore } from '../store/generationStore';
+import { usePlanStore } from '../store/planStore';
 import { usePlayStore } from '../store/playStore';
 import { playSettingsFromSession } from '../engine/playSettings';
 import type { PlaySettings, SessionGenerationContext, Song } from '../models/types';
@@ -57,6 +59,7 @@ export default function Layout() {
   const addSession = useSessionStore((s) => s.add);
   const sessionCount = useSessionStore((s) => s.sessions.length);
   const modelKey = useGenerationStore((s) => s.modelKey);
+  const planStatus = usePlanStore((s) => s.status);
   const playSettings = usePlayStore((s) => s.settings);
   const resetPlayback = useSongStore((s) => s.resetPlayback);
   const importSong = useSongStore((s) => s.importSong);
@@ -294,6 +297,9 @@ export default function Layout() {
               <button onClick={() => setSectionsOpen(true)} className="px-2 py-1 btn-hover" style={{ background: 'var(--btn-bg)' }} aria-haspopup="dialog">Edit Song Form</button>
             </div>
           </div>
+          {/* The Complete-the-form run, while one is shown; it lands on
+              the staff only through its Apply button. */}
+          {planStatus !== 'idle' && <PlanRunBand />}
           <Staff />
         </div>
 
