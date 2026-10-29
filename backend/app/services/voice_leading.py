@@ -32,6 +32,7 @@ _PC_FLAT_NAME = ["C", "Db", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B"
 _CHORD_TONES: dict[str, tuple[int, ...]] = {
     "maj":    (0, 4, 7),
     "min":    (0, 3, 7),
+    "m":      (0, 3, 7),  # the model's own spelling of a minor triad ("Am"); without it "Am" fell back to major
     "7":      (0, 4, 7, 10),
     "maj7":   (0, 4, 7, 11),
     "m7":     (0, 3, 7, 10),
