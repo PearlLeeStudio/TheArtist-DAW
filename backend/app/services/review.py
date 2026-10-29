@@ -77,8 +77,6 @@ _QUALITY_ALIASES = {"": "maj", "M": "maj", "major": "maj", "m": "min", "minor": 
                     "sus": "sus4"}
 _NOTE_NAMES = frozenset("C C# Db D D# Eb E F F# Gb G G# Ab A A# Bb B B# Cb E# Fb".split())
 _EXTENSIONS = re.compile(r"\(([^)]+)\)")
-_FLAT_ROOT = re.compile(r"\A([A-G])b")
-_FLAT_BASS = re.compile(r"/([A-G])b\Z")
 _ALTERED_TRIAD = re.compile(r"\A([A-G][#b]?)\([^)]*\)")
 
 
@@ -131,12 +129,11 @@ def _chord_key(symbol: str | None, with_bass: bool = True) -> tuple | str | None
 
 
 def _music21_symbol(symbol: str) -> str:
-    """The spelling music21 reads: a flat root or bass as '-' (B-m7, C/E-), parentheses dropped (C7b9).
-    As written, music21 reads 'Bb7' as B with a flat seventh and voices no 'Bbm7' or 'C7(b9)'."""
-    # An alteration right after a bare root ('C(b9)') would otherwise land on the root ('C-9'): drop it
+    """The editor's symbol as the physics code reads it: extensions without parentheses (C7(b9) -> C7b9),
+    which music21 does not voice; ai/physics respells flats itself."""
+    # An alteration right after a bare root ('C(b9)') would otherwise read as a flat root ('Cb9'): drop it
     bare = _ALTERED_TRIAD.sub(r"\1", symbol)
-    spelled = _FLAT_BASS.sub(r"/\1-", _FLAT_ROOT.sub(r"\1-", bare))
-    return spelled.replace("(", "").replace(")", "").replace(",", "")
+    return bare.replace("(", "").replace(")", "").replace(",", "")
 
 
 def _outside_key(chord: str, collection: frozenset[int]) -> bool:

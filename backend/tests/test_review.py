@@ -99,11 +99,14 @@ class FactsTest(unittest.TestCase):
 
     @unittest.skipUnless(inference.PHYSICS_AVAILABLE, "ai/physics (music21) is not installed")
     def test_roughness_is_the_physics_mean_over_every_chord_including_flat_roots(self):
-        # music21 spells a flat '-'; an alteration on a bare triad is dropped rather than put on the root
+        # Parentheses go; an alteration on a bare triad is dropped rather than read as a flat root
         self.assertEqual([review._music21_symbol(s) for s in ("Bbm7b5/Eb", "C7(b9)", "Dm7/F", "C(b9)", "C(#11)",
                                                               "C(b9)/Eb", "Db(b9)")],
-                         ["B-m7b5/E-", "C7b9", "Dm7/F", "C", "C", "C/E-", "D-"])
-        total, scored = inference.sequence_roughness(["Cmaj", "Amin", "B-7"])
+                         ["Bbm7b5/Eb", "C7b9", "Dm7/F", "C", "C", "C/Eb", "Db"])
+        # The physics code voices a flat root as itself, not as the natural above it
+        self.assertEqual(inference.sequence_roughness(["Bb7"]), inference.sequence_roughness(["B-7"]))
+        self.assertNotEqual(inference.sequence_roughness(["Bb7"]), inference.sequence_roughness(["B7"]))
+        total, scored = inference.sequence_roughness(["Cmaj", "Amin", "Bb7"])
         self.assertEqual(scored, 3)
         rows = facts()
         self.assertEqual(rows[2].r1Roughness, round(total / scored, 3))
