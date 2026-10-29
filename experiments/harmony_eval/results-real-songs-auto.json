@@ -1,0 +1,809 @@
+{
+ "engine": "auto",
+ "provider": "meta",
+ "model": "muse-spark-1.3",
+ "settings": {
+  "provider": "meta",
+  "model": "muse-spark-1.3",
+  "reasoning_effort": "low",
+  "timeout_s": 45.0,
+  "max_completion_tokens": 4096,
+  "max_request_usd": 0.1,
+  "ledger_cap_usd": 25.0,
+  "batch": {
+   "max_measures": 8,
+   "max_notes": 512
+  },
+  "max_calls_per_score": 2,
+  "local": {
+   "provider": "local",
+   "model": "harmony_analysis"
+  }
+ },
+ "dataset": {
+  "label": "130-song test split of the training corpora, private; excerpts realized with the product's voicing code",
+  "sha256": "b5dcef9c9fdefef028b8b067f7b50c25c8c8bdc08cf7278df9103995f1195daf",
+  "seed": 20261029,
+  "songs_in_file": 130,
+  "songs_dropped": {
+   "meter": 1
+  },
+  "bars_left_out": {
+   "more_than_two_chords": 72
+  },
+  "songs_used": 40,
+  "excerpts": 40,
+  "bars": 320,
+  "slots": 640,
+  "genres": {
+   "blues": 3,
+   "bossa": 3,
+   "classical": 3,
+   "country": 3,
+   "electronic": 3,
+   "folk": 4,
+   "funk": 3,
+   "gospel": 3,
+   "hip_hop": 3,
+   "jazz": 3,
+   "pop": 3,
+   "rnb_soul": 3,
+   "rock": 3
+  },
+  "variants": {
+   "block": 7,
+   "rootless": 7,
+   "inversion": 8,
+   "melody": 6,
+   "sparse": 6,
+   "waltz": 6
+  },
+  "meters": {
+   "4/4": 34,
+   "3/4": 6
+  },
+  "key_sources": {
+   "estimated": 32,
+   "file": 8
+  }
+ },
+ "real_songs": {
+  "created": "2026-10-29T11:47:01+00:00",
+  "complete": true,
+  "stopped": null,
+  "calls": [
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 10517.992,
+    "cost_usd": 0.01092825,
+    "status": "ok",
+    "request_id": "1372a4f6-f288-419d-946f-5c897991b831",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 5656.889,
+    "cost_usd": 0.00717525,
+    "status": "ok",
+    "request_id": "f7450d5f-2d59-4106-bc34-ef960c85698c",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 6274.322,
+    "cost_usd": 0.00747455,
+    "status": "ok",
+    "request_id": "fcc5ef59-8689-47e3-b3a6-613f10972e7d",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 8035.167,
+    "cost_usd": 0.00711405,
+    "status": "ok",
+    "request_id": "a2ec534b-0387-4d9b-9b73-90d3a29e1895",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 4,
+    "latency_ms": 5978.105,
+    "cost_usd": 0.0060403,
+    "status": "ok",
+    "request_id": "7c232893-5e4d-4e5f-9150-fbe1d421f99e",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 11584.915,
+    "cost_usd": 0.01138725,
+    "status": "ok",
+    "request_id": "77f876aa-45a4-4167-a65f-90b3ec989a59",
+    "attempts": 1
+   }
+  ],
+  "call_stats": {
+   "calls": 6,
+   "attempts": 6,
+   "retries": 0,
+   "retry_rate": 0.0,
+   "json_validity": 1.0,
+   "failed": {},
+   "latency_ms_p50": 6274.322,
+   "latency_ms_p95": 11584.915,
+   "cost_usd": 0.05012,
+   "bars_sent": 44,
+   "request_ids": [
+    "1372a4f6-f288-419d-946f-5c897991b831",
+    "f7450d5f-2d59-4106-bc34-ef960c85698c",
+    "fcc5ef59-8689-47e3-b3a6-613f10972e7d",
+    "a2ec534b-0387-4d9b-9b73-90d3a29e1895",
+    "7c232893-5e4d-4e5f-9150-fbe1d421f99e",
+    "77f876aa-45a4-4167-a65f-90b3ec989a59"
+   ]
+  },
+  "cost_usd": 0.05012,
+  "excerpts": 40,
+  "bars": 320,
+  "metrics": {
+   "slots": 640,
+   "covered": 610,
+   "coverage": 0.9531,
+   "unparseable": 0,
+   "unscored_truth": 0,
+   "all": {
+    "root": 0.8453,
+    "triad": 0.8453,
+    "seventh": 0.8453,
+    "bass": 0.8391,
+    "exact": 0.8391
+   },
+   "on_covered": {
+    "root": 0.8869,
+    "triad": 0.8869,
+    "seventh": 0.8869,
+    "bass": 0.8803,
+    "exact": 0.8803
+   },
+   "calibration": {
+    "medium": {
+     "slots": 360,
+     "root": 0.9556,
+     "exact": 0.9556
+    },
+    "low": {
+     "slots": 250,
+     "root": 0.788,
+     "exact": 0.772
+    }
+   }
+  },
+  "by_variant": {
+   "block": {
+    "slots": 112,
+    "covered": 112,
+    "coverage": 1.0,
+    "unparseable": 0,
+    "unscored_truth": 0,
+    "all": {
+     "root": 1.0,
+     "triad": 1.0,
+     "seventh": 1.0,
+     "bass": 1.0,
+     "exact": 1.0
+    },
+    "on_covered": {
+     "root": 1.0,
+     "triad": 1.0,
+     "seventh": 1.0,
+     "bass": 1.0,
+     "exact": 1.0
+    },
+    "calibration": {
+     "medium": {
+      "slots": 112,
+      "root": 1.0,
+      "exact": 1.0
+     }
+    }
+   },
+   "rootless": {
+    "slots": 112,
+    "covered": 112,
+    "coverage": 1.0,
+    "unparseable": 0,
+    "unscored_truth": 0,
+    "all": {
+     "root": 0.3839,
+     "triad": 0.3839,
+     "seventh": 0.3839,
+     "bass": 0.3482,
+     "exact": 0.3482
+    },
+    "on_covered": {
+     "root": 0.3839,
+     "triad": 0.3839,
+     "seventh": 0.3839,
+     "bass": 0.3482,
+     "exact": 0.3482
+    },
+    "calibration": {
+     "medium": {
+      "slots": 16,
+      "root": 0.0,
+      "exact": 0.0
+     },
+     "low": {
+      "slots": 96,
+      "root": 0.4479,
+      "exact": 0.4062
+     }
+    }
+   },
+   "inversion": {
+    "slots": 128,
+    "covered": 128,
+    "coverage": 1.0,
+    "unparseable": 0,
+    "unscored_truth": 0,
+    "all": {
+     "root": 1.0,
+     "triad": 1.0,
+     "seventh": 1.0,
+     "bass": 1.0,
+     "exact": 1.0
+    },
+    "on_covered": {
+     "root": 1.0,
+     "triad": 1.0,
+     "seventh": 1.0,
+     "bass": 1.0,
+     "exact": 1.0
+    },
+    "calibration": {
+     "medium": {
+      "slots": 122,
+      "root": 1.0,
+      "exact": 1.0
+     },
+     "low": {
+      "slots": 6,
+      "root": 1.0,
+      "exact": 1.0
+     }
+    }
+   },
+   "melody": {
+    "slots": 96,
+    "covered": 66,
+    "coverage": 0.6875,
+    "unparseable": 0,
+    "unscored_truth": 0,
+    "all": {
+     "root": 0.6875,
+     "triad": 0.6875,
+     "seventh": 0.6875,
+     "bass": 0.6875,
+     "exact": 0.6875
+    },
+    "on_covered": {
+     "root": 1.0,
+     "triad": 1.0,
+     "seventh": 1.0,
+     "bass": 1.0,
+     "exact": 1.0
+    },
+    "calibration": {
+     "low": {
+      "slots": 44,
+      "root": 1.0,
+      "exact": 1.0
+     },
+     "medium": {
+      "slots": 22,
+      "root": 1.0,
+      "exact": 1.0
+     }
+    }
+   },
+   "sparse": {
+    "slots": 96,
+    "covered": 96,
+    "coverage": 1.0,
+    "unparseable": 0,
+    "unscored_truth": 0,
+    "all": {
+     "root": 1.0,
+     "triad": 1.0,
+     "seventh": 1.0,
+     "bass": 1.0,
+     "exact": 1.0
+    },
+    "on_covered": {
+     "root": 1.0,
+     "triad": 1.0,
+     "seventh": 1.0,
+     "bass": 1.0,
+     "exact": 1.0
+    },
+    "calibration": {
+     "medium": {
+      "slots": 88,
+      "root": 1.0,
+      "exact": 1.0
+     },
+     "low": {
+      "slots": 8,
+      "root": 1.0,
+      "exact": 1.0
+     }
+    }
+   },
+   "waltz": {
+    "slots": 96,
+    "covered": 96,
+    "coverage": 1.0,
+    "unparseable": 0,
+    "unscored_truth": 0,
+    "all": {
+     "root": 1.0,
+     "triad": 1.0,
+     "seventh": 1.0,
+     "bass": 1.0,
+     "exact": 1.0
+    },
+    "on_covered": {
+     "root": 1.0,
+     "triad": 1.0,
+     "seventh": 1.0,
+     "bass": 1.0,
+     "exact": 1.0
+    },
+    "calibration": {
+     "low": {
+      "slots": 96,
+      "root": 1.0,
+      "exact": 1.0
+     }
+    }
+   }
+  },
+  "by_genre": {
+   "blues": {
+    "slots": 48,
+    "covered": 48,
+    "coverage": 1.0,
+    "unparseable": 0,
+    "unscored_truth": 0,
+    "all": {
+     "root": 0.6667,
+     "triad": 0.6667,
+     "seventh": 0.6667,
+     "bass": 0.6667,
+     "exact": 0.6667
+    },
+    "on_covered": {
+     "root": 0.6667,
+     "triad": 0.6667,
+     "seventh": 0.6667,
+     "bass": 0.6667,
+     "exact": 0.6667
+    },
+    "calibration": {
+     "medium": {
+      "slots": 48,
+      "root": 0.6667,
+      "exact": 0.6667
+     }
+    }
+   },
+   "bossa": {
+    "slots": 48,
+    "covered": 38,
+    "coverage": 0.7917,
+    "unparseable": 0,
+    "unscored_truth": 0,
+    "all": {
+     "root": 0.5417,
+     "triad": 0.5417,
+     "seventh": 0.5417,
+     "bass": 0.4583,
+     "exact": 0.4583
+    },
+    "on_covered": {
+     "root": 0.6842,
+     "triad": 0.6842,
+     "seventh": 0.6842,
+     "bass": 0.5789,
+     "exact": 0.5789
+    },
+    "calibration": {
+     "low": {
+      "slots": 24,
+      "root": 0.5,
+      "exact": 0.3333
+     },
+     "medium": {
+      "slots": 14,
+      "root": 1.0,
+      "exact": 1.0
+     }
+    }
+   },
+   "classical": {
+    "slots": 48,
+    "covered": 44,
+    "coverage": 0.9167,
+    "unparseable": 0,
+    "unscored_truth": 0,
+    "all": {
+     "root": 0.9167,
+     "triad": 0.9167,
+     "seventh": 0.9167,
+     "bass": 0.9167,
+     "exact": 0.9167
+    },
+    "on_covered": {
+     "root": 1.0,
+     "triad": 1.0,
+     "seventh": 1.0,
+     "bass": 1.0,
+     "exact": 1.0
+    },
+    "calibration": {
+     "medium": {
+      "slots": 36,
+      "root": 1.0,
+      "exact": 1.0
+     },
+     "low": {
+      "slots": 8,
+      "root": 1.0,
+      "exact": 1.0
+     }
+    }
+   },
+   "country": {
+    "slots": 48,
+    "covered": 42,
+    "coverage": 0.875,
+    "unparseable": 0,
+    "unscored_truth": 0,
+    "all": {
+     "root": 0.875,
+     "triad": 0.875,
+     "seventh": 0.875,
+     "bass": 0.875,
+     "exact": 0.875
+    },
+    "on_covered": {
+     "root": 1.0,
+     "triad": 1.0,
+     "seventh": 1.0,
+     "bass": 1.0,
+     "exact": 1.0
+    },
+    "calibration": {
+     "low": {
+      "slots": 24,
+      "root": 1.0,
+      "exact": 1.0
+     },
+     "medium": {
+      "slots": 18,
+      "root": 1.0,
+      "exact": 1.0
+     }
+    }
+   },
+   "electronic": {
+    "slots": 48,
+    "covered": 48,
+    "coverage": 1.0,
+    "unparseable": 0,
+    "unscored_truth": 0,
+    "all": {
+     "root": 1.0,
+     "triad": 1.0,
+     "seventh": 1.0,
+     "bass": 1.0,
+     "exact": 1.0
+    },
+    "on_covered": {
+     "root": 1.0,
+     "triad": 1.0,
+     "seventh": 1.0,
+     "bass": 1.0,
+     "exact": 1.0
+    },
+    "calibration": {
+     "medium": {
+      "slots": 32,
+      "root": 1.0,
+      "exact": 1.0
+     },
+     "low": {
+      "slots": 16,
+      "root": 1.0,
+      "exact": 1.0
+     }
+    }
+   },
+   "folk": {
+    "slots": 64,
+    "covered": 64,
+    "coverage": 1.0,
+    "unparseable": 0,
+    "unscored_truth": 0,
+    "all": {
+     "root": 1.0,
+     "triad": 1.0,
+     "seventh": 1.0,
+     "bass": 1.0,
+     "exact": 1.0
+    },
+    "on_covered": {
+     "root": 1.0,
+     "triad": 1.0,
+     "seventh": 1.0,
+     "bass": 1.0,
+     "exact": 1.0
+    },
+    "calibration": {
+     "low": {
+      "slots": 32,
+      "root": 1.0,
+      "exact": 1.0
+     },
+     "medium": {
+      "slots": 32,
+      "root": 1.0,
+      "exact": 1.0
+     }
+    }
+   },
+   "funk": {
+    "slots": 48,
+    "covered": 48,
+    "coverage": 1.0,
+    "unparseable": 0,
+    "unscored_truth": 0,
+    "all": {
+     "root": 0.8333,
+     "triad": 0.8333,
+     "seventh": 0.8333,
+     "bass": 0.8333,
+     "exact": 0.8333
+    },
+    "on_covered": {
+     "root": 0.8333,
+     "triad": 0.8333,
+     "seventh": 0.8333,
+     "bass": 0.8333,
+     "exact": 0.8333
+    },
+    "calibration": {
+     "medium": {
+      "slots": 32,
+      "root": 1.0,
+      "exact": 1.0
+     },
+     "low": {
+      "slots": 16,
+      "root": 0.5,
+      "exact": 0.5
+     }
+    }
+   },
+   "gospel": {
+    "slots": 48,
+    "covered": 46,
+    "coverage": 0.9583,
+    "unparseable": 0,
+    "unscored_truth": 0,
+    "all": {
+     "root": 0.7083,
+     "triad": 0.7083,
+     "seventh": 0.7083,
+     "bass": 0.7083,
+     "exact": 0.7083
+    },
+    "on_covered": {
+     "root": 0.7391,
+     "triad": 0.7391,
+     "seventh": 0.7391,
+     "bass": 0.7391,
+     "exact": 0.7391
+    },
+    "calibration": {
+     "low": {
+      "slots": 30,
+      "root": 0.6,
+      "exact": 0.6
+     },
+     "medium": {
+      "slots": 16,
+      "root": 1.0,
+      "exact": 1.0
+     }
+    }
+   },
+   "hip_hop": {
+    "slots": 48,
+    "covered": 44,
+    "coverage": 0.9167,
+    "unparseable": 0,
+    "unscored_truth": 0,
+    "all": {
+     "root": 0.9167,
+     "triad": 0.9167,
+     "seventh": 0.9167,
+     "bass": 0.9167,
+     "exact": 0.9167
+    },
+    "on_covered": {
+     "root": 1.0,
+     "triad": 1.0,
+     "seventh": 1.0,
+     "bass": 1.0,
+     "exact": 1.0
+    },
+    "calibration": {
+     "medium": {
+      "slots": 38,
+      "root": 1.0,
+      "exact": 1.0
+     },
+     "low": {
+      "slots": 6,
+      "root": 1.0,
+      "exact": 1.0
+     }
+    }
+   },
+   "jazz": {
+    "slots": 48,
+    "covered": 44,
+    "coverage": 0.9167,
+    "unparseable": 0,
+    "unscored_truth": 0,
+    "all": {
+     "root": 0.9167,
+     "triad": 0.9167,
+     "seventh": 0.9167,
+     "bass": 0.9167,
+     "exact": 0.9167
+    },
+    "on_covered": {
+     "root": 1.0,
+     "triad": 1.0,
+     "seventh": 1.0,
+     "bass": 1.0,
+     "exact": 1.0
+    },
+    "calibration": {
+     "medium": {
+      "slots": 14,
+      "root": 1.0,
+      "exact": 1.0
+     },
+     "low": {
+      "slots": 30,
+      "root": 1.0,
+      "exact": 1.0
+     }
+    }
+   },
+   "pop": {
+    "slots": 48,
+    "covered": 48,
+    "coverage": 1.0,
+    "unparseable": 0,
+    "unscored_truth": 0,
+    "all": {
+     "root": 1.0,
+     "triad": 1.0,
+     "seventh": 1.0,
+     "bass": 1.0,
+     "exact": 1.0
+    },
+    "on_covered": {
+     "root": 1.0,
+     "triad": 1.0,
+     "seventh": 1.0,
+     "bass": 1.0,
+     "exact": 1.0
+    },
+    "calibration": {
+     "medium": {
+      "slots": 32,
+      "root": 1.0,
+      "exact": 1.0
+     },
+     "low": {
+      "slots": 16,
+      "root": 1.0,
+      "exact": 1.0
+     }
+    }
+   },
+   "rnb_soul": {
+    "slots": 48,
+    "covered": 48,
+    "coverage": 1.0,
+    "unparseable": 0,
+    "unscored_truth": 0,
+    "all": {
+     "root": 0.75,
+     "triad": 0.75,
+     "seventh": 0.75,
+     "bass": 0.75,
+     "exact": 0.75
+    },
+    "on_covered": {
+     "root": 0.75,
+     "triad": 0.75,
+     "seventh": 0.75,
+     "bass": 0.75,
+     "exact": 0.75
+    },
+    "calibration": {
+     "low": {
+      "slots": 32,
+      "root": 0.625,
+      "exact": 0.625
+     },
+     "medium": {
+      "slots": 16,
+      "root": 1.0,
+      "exact": 1.0
+     }
+    }
+   },
+   "rock": {
+    "slots": 48,
+    "covered": 48,
+    "coverage": 1.0,
+    "unparseable": 0,
+    "unscored_truth": 0,
+    "all": {
+     "root": 0.8125,
+     "triad": 0.8125,
+     "seventh": 0.8125,
+     "bass": 0.8125,
+     "exact": 0.8125
+    },
+    "on_covered": {
+     "root": 0.8125,
+     "triad": 0.8125,
+     "seventh": 0.8125,
+     "bass": 0.8125,
+     "exact": 0.8125
+    },
+    "calibration": {
+     "medium": {
+      "slots": 32,
+      "root": 1.0,
+      "exact": 1.0
+     },
+     "low": {
+      "slots": 16,
+      "root": 0.4375,
+      "exact": 0.4375
+     }
+    }
+   }
+  }
+ }
+}

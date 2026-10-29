@@ -1,0 +1,1178 @@
+{
+ "engine": "meta",
+ "provider": "meta",
+ "model": "muse-spark-1.3",
+ "settings": {
+  "provider": "meta",
+  "model": "muse-spark-1.3",
+  "reasoning_effort": "low",
+  "timeout_s": 45.0,
+  "max_completion_tokens": 4096,
+  "max_request_usd": 0.1,
+  "ledger_cap_usd": 25.0,
+  "batch": {
+   "max_measures": 8,
+   "max_notes": 512
+  }
+ },
+ "dataset": {
+  "label": "130-song test split of the training corpora, private; excerpts realized with the product's voicing code",
+  "sha256": "b5dcef9c9fdefef028b8b067f7b50c25c8c8bdc08cf7278df9103995f1195daf",
+  "seed": 20261029,
+  "songs_in_file": 130,
+  "songs_dropped": {
+   "meter": 1
+  },
+  "bars_left_out": {
+   "more_than_two_chords": 72
+  },
+  "songs_used": 40,
+  "excerpts": 40,
+  "bars": 320,
+  "slots": 640,
+  "genres": {
+   "blues": 3,
+   "bossa": 3,
+   "classical": 3,
+   "country": 3,
+   "electronic": 3,
+   "folk": 4,
+   "funk": 3,
+   "gospel": 3,
+   "hip_hop": 3,
+   "jazz": 3,
+   "pop": 3,
+   "rnb_soul": 3,
+   "rock": 3
+  },
+  "variants": {
+   "block": 7,
+   "rootless": 7,
+   "inversion": 8,
+   "melody": 6,
+   "sparse": 6,
+   "waltz": 6
+  },
+  "meters": {
+   "4/4": 34,
+   "3/4": 6
+  },
+  "key_sources": {
+   "estimated": 32,
+   "file": 8
+  }
+ },
+ "real_songs": {
+  "created": "2026-10-29T11:43:11+00:00",
+  "complete": true,
+  "stopped": null,
+  "calls": [
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 4391.331,
+    "cost_usd": 0.0067525,
+    "status": "ok",
+    "request_id": "31eeb394-4898-4dc8-9c76-dfc6a38d18e3",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 9661.644,
+    "cost_usd": 0.009696,
+    "status": "ok",
+    "request_id": "4ee6dbbf-379d-4e4d-9a48-4e0969c438ab",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 5304.432,
+    "cost_usd": 0.00753725,
+    "status": "ok",
+    "request_id": "a16d8abe-2f5d-48d9-a7e9-60b8a6b7b97b",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 8791.953,
+    "cost_usd": 0.0096405,
+    "status": "ok",
+    "request_id": "3b4ca0fd-ebf0-460d-a698-d29d29580017",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 4245.017,
+    "cost_usd": 0.00760325,
+    "status": "ok",
+    "request_id": "ba6fa28e-5f55-4e92-aded-b4ffec125cc3",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 6028.475,
+    "cost_usd": 0.011091,
+    "status": "ok",
+    "request_id": "6955f325-0379-456d-be0f-95cb2a91ee00",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 4529.32,
+    "cost_usd": 0.008531,
+    "status": "ok",
+    "request_id": "c8e8e1ab-296a-4a82-ae12-e01348d7591a",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 6838.232,
+    "cost_usd": 0.01305625,
+    "status": "ok",
+    "request_id": "41fc67fa-acd8-4e74-aa5b-68b87108d1f6",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 3416.924,
+    "cost_usd": 0.00599705,
+    "status": "ok",
+    "request_id": "153ef3e9-fce7-4937-a0dc-b0b296f310ef",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 6688.061,
+    "cost_usd": 0.01148805,
+    "status": "ok",
+    "request_id": "04b8228e-379e-4006-b91d-0497a8286121",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 4147.898,
+    "cost_usd": 0.0055748,
+    "status": "ok",
+    "request_id": "19864cd0-1225-4393-873a-2e84ec8dde4a",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 3376.815,
+    "cost_usd": 0.0064058,
+    "status": "ok",
+    "request_id": "6844133d-0214-4d06-a730-5bc1b5b56e8b",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 6080.373,
+    "cost_usd": 0.006891,
+    "status": "ok",
+    "request_id": "766f6a80-6d19-41a2-b62e-1c0169c8d5c9",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 8703.016,
+    "cost_usd": 0.0087818,
+    "status": "ok",
+    "request_id": "65a17138-694b-439d-9c95-67482ff573fc",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 3707.715,
+    "cost_usd": 0.00654555,
+    "status": "ok",
+    "request_id": "cfc245bc-0f87-4515-8d75-7bb83172f844",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 4362.428,
+    "cost_usd": 0.0069373,
+    "status": "ok",
+    "request_id": "1cc1811b-f392-4aab-8996-9fb3c26163a3",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 3705.718,
+    "cost_usd": 0.0067255,
+    "status": "ok",
+    "request_id": "385f7120-bd60-4406-b20b-da8c2953b998",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 5250.604,
+    "cost_usd": 0.00725175,
+    "status": "ok",
+    "request_id": "70f9baa2-ddc5-4412-928e-cf2cb9825092",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 6536.242,
+    "cost_usd": 0.00896855,
+    "status": "ok",
+    "request_id": "429938bd-13cc-4628-8174-b9c537230090",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 2775.788,
+    "cost_usd": 0.006802,
+    "status": "ok",
+    "request_id": "3077485a-2c14-4d98-8d46-14390b2b08bd",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 4256.924,
+    "cost_usd": 0.00692205,
+    "status": "ok",
+    "request_id": "d1474f41-be57-4dc9-afa1-e21866d6fa8c",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 6166.098,
+    "cost_usd": 0.0099108,
+    "status": "ok",
+    "request_id": "b932f10e-3540-4408-bcc3-e7cc33f18d46",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 9736.367,
+    "cost_usd": 0.01079725,
+    "status": "ok",
+    "request_id": "018f61e0-f869-48d9-b23b-e7e17b1c4d8d",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 5018.41,
+    "cost_usd": 0.0077338,
+    "status": "ok",
+    "request_id": "e0dc218e-34f5-41e8-a5e2-77a757530766",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 5852.668,
+    "cost_usd": 0.01086975,
+    "status": "ok",
+    "request_id": "6447546f-7fa5-4a2d-8185-e173f3707c1d",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 7375.758,
+    "cost_usd": 0.010397,
+    "status": "ok",
+    "request_id": "09878b4f-887c-4f2b-81ff-13db3ba88577",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 4781.19,
+    "cost_usd": 0.010169,
+    "status": "ok",
+    "request_id": "d60a7f75-b62f-4e88-a7eb-2f9e3a781f49",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 2990.452,
+    "cost_usd": 0.00563805,
+    "status": "ok",
+    "request_id": "82a0f295-77b8-49e7-b486-9443ee9985ea",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 9764.008,
+    "cost_usd": 0.01509205,
+    "status": "ok",
+    "request_id": "ec616599-9744-4ff8-91c5-afe9b02f6a33",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 6243.35,
+    "cost_usd": 0.0072223,
+    "status": "ok",
+    "request_id": "3ebbf586-d356-4353-826e-0f3a0d39ff85",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 5089.982,
+    "cost_usd": 0.00686355,
+    "status": "ok",
+    "request_id": "9d4c890b-fdea-4dd3-9da9-6a4fd0017964",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 4195.675,
+    "cost_usd": 0.0060263,
+    "status": "ok",
+    "request_id": "2946cf6e-7eee-4372-af10-4f65a1b3d43c",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 2892.997,
+    "cost_usd": 0.00535505,
+    "status": "ok",
+    "request_id": "a5a0f787-5259-48c9-8aca-42102cc4eb07",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 4489.379,
+    "cost_usd": 0.0070105,
+    "status": "ok",
+    "request_id": "1446d76d-0aa4-4352-af5d-083eef1b2008",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 3606.728,
+    "cost_usd": 0.0064708,
+    "status": "ok",
+    "request_id": "78b78fc3-811f-4232-bc76-e730397a3d5c",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 4993.707,
+    "cost_usd": 0.0075938,
+    "status": "ok",
+    "request_id": "ee9613b3-da8b-491a-82dd-3a7d4778d496",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 11915.105,
+    "cost_usd": 0.01280575,
+    "status": "ok",
+    "request_id": "e3b394e5-7bae-4a1b-a013-671706502f59",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 5078.948,
+    "cost_usd": 0.00835775,
+    "status": "ok",
+    "request_id": "458623a0-1bfa-4df7-8e74-1c0a183ec3f5",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 7301.451,
+    "cost_usd": 0.00978925,
+    "status": "ok",
+    "request_id": "9c12b636-19f2-4188-9a85-7c06eaae3e28",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 8561.388,
+    "cost_usd": 0.0106695,
+    "status": "ok",
+    "request_id": "c9a99298-888b-4687-97ce-44f85b4fe9f4",
+    "attempts": 1
+   }
+  ],
+  "call_stats": {
+   "calls": 40,
+   "attempts": 40,
+   "retries": 0,
+   "retry_rate": 0.0,
+   "json_validity": 1.0,
+   "failed": {},
+   "latency_ms_p50": 5078.948,
+   "latency_ms_p95": 9736.367,
+   "cost_usd": 0.337971,
+   "bars_sent": 320,
+   "request_ids": [
+    "31eeb394-4898-4dc8-9c76-dfc6a38d18e3",
+    "4ee6dbbf-379d-4e4d-9a48-4e0969c438ab",
+    "a16d8abe-2f5d-48d9-a7e9-60b8a6b7b97b",
+    "3b4ca0fd-ebf0-460d-a698-d29d29580017",
+    "ba6fa28e-5f55-4e92-aded-b4ffec125cc3",
+    "6955f325-0379-456d-be0f-95cb2a91ee00",
+    "c8e8e1ab-296a-4a82-ae12-e01348d7591a",
+    "41fc67fa-acd8-4e74-aa5b-68b87108d1f6",
+    "153ef3e9-fce7-4937-a0dc-b0b296f310ef",
+    "04b8228e-379e-4006-b91d-0497a8286121",
+    "19864cd0-1225-4393-873a-2e84ec8dde4a",
+    "6844133d-0214-4d06-a730-5bc1b5b56e8b",
+    "766f6a80-6d19-41a2-b62e-1c0169c8d5c9",
+    "65a17138-694b-439d-9c95-67482ff573fc",
+    "cfc245bc-0f87-4515-8d75-7bb83172f844",
+    "1cc1811b-f392-4aab-8996-9fb3c26163a3",
+    "385f7120-bd60-4406-b20b-da8c2953b998",
+    "70f9baa2-ddc5-4412-928e-cf2cb9825092",
+    "429938bd-13cc-4628-8174-b9c537230090",
+    "3077485a-2c14-4d98-8d46-14390b2b08bd",
+    "d1474f41-be57-4dc9-afa1-e21866d6fa8c",
+    "b932f10e-3540-4408-bcc3-e7cc33f18d46",
+    "018f61e0-f869-48d9-b23b-e7e17b1c4d8d",
+    "e0dc218e-34f5-41e8-a5e2-77a757530766",
+    "6447546f-7fa5-4a2d-8185-e173f3707c1d",
+    "09878b4f-887c-4f2b-81ff-13db3ba88577",
+    "d60a7f75-b62f-4e88-a7eb-2f9e3a781f49",
+    "82a0f295-77b8-49e7-b486-9443ee9985ea",
+    "ec616599-9744-4ff8-91c5-afe9b02f6a33",
+    "3ebbf586-d356-4353-826e-0f3a0d39ff85",
+    "9d4c890b-fdea-4dd3-9da9-6a4fd0017964",
+    "2946cf6e-7eee-4372-af10-4f65a1b3d43c",
+    "a5a0f787-5259-48c9-8aca-42102cc4eb07",
+    "1446d76d-0aa4-4352-af5d-083eef1b2008",
+    "78b78fc3-811f-4232-bc76-e730397a3d5c",
+    "ee9613b3-da8b-491a-82dd-3a7d4778d496",
+    "e3b394e5-7bae-4a1b-a013-671706502f59",
+    "458623a0-1bfa-4df7-8e74-1c0a183ec3f5",
+    "9c12b636-19f2-4188-9a85-7c06eaae3e28",
+    "c9a99298-888b-4687-97ce-44f85b4fe9f4"
+   ]
+  },
+  "cost_usd": 0.337971,
+  "excerpts": 40,
+  "bars": 320,
+  "metrics": {
+   "slots": 640,
+   "covered": 640,
+   "coverage": 1.0,
+   "unparseable": 0,
+   "unscored_truth": 0,
+   "all": {
+    "root": 0.9047,
+    "triad": 0.9047,
+    "seventh": 0.9,
+    "bass": 0.9031,
+    "exact": 0.8953
+   },
+   "on_covered": {
+    "root": 0.9047,
+    "triad": 0.9047,
+    "seventh": 0.9,
+    "bass": 0.9031,
+    "exact": 0.8953
+   },
+   "calibration": {
+    "high": {
+     "slots": 526,
+     "root": 0.9677,
+     "exact": 0.962
+    },
+    "low": {
+     "slots": 96,
+     "root": 0.5521,
+     "exact": 0.5521
+    },
+    "medium": {
+     "slots": 18,
+     "root": 0.9444,
+     "exact": 0.7778
+    }
+   }
+  },
+  "by_variant": {
+   "block": {
+    "slots": 112,
+    "covered": 112,
+    "coverage": 1.0,
+    "unparseable": 0,
+    "unscored_truth": 0,
+    "all": {
+     "root": 1.0,
+     "triad": 1.0,
+     "seventh": 1.0,
+     "bass": 1.0,
+     "exact": 1.0
+    },
+    "on_covered": {
+     "root": 1.0,
+     "triad": 1.0,
+     "seventh": 1.0,
+     "bass": 1.0,
+     "exact": 1.0
+    },
+    "calibration": {
+     "high": {
+      "slots": 106,
+      "root": 1.0,
+      "exact": 1.0
+     },
+     "medium": {
+      "slots": 6,
+      "root": 1.0,
+      "exact": 1.0
+     }
+    }
+   },
+   "rootless": {
+    "slots": 112,
+    "covered": 112,
+    "coverage": 1.0,
+    "unparseable": 0,
+    "unscored_truth": 0,
+    "all": {
+     "root": 0.4732,
+     "triad": 0.4732,
+     "seventh": 0.4732,
+     "bass": 0.4732,
+     "exact": 0.4732
+    },
+    "on_covered": {
+     "root": 0.4732,
+     "triad": 0.4732,
+     "seventh": 0.4732,
+     "bass": 0.4732,
+     "exact": 0.4732
+    },
+    "calibration": {
+     "high": {
+      "slots": 16,
+      "root": 0.0,
+      "exact": 0.0
+     },
+     "low": {
+      "slots": 96,
+      "root": 0.5521,
+      "exact": 0.5521
+     }
+    }
+   },
+   "inversion": {
+    "slots": 128,
+    "covered": 128,
+    "coverage": 1.0,
+    "unparseable": 0,
+    "unscored_truth": 0,
+    "all": {
+     "root": 0.9922,
+     "triad": 0.9922,
+     "seventh": 0.9922,
+     "bass": 0.9766,
+     "exact": 0.9688
+    },
+    "on_covered": {
+     "root": 0.9922,
+     "triad": 0.9922,
+     "seventh": 0.9922,
+     "bass": 0.9766,
+     "exact": 0.9688
+    },
+    "calibration": {
+     "high": {
+      "slots": 128,
+      "root": 0.9922,
+      "exact": 0.9688
+     }
+    }
+   },
+   "melody": {
+    "slots": 96,
+    "covered": 96,
+    "coverage": 1.0,
+    "unparseable": 0,
+    "unscored_truth": 0,
+    "all": {
+     "root": 0.9896,
+     "triad": 0.9896,
+     "seventh": 0.9583,
+     "bass": 1.0,
+     "exact": 0.9583
+    },
+    "on_covered": {
+     "root": 0.9896,
+     "triad": 0.9896,
+     "seventh": 0.9583,
+     "bass": 1.0,
+     "exact": 0.9583
+    },
+    "calibration": {
+     "high": {
+      "slots": 88,
+      "root": 1.0,
+      "exact": 1.0
+     },
+     "medium": {
+      "slots": 8,
+      "root": 0.875,
+      "exact": 0.5
+     }
+    }
+   },
+   "sparse": {
+    "slots": 96,
+    "covered": 96,
+    "coverage": 1.0,
+    "unparseable": 0,
+    "unscored_truth": 0,
+    "all": {
+     "root": 1.0,
+     "triad": 1.0,
+     "seventh": 1.0,
+     "bass": 1.0,
+     "exact": 1.0
+    },
+    "on_covered": {
+     "root": 1.0,
+     "triad": 1.0,
+     "seventh": 1.0,
+     "bass": 1.0,
+     "exact": 1.0
+    },
+    "calibration": {
+     "high": {
+      "slots": 94,
+      "root": 1.0,
+      "exact": 1.0
+     },
+     "medium": {
+      "slots": 2,
+      "root": 1.0,
+      "exact": 1.0
+     }
+    }
+   },
+   "waltz": {
+    "slots": 96,
+    "covered": 96,
+    "coverage": 1.0,
+    "unparseable": 0,
+    "unscored_truth": 0,
+    "all": {
+     "root": 1.0,
+     "triad": 1.0,
+     "seventh": 1.0,
+     "bass": 1.0,
+     "exact": 1.0
+    },
+    "on_covered": {
+     "root": 1.0,
+     "triad": 1.0,
+     "seventh": 1.0,
+     "bass": 1.0,
+     "exact": 1.0
+    },
+    "calibration": {
+     "high": {
+      "slots": 94,
+      "root": 1.0,
+      "exact": 1.0
+     },
+     "medium": {
+      "slots": 2,
+      "root": 1.0,
+      "exact": 1.0
+     }
+    }
+   }
+  },
+  "by_genre": {
+   "blues": {
+    "slots": 48,
+    "covered": 48,
+    "coverage": 1.0,
+    "unparseable": 0,
+    "unscored_truth": 0,
+    "all": {
+     "root": 0.6667,
+     "triad": 0.6667,
+     "seventh": 0.6667,
+     "bass": 0.6667,
+     "exact": 0.6667
+    },
+    "on_covered": {
+     "root": 0.6667,
+     "triad": 0.6667,
+     "seventh": 0.6667,
+     "bass": 0.6667,
+     "exact": 0.6667
+    },
+    "calibration": {
+     "high": {
+      "slots": 48,
+      "root": 0.6667,
+      "exact": 0.6667
+     }
+    }
+   },
+   "bossa": {
+    "slots": 48,
+    "covered": 48,
+    "coverage": 1.0,
+    "unparseable": 0,
+    "unscored_truth": 0,
+    "all": {
+     "root": 0.75,
+     "triad": 0.75,
+     "seventh": 0.75,
+     "bass": 0.75,
+     "exact": 0.75
+    },
+    "on_covered": {
+     "root": 0.75,
+     "triad": 0.75,
+     "seventh": 0.75,
+     "bass": 0.75,
+     "exact": 0.75
+    },
+    "calibration": {
+     "low": {
+      "slots": 16,
+      "root": 0.25,
+      "exact": 0.25
+     },
+     "high": {
+      "slots": 32,
+      "root": 1.0,
+      "exact": 1.0
+     }
+    }
+   },
+   "classical": {
+    "slots": 48,
+    "covered": 48,
+    "coverage": 1.0,
+    "unparseable": 0,
+    "unscored_truth": 0,
+    "all": {
+     "root": 0.9792,
+     "triad": 0.9792,
+     "seventh": 0.9792,
+     "bass": 1.0,
+     "exact": 0.9792
+    },
+    "on_covered": {
+     "root": 0.9792,
+     "triad": 0.9792,
+     "seventh": 0.9792,
+     "bass": 1.0,
+     "exact": 0.9792
+    },
+    "calibration": {
+     "high": {
+      "slots": 46,
+      "root": 1.0,
+      "exact": 1.0
+     },
+     "medium": {
+      "slots": 2,
+      "root": 0.5,
+      "exact": 0.5
+     }
+    }
+   },
+   "country": {
+    "slots": 48,
+    "covered": 48,
+    "coverage": 1.0,
+    "unparseable": 0,
+    "unscored_truth": 0,
+    "all": {
+     "root": 1.0,
+     "triad": 1.0,
+     "seventh": 1.0,
+     "bass": 1.0,
+     "exact": 1.0
+    },
+    "on_covered": {
+     "root": 1.0,
+     "triad": 1.0,
+     "seventh": 1.0,
+     "bass": 1.0,
+     "exact": 1.0
+    },
+    "calibration": {
+     "high": {
+      "slots": 48,
+      "root": 1.0,
+      "exact": 1.0
+     }
+    }
+   },
+   "electronic": {
+    "slots": 48,
+    "covered": 48,
+    "coverage": 1.0,
+    "unparseable": 0,
+    "unscored_truth": 0,
+    "all": {
+     "root": 1.0,
+     "triad": 1.0,
+     "seventh": 1.0,
+     "bass": 1.0,
+     "exact": 1.0
+    },
+    "on_covered": {
+     "root": 1.0,
+     "triad": 1.0,
+     "seventh": 1.0,
+     "bass": 1.0,
+     "exact": 1.0
+    },
+    "calibration": {
+     "high": {
+      "slots": 46,
+      "root": 1.0,
+      "exact": 1.0
+     },
+     "medium": {
+      "slots": 2,
+      "root": 1.0,
+      "exact": 1.0
+     }
+    }
+   },
+   "folk": {
+    "slots": 64,
+    "covered": 64,
+    "coverage": 1.0,
+    "unparseable": 0,
+    "unscored_truth": 0,
+    "all": {
+     "root": 0.9844,
+     "triad": 0.9844,
+     "seventh": 0.9844,
+     "bass": 1.0,
+     "exact": 0.9844
+    },
+    "on_covered": {
+     "root": 0.9844,
+     "triad": 0.9844,
+     "seventh": 0.9844,
+     "bass": 1.0,
+     "exact": 0.9844
+    },
+    "calibration": {
+     "high": {
+      "slots": 48,
+      "root": 0.9792,
+      "exact": 0.9792
+     },
+     "low": {
+      "slots": 16,
+      "root": 1.0,
+      "exact": 1.0
+     }
+    }
+   },
+   "funk": {
+    "slots": 48,
+    "covered": 48,
+    "coverage": 1.0,
+    "unparseable": 0,
+    "unscored_truth": 0,
+    "all": {
+     "root": 0.8333,
+     "triad": 0.8333,
+     "seventh": 0.8333,
+     "bass": 0.8333,
+     "exact": 0.8333
+    },
+    "on_covered": {
+     "root": 0.8333,
+     "triad": 0.8333,
+     "seventh": 0.8333,
+     "bass": 0.8333,
+     "exact": 0.8333
+    },
+    "calibration": {
+     "high": {
+      "slots": 32,
+      "root": 1.0,
+      "exact": 1.0
+     },
+     "low": {
+      "slots": 16,
+      "root": 0.5,
+      "exact": 0.5
+     }
+    }
+   },
+   "gospel": {
+    "slots": 48,
+    "covered": 48,
+    "coverage": 1.0,
+    "unparseable": 0,
+    "unscored_truth": 0,
+    "all": {
+     "root": 0.75,
+     "triad": 0.75,
+     "seventh": 0.75,
+     "bass": 0.75,
+     "exact": 0.75
+    },
+    "on_covered": {
+     "root": 0.75,
+     "triad": 0.75,
+     "seventh": 0.75,
+     "bass": 0.75,
+     "exact": 0.75
+    },
+    "calibration": {
+     "low": {
+      "slots": 16,
+      "root": 0.25,
+      "exact": 0.25
+     },
+     "high": {
+      "slots": 32,
+      "root": 1.0,
+      "exact": 1.0
+     }
+    }
+   },
+   "hip_hop": {
+    "slots": 48,
+    "covered": 48,
+    "coverage": 1.0,
+    "unparseable": 0,
+    "unscored_truth": 0,
+    "all": {
+     "root": 1.0,
+     "triad": 1.0,
+     "seventh": 1.0,
+     "bass": 1.0,
+     "exact": 1.0
+    },
+    "on_covered": {
+     "root": 1.0,
+     "triad": 1.0,
+     "seventh": 1.0,
+     "bass": 1.0,
+     "exact": 1.0
+    },
+    "calibration": {
+     "high": {
+      "slots": 48,
+      "root": 1.0,
+      "exact": 1.0
+     }
+    }
+   },
+   "jazz": {
+    "slots": 48,
+    "covered": 48,
+    "coverage": 1.0,
+    "unparseable": 0,
+    "unscored_truth": 0,
+    "all": {
+     "root": 1.0,
+     "triad": 1.0,
+     "seventh": 0.9375,
+     "bass": 1.0,
+     "exact": 0.9375
+    },
+    "on_covered": {
+     "root": 1.0,
+     "triad": 1.0,
+     "seventh": 0.9375,
+     "bass": 1.0,
+     "exact": 0.9375
+    },
+    "calibration": {
+     "high": {
+      "slots": 40,
+      "root": 1.0,
+      "exact": 1.0
+     },
+     "medium": {
+      "slots": 8,
+      "root": 1.0,
+      "exact": 0.625
+     }
+    }
+   },
+   "pop": {
+    "slots": 48,
+    "covered": 48,
+    "coverage": 1.0,
+    "unparseable": 0,
+    "unscored_truth": 0,
+    "all": {
+     "root": 1.0,
+     "triad": 1.0,
+     "seventh": 1.0,
+     "bass": 1.0,
+     "exact": 1.0
+    },
+    "on_covered": {
+     "root": 1.0,
+     "triad": 1.0,
+     "seventh": 1.0,
+     "bass": 1.0,
+     "exact": 1.0
+    },
+    "calibration": {
+     "high": {
+      "slots": 48,
+      "root": 1.0,
+      "exact": 1.0
+     }
+    }
+   },
+   "rnb_soul": {
+    "slots": 48,
+    "covered": 48,
+    "coverage": 1.0,
+    "unparseable": 0,
+    "unscored_truth": 0,
+    "all": {
+     "root": 0.9167,
+     "triad": 0.9167,
+     "seventh": 0.9167,
+     "bass": 0.9167,
+     "exact": 0.9167
+    },
+    "on_covered": {
+     "root": 0.9167,
+     "triad": 0.9167,
+     "seventh": 0.9167,
+     "bass": 0.9167,
+     "exact": 0.9167
+    },
+    "calibration": {
+     "high": {
+      "slots": 32,
+      "root": 1.0,
+      "exact": 1.0
+     },
+     "low": {
+      "slots": 16,
+      "root": 0.75,
+      "exact": 0.75
+     }
+    }
+   },
+   "rock": {
+    "slots": 48,
+    "covered": 48,
+    "coverage": 1.0,
+    "unparseable": 0,
+    "unscored_truth": 0,
+    "all": {
+     "root": 0.8542,
+     "triad": 0.8542,
+     "seventh": 0.8542,
+     "bass": 0.7917,
+     "exact": 0.7917
+    },
+    "on_covered": {
+     "root": 0.8542,
+     "triad": 0.8542,
+     "seventh": 0.8542,
+     "bass": 0.7917,
+     "exact": 0.7917
+    },
+    "calibration": {
+     "high": {
+      "slots": 26,
+      "root": 1.0,
+      "exact": 0.8846
+     },
+     "medium": {
+      "slots": 6,
+      "root": 1.0,
+      "exact": 1.0
+     },
+     "low": {
+      "slots": 16,
+      "root": 0.5625,
+      "exact": 0.5625
+     }
+    }
+   }
+  }
+ }
+}

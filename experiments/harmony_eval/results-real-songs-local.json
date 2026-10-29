@@ -1,0 +1,3918 @@
+{
+ "engine": "local",
+ "provider": "local",
+ "model": "harmony_analysis",
+ "settings": {
+  "provider": "local",
+  "model": "harmony_analysis"
+ },
+ "dataset": {
+  "label": "130-song test split of the training corpora, private; excerpts realized with the product's voicing code",
+  "sha256": "b5dcef9c9fdefef028b8b067f7b50c25c8c8bdc08cf7278df9103995f1195daf",
+  "seed": 20261029,
+  "songs_in_file": 130,
+  "songs_dropped": {
+   "meter": 1
+  },
+  "bars_left_out": {
+   "more_than_two_chords": 72
+  },
+  "songs_used": 40,
+  "excerpts": 40,
+  "bars": 320,
+  "slots": 640,
+  "genres": {
+   "blues": 3,
+   "bossa": 3,
+   "classical": 3,
+   "country": 3,
+   "electronic": 3,
+   "folk": 4,
+   "funk": 3,
+   "gospel": 3,
+   "hip_hop": 3,
+   "jazz": 3,
+   "pop": 3,
+   "rnb_soul": 3,
+   "rock": 3
+  },
+  "variants": {
+   "block": 7,
+   "rootless": 7,
+   "inversion": 8,
+   "melody": 6,
+   "sparse": 6,
+   "waltz": 6
+  },
+  "meters": {
+   "4/4": 34,
+   "3/4": 6
+  },
+  "key_sources": {
+   "estimated": 32,
+   "file": 8
+  }
+ },
+ "real_songs": {
+  "created": "2026-10-29T11:38:44+00:00",
+  "complete": true,
+  "stopped": null,
+  "calls": [
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.294,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.185,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.157,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.152,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.139,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.159,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.153,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.141,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.143,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.143,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.145,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.131,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.136,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.134,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.131,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.13,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.165,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.159,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.153,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.16,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.149,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.144,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.147,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.146,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.039,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.038,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.029,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.028,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.027,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.027,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.026,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.025,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.16,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.15,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.15,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.148,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.152,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.152,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.147,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.146,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.584,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.533,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.565,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.544,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.546,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.55,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.55,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.585,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.16,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.153,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.152,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.184,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.151,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.15,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.152,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.152,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.551,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.524,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.519,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.498,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.524,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.509,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.518,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.563,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.095,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.083,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.125,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.084,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.117,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.087,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.087,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.087,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.553,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.574,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.535,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.523,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.515,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.501,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.562,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.529,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.093,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.084,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.082,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.082,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.085,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.084,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.083,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.085,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.161,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.156,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.15,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.151,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.151,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.144,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.148,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.149,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.094,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.086,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.088,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.084,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.082,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.083,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.081,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.082,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.155,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.148,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.146,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.151,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.162,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.144,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.149,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.144,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.157,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.151,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.148,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.145,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.146,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.146,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.145,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.143,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.152,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.146,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.146,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.143,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.143,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.142,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.141,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.145,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.151,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.145,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.147,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.143,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.147,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.14,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.143,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.142,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.036,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.029,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.027,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.03,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.027,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.026,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.025,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.026,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.17,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.152,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.147,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.146,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.148,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.149,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.146,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.145,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.154,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.146,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.144,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.143,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.143,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.148,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.143,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.141,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.036,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.031,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.027,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.029,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.026,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.027,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.028,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.027,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.157,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.15,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.146,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.145,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.148,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.146,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.145,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.144,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.036,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.03,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.027,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.027,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.027,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.026,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.027,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.028,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.152,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.197,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.146,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.175,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.145,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.173,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.145,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.173,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.637,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.508,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.527,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.628,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.527,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.614,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.52,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.503,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.154,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.147,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.15,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.143,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.17,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.15,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.144,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.168,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.54,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.541,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.504,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.512,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.49,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.5,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.489,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.531,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.091,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.11,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.085,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.085,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.082,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.105,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.083,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.084,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.698,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.701,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.723,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.533,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.759,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.487,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.693,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.514,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.127,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.124,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.119,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.088,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.115,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.115,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.145,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.085,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.16,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.205,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.149,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.203,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.149,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.205,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.148,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.145,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.095,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.085,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.083,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.085,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.083,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.083,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.083,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.085,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.153,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.162,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.144,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.144,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.143,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.142,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.142,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.14,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.152,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.146,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.147,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.144,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.144,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.143,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.148,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.147,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.205,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.149,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.19,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.143,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.187,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.144,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.188,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.143,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.156,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.179,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.148,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.147,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.144,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.146,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.144,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.144,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.093,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.034,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.085,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.033,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.084,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.033,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.082,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.032,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.155,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.145,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.147,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.146,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.148,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.156,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.147,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.147,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.037,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.03,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.027,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.027,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.026,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.027,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.027,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.025,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.164,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.158,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.146,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.146,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.144,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.145,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.145,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   },
+   {
+    "provider": "local",
+    "model": "harmony_analysis",
+    "bars": 1,
+    "latency_ms": 0.145,
+    "cost_usd": 0.0,
+    "status": "ok",
+    "request_id": null,
+    "attempts": 1
+   }
+  ],
+  "call_stats": {
+   "calls": 320,
+   "attempts": 320,
+   "retries": 0,
+   "retry_rate": 0.0,
+   "json_validity": 1.0,
+   "failed": {},
+   "latency_ms_p50": 0.146,
+   "latency_ms_p95": 0.55,
+   "cost_usd": 0.0,
+   "bars_sent": 320,
+   "request_ids": []
+  },
+  "cost_usd": 0.0,
+  "excerpts": 40,
+  "bars": 320,
+  "metrics": {
+   "slots": 640,
+   "covered": 522,
+   "coverage": 0.8156,
+   "unparseable": 0,
+   "unscored_truth": 0,
+   "all": {
+    "root": 0.7781,
+    "triad": 0.7781,
+    "seventh": 0.7781,
+    "bass": 0.7781,
+    "exact": 0.7781
+   },
+   "on_covered": {
+    "root": 0.954,
+    "triad": 0.954,
+    "seventh": 0.954,
+    "bass": 0.954,
+    "exact": 0.954
+   },
+   "calibration": {
+    "medium": {
+     "slots": 360,
+     "root": 0.9556,
+     "exact": 0.9556
+    },
+    "low": {
+     "slots": 162,
+     "root": 0.9506,
+     "exact": 0.9506
+    }
+   }
+  },
+  "by_variant": {
+   "block": {
+    "slots": 112,
+    "covered": 112,
+    "coverage": 1.0,
+    "unparseable": 0,
+    "unscored_truth": 0,
+    "all": {
+     "root": 1.0,
+     "triad": 1.0,
+     "seventh": 1.0,
+     "bass": 1.0,
+     "exact": 1.0
+    },
+    "on_covered": {
+     "root": 1.0,
+     "triad": 1.0,
+     "seventh": 1.0,
+     "bass": 1.0,
+     "exact": 1.0
+    },
+    "calibration": {
+     "medium": {
+      "slots": 112,
+      "root": 1.0,
+      "exact": 1.0
+     }
+    }
+   },
+   "rootless": {
+    "slots": 112,
+    "covered": 24,
+    "coverage": 0.2143,
+    "unparseable": 0,
+    "unscored_truth": 0,
+    "all": {
+     "root": 0.0,
+     "triad": 0.0,
+     "seventh": 0.0,
+     "bass": 0.0,
+     "exact": 0.0
+    },
+    "on_covered": {
+     "root": 0.0,
+     "triad": 0.0,
+     "seventh": 0.0,
+     "bass": 0.0,
+     "exact": 0.0
+    },
+    "calibration": {
+     "medium": {
+      "slots": 16,
+      "root": 0.0,
+      "exact": 0.0
+     },
+     "low": {
+      "slots": 8,
+      "root": 0.0,
+      "exact": 0.0
+     }
+    }
+   },
+   "inversion": {
+    "slots": 128,
+    "covered": 128,
+    "coverage": 1.0,
+    "unparseable": 0,
+    "unscored_truth": 0,
+    "all": {
+     "root": 1.0,
+     "triad": 1.0,
+     "seventh": 1.0,
+     "bass": 1.0,
+     "exact": 1.0
+    },
+    "on_covered": {
+     "root": 1.0,
+     "triad": 1.0,
+     "seventh": 1.0,
+     "bass": 1.0,
+     "exact": 1.0
+    },
+    "calibration": {
+     "medium": {
+      "slots": 122,
+      "root": 1.0,
+      "exact": 1.0
+     },
+     "low": {
+      "slots": 6,
+      "root": 1.0,
+      "exact": 1.0
+     }
+    }
+   },
+   "melody": {
+    "slots": 96,
+    "covered": 66,
+    "coverage": 0.6875,
+    "unparseable": 0,
+    "unscored_truth": 0,
+    "all": {
+     "root": 0.6875,
+     "triad": 0.6875,
+     "seventh": 0.6875,
+     "bass": 0.6875,
+     "exact": 0.6875
+    },
+    "on_covered": {
+     "root": 1.0,
+     "triad": 1.0,
+     "seventh": 1.0,
+     "bass": 1.0,
+     "exact": 1.0
+    },
+    "calibration": {
+     "low": {
+      "slots": 44,
+      "root": 1.0,
+      "exact": 1.0
+     },
+     "medium": {
+      "slots": 22,
+      "root": 1.0,
+      "exact": 1.0
+     }
+    }
+   },
+   "sparse": {
+    "slots": 96,
+    "covered": 96,
+    "coverage": 1.0,
+    "unparseable": 0,
+    "unscored_truth": 0,
+    "all": {
+     "root": 1.0,
+     "triad": 1.0,
+     "seventh": 1.0,
+     "bass": 1.0,
+     "exact": 1.0
+    },
+    "on_covered": {
+     "root": 1.0,
+     "triad": 1.0,
+     "seventh": 1.0,
+     "bass": 1.0,
+     "exact": 1.0
+    },
+    "calibration": {
+     "medium": {
+      "slots": 88,
+      "root": 1.0,
+      "exact": 1.0
+     },
+     "low": {
+      "slots": 8,
+      "root": 1.0,
+      "exact": 1.0
+     }
+    }
+   },
+   "waltz": {
+    "slots": 96,
+    "covered": 96,
+    "coverage": 1.0,
+    "unparseable": 0,
+    "unscored_truth": 0,
+    "all": {
+     "root": 1.0,
+     "triad": 1.0,
+     "seventh": 1.0,
+     "bass": 1.0,
+     "exact": 1.0
+    },
+    "on_covered": {
+     "root": 1.0,
+     "triad": 1.0,
+     "seventh": 1.0,
+     "bass": 1.0,
+     "exact": 1.0
+    },
+    "calibration": {
+     "low": {
+      "slots": 96,
+      "root": 1.0,
+      "exact": 1.0
+     }
+    }
+   }
+  },
+  "by_genre": {
+   "blues": {
+    "slots": 48,
+    "covered": 48,
+    "coverage": 1.0,
+    "unparseable": 0,
+    "unscored_truth": 0,
+    "all": {
+     "root": 0.6667,
+     "triad": 0.6667,
+     "seventh": 0.6667,
+     "bass": 0.6667,
+     "exact": 0.6667
+    },
+    "on_covered": {
+     "root": 0.6667,
+     "triad": 0.6667,
+     "seventh": 0.6667,
+     "bass": 0.6667,
+     "exact": 0.6667
+    },
+    "calibration": {
+     "medium": {
+      "slots": 48,
+      "root": 0.6667,
+      "exact": 0.6667
+     }
+    }
+   },
+   "bossa": {
+    "slots": 48,
+    "covered": 22,
+    "coverage": 0.4583,
+    "unparseable": 0,
+    "unscored_truth": 0,
+    "all": {
+     "root": 0.4583,
+     "triad": 0.4583,
+     "seventh": 0.4583,
+     "bass": 0.4583,
+     "exact": 0.4583
+    },
+    "on_covered": {
+     "root": 1.0,
+     "triad": 1.0,
+     "seventh": 1.0,
+     "bass": 1.0,
+     "exact": 1.0
+    },
+    "calibration": {
+     "medium": {
+      "slots": 14,
+      "root": 1.0,
+      "exact": 1.0
+     },
+     "low": {
+      "slots": 8,
+      "root": 1.0,
+      "exact": 1.0
+     }
+    }
+   },
+   "classical": {
+    "slots": 48,
+    "covered": 44,
+    "coverage": 0.9167,
+    "unparseable": 0,
+    "unscored_truth": 0,
+    "all": {
+     "root": 0.9167,
+     "triad": 0.9167,
+     "seventh": 0.9167,
+     "bass": 0.9167,
+     "exact": 0.9167
+    },
+    "on_covered": {
+     "root": 1.0,
+     "triad": 1.0,
+     "seventh": 1.0,
+     "bass": 1.0,
+     "exact": 1.0
+    },
+    "calibration": {
+     "medium": {
+      "slots": 36,
+      "root": 1.0,
+      "exact": 1.0
+     },
+     "low": {
+      "slots": 8,
+      "root": 1.0,
+      "exact": 1.0
+     }
+    }
+   },
+   "country": {
+    "slots": 48,
+    "covered": 42,
+    "coverage": 0.875,
+    "unparseable": 0,
+    "unscored_truth": 0,
+    "all": {
+     "root": 0.875,
+     "triad": 0.875,
+     "seventh": 0.875,
+     "bass": 0.875,
+     "exact": 0.875
+    },
+    "on_covered": {
+     "root": 1.0,
+     "triad": 1.0,
+     "seventh": 1.0,
+     "bass": 1.0,
+     "exact": 1.0
+    },
+    "calibration": {
+     "low": {
+      "slots": 24,
+      "root": 1.0,
+      "exact": 1.0
+     },
+     "medium": {
+      "slots": 18,
+      "root": 1.0,
+      "exact": 1.0
+     }
+    }
+   },
+   "electronic": {
+    "slots": 48,
+    "covered": 48,
+    "coverage": 1.0,
+    "unparseable": 0,
+    "unscored_truth": 0,
+    "all": {
+     "root": 1.0,
+     "triad": 1.0,
+     "seventh": 1.0,
+     "bass": 1.0,
+     "exact": 1.0
+    },
+    "on_covered": {
+     "root": 1.0,
+     "triad": 1.0,
+     "seventh": 1.0,
+     "bass": 1.0,
+     "exact": 1.0
+    },
+    "calibration": {
+     "medium": {
+      "slots": 32,
+      "root": 1.0,
+      "exact": 1.0
+     },
+     "low": {
+      "slots": 16,
+      "root": 1.0,
+      "exact": 1.0
+     }
+    }
+   },
+   "folk": {
+    "slots": 64,
+    "covered": 48,
+    "coverage": 0.75,
+    "unparseable": 0,
+    "unscored_truth": 0,
+    "all": {
+     "root": 0.75,
+     "triad": 0.75,
+     "seventh": 0.75,
+     "bass": 0.75,
+     "exact": 0.75
+    },
+    "on_covered": {
+     "root": 1.0,
+     "triad": 1.0,
+     "seventh": 1.0,
+     "bass": 1.0,
+     "exact": 1.0
+    },
+    "calibration": {
+     "low": {
+      "slots": 16,
+      "root": 1.0,
+      "exact": 1.0
+     },
+     "medium": {
+      "slots": 32,
+      "root": 1.0,
+      "exact": 1.0
+     }
+    }
+   },
+   "funk": {
+    "slots": 48,
+    "covered": 32,
+    "coverage": 0.6667,
+    "unparseable": 0,
+    "unscored_truth": 0,
+    "all": {
+     "root": 0.6667,
+     "triad": 0.6667,
+     "seventh": 0.6667,
+     "bass": 0.6667,
+     "exact": 0.6667
+    },
+    "on_covered": {
+     "root": 1.0,
+     "triad": 1.0,
+     "seventh": 1.0,
+     "bass": 1.0,
+     "exact": 1.0
+    },
+    "calibration": {
+     "medium": {
+      "slots": 32,
+      "root": 1.0,
+      "exact": 1.0
+     }
+    }
+   },
+   "gospel": {
+    "slots": 48,
+    "covered": 30,
+    "coverage": 0.625,
+    "unparseable": 0,
+    "unscored_truth": 0,
+    "all": {
+     "root": 0.625,
+     "triad": 0.625,
+     "seventh": 0.625,
+     "bass": 0.625,
+     "exact": 0.625
+    },
+    "on_covered": {
+     "root": 1.0,
+     "triad": 1.0,
+     "seventh": 1.0,
+     "bass": 1.0,
+     "exact": 1.0
+    },
+    "calibration": {
+     "medium": {
+      "slots": 16,
+      "root": 1.0,
+      "exact": 1.0
+     },
+     "low": {
+      "slots": 14,
+      "root": 1.0,
+      "exact": 1.0
+     }
+    }
+   },
+   "hip_hop": {
+    "slots": 48,
+    "covered": 44,
+    "coverage": 0.9167,
+    "unparseable": 0,
+    "unscored_truth": 0,
+    "all": {
+     "root": 0.9167,
+     "triad": 0.9167,
+     "seventh": 0.9167,
+     "bass": 0.9167,
+     "exact": 0.9167
+    },
+    "on_covered": {
+     "root": 1.0,
+     "triad": 1.0,
+     "seventh": 1.0,
+     "bass": 1.0,
+     "exact": 1.0
+    },
+    "calibration": {
+     "medium": {
+      "slots": 38,
+      "root": 1.0,
+      "exact": 1.0
+     },
+     "low": {
+      "slots": 6,
+      "root": 1.0,
+      "exact": 1.0
+     }
+    }
+   },
+   "jazz": {
+    "slots": 48,
+    "covered": 44,
+    "coverage": 0.9167,
+    "unparseable": 0,
+    "unscored_truth": 0,
+    "all": {
+     "root": 0.9167,
+     "triad": 0.9167,
+     "seventh": 0.9167,
+     "bass": 0.9167,
+     "exact": 0.9167
+    },
+    "on_covered": {
+     "root": 1.0,
+     "triad": 1.0,
+     "seventh": 1.0,
+     "bass": 1.0,
+     "exact": 1.0
+    },
+    "calibration": {
+     "medium": {
+      "slots": 14,
+      "root": 1.0,
+      "exact": 1.0
+     },
+     "low": {
+      "slots": 30,
+      "root": 1.0,
+      "exact": 1.0
+     }
+    }
+   },
+   "pop": {
+    "slots": 48,
+    "covered": 48,
+    "coverage": 1.0,
+    "unparseable": 0,
+    "unscored_truth": 0,
+    "all": {
+     "root": 1.0,
+     "triad": 1.0,
+     "seventh": 1.0,
+     "bass": 1.0,
+     "exact": 1.0
+    },
+    "on_covered": {
+     "root": 1.0,
+     "triad": 1.0,
+     "seventh": 1.0,
+     "bass": 1.0,
+     "exact": 1.0
+    },
+    "calibration": {
+     "medium": {
+      "slots": 32,
+      "root": 1.0,
+      "exact": 1.0
+     },
+     "low": {
+      "slots": 16,
+      "root": 1.0,
+      "exact": 1.0
+     }
+    }
+   },
+   "rnb_soul": {
+    "slots": 48,
+    "covered": 40,
+    "coverage": 0.8333,
+    "unparseable": 0,
+    "unscored_truth": 0,
+    "all": {
+     "root": 0.6667,
+     "triad": 0.6667,
+     "seventh": 0.6667,
+     "bass": 0.6667,
+     "exact": 0.6667
+    },
+    "on_covered": {
+     "root": 0.8,
+     "triad": 0.8,
+     "seventh": 0.8,
+     "bass": 0.8,
+     "exact": 0.8
+    },
+    "calibration": {
+     "low": {
+      "slots": 24,
+      "root": 0.6667,
+      "exact": 0.6667
+     },
+     "medium": {
+      "slots": 16,
+      "root": 1.0,
+      "exact": 1.0
+     }
+    }
+   },
+   "rock": {
+    "slots": 48,
+    "covered": 32,
+    "coverage": 0.6667,
+    "unparseable": 0,
+    "unscored_truth": 0,
+    "all": {
+     "root": 0.6667,
+     "triad": 0.6667,
+     "seventh": 0.6667,
+     "bass": 0.6667,
+     "exact": 0.6667
+    },
+    "on_covered": {
+     "root": 1.0,
+     "triad": 1.0,
+     "seventh": 1.0,
+     "bass": 1.0,
+     "exact": 1.0
+    },
+    "calibration": {
+     "medium": {
+      "slots": 32,
+      "root": 1.0,
+      "exact": 1.0
+     }
+    }
+   }
+  }
+ }
+}

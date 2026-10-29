@@ -1,0 +1,6335 @@
+{
+ "engine": "meta",
+ "provider": "meta",
+ "model": "muse-spark-1.3",
+ "settings": {
+  "provider": "meta",
+  "model": "muse-spark-1.3",
+  "reasoning_effort": "low",
+  "timeout_s": 45.0,
+  "max_completion_tokens": 4096,
+  "max_request_usd": 0.1,
+  "ledger_cap_usd": 25.0,
+  "batch": {
+   "max_measures": 8,
+   "max_notes": 512
+  }
+ },
+ "dataset": {
+  "path": "experiments/harmony_eval/dataset.jsonl",
+  "sha256": "7b0aa7f9551261667bcb46a016fc0f4b6565b9609ee62604473796fb93da306a",
+  "records": 42,
+  "bars": 344,
+  "variants": {
+   "block": 7,
+   "rootless": 7,
+   "inversion": 7,
+   "melody": 7,
+   "sparse": 7,
+   "waltz": 7
+  }
+ },
+ "synthetic": {
+  "created": "2026-10-29T11:38:53+00:00",
+  "complete": true,
+  "stopped": null,
+  "records": [
+   {
+    "id": "00-jazz-block",
+    "source": "generator",
+    "genre": "jazz",
+    "key": "Bb major",
+    "variant": "block",
+    "bars": [
+     {
+      "index": 0,
+      "chords": [
+       "Ebadd9"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Bass Eb2 both halves with sustained Eb4 G4 Bb4 C5; Eb triad plus 9th C, no 7th; single harmony sustained across bar.",
+      "request_id": "ad2dda6b-ba71-4050-9d32-9bf6ae41cbd8",
+      "error": null,
+      "truth": [
+       "Eb6",
+       null
+      ]
+     },
+     {
+      "index": 1,
+      "chords": [
+       "Am7b5",
+       "Ebadd9"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "First half bass A2 with A4 C5 Eb5 G5 forms complete Am7b5; second half bass Eb2 with Eb4 G4 Bb4 C5 returns to Eb triad+9th.",
+      "request_id": "ad2dda6b-ba71-4050-9d32-9bf6ae41cbd8",
+      "error": null,
+      "truth": [
+       "Am7b5",
+       "Eb6"
+      ]
+     },
+     {
+      "index": 2,
+      "chords": [
+       "F7",
+       "Gm7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "First half bass F2 with F4 A4 C5 Eb5 complete dominant 7th; second half bass G2 with G4 Bb4 D5 F5 complete Gm7.",
+      "request_id": "ad2dda6b-ba71-4050-9d32-9bf6ae41cbd8",
+      "error": null,
+      "truth": [
+       "F9",
+       "Gm7"
+      ]
+     },
+     {
+      "index": 3,
+      "chords": [
+       "Bbmaj7",
+       "Gm7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "First half bass Bb2 with Bb4 D5 F5 A5 complete Bbmaj7; second half bass G2 with G4 Bb4 D5 F5 complete Gm7.",
+      "request_id": "ad2dda6b-ba71-4050-9d32-9bf6ae41cbd8",
+      "error": null,
+      "truth": [
+       "Bbmaj7",
+       "Gm7"
+      ]
+     },
+     {
+      "index": 4,
+      "chords": [
+       "Gm7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Both halves bass G2 with sustained G4 Bb4 D5 F5; identical complete Gm7 tetrad, no change.",
+      "request_id": "ad2dda6b-ba71-4050-9d32-9bf6ae41cbd8",
+      "error": null,
+      "truth": [
+       "Gm7",
+       null
+      ]
+     },
+     {
+      "index": 5,
+      "chords": [
+       "F7",
+       "Bbmaj7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "First half bass F2 with F4 A4 C5 Eb5 complete F7; second half bass Bb2 with Bb4 D5 F5 A5 complete Bbmaj7.",
+      "request_id": "ad2dda6b-ba71-4050-9d32-9bf6ae41cbd8",
+      "error": null,
+      "truth": [
+       "F13",
+       "Bbmaj7"
+      ]
+     },
+     {
+      "index": 6,
+      "chords": [
+       "Bbmaj7",
+       "F7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "First half bass Bb2 with Bb4 D5 F5 A5 complete Bbmaj7; second half bass F2 with F4 A4 C5 Eb5 complete F7.",
+      "request_id": "ad2dda6b-ba71-4050-9d32-9bf6ae41cbd8",
+      "error": null,
+      "truth": [
+       "Bbmaj7",
+       "F9"
+      ]
+     },
+     {
+      "index": 7,
+      "chords": [
+       "Cm7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Both halves bass C2 with sustained C4 Eb4 G4 Bb4; identical complete Cm7 tetrad fitting Bb major ii.",
+      "request_id": "ad2dda6b-ba71-4050-9d32-9bf6ae41cbd8",
+      "error": null,
+      "truth": [
+       "Cm7",
+       null
+      ]
+     }
+    ]
+   },
+   {
+    "id": "01-pop-rootless",
+    "source": "generator",
+    "genre": "pop",
+    "key": "C major",
+    "variant": "rootless",
+    "bars": [
+     {
+      "index": 0,
+      "chords": [
+       "Am",
+       "C"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Onsets 0.0: A4-C5-E5 sustained 2.0 = Am triad; 2.0: C5-E5-G5 = C triad in C major. Two simultaneous triads in temporal order.",
+      "request_id": "006268dd-21a4-4ef3-9b62-176195d6b4d0",
+      "error": null,
+      "truth": [
+       "Fmaj7",
+       "Am7"
+      ]
+     },
+     {
+      "index": 1,
+      "chords": [
+       "Am"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Both onsets 0.0 and 2.0 have A4-C5-E5 sustained 2.0 = repeated Am triad, no competing pitches.",
+      "request_id": "006268dd-21a4-4ef3-9b62-176195d6b4d0",
+      "error": null,
+      "truth": [
+       "Fmaj7",
+       null
+      ]
+     },
+     {
+      "index": 2,
+      "chords": [
+       "Em"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Both onsets 0.0 and 2.0 have E4-G4-B4 sustained 2.0 = repeated Em triad.",
+      "request_id": "006268dd-21a4-4ef3-9b62-176195d6b4d0",
+      "error": null,
+      "truth": [
+       "Cmaj7",
+       null
+      ]
+     },
+     {
+      "index": 3,
+      "chords": [
+       "Am"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Both onsets 0.0 and 2.0 have A4-C5-E5 sustained 2.0 = repeated Am triad.",
+      "request_id": "006268dd-21a4-4ef3-9b62-176195d6b4d0",
+      "error": null,
+      "truth": [
+       "Fmaj7",
+       null
+      ]
+     },
+     {
+      "index": 4,
+      "chords": [
+       "Am"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Both onsets 0.0 and 2.0 have A4-C5-E5 sustained 2.0 = repeated Am triad.",
+      "request_id": "006268dd-21a4-4ef3-9b62-176195d6b4d0",
+      "error": null,
+      "truth": [
+       "Fmaj7",
+       null
+      ]
+     },
+     {
+      "index": 5,
+      "chords": [
+       "Em",
+       "C"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Onset 0.0: E4-G4-B4 = Em triad; onset 2.0: C5-E5-G5 = C triad. Two distinct sustained triads.",
+      "request_id": "006268dd-21a4-4ef3-9b62-176195d6b4d0",
+      "error": null,
+      "truth": [
+       "Cmaj7",
+       "Am7"
+      ]
+     },
+     {
+      "index": 6,
+      "chords": [
+       "Em",
+       "Am"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Onset 0.0: E4-G4-B4 = Em triad; onset 2.0: A4-C5-E5 = Am triad. Clear change at half bar.",
+      "request_id": "006268dd-21a4-4ef3-9b62-176195d6b4d0",
+      "error": null,
+      "truth": [
+       "Cmaj7",
+       "Fmaj7"
+      ]
+     },
+     {
+      "index": 7,
+      "chords": [
+       "F",
+       "Fdim"
+      ],
+      "confidence": "medium",
+      "source": "meta",
+      "evidence": "Onset 0.0: F4-A4-C5 = F triad. Onset 2.0: F4-Ab4-B4 stacks minor 3rds; B as enharmonic Cb gives F-Ab-Cb = Fdim, spelling ambiguous requires review.",
+      "request_id": "006268dd-21a4-4ef3-9b62-176195d6b4d0",
+      "error": null,
+      "truth": [
+       "Dm7",
+       "Db7"
+      ]
+     }
+    ]
+   },
+   {
+    "id": "02-rock-inversion",
+    "source": "generator",
+    "genre": "rock",
+    "key": "E major",
+    "variant": "inversion",
+    "bars": [
+     {
+      "index": 0,
+      "chords": [
+       "Cmaj7/E"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Both halves C4 E4 G4 B4 sustained 2.0 over E2; complete Cmaj7 stack with 3rd in bass. Possible harmonization from supplied pitches.",
+      "request_id": "9141a358-a50f-4ed3-be00-34d8810aab7c",
+      "error": null,
+      "truth": [
+       "Cmaj7/E",
+       null
+      ]
+     },
+     {
+      "index": 1,
+      "chords": [
+       "D7/F#",
+       "F#m7/C#"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "First half D4 F#4 A4 C5 over F#2 = D7 1st inversion; second F#4 A4 C#5 E5 over C#2 = F#m7 2nd inversion. Possible harmonization.",
+      "request_id": "9141a358-a50f-4ed3-be00-34d8810aab7c",
+      "error": null,
+      "truth": [
+       "D7/F#",
+       "Gbm7/Db"
+      ]
+     },
+     {
+      "index": 2,
+      "chords": [
+       "Em7/B"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Both halves E4 G4 B4 D5 over B2; complete Em7 with 5th in bass. Possible harmonization.",
+      "request_id": "9141a358-a50f-4ed3-be00-34d8810aab7c",
+      "error": null,
+      "truth": [
+       "Em7/B",
+       null
+      ]
+     },
+     {
+      "index": 3,
+      "chords": [
+       "F#m7/A",
+       "D7/A"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "First F#4 A4 C#5 E5 over A2 = F#m7 1st inversion; second D4 F#4 A4 C5 over A2 = D7 2nd inversion. Possible harmonization.",
+      "request_id": "9141a358-a50f-4ed3-be00-34d8810aab7c",
+      "error": null,
+      "truth": [
+       "Gbm7/A",
+       "D7/A"
+      ]
+     },
+     {
+      "index": 4,
+      "chords": [
+       "Emaj7/B",
+       "D7/F#"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "First E4 G#4 B4 D#5 over B2 = Emaj7 2nd inversion; second D4 F#4 A4 C5 over F#2 = D7 1st inversion. Possible harmonization.",
+      "request_id": "9141a358-a50f-4ed3-be00-34d8810aab7c",
+      "error": null,
+      "truth": [
+       "Emaj7/B",
+       "D7/F#"
+      ]
+     },
+     {
+      "index": 5,
+      "chords": [
+       "Emaj7/B",
+       "F#m7/C#"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "First E4 G#4 B4 D#5 over B2 = Emaj7; second F#4 A4 C#5 E5 over C#2 = F#m7 2nd inversion. Possible harmonization.",
+      "request_id": "9141a358-a50f-4ed3-be00-34d8810aab7c",
+      "error": null,
+      "truth": [
+       "Emaj7/B",
+       "Gbm7/Db"
+      ]
+     },
+     {
+      "index": 6,
+      "chords": [
+       "Amaj7/E",
+       "D7/F#"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "First A4 C#5 E5 G#5 over E2 = Amaj7 2nd inversion; second D4 F#4 A4 C5 over F#2 = D7 1st inversion. Possible harmonization.",
+      "request_id": "9141a358-a50f-4ed3-be00-34d8810aab7c",
+      "error": null,
+      "truth": [
+       "Amaj7/E",
+       "D7/F#"
+      ]
+     },
+     {
+      "index": 7,
+      "chords": [
+       "Am7/C",
+       "F#m7/C#"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "First A4 C5 E5 G5 over C2 = A-C-E-G with C bass; second F#4 A4 C#5 E5 over C#2 = F#m7. Possible harmonization.",
+      "request_id": "9141a358-a50f-4ed3-be00-34d8810aab7c",
+      "error": null,
+      "truth": [
+       "Am7/C",
+       "Gbm7/Db"
+      ]
+     }
+    ]
+   },
+   {
+    "id": "03-blues-melody",
+    "source": "generator",
+    "genre": "blues",
+    "key": "A major",
+    "variant": "melody",
+    "bars": [
+     {
+      "index": 0,
+      "chords": [
+       "E7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Bass E2 sustained with E4 G#4 B4 D5 both halves; melody E-G#-B-C# arpeggiates E7 with C# as 6th/color, no competing bass.",
+      "request_id": "09a51c96-70ee-4db3-9db7-3e53f4170781",
+      "error": null,
+      "truth": [
+       "E7#9",
+       "E7"
+      ]
+     },
+     {
+      "index": 1,
+      "chords": [
+       "Amaj7",
+       "E7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "0-2: bass A2 + A C# E G# = Amaj7, melody C#-B-C#-A fits. 2-4: bass E2 + E G# B D = E7, melody G#-F#-G#-E with F# passing 9th.",
+      "request_id": "09a51c96-70ee-4db3-9db7-3e53f4170781",
+      "error": null,
+      "truth": [
+       "Amaj7",
+       "E7#9"
+      ]
+     },
+     {
+      "index": 2,
+      "chords": [
+       "Bm7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Bass B2 both halves with B D F# A = Bm7; melodies B-C#-D-F# and D-C#-D-B fit as chord tones + 9th C# passing.",
+      "request_id": "09a51c96-70ee-4db3-9db7-3e53f4170781",
+      "error": null,
+      "truth": [
+       "Bm7",
+       null
+      ]
+     },
+     {
+      "index": 3,
+      "chords": [
+       "E7",
+       "C#m7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "0-2: bass E2 + E G# B D = E7. 2-4: bass C#2 + C# E G# B = C#m7; melodic D5 at 2.5 stepwise passing between C# and E.",
+      "request_id": "09a51c96-70ee-4db3-9db7-3e53f4170781",
+      "error": null,
+      "truth": [
+       "E7",
+       "Dbm7"
+      ]
+     },
+     {
+      "index": 4,
+      "chords": [
+       "E7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Bass E2 both halves with E G# B D sustained; melody E-F#-G#-B and E-G#-B-G# fit E7 with F# as passing 9th.",
+      "request_id": "09a51c96-70ee-4db3-9db7-3e53f4170781",
+      "error": null,
+      "truth": [
+       "E7",
+       null
+      ]
+     },
+     {
+      "index": 5,
+      "chords": [
+       "Bm7",
+       "Dmaj7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "0-2: bass B2 + B D F# A = Bm7, G#6 melody is upper passing to F#. 2-4: bass D2 + D F# A C# = Dmaj7, melody D-E-F#-A with E passing.",
+      "request_id": "09a51c96-70ee-4db3-9db7-3e53f4170781",
+      "error": null,
+      "truth": [
+       "Bm7",
+       "Dmaj7"
+      ]
+     },
+     {
+      "index": 6,
+      "chords": [
+       "D7",
+       "Amaj7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "0-2: bass D2 + D F# A C natural = D7, distinct from Dmaj7; melody chord tones. 2-4: bass A2 + A C# E G# = Amaj7, B passing 9th.",
+      "request_id": "09a51c96-70ee-4db3-9db7-3e53f4170781",
+      "error": null,
+      "truth": [
+       "D9",
+       "Amaj7"
+      ]
+     },
+     {
+      "index": 7,
+      "chords": [
+       "D7",
+       "Bm7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "0-2: bass D2 + D F# A C natural = D7, melody D-E-F#-A with E passing. 2-4: bass B2 + B D F# A = Bm7, melody B-D-F#-D chord tones.",
+      "request_id": "09a51c96-70ee-4db3-9db7-3e53f4170781",
+      "error": null,
+      "truth": [
+       "D9",
+       "Bm7"
+      ]
+     }
+    ]
+   },
+   {
+    "id": "04-bossa-sparse",
+    "source": "generator",
+    "genre": "bossa",
+    "key": "D minor",
+    "variant": "sparse",
+    "bars": [
+     {
+      "index": 0,
+      "chords": [
+       "Bbmaj7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Onset 0.0 simultaneous Bb4 D5 F5 A5 over Bb2 bass matches Bb-D-F-A stack.",
+      "request_id": "46b0e9bc-e0a6-494c-8e35-0577f9d38839",
+      "error": null,
+      "truth": [
+       "Bbmaj7",
+       null
+      ]
+     },
+     {
+      "index": 1,
+      "chords": [
+       "Fmaj7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Onset 0.0 simultaneous F4 A4 C5 E5 over F2 bass matches F-A-C-E stack.",
+      "request_id": "46b0e9bc-e0a6-494c-8e35-0577f9d38839",
+      "error": null,
+      "truth": [
+       "Fmaj7",
+       null
+      ]
+     },
+     {
+      "index": 2,
+      "chords": [
+       "Fmaj7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Same as m1: F4 A4 C5 E5 over F2 bass at onset 0.0 gives F-A-C-E.",
+      "request_id": "46b0e9bc-e0a6-494c-8e35-0577f9d38839",
+      "error": null,
+      "truth": [
+       "Fmaj7",
+       null
+      ]
+     },
+     {
+      "index": 3,
+      "chords": [
+       "Bbmaj7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Onset 0.0 Bb4 D5 F5 A5 over Bb2 bass gives Bb-D-F-A.",
+      "request_id": "46b0e9bc-e0a6-494c-8e35-0577f9d38839",
+      "error": null,
+      "truth": [
+       "Bbmaj7",
+       null
+      ]
+     },
+     {
+      "index": 4,
+      "chords": [
+       "Bbmaj7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Onset 0.0 Bb4 D5 F5 A5 over Bb2 bass gives Bb-D-F-A.",
+      "request_id": "46b0e9bc-e0a6-494c-8e35-0577f9d38839",
+      "error": null,
+      "truth": [
+       "Bbmaj7",
+       null
+      ]
+     },
+     {
+      "index": 5,
+      "chords": [
+       "Bbmaj7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Onset 0.0 Bb4 D5 F5 A5 over Bb2 bass gives Bb-D-F-A.",
+      "request_id": "46b0e9bc-e0a6-494c-8e35-0577f9d38839",
+      "error": null,
+      "truth": [
+       "Bbmaj7",
+       null
+      ]
+     },
+     {
+      "index": 6,
+      "chords": [
+       "Bbmaj7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Onset 0.0 Bb4 D5 F5 A5 over Bb2 bass gives Bb-D-F-A.",
+      "request_id": "46b0e9bc-e0a6-494c-8e35-0577f9d38839",
+      "error": null,
+      "truth": [
+       "Bbmaj7",
+       null
+      ]
+     },
+     {
+      "index": 7,
+      "chords": [
+       "Em7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Onset 0.0 E4 G4 B4 D5 over E2 bass gives E-G-B-D; B natural per spelling.",
+      "request_id": "46b0e9bc-e0a6-494c-8e35-0577f9d38839",
+      "error": null,
+      "truth": [
+       "Em7",
+       null
+      ]
+     }
+    ]
+   },
+   {
+    "id": "05-classical-waltz",
+    "source": "generator",
+    "genre": "classical",
+    "key": "G major",
+    "variant": "waltz",
+    "bars": [
+     {
+      "index": 0,
+      "chords": [],
+      "confidence": null,
+      "source": "meta",
+      "evidence": "",
+      "request_id": "70379eb3-495f-4a3b-889d-0aceaede0330",
+      "error": "harmony_validation",
+      "truth": [
+       "F7",
+       null
+      ]
+     },
+     {
+      "index": 1,
+      "chords": [],
+      "confidence": null,
+      "source": "meta",
+      "evidence": "",
+      "request_id": "70379eb3-495f-4a3b-889d-0aceaede0330",
+      "error": "harmony_validation",
+      "truth": [
+       "F7",
+       null
+      ]
+     },
+     {
+      "index": 2,
+      "chords": [],
+      "confidence": null,
+      "source": "meta",
+      "evidence": "",
+      "request_id": "70379eb3-495f-4a3b-889d-0aceaede0330",
+      "error": "harmony_validation",
+      "truth": [
+       "Cmaj7",
+       null
+      ]
+     },
+     {
+      "index": 3,
+      "chords": [],
+      "confidence": null,
+      "source": "meta",
+      "evidence": "",
+      "request_id": "70379eb3-495f-4a3b-889d-0aceaede0330",
+      "error": "harmony_validation",
+      "truth": [
+       "D7",
+       null
+      ]
+     },
+     {
+      "index": 4,
+      "chords": [],
+      "confidence": null,
+      "source": "meta",
+      "evidence": "",
+      "request_id": "70379eb3-495f-4a3b-889d-0aceaede0330",
+      "error": "harmony_validation",
+      "truth": [
+       "D7",
+       null
+      ]
+     },
+     {
+      "index": 5,
+      "chords": [],
+      "confidence": null,
+      "source": "meta",
+      "evidence": "",
+      "request_id": "70379eb3-495f-4a3b-889d-0aceaede0330",
+      "error": "harmony_validation",
+      "truth": [
+       "Ebmaj7",
+       null
+      ]
+     },
+     {
+      "index": 6,
+      "chords": [],
+      "confidence": null,
+      "source": "meta",
+      "evidence": "",
+      "request_id": "70379eb3-495f-4a3b-889d-0aceaede0330",
+      "error": "harmony_validation",
+      "truth": [
+       "Gm7",
+       null
+      ]
+     },
+     {
+      "index": 7,
+      "chords": [],
+      "confidence": null,
+      "source": "meta",
+      "evidence": "",
+      "request_id": "70379eb3-495f-4a3b-889d-0aceaede0330",
+      "error": "harmony_validation",
+      "truth": [
+       "Ebmaj7",
+       null
+      ]
+     }
+    ]
+   },
+   {
+    "id": "06-country-block",
+    "source": "generator",
+    "genre": "country",
+    "key": "D major",
+    "variant": "block",
+    "bars": [
+     {
+      "index": 0,
+      "chords": [
+       "F#m7",
+       "Bm7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Onsets 0.0: F# A C# E over F#2 bass = F#m7; 2.0: B D F# A over B2 bass = Bm7. Sustained simultaneities, root bass.",
+      "request_id": "a42d4826-147b-467f-ab93-61f17cb6f2e9",
+      "error": null,
+      "truth": [
+       "Gbm7",
+       "Bm7"
+      ]
+     },
+     {
+      "index": 1,
+      "chords": [
+       "Dmaj7",
+       "Gmaj7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "0.0: D F# A C# over D2 = Dmaj7; 2.0: G B D F# over G2 = Gmaj7. Complete seventh stacks with root bass in D major.",
+      "request_id": "a42d4826-147b-467f-ab93-61f17cb6f2e9",
+      "error": null,
+      "truth": [
+       "Dmaj7",
+       "Gmaj7"
+      ]
+     },
+     {
+      "index": 2,
+      "chords": [
+       "A7",
+       "Gmaj7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "0.0: A C# E G over A2 = A7 dominant; 2.0: G B D F# over G2 = Gmaj7. Distinct bass and complete four-note stacks.",
+      "request_id": "a42d4826-147b-467f-ab93-61f17cb6f2e9",
+      "error": null,
+      "truth": [
+       "A7",
+       "Gmaj7"
+      ]
+     },
+     {
+      "index": 3,
+      "chords": [
+       "Dmaj7",
+       "Bm7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "0.0: D F# A C# over D2 = Dmaj7; 2.0: B D F# A over B2 = Bm7. Root-position sustained simultaneities.",
+      "request_id": "a42d4826-147b-467f-ab93-61f17cb6f2e9",
+      "error": null,
+      "truth": [
+       "Dmaj7",
+       "Bm7"
+      ]
+     },
+     {
+      "index": 4,
+      "chords": [
+       "Dmaj7",
+       "A7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "0.0: D F# A C# over D2 = Dmaj7; 2.0: A C# E G over A2 = A7. Clear change of bass and upper stack.",
+      "request_id": "a42d4826-147b-467f-ab93-61f17cb6f2e9",
+      "error": null,
+      "truth": [
+       "Dmaj7",
+       "A7"
+      ]
+     },
+     {
+      "index": 5,
+      "chords": [
+       "Bm7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Both 0.0 and 2.0 have B D F# A over B2 bass = Bm7 repeated. One harmony sustained across bar.",
+      "request_id": "a42d4826-147b-467f-ab93-61f17cb6f2e9",
+      "error": null,
+      "truth": [
+       "Bm7",
+       null
+      ]
+     },
+     {
+      "index": 6,
+      "chords": [
+       "A7",
+       "F#m7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "0.0: A C# E G over A2 = A7; 2.0: F# A C# E over F#2 = F#m7. Root basses confirm change.",
+      "request_id": "a42d4826-147b-467f-ab93-61f17cb6f2e9",
+      "error": null,
+      "truth": [
+       "A7",
+       "Gbm7"
+      ]
+     },
+     {
+      "index": 7,
+      "chords": [
+       "Bm7",
+       "F#m7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "0.0: B D F# A over B2 = Bm7; 2.0: F# A C# E over F#2 = F#m7. Complete seventh chords with root bass.",
+      "request_id": "a42d4826-147b-467f-ab93-61f17cb6f2e9",
+      "error": null,
+      "truth": [
+       "Bm7",
+       "Gbm7"
+      ]
+     }
+    ]
+   },
+   {
+    "id": "07-rnb_soul-rootless",
+    "source": "generator",
+    "genre": "rnb_soul",
+    "key": "Eb major",
+    "variant": "rootless",
+    "bars": [
+     {
+      "index": 0,
+      "chords": [
+       "Gm"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "G4 Bb4 D5 sustained both halves, simultaneous G-minor triad; diatonic iii in Eb major.",
+      "request_id": "91bb5201-9dc6-4813-b112-c451e4a8223d",
+      "error": null,
+      "truth": [
+       "Ebmaj7",
+       null
+      ]
+     },
+     {
+      "index": 1,
+      "chords": [
+       "Gm"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Same as m0: G4 Bb4 D5 both halves, G-minor triad, iii in Eb.",
+      "request_id": "91bb5201-9dc6-4813-b112-c451e4a8223d",
+      "error": null,
+      "truth": [
+       "Ebmaj7",
+       null
+      ]
+     },
+     {
+      "index": 2,
+      "chords": [
+       "Cm",
+       "Eb"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "First half C5 Eb5 G5 = C-minor; second Eb4 G4 Bb4 = Eb-major, two successive triads.",
+      "request_id": "91bb5201-9dc6-4813-b112-c451e4a8223d",
+      "error": null,
+      "truth": [
+       "Abmaj7",
+       "Cm7"
+      ]
+     },
+     {
+      "index": 3,
+      "chords": [
+       "Gm"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "G4 Bb4 D5 both halves, sustained G-minor triad, iii in Eb.",
+      "request_id": "91bb5201-9dc6-4813-b112-c451e4a8223d",
+      "error": null,
+      "truth": [
+       "Ebmaj7",
+       null
+      ]
+     },
+     {
+      "index": 4,
+      "chords": [
+       "Gm",
+       "Eb"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "First half G4 Bb4 D5 = Gm; second Eb4 G4 Bb4 = Eb-major.",
+      "request_id": "91bb5201-9dc6-4813-b112-c451e4a8223d",
+      "error": null,
+      "truth": [
+       "Ebmaj7",
+       "Cm7"
+      ]
+     },
+     {
+      "index": 5,
+      "chords": [
+       "Eb",
+       "Cm"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "First half Eb4 G4 Bb4 = Eb I; second C5 Eb5 G5 = C-minor vi.",
+      "request_id": "91bb5201-9dc6-4813-b112-c451e4a8223d",
+      "error": null,
+      "truth": [
+       "Cm7",
+       "Abmaj7"
+      ]
+     },
+     {
+      "index": 6,
+      "chords": [
+       "Eb",
+       "Gm"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "First half Eb4 G4 Bb4 = Eb; second G4 Bb4 D5 = Gm.",
+      "request_id": "91bb5201-9dc6-4813-b112-c451e4a8223d",
+      "error": null,
+      "truth": [
+       "Cm7",
+       "Ebmaj7"
+      ]
+     },
+     {
+      "index": 7,
+      "chords": [
+       "Ab",
+       "Abdim"
+      ],
+      "confidence": "medium",
+      "source": "meta",
+      "evidence": "First Ab4 C5 Eb5 = Ab-major IV; second Ab4 B4 D5 enharmonically Ab Cb Ebb = Ab diminished passing sonority, spelling ambiguous.",
+      "request_id": "91bb5201-9dc6-4813-b112-c451e4a8223d",
+      "error": null,
+      "truth": [
+       "Fm7",
+       "E7"
+      ]
+     }
+    ]
+   },
+   {
+    "id": "08-hip_hop-inversion",
+    "source": "generator",
+    "genre": "hip_hop",
+    "key": "A minor",
+    "variant": "inversion",
+    "bars": [
+     {
+      "index": 0,
+      "chords": [
+       "G#m7b5/D",
+       "Dmaj7/A"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Onset 0: Ab-B-D-Gb = G#-B-D-F# over D2 bass; onset 2: D-Gb-A-Db = D-F#-A-C# over A2 bass. Possible harmonization, not verified original.",
+      "request_id": "c8424a58-a036-4527-9e26-f8164e764ed8",
+      "error": null,
+      "truth": [
+       "Abm7b5/D",
+       "Dmaj7/A"
+      ]
+     },
+     {
+      "index": 1,
+      "chords": [
+       "Dm7/F"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Both halves D-F-A-C over F2 bass, sustained 2.0 each. Single harmony repeated, not two changes.",
+      "request_id": "c8424a58-a036-4527-9e26-f8164e764ed8",
+      "error": null,
+      "truth": [
+       "Dm7/F",
+       null
+      ]
+     },
+     {
+      "index": 2,
+      "chords": [
+       "Bm7b5/F",
+       "Dm7/A"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Onset 0: B-D-F-A over F2; onset 2: D-F-A-C over A2. Upper tertian structures clear.",
+      "request_id": "c8424a58-a036-4527-9e26-f8164e764ed8",
+      "error": null,
+      "truth": [
+       "Bm7b5/F",
+       "Dm7/A"
+      ]
+     },
+     {
+      "index": 3,
+      "chords": [
+       "Dmaj7/A",
+       "Bm7b5/D"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Onset 0: D-Gb-A-Db = D-F#-A-C# over A2; onset 2: B-D-F-A over D2.",
+      "request_id": "c8424a58-a036-4527-9e26-f8164e764ed8",
+      "error": null,
+      "truth": [
+       "Dmaj7/A",
+       "Bm7b5/D"
+      ]
+     },
+     {
+      "index": 4,
+      "chords": [
+       "F#m7/C#",
+       "Bm7b5/D"
+      ],
+      "confidence": "medium",
+      "source": "meta",
+      "evidence": "Onset 0: Gb-A-Db-E = F#-A-C#-E over Db2=C# bass; onset 2: B-D-F-A over D2. Enharmonic spelling ambiguous.",
+      "request_id": "c8424a58-a036-4527-9e26-f8164e764ed8",
+      "error": null,
+      "truth": [
+       "Gbm7/Db",
+       "Bm7b5/D"
+      ]
+     },
+     {
+      "index": 5,
+      "chords": [
+       "Am7/E",
+       "G#m7b5/D"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Onset 0: A-C-E-G over E2; onset 2: Ab-B-D-Gb = G#-B-D-F# over D2.",
+      "request_id": "c8424a58-a036-4527-9e26-f8164e764ed8",
+      "error": null,
+      "truth": [
+       "Am7/E",
+       "Abm7b5/D"
+      ]
+     },
+     {
+      "index": 6,
+      "chords": [
+       "Amaj7/E",
+       "Em7/G"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Onset 0: A-Db-E-Ab = A-C#-E-G# over E2; onset 2: E-G-B-D over G2.",
+      "request_id": "c8424a58-a036-4527-9e26-f8164e764ed8",
+      "error": null,
+      "truth": [
+       "Amaj7/E",
+       "Em7/G"
+      ]
+     },
+     {
+      "index": 7,
+      "chords": [
+       "Em7/B",
+       "Am7/C"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Onset 0: E-G-B-D over B2; onset 2: A-C-E-G over C2. Diatonic to A minor.",
+      "request_id": "c8424a58-a036-4527-9e26-f8164e764ed8",
+      "error": null,
+      "truth": [
+       "Em7/B",
+       "Am7/C"
+      ]
+     }
+    ]
+   },
+   {
+    "id": "09-electronic-melody",
+    "source": "generator",
+    "genre": "electronic",
+    "key": "F# minor",
+    "variant": "melody",
+    "bars": [
+     {
+      "index": 0,
+      "chords": [
+       "E7",
+       "F#m7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Bass E2 with sustained E4 G#4 B4 D5 = E7; melody E5 F#5 G#5 B5 with F# passing. Then bass F#2 with F#4 A4 C#5 E5 = F#m7; melody F#5 G#5 A5 C#6 with G# passing.",
+      "request_id": "2e5486f0-6045-4770-ac13-1e8f5226cacc",
+      "error": null,
+      "truth": [
+       "E7",
+       "F#m7"
+      ]
+     },
+     {
+      "index": 1,
+      "chords": [
+       "Dmaj7",
+       "Bm7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Bass D2 with D4 F#4 A4 C#5 = Dmaj7; melody D5 F#5 A5. Then bass B2 with B4 D5 F#5 A5 = Bm7; melody D6 C#6 D6 B5 with C# as stepwise passing.",
+      "request_id": "2e5486f0-6045-4770-ac13-1e8f5226cacc",
+      "error": null,
+      "truth": [
+       "Dmaj7",
+       "Bm7"
+      ]
+     },
+     {
+      "index": 2,
+      "chords": [
+       "G#m7b5",
+       "Dmaj7"
+      ],
+      "confidence": "medium",
+      "source": "meta",
+      "evidence": "Bass G#2 with G#4 B4 D5 F#5 = G#m7b5; melody E6 D6 B5 G#5 has E as non-chord upper neighbor, so possible harmonization. Then bass D2 with D4 F#4 A4 C#5 = Dmaj7; melody F#5 E5 F#5 D5 with E passing.",
+      "request_id": "2e5486f0-6045-4770-ac13-1e8f5226cacc",
+      "error": null,
+      "truth": [
+       "G#m7b5",
+       "Dmaj7"
+      ]
+     },
+     {
+      "index": 3,
+      "chords": [
+       "F#m7",
+       "Bm7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Bass F#2 with F#4 A4 C#5 E5 = F#m7; melody F#5 G#5 A5 C#6 with G# passing. Then bass B2 with B4 D5 F#5 A5 = Bm7; melody B5 D6 F#6 D6 all chord tones.",
+      "request_id": "2e5486f0-6045-4770-ac13-1e8f5226cacc",
+      "error": null,
+      "truth": [
+       "F#m7",
+       "Bm7"
+      ]
+     },
+     {
+      "index": 4,
+      "chords": [
+       "Bm7",
+       "F#m7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Bass B2 with B4 D5 F#5 A5 = Bm7; melody G#6 F#6 D6 B5 with G# as 13th/passing to F#. Then bass F#2 with F#4 A4 C#5 E5 = F#m7; melody D6 C#6 A5 F#5 with D passing.",
+      "request_id": "2e5486f0-6045-4770-ac13-1e8f5226cacc",
+      "error": null,
+      "truth": [
+       "Bm7",
+       "F#m7"
+      ]
+     },
+     {
+      "index": 5,
+      "chords": [
+       "F#m7",
+       "C#m7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Bass F#2 with F#4 A4 C#5 E5 = F#m7; melody D6 C#6 A5 F#5 with D non-chord. Then bass C#2 with C#4 E4 G#4 B4 = C#m7; melody E5 D5 E5 C#5 with D passing.",
+      "request_id": "2e5486f0-6045-4770-ac13-1e8f5226cacc",
+      "error": null,
+      "truth": [
+       "F#m7",
+       "C#m7"
+      ]
+     },
+     {
+      "index": 6,
+      "chords": [
+       "E7",
+       "Dmaj7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Bass E2 with E4 G#4 B4 D5 = E7; melody C#6 B5 G#5 E5 with C# as 13th/passing. Then bass D2 with D4 F#4 A4 C#5 = Dmaj7; melody F#5 E5 F#5 D5 with E passing.",
+      "request_id": "2e5486f0-6045-4770-ac13-1e8f5226cacc",
+      "error": null,
+      "truth": [
+       "E7",
+       "Dmaj7"
+      ]
+     },
+     {
+      "index": 7,
+      "chords": [
+       "Bm7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Bass B2 sustained both halves with B4 D5 F#5 A5 = Bm7; melody D6 C#6 D6 B5 repeated with C# as lower neighbor. Single harmony sustained, no second change justified.",
+      "request_id": "2e5486f0-6045-4770-ac13-1e8f5226cacc",
+      "error": null,
+      "truth": [
+       "Bm7",
+       null
+      ]
+     }
+    ]
+   },
+   {
+    "id": "10-funk-sparse",
+    "source": "generator",
+    "genre": "funk",
+    "key": "F major",
+    "variant": "sparse",
+    "bars": [
+     {
+      "index": 0,
+      "chords": [
+       "Bbmaj7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Supplied treble Bb4 D5 F5 A5 simultaneous at onset 0 with bass Bb2; fits Bbmaj7, diatonic IV in F major.",
+      "request_id": "67cd3890-8d03-46dc-b254-d9d261dfd1bb",
+      "error": null,
+      "truth": [
+       "Bbmaj7",
+       null
+      ]
+     },
+     {
+      "index": 1,
+      "chords": [
+       "Dm7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Supplied treble D4 F4 A4 C5 simultaneous at onset 0 with bass D2; fits Dm7, diatonic vi in F major.",
+      "request_id": "67cd3890-8d03-46dc-b254-d9d261dfd1bb",
+      "error": null,
+      "truth": [
+       "Dm7",
+       null
+      ]
+     },
+     {
+      "index": 2,
+      "chords": [
+       "Bbmaj7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Supplied treble Bb4 D5 F5 A5 simultaneous at onset 0 with bass Bb2; fits Bbmaj7, diatonic IV in F major.",
+      "request_id": "67cd3890-8d03-46dc-b254-d9d261dfd1bb",
+      "error": null,
+      "truth": [
+       "Bbmaj7",
+       null
+      ]
+     },
+     {
+      "index": 3,
+      "chords": [
+       "Bbmaj7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Supplied treble Bb4 D5 F5 A5 simultaneous at onset 0 with bass Bb2; fits Bbmaj7, diatonic IV in F major.",
+      "request_id": "67cd3890-8d03-46dc-b254-d9d261dfd1bb",
+      "error": null,
+      "truth": [
+       "Bbmaj7",
+       null
+      ]
+     },
+     {
+      "index": 4,
+      "chords": [
+       "Bbmaj7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Supplied treble Bb4 D5 F5 A5 simultaneous at onset 0 with bass Bb2; fits Bbmaj7, diatonic IV in F major.",
+      "request_id": "67cd3890-8d03-46dc-b254-d9d261dfd1bb",
+      "error": null,
+      "truth": [
+       "Bbmaj7",
+       null
+      ]
+     },
+     {
+      "index": 5,
+      "chords": [
+       "Bbmaj7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Supplied treble Bb4 D5 F5 A5 simultaneous at onset 0 with bass Bb2; fits Bbmaj7, diatonic IV in F major.",
+      "request_id": "67cd3890-8d03-46dc-b254-d9d261dfd1bb",
+      "error": null,
+      "truth": [
+       "Bbmaj7",
+       null
+      ]
+     },
+     {
+      "index": 6,
+      "chords": [
+       "Dm7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Supplied treble D4 F4 A4 C5 simultaneous at onset 0 with bass D2; fits Dm7, diatonic vi in F major.",
+      "request_id": "67cd3890-8d03-46dc-b254-d9d261dfd1bb",
+      "error": null,
+      "truth": [
+       "Dm7",
+       null
+      ]
+     },
+     {
+      "index": 7,
+      "chords": [
+       "Gm7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Supplied treble G4 Bb4 D5 F5 simultaneous at onset 0 with bass G2; fits Gm7, diatonic ii in F major.",
+      "request_id": "67cd3890-8d03-46dc-b254-d9d261dfd1bb",
+      "error": null,
+      "truth": [
+       "Gm7",
+       null
+      ]
+     }
+    ]
+   },
+   {
+    "id": "11-folk-waltz",
+    "source": "generator",
+    "genre": "folk",
+    "key": "E minor",
+    "variant": "waltz",
+    "bars": [
+     {
+      "index": 0,
+      "chords": [
+       "D#m7b5"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Bass D#2 plus repeated simultaneous D#4 F#4 A4 C#5 spells D# F# A C# = D#m7b5, consistent with E-minor vii.",
+      "request_id": "7399d19b-3c24-4dee-bfa2-7e1dea670b35",
+      "error": null,
+      "truth": [
+       "Ebm7b5",
+       null
+      ]
+     },
+     {
+      "index": 1,
+      "chords": [
+       "G#m7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Bass G#2 plus repeated simultaneous G#4 B4 D#5 F#5 spells G# B D# F# = G#m7.",
+      "request_id": "7399d19b-3c24-4dee-bfa2-7e1dea670b35",
+      "error": null,
+      "truth": [
+       "Abm7",
+       null
+      ]
+     },
+     {
+      "index": 2,
+      "chords": [
+       "G#m7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Same as m.1: Bass G#2 plus repeated G#4 B4 D#5 F#5 spells G# B D# F# = G#m7.",
+      "request_id": "7399d19b-3c24-4dee-bfa2-7e1dea670b35",
+      "error": null,
+      "truth": [
+       "Abm7",
+       null
+      ]
+     },
+     {
+      "index": 3,
+      "chords": [
+       "Bm7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Bass B2 plus repeated simultaneous B4 D5 F#5 A5 spells B D F# A = Bm7.",
+      "request_id": "7399d19b-3c24-4dee-bfa2-7e1dea670b35",
+      "error": null,
+      "truth": [
+       "Bm7",
+       null
+      ]
+     },
+     {
+      "index": 4,
+      "chords": [
+       "F#m7b5"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Bass F#2 plus repeated simultaneous F#4 A4 C5 E5 spells F# A C E = F#m7b5, diatonic ii in E minor.",
+      "request_id": "7399d19b-3c24-4dee-bfa2-7e1dea670b35",
+      "error": null,
+      "truth": [
+       "Gbm7b5",
+       null
+      ]
+     },
+     {
+      "index": 5,
+      "chords": [
+       "G#m7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Bass G#2 plus repeated simultaneous G#4 B4 D#5 F#5 spells G# B D# F# = G#m7.",
+      "request_id": "7399d19b-3c24-4dee-bfa2-7e1dea670b35",
+      "error": null,
+      "truth": [
+       "Abm7",
+       null
+      ]
+     },
+     {
+      "index": 6,
+      "chords": [
+       "Amaj7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Bass A2 plus repeated simultaneous A4 C#5 E5 G#5 spells A C# E G# = Amaj7.",
+      "request_id": "7399d19b-3c24-4dee-bfa2-7e1dea670b35",
+      "error": null,
+      "truth": [
+       "Amaj7",
+       null
+      ]
+     },
+     {
+      "index": 7,
+      "chords": [
+       "Bm7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Bass B2 plus repeated simultaneous B4 D5 F#5 A5 spells B D F# A = Bm7.",
+      "request_id": "7399d19b-3c24-4dee-bfa2-7e1dea670b35",
+      "error": null,
+      "truth": [
+       "Bm7",
+       null
+      ]
+     }
+    ]
+   },
+   {
+    "id": "12-gospel-block",
+    "source": "generator",
+    "genre": "gospel",
+    "key": "Ab major",
+    "variant": "block",
+    "bars": [
+     {
+      "index": 0,
+      "chords": [
+       "Eb7",
+       "Fm7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Onset0 Eb-G-Bb-Db over Eb2 = Eb7; onset2 F-Ab-C-Eb over F2 = Fm7 in Ab major. Requires human review.",
+      "request_id": "3ab03b93-7170-4be4-9d09-5fe9fdf52160",
+      "error": null,
+      "truth": [
+       "Eb7",
+       "Fm7"
+      ]
+     },
+     {
+      "index": 1,
+      "chords": [
+       "Fm7",
+       "Bbm7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Onset0 F-Ab-C-Eb over F2 = Fm7; onset2 Bb-Db-F-Ab over Bb2 = Bbm7. Requires human review.",
+      "request_id": "3ab03b93-7170-4be4-9d09-5fe9fdf52160",
+      "error": null,
+      "truth": [
+       "Fm7",
+       "Bbm7"
+      ]
+     },
+     {
+      "index": 2,
+      "chords": [
+       "Bbm7",
+       "Dbmaj7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Onset0 Bb-Db-F-Ab over Bb2 = Bbm7; onset2 Db-F-Ab-C over Db2 = Dbmaj7. Requires human review.",
+      "request_id": "3ab03b93-7170-4be4-9d09-5fe9fdf52160",
+      "error": null,
+      "truth": [
+       "Bbm7",
+       "Dbmaj7"
+      ]
+     },
+     {
+      "index": 3,
+      "chords": [
+       "Gm7b5",
+       "Eb7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Onset0 G-Bb-Db-F over G2 = Gm7b5; onset2 Eb-G-Bb-Db over Eb2 = Eb7. Requires human review.",
+      "request_id": "3ab03b93-7170-4be4-9d09-5fe9fdf52160",
+      "error": null,
+      "truth": [
+       "Gm7b5",
+       "Eb7"
+      ]
+     },
+     {
+      "index": 4,
+      "chords": [
+       "Eb7",
+       "Bbm7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Onset0 Eb-G-Bb-Db over Eb2 = Eb7; onset2 Bb-Db-F-Ab over Bb2 = Bbm7. Requires human review.",
+      "request_id": "3ab03b93-7170-4be4-9d09-5fe9fdf52160",
+      "error": null,
+      "truth": [
+       "Eb7",
+       "Bbm7"
+      ]
+     },
+     {
+      "index": 5,
+      "chords": [
+       "Dbmaj7",
+       "Abmaj7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Onset0 Db-F-Ab-C over Db2 = Dbmaj7; onset2 Ab-C-Eb-G over Ab2 = Abmaj7. Requires human review.",
+      "request_id": "3ab03b93-7170-4be4-9d09-5fe9fdf52160",
+      "error": null,
+      "truth": [
+       "Dbmaj7",
+       "Abmaj7"
+      ]
+     },
+     {
+      "index": 6,
+      "chords": [
+       "Dbmaj7",
+       "Cm7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Onset0 Db-F-Ab-C over Db2 = Dbmaj7; onset2 C-Eb-G-Bb over C2 = Cm7. Requires human review.",
+      "request_id": "3ab03b93-7170-4be4-9d09-5fe9fdf52160",
+      "error": null,
+      "truth": [
+       "Dbmaj7",
+       "Cm7"
+      ]
+     },
+     {
+      "index": 7,
+      "chords": [
+       "Dbmaj7",
+       "Dbmaj7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Both halves Db-F-Ab-C over Db2 = Dbmaj7 sustained. Requires human review.",
+      "request_id": "3ab03b93-7170-4be4-9d09-5fe9fdf52160",
+      "error": null,
+      "truth": [
+       "Dbmaj7",
+       null
+      ]
+     }
+    ]
+   },
+   {
+    "id": "13-ii-v-i-major-rootless",
+    "source": "canonical",
+    "genre": "jazz",
+    "key": "C major",
+    "variant": "rootless",
+    "bars": [
+     {
+      "index": 0,
+      "chords": [],
+      "confidence": null,
+      "source": "meta",
+      "evidence": "",
+      "request_id": "d0d9c99d-9fb7-48fc-a8ad-362128eb5f4e",
+      "error": "harmony_validation",
+      "truth": [
+       "Dm7",
+       "G7"
+      ]
+     },
+     {
+      "index": 1,
+      "chords": [],
+      "confidence": null,
+      "source": "meta",
+      "evidence": "",
+      "request_id": "d0d9c99d-9fb7-48fc-a8ad-362128eb5f4e",
+      "error": "harmony_validation",
+      "truth": [
+       "Cmaj7",
+       null
+      ]
+     },
+     {
+      "index": 2,
+      "chords": [],
+      "confidence": null,
+      "source": "meta",
+      "evidence": "",
+      "request_id": "d0d9c99d-9fb7-48fc-a8ad-362128eb5f4e",
+      "error": "harmony_validation",
+      "truth": [
+       "Dm7",
+       "G7"
+      ]
+     },
+     {
+      "index": 3,
+      "chords": [],
+      "confidence": null,
+      "source": "meta",
+      "evidence": "",
+      "request_id": "d0d9c99d-9fb7-48fc-a8ad-362128eb5f4e",
+      "error": "harmony_validation",
+      "truth": [
+       "Cmaj7",
+       "A7"
+      ]
+     },
+     {
+      "index": 4,
+      "chords": [],
+      "confidence": null,
+      "source": "meta",
+      "evidence": "",
+      "request_id": "d0d9c99d-9fb7-48fc-a8ad-362128eb5f4e",
+      "error": "harmony_validation",
+      "truth": [
+       "Dm7",
+       "G7"
+      ]
+     },
+     {
+      "index": 5,
+      "chords": [],
+      "confidence": null,
+      "source": "meta",
+      "evidence": "",
+      "request_id": "d0d9c99d-9fb7-48fc-a8ad-362128eb5f4e",
+      "error": "harmony_validation",
+      "truth": [
+       "Em7",
+       "Am7"
+      ]
+     },
+     {
+      "index": 6,
+      "chords": [],
+      "confidence": null,
+      "source": "meta",
+      "evidence": "",
+      "request_id": "d0d9c99d-9fb7-48fc-a8ad-362128eb5f4e",
+      "error": "harmony_validation",
+      "truth": [
+       "Dm7",
+       "G7"
+      ]
+     },
+     {
+      "index": 7,
+      "chords": [],
+      "confidence": null,
+      "source": "meta",
+      "evidence": "",
+      "request_id": "d0d9c99d-9fb7-48fc-a8ad-362128eb5f4e",
+      "error": "harmony_validation",
+      "truth": [
+       "Cmaj7",
+       null
+      ]
+     }
+    ]
+   },
+   {
+    "id": "14-ii-v-i-minor-inversion",
+    "source": "canonical",
+    "genre": "jazz",
+    "key": "A minor",
+    "variant": "inversion",
+    "bars": [
+     {
+      "index": 0,
+      "chords": [
+       "Dm6/F",
+       "E7/B"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Half1 F2 bass with B4 D5 F5 A5 = D-F-A-B stack, possible Dm6/F. Half2 B2 bass with E4 Ab4(G#) B4 D5 = E-G#-B-D, possible E7/B. Key A minor supports iv6-V.",
+      "request_id": "b50149e4-6484-4118-afe5-cbbd42aefb38",
+      "error": null,
+      "truth": [
+       "Bm7b5/F",
+       "E7/B"
+      ]
+     },
+     {
+      "index": 1,
+      "chords": [
+       "Am7/E"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Both halves E2 bass with A4 C5 E5 G5 = A-C-E-G, possible Am7/E. Repeated same voicing so one harmony, consistent with A minor i.",
+      "request_id": "b50149e4-6484-4118-afe5-cbbd42aefb38",
+      "error": null,
+      "truth": [
+       "Am7/E",
+       null
+      ]
+     },
+     {
+      "index": 2,
+      "chords": [
+       "Dm7/F",
+       "G7/B"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Half1 F2 bass with D4 F4 A4 C5 = D-F-A-C, possible Dm7/F. Half2 B2 bass with G4 B4 D5 F5 = G-B-D-F, possible G7/B.",
+      "request_id": "b50149e4-6484-4118-afe5-cbbd42aefb38",
+      "error": null,
+      "truth": [
+       "Dm7/F",
+       "G7/B"
+      ]
+     },
+     {
+      "index": 3,
+      "chords": [
+       "Cmaj7/G"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Both halves G2 bass with C4 E4 G4 B4 = C-E-G-B, possible Cmaj7/G. Sustained repetition supports single harmony.",
+      "request_id": "b50149e4-6484-4118-afe5-cbbd42aefb38",
+      "error": null,
+      "truth": [
+       "Cmaj7/G",
+       null
+      ]
+     },
+     {
+      "index": 4,
+      "chords": [
+       "Dm6",
+       "E7/B"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Half1 D2 bass with B4 D5 F5 A5 = D-F-A-B, possible Dm6 in root position. Half2 B2 bass with E4 Ab4 B4 D5 = E7/B as in m0.",
+      "request_id": "b50149e4-6484-4118-afe5-cbbd42aefb38",
+      "error": null,
+      "truth": [
+       "Bm7b5/D",
+       "E7/B"
+      ]
+     },
+     {
+      "index": 5,
+      "chords": [
+       "Am7/E"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Same as m1: E2 bass with A4 C5 E5 G5 both halves, possible Am7/E. No passing tones supplied.",
+      "request_id": "b50149e4-6484-4118-afe5-cbbd42aefb38",
+      "error": null,
+      "truth": [
+       "Am7/E",
+       null
+      ]
+     },
+     {
+      "index": 6,
+      "chords": [
+       "Dm7/F",
+       "E7/B"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Half1 F2 bass with D4 F4 A4 C5 = D-F-A-C, possible Dm7/F. Half2 B2 bass with E4 Ab4 B4 D5 = E-G#-B-D, possible E7/B.",
+      "request_id": "b50149e4-6484-4118-afe5-cbbd42aefb38",
+      "error": null,
+      "truth": [
+       "Dm7/F",
+       "E7/B"
+      ]
+     },
+     {
+      "index": 7,
+      "chords": [
+       "Am6/C"
+      ],
+      "confidence": "medium",
+      "source": "meta",
+      "evidence": "Both halves C2 bass with A4 C5 E5 Gb5(F#) = A-C-E-F#, possible Am6/C, enharmonically F#m7b5/C. Single sustained harmony; spelling Gb adds ambiguity.",
+      "request_id": "b50149e4-6484-4118-afe5-cbbd42aefb38",
+      "error": null,
+      "truth": [
+       "Am6/C",
+       null
+      ]
+     }
+    ]
+   },
+   {
+    "id": "15-i-vi-iv-v-melody",
+    "source": "canonical",
+    "genre": "pop",
+    "key": "G major",
+    "variant": "melody",
+    "bars": [
+     {
+      "index": 0,
+      "chords": [
+       "G"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Sustained G4-B4-D5 over G2 bass both halves; melody E6-D6-B5-G5 and G5-A5-B5-D6 are chord tones plus stepwise passing E/A over stable G harmony in G major.",
+      "request_id": "41f159de-c8fe-4858-b29b-d2ba77b2432e",
+      "error": null,
+      "truth": [
+       "G",
+       null
+      ]
+     },
+     {
+      "index": 1,
+      "chords": [
+       "Em"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Sustained E4-G4-B4 over E2 bass both halves; melody E5-G5-B5-G5 and E5-F#5-G5-B5 fits E minor with F# as stepwise passing tone.",
+      "request_id": "41f159de-c8fe-4858-b29b-d2ba77b2432e",
+      "error": null,
+      "truth": [
+       "Em",
+       null
+      ]
+     },
+     {
+      "index": 2,
+      "chords": [
+       "C"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Sustained C4-E4-G4 over C2 bass both halves; melody A5-G5-E5-C5 and E5-D5-E5-C5 fits C major with A/D as passing tones.",
+      "request_id": "41f159de-c8fe-4858-b29b-d2ba77b2432e",
+      "error": null,
+      "truth": [
+       "C",
+       null
+      ]
+     },
+     {
+      "index": 3,
+      "chords": [
+       "D"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Sustained D4-F#4-A4 over D2 bass both halves; melody F#5-E5-F#5-D5 and B5-A5-F#5-D5 fits D major with E/B/A as passing tones.",
+      "request_id": "41f159de-c8fe-4858-b29b-d2ba77b2432e",
+      "error": null,
+      "truth": [
+       "D",
+       null
+      ]
+     },
+     {
+      "index": 4,
+      "chords": [
+       "G"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Sustained G4-B4-D5 over G2 bass both halves; melody G5-B5-D6-B5 repeated all G-triad chord tones.",
+      "request_id": "41f159de-c8fe-4858-b29b-d2ba77b2432e",
+      "error": null,
+      "truth": [
+       "G",
+       null
+      ]
+     },
+     {
+      "index": 5,
+      "chords": [
+       "Em"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Sustained E4-G4-B4 over E2 bass both halves; melody G5-F#5-G5-E5 repeated fits E minor with F# as neighbor/passing tone.",
+      "request_id": "41f159de-c8fe-4858-b29b-d2ba77b2432e",
+      "error": null,
+      "truth": [
+       "Em",
+       null
+      ]
+     },
+     {
+      "index": 6,
+      "chords": [
+       "C",
+       "D"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "First half C4-E4-G4 over C2 with C5-E5-G5-E5; second half D4-F#4-A4 over D2 with B5-A5-F#5-D5. Change aligns with bass and sustained triad at onset 2.0.",
+      "request_id": "41f159de-c8fe-4858-b29b-d2ba77b2432e",
+      "error": null,
+      "truth": [
+       "C",
+       "D"
+      ]
+     },
+     {
+      "index": 7,
+      "chords": [
+       "G"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Sustained G4-B4-D5 over G2 bass both halves; melody G5-B5-D6-B5 and E6-D6-B5-G5 fits G with upper E/D as descending passing tones to chord tone G.",
+      "request_id": "41f159de-c8fe-4858-b29b-d2ba77b2432e",
+      "error": null,
+      "truth": [
+       "G",
+       null
+      ]
+     }
+    ]
+   },
+   {
+    "id": "16-12-bar-blues-sparse",
+    "source": "canonical",
+    "genre": "blues",
+    "key": "F major",
+    "variant": "sparse",
+    "bars": [
+     {
+      "index": 0,
+      "chords": [
+       "F7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Possible harmonization: simultaneous F2 bass with F4 A4 C5 Eb5 at onset 0, exact timing, no warnings; spells F7 in F major.",
+      "request_id": "e35172e7-4521-4592-8ff0-cdcc5caf7e72",
+      "error": null,
+      "truth": [
+       "F7",
+       null
+      ]
+     },
+     {
+      "index": 1,
+      "chords": [
+       "Bb7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Possible harmonization: simultaneous Bb2 bass with Bb4 D5 F5 Ab5 at onset 0, exact timing, no warnings; spells Bb7 in F major.",
+      "request_id": "e35172e7-4521-4592-8ff0-cdcc5caf7e72",
+      "error": null,
+      "truth": [
+       "Bb7",
+       null
+      ]
+     },
+     {
+      "index": 2,
+      "chords": [
+       "F7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Possible harmonization: simultaneous F2 bass with F4 A4 C5 Eb5 at onset 0, exact timing, no warnings; spells F7 in F major.",
+      "request_id": "e35172e7-4521-4592-8ff0-cdcc5caf7e72",
+      "error": null,
+      "truth": [
+       "F7",
+       null
+      ]
+     },
+     {
+      "index": 3,
+      "chords": [
+       "F7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Possible harmonization: simultaneous F2 bass with F4 A4 C5 Eb5 at onset 0, exact timing, no warnings; spells F7 in F major.",
+      "request_id": "e35172e7-4521-4592-8ff0-cdcc5caf7e72",
+      "error": null,
+      "truth": [
+       "F7",
+       null
+      ]
+     },
+     {
+      "index": 4,
+      "chords": [
+       "Bb7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Possible harmonization: simultaneous Bb2 bass with Bb4 D5 F5 Ab5 at onset 0, exact timing, no warnings; spells Bb7 in F major.",
+      "request_id": "e35172e7-4521-4592-8ff0-cdcc5caf7e72",
+      "error": null,
+      "truth": [
+       "Bb7",
+       null
+      ]
+     },
+     {
+      "index": 5,
+      "chords": [
+       "Bb7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Possible harmonization: simultaneous Bb2 bass with Bb4 D5 F5 Ab5 at onset 0, exact timing, no warnings; spells Bb7 in F major.",
+      "request_id": "e35172e7-4521-4592-8ff0-cdcc5caf7e72",
+      "error": null,
+      "truth": [
+       "Bb7",
+       null
+      ]
+     },
+     {
+      "index": 6,
+      "chords": [
+       "F7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Possible harmonization: simultaneous F2 bass with F4 A4 C5 Eb5 at onset 0, exact timing, no warnings; spells F7 in F major.",
+      "request_id": "e35172e7-4521-4592-8ff0-cdcc5caf7e72",
+      "error": null,
+      "truth": [
+       "F7",
+       null
+      ]
+     },
+     {
+      "index": 7,
+      "chords": [
+       "F7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Possible harmonization: simultaneous F2 bass with F4 A4 C5 Eb5 at onset 0, exact timing, no warnings; spells F7 in F major.",
+      "request_id": "e35172e7-4521-4592-8ff0-cdcc5caf7e72",
+      "error": null,
+      "truth": [
+       "F7",
+       null
+      ]
+     },
+     {
+      "index": 8,
+      "chords": [
+       "C7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Supplied C4 E4 G4 Bb4 with bass C2 simultaneous at onset 0 form C dominant 7th; V7 in F major.",
+      "request_id": "b49057fd-907e-4914-bddb-d35525187e84",
+      "error": null,
+      "truth": [
+       "C7",
+       null
+      ]
+     },
+     {
+      "index": 9,
+      "chords": [
+       "Bb7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Supplied Bb4 D5 F5 Ab5 with bass Bb2 simultaneous at onset 0 form Bb dominant 7th; chromatic Ab vs F major.",
+      "request_id": "b49057fd-907e-4914-bddb-d35525187e84",
+      "error": null,
+      "truth": [
+       "Bb7",
+       null
+      ]
+     },
+     {
+      "index": 10,
+      "chords": [
+       "F7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Supplied F4 A4 C5 Eb5 with bass F2 simultaneous at onset 0 form F dominant 7th; chromatic Eb vs F major.",
+      "request_id": "b49057fd-907e-4914-bddb-d35525187e84",
+      "error": null,
+      "truth": [
+       "F7",
+       null
+      ]
+     },
+     {
+      "index": 11,
+      "chords": [
+       "C7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Supplied C4 E4 G4 Bb4 with bass C2 simultaneous at onset 0 form C dominant 7th; repeats m8, V7 in F major.",
+      "request_id": "b49057fd-907e-4914-bddb-d35525187e84",
+      "error": null,
+      "truth": [
+       "C7",
+       null
+      ]
+     }
+    ]
+   },
+   {
+    "id": "17-bossa-maj7-m7-loop-waltz",
+    "source": "canonical",
+    "genre": "bossa",
+    "key": "D major",
+    "variant": "waltz",
+    "bars": [
+     {
+      "index": 0,
+      "chords": [
+       "Dmaj7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Bass D2 with simultaneous D4-F#4-A4-C#5 stacked thirds on beats 1-2; root-position maj7 in D major.",
+      "request_id": "425d9194-6d21-4994-9cc7-2d8fce3c4bb3",
+      "error": null,
+      "truth": [
+       "Dmaj7",
+       null
+      ]
+     },
+     {
+      "index": 1,
+      "chords": [
+       "Dmaj7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Same as m0: D2 bass plus D-F#-A-C# block chord, root-position D major seventh.",
+      "request_id": "425d9194-6d21-4994-9cc7-2d8fce3c4bb3",
+      "error": null,
+      "truth": [
+       "Dmaj7",
+       null
+      ]
+     },
+     {
+      "index": 2,
+      "chords": [
+       "Em7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Bass E2 with E4-G4-B4-D5 block chord; root-position E-G-B-D = Em7, ii7 in D major.",
+      "request_id": "425d9194-6d21-4994-9cc7-2d8fce3c4bb3",
+      "error": null,
+      "truth": [
+       "Em7",
+       null
+      ]
+     },
+     {
+      "index": 3,
+      "chords": [
+       "A7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Bass A2 with A-C#-E-G block chord; root-position dominant seventh, V7 in D major.",
+      "request_id": "425d9194-6d21-4994-9cc7-2d8fce3c4bb3",
+      "error": null,
+      "truth": [
+       "A7",
+       null
+      ]
+     },
+     {
+      "index": 4,
+      "chords": [
+       "F#m7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Bass F#2 with F#-A-C#-E block chord; root-position F#m7, iii7 in D major.",
+      "request_id": "425d9194-6d21-4994-9cc7-2d8fce3c4bb3",
+      "error": null,
+      "truth": [
+       "F#m7",
+       null
+      ]
+     },
+     {
+      "index": 5,
+      "chords": [
+       "Bm7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Bass B2 with B-D-F#-A block chord; root-position Bm7, vi7 in D major.",
+      "request_id": "425d9194-6d21-4994-9cc7-2d8fce3c4bb3",
+      "error": null,
+      "truth": [
+       "Bm7",
+       null
+      ]
+     },
+     {
+      "index": 6,
+      "chords": [
+       "Em7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Bass E2 with E-G-B-D block chord; root-position Em7, ii7 in D major.",
+      "request_id": "425d9194-6d21-4994-9cc7-2d8fce3c4bb3",
+      "error": null,
+      "truth": [
+       "Em7",
+       null
+      ]
+     },
+     {
+      "index": 7,
+      "chords": [
+       "A7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Bass A2 with A-C#-E-G block chord; root-position A7, V7 in D major.",
+      "request_id": "425d9194-6d21-4994-9cc7-2d8fce3c4bb3",
+      "error": null,
+      "truth": [
+       "A7",
+       null
+      ]
+     }
+    ]
+   },
+   {
+    "id": "18-classical-period-block",
+    "source": "canonical",
+    "genre": "classical",
+    "key": "C major",
+    "variant": "block",
+    "bars": [
+     {
+      "index": 0,
+      "chords": [
+       "C"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "C4 E4 G4 sustained over C2 bass both halves; complete C triad in C major, no ambiguity.",
+      "request_id": "e23543c5-aaf7-4bea-9310-bba452b9c6c0",
+      "error": null,
+      "truth": [
+       "C",
+       null
+      ]
+     },
+     {
+      "index": 1,
+      "chords": [
+       "G/B"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "G4 B4 D5 over B2 bass both halves; G triad with third in bass = first-inversion possible harmonization.",
+      "request_id": "e23543c5-aaf7-4bea-9310-bba452b9c6c0",
+      "error": null,
+      "truth": [
+       "G/B",
+       null
+      ]
+     },
+     {
+      "index": 2,
+      "chords": [
+       "Am"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "A4 C5 E5 over A2 bass both halves; complete A minor triad in C major.",
+      "request_id": "e23543c5-aaf7-4bea-9310-bba452b9c6c0",
+      "error": null,
+      "truth": [
+       "Am",
+       null
+      ]
+     },
+     {
+      "index": 3,
+      "chords": [
+       "G"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "G4 B4 D5 over G2 bass both halves; complete G major triad in root position.",
+      "request_id": "e23543c5-aaf7-4bea-9310-bba452b9c6c0",
+      "error": null,
+      "truth": [
+       "G",
+       null
+      ]
+     },
+     {
+      "index": 4,
+      "chords": [
+       "C"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "C4 E4 G4 over C2 bass both halves; complete C triad, same as m0.",
+      "request_id": "e23543c5-aaf7-4bea-9310-bba452b9c6c0",
+      "error": null,
+      "truth": [
+       "C",
+       null
+      ]
+     },
+     {
+      "index": 5,
+      "chords": [
+       "C/E",
+       "F"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "First half C-E-G over E2 bass = C first inversion; second half F-A-C over F2 bass = F; two sustained 2-beat blocks.",
+      "request_id": "e23543c5-aaf7-4bea-9310-bba452b9c6c0",
+      "error": null,
+      "truth": [
+       "C/E",
+       "F"
+      ]
+     },
+     {
+      "index": 6,
+      "chords": [
+       "Dm/F",
+       "G7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "First half D4 F4 A4 over F2 = D minor over third; second half G-B-D-F over G2 = G7; sequential 2-beat blocks.",
+      "request_id": "e23543c5-aaf7-4bea-9310-bba452b9c6c0",
+      "error": null,
+      "truth": [
+       "Dm/F",
+       "G7"
+      ]
+     },
+     {
+      "index": 7,
+      "chords": [
+       "C"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "C4 E4 G4 over C2 bass both halves; complete C triad closing progression.",
+      "request_id": "e23543c5-aaf7-4bea-9310-bba452b9c6c0",
+      "error": null,
+      "truth": [
+       "C",
+       null
+      ]
+     }
+    ]
+   },
+   {
+    "id": "19-jazz-rootless",
+    "source": "generator",
+    "genre": "jazz",
+    "key": "Bb major",
+    "variant": "rootless",
+    "bars": [
+     {
+      "index": 0,
+      "chords": [
+       "Cm7"
+      ],
+      "confidence": "medium",
+      "source": "meta",
+      "evidence": "Beats 0-2 both G4-Bb4-C5 simultaneity; no E/Eb supplied so 3rd missing, possible harmonization as Cm7 in Bb major, not recovered original.",
+      "request_id": "6bc8b246-5920-4d73-b97b-69d294b7ea6c",
+      "error": null,
+      "truth": [
+       "Eb6",
+       null
+      ]
+     },
+     {
+      "index": 1,
+      "chords": [
+       "Cm",
+       "Cm7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Beat 0 C5-Eb5-G5 complete Cm triad; beat 2 G4-Bb4-C5 as Cm7 without 3rd, consistent sustain and key.",
+      "request_id": "6bc8b246-5920-4d73-b97b-69d294b7ea6c",
+      "error": null,
+      "truth": [
+       "Am7b5",
+       "Eb6"
+      ]
+     },
+     {
+      "index": 2,
+      "chords": [
+       "F7",
+       "Bb"
+      ],
+      "confidence": "medium",
+      "source": "meta",
+      "evidence": "Beat 0 A4-C5-Eb5 simultaneous, interpreted as possible F7 without supplied F root; beat 2 Bb4-D5-F5 complete Bb triad.",
+      "request_id": "6bc8b246-5920-4d73-b97b-69d294b7ea6c",
+      "error": null,
+      "truth": [
+       "F9",
+       "Gm7"
+      ]
+     },
+     {
+      "index": 3,
+      "chords": [
+       "Dm",
+       "Bb"
+      ],
+      "confidence": "medium",
+      "source": "meta",
+      "evidence": "Beat 0 D5-F5-A5 complete Dm triad, possible harmonization also compatible with Bb6; beat 2 Bb4-D5-F5 complete Bb triad.",
+      "request_id": "6bc8b246-5920-4d73-b97b-69d294b7ea6c",
+      "error": null,
+      "truth": [
+       "Bbmaj7",
+       "Gm7"
+      ]
+     },
+     {
+      "index": 4,
+      "chords": [
+       "Bb"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Both halves Bb4-D5-F5 complete sustained Bb-major triad in Bb major key.",
+      "request_id": "6bc8b246-5920-4d73-b97b-69d294b7ea6c",
+      "error": null,
+      "truth": [
+       "Gm7",
+       null
+      ]
+     },
+     {
+      "index": 5,
+      "chords": [
+       "F7",
+       "Dm"
+      ],
+      "confidence": "medium",
+      "source": "meta",
+      "evidence": "Beat 0 A4-C5-Eb5 as possible rootless F7, no F supplied; beat 2 D5-F5-A5 complete Dm triad.",
+      "request_id": "6bc8b246-5920-4d73-b97b-69d294b7ea6c",
+      "error": null,
+      "truth": [
+       "F13",
+       "Bbmaj7"
+      ]
+     },
+     {
+      "index": 6,
+      "chords": [
+       "Dm",
+       "F7"
+      ],
+      "confidence": "medium",
+      "source": "meta",
+      "evidence": "Beat 0 D5-F5-A5 complete Dm; beat 2 A4-C5-Eb5 as possible rootless F7, no F supplied.",
+      "request_id": "6bc8b246-5920-4d73-b97b-69d294b7ea6c",
+      "error": null,
+      "truth": [
+       "Bbmaj7",
+       "F9"
+      ]
+     },
+     {
+      "index": 7,
+      "chords": [
+       "Eb"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Both halves Eb4-G4-Bb4 complete sustained Eb-major triad, IV in Bb major.",
+      "request_id": "6bc8b246-5920-4d73-b97b-69d294b7ea6c",
+      "error": null,
+      "truth": [
+       "Cm7",
+       null
+      ]
+     }
+    ]
+   },
+   {
+    "id": "20-pop-inversion",
+    "source": "generator",
+    "genre": "pop",
+    "key": "C major",
+    "variant": "inversion",
+    "bars": [
+     {
+      "index": 0,
+      "chords": [
+       "Fmaj7/A",
+       "Am7/C"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Onset 0: F-A-C-E over A2 bass fits Fmaj7/A; onset 2: A-C-E-G over C2 bass fits Am7/C. Two distinct sustained tetrads.",
+      "request_id": "6cd0a21c-c895-4ad0-a1b4-c67c2e7dfb66",
+      "error": null,
+      "truth": [
+       "Fmaj7/A",
+       "Am7/C"
+      ]
+     },
+     {
+      "index": 1,
+      "chords": [
+       "Fmaj7/A"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Both onsets F-A-C-E over A2 bass; single sustained harmony Fmaj7 in first inversion, no change.",
+      "request_id": "6cd0a21c-c895-4ad0-a1b4-c67c2e7dfb66",
+      "error": null,
+      "truth": [
+       "Fmaj7/A",
+       null
+      ]
+     },
+     {
+      "index": 2,
+      "chords": [
+       "Cmaj7/E"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Both onsets C-E-G-B over E2 bass; single sustained harmony Cmaj7 in first inversion.",
+      "request_id": "6cd0a21c-c895-4ad0-a1b4-c67c2e7dfb66",
+      "error": null,
+      "truth": [
+       "Cmaj7/E",
+       null
+      ]
+     },
+     {
+      "index": 3,
+      "chords": [
+       "Fmaj7/C"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Both onsets F-A-C-E over C2 bass; sustained Fmaj7 in second inversion, no change.",
+      "request_id": "6cd0a21c-c895-4ad0-a1b4-c67c2e7dfb66",
+      "error": null,
+      "truth": [
+       "Fmaj7/C",
+       null
+      ]
+     },
+     {
+      "index": 4,
+      "chords": [
+       "Fmaj7/C"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Both onsets F-A-C-E over C2 bass; sustained Fmaj7 in second inversion, no change.",
+      "request_id": "6cd0a21c-c895-4ad0-a1b4-c67c2e7dfb66",
+      "error": null,
+      "truth": [
+       "Fmaj7/C",
+       null
+      ]
+     },
+     {
+      "index": 5,
+      "chords": [
+       "Cmaj7/G",
+       "Am7/C"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Onset 0: C-E-G-B over G2 fits Cmaj7/G; onset 2: A-C-E-G over C2 fits Am7/C.",
+      "request_id": "6cd0a21c-c895-4ad0-a1b4-c67c2e7dfb66",
+      "error": null,
+      "truth": [
+       "Cmaj7/G",
+       "Am7/C"
+      ]
+     },
+     {
+      "index": 6,
+      "chords": [
+       "Cmaj7/E",
+       "Fmaj7/C"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Onset 0: C-E-G-B over E2 fits Cmaj7/E; onset 2: F-A-C-E over C2 fits Fmaj7/C.",
+      "request_id": "6cd0a21c-c895-4ad0-a1b4-c67c2e7dfb66",
+      "error": null,
+      "truth": [
+       "Cmaj7/E",
+       "Fmaj7/C"
+      ]
+     },
+     {
+      "index": 7,
+      "chords": [
+       "Dm7/A",
+       "Db7/F"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Onset 0: D-F-A-C over A2 fits Dm7/A; onset 2: Db-F-Ab-B over F2, B as Cb, fits Db7/F chromatic harmony.",
+      "request_id": "6cd0a21c-c895-4ad0-a1b4-c67c2e7dfb66",
+      "error": null,
+      "truth": [
+       "Dm7/A",
+       "Db7/F"
+      ]
+     }
+    ]
+   },
+   {
+    "id": "21-rock-melody",
+    "source": "generator",
+    "genre": "rock",
+    "key": "E major",
+    "variant": "melody",
+    "bars": [
+     {
+      "index": 0,
+      "chords": [
+       "Cmaj7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Sustained C4-E4-G4-B4 over C2 for 0.0-4.0; melody C5-E5-G5-E5 then E5-D#5-E5-C5. D# is stepwise passing to E. Possible harmonization, requires review.",
+      "request_id": "c2e4d415-13e0-44bc-9fa5-ad2d45c3f14c",
+      "error": null,
+      "truth": [
+       "Cmaj7",
+       null
+      ]
+     },
+     {
+      "index": 1,
+      "chords": [
+       "D7",
+       "F#m7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "0.0-2.0 sustained D4-F#4-A4-C5 over D2 = D7; melody D5-D#5-F#5-A5 with D# chromatic passing. 2.0-4.0 F#4-A4-C#5-E5 over F#2 = F#m7. Possible harmonization, requires review.",
+      "request_id": "c2e4d415-13e0-44bc-9fa5-ad2d45c3f14c",
+      "error": null,
+      "truth": [
+       "D7",
+       "Gbm7"
+      ]
+     },
+     {
+      "index": 2,
+      "chords": [
+       "Em7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Sustained E4-G4-B4-D5 over E2 for 0.0-4.0; melodies E5-F#5-G5-B5 and G5-F#5-G5-E5 are diatonic chord tones plus stepwise F#. Possible harmonization, requires review.",
+      "request_id": "c2e4d415-13e0-44bc-9fa5-ad2d45c3f14c",
+      "error": null,
+      "truth": [
+       "Em7",
+       null
+      ]
+     },
+     {
+      "index": 3,
+      "chords": [
+       "F#m7",
+       "D7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "0.0-2.0 F#4-A4-C#5-E5 over F#2 = F#m7 with chord-tone melody. 2.0-4.0 D4-F#4-A4-C5 over D2 = D7; melody F#5-E5-F#5-D5 with E as passing. Possible harmonization, requires review.",
+      "request_id": "c2e4d415-13e0-44bc-9fa5-ad2d45c3f14c",
+      "error": null,
+      "truth": [
+       "Gbm7",
+       "D7"
+      ]
+     },
+     {
+      "index": 4,
+      "chords": [
+       "Emaj7",
+       "D7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "0.0-2.0 E4-G#4-B4-D#5 over E2 = Emaj7; melody G#5-F#5-G#5-E5. 2.0-4.0 D4-F#4-A4-C5 over D2 = D7. Possible harmonization, requires review.",
+      "request_id": "c2e4d415-13e0-44bc-9fa5-ad2d45c3f14c",
+      "error": null,
+      "truth": [
+       "Emaj7",
+       "D7"
+      ]
+     },
+     {
+      "index": 5,
+      "chords": [
+       "Emaj7",
+       "F#m7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "0.0-2.0 E4-G#4-B4-D#5 over E2 = Emaj7 with chord-tone melody. 2.0-4.0 F#4-A4-C#5-E5 over F#2 = F#m7; melody A5-G#5-A5-F#5 with G# passing. Possible harmonization, requires review.",
+      "request_id": "c2e4d415-13e0-44bc-9fa5-ad2d45c3f14c",
+      "error": null,
+      "truth": [
+       "Emaj7",
+       "Gbm7"
+      ]
+     },
+     {
+      "index": 6,
+      "chords": [
+       "Amaj7",
+       "D7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "0.0-2.0 A4-C#5-E5-G#5 over A2 = Amaj7; melody C#6-B5-C#6-A5. 2.0-4.0 D4-F#4-A4-C5 over D2 = D7. Possible harmonization, requires review.",
+      "request_id": "c2e4d415-13e0-44bc-9fa5-ad2d45c3f14c",
+      "error": null,
+      "truth": [
+       "Amaj7",
+       "D7"
+      ]
+     },
+     {
+      "index": 7,
+      "chords": [
+       "Am7",
+       "F#m7"
+      ],
+      "confidence": "medium",
+      "source": "meta",
+      "evidence": "0.0-2.0 A4-C5-E5-G5 over A2 = Am7; melody F#6-E6-C6-A5 includes F# non-chord passing. 2.0-4.0 F#4-A4-C#5-E5 over F#2 = F#m7. Possible harmonization, requires review.",
+      "request_id": "c2e4d415-13e0-44bc-9fa5-ad2d45c3f14c",
+      "error": null,
+      "truth": [
+       "Am7",
+       "Gbm7"
+      ]
+     }
+    ]
+   },
+   {
+    "id": "22-blues-sparse",
+    "source": "generator",
+    "genre": "blues",
+    "key": "A major",
+    "variant": "sparse",
+    "bars": [
+     {
+      "index": 0,
+      "chords": [
+       "E7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Supplied E2 bass with simultaneous E4 G#4 B4 D5 outlines root-position E7, V7 in A major. Requires human review.",
+      "request_id": "ce50a0ec-64a6-4565-b91e-ea28a67d6daa",
+      "error": null,
+      "truth": [
+       "E7#9",
+       null
+      ]
+     },
+     {
+      "index": 1,
+      "chords": [
+       "Amaj7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Supplied A2 bass with simultaneous A4 C#5 E5 G#5 outlines root-position Amaj7, Imaj7 in A major. Requires human review.",
+      "request_id": "ce50a0ec-64a6-4565-b91e-ea28a67d6daa",
+      "error": null,
+      "truth": [
+       "Amaj7",
+       null
+      ]
+     },
+     {
+      "index": 2,
+      "chords": [
+       "Bm7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Supplied B2 bass with simultaneous B4 D5 F#5 A5 outlines root-position Bm7, ii7 diatonic in A major. Requires human review.",
+      "request_id": "ce50a0ec-64a6-4565-b91e-ea28a67d6daa",
+      "error": null,
+      "truth": [
+       "Bm7",
+       null
+      ]
+     },
+     {
+      "index": 3,
+      "chords": [
+       "E7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Same as m0: E2 bass with E4 G#4 B4 D5 outlines root-position E7, V7. Requires human review.",
+      "request_id": "ce50a0ec-64a6-4565-b91e-ea28a67d6daa",
+      "error": null,
+      "truth": [
+       "E7",
+       null
+      ]
+     },
+     {
+      "index": 4,
+      "chords": [
+       "E7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Same as m0: E2 bass with E4 G#4 B4 D5 outlines root-position E7, V7. Requires human review.",
+      "request_id": "ce50a0ec-64a6-4565-b91e-ea28a67d6daa",
+      "error": null,
+      "truth": [
+       "E7",
+       null
+      ]
+     },
+     {
+      "index": 5,
+      "chords": [
+       "Bm7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Same as m2: B2 bass with B4 D5 F#5 A5 outlines root-position Bm7, ii7. Requires human review.",
+      "request_id": "ce50a0ec-64a6-4565-b91e-ea28a67d6daa",
+      "error": null,
+      "truth": [
+       "Bm7",
+       null
+      ]
+     },
+     {
+      "index": 6,
+      "chords": [
+       "D7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Supplied D2 bass with simultaneous D4 F#4 A4 C5 outlines root-position D7 with chromatic C natural vs A-major C#. Requires human review.",
+      "request_id": "ce50a0ec-64a6-4565-b91e-ea28a67d6daa",
+      "error": null,
+      "truth": [
+       "D9",
+       null
+      ]
+     },
+     {
+      "index": 7,
+      "chords": [
+       "D7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Same as m6: D2 bass with D4 F#4 A4 C5 outlines root-position D7. Requires human review.",
+      "request_id": "ce50a0ec-64a6-4565-b91e-ea28a67d6daa",
+      "error": null,
+      "truth": [
+       "D9",
+       null
+      ]
+     }
+    ]
+   },
+   {
+    "id": "23-bossa-waltz",
+    "source": "generator",
+    "genre": "bossa",
+    "key": "D minor",
+    "variant": "waltz",
+    "bars": [
+     {
+      "index": 0,
+      "chords": [
+       "Bbmaj7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Bass Bb2 beat1 with sustained simultaneity Bb4-D5-F5-A5 beats2-3. Spells Bb-D-F-A = Bbmaj7 in D minor VI.",
+      "request_id": "c79e6094-991a-416a-b4eb-275c8f52abd2",
+      "error": null,
+      "truth": [
+       "Bbmaj7",
+       null
+      ]
+     },
+     {
+      "index": 1,
+      "chords": [
+       "Fmaj7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Bass F2 beat1 with simultaneity F4-A4-C5-E5 beats2-3. Spells F-A-C-E = Fmaj7.",
+      "request_id": "c79e6094-991a-416a-b4eb-275c8f52abd2",
+      "error": null,
+      "truth": [
+       "Fmaj7",
+       null
+      ]
+     },
+     {
+      "index": 2,
+      "chords": [
+       "Fmaj7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Same as m1: Bass F2 plus F4-A4-C5-E5 simultaneity. F-A-C-E = Fmaj7.",
+      "request_id": "c79e6094-991a-416a-b4eb-275c8f52abd2",
+      "error": null,
+      "truth": [
+       "Fmaj7",
+       null
+      ]
+     },
+     {
+      "index": 3,
+      "chords": [
+       "Bbmaj7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Bass Bb2 plus Bb4-D5-F5-A5 simultaneity beats2-3. Bb-D-F-A = Bbmaj7.",
+      "request_id": "c79e6094-991a-416a-b4eb-275c8f52abd2",
+      "error": null,
+      "truth": [
+       "Bbmaj7",
+       null
+      ]
+     },
+     {
+      "index": 4,
+      "chords": [
+       "Bbmaj7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Bass Bb2 plus Bb4-D5-F5-A5 simultaneity. Bb-D-F-A = Bbmaj7.",
+      "request_id": "c79e6094-991a-416a-b4eb-275c8f52abd2",
+      "error": null,
+      "truth": [
+       "Bbmaj7",
+       null
+      ]
+     },
+     {
+      "index": 5,
+      "chords": [
+       "Bbmaj7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Bass Bb2 plus Bb4-D5-F5-A5 simultaneity. Bb-D-F-A = Bbmaj7.",
+      "request_id": "c79e6094-991a-416a-b4eb-275c8f52abd2",
+      "error": null,
+      "truth": [
+       "Bbmaj7",
+       null
+      ]
+     },
+     {
+      "index": 6,
+      "chords": [
+       "Bbmaj7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Bass Bb2 plus Bb4-D5-F5-A5 simultaneity. Bb-D-F-A = Bbmaj7.",
+      "request_id": "c79e6094-991a-416a-b4eb-275c8f52abd2",
+      "error": null,
+      "truth": [
+       "Bbmaj7",
+       null
+      ]
+     },
+     {
+      "index": 7,
+      "chords": [
+       "Em7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Bass E2 plus E4-G4-B4-D5 simultaneity beats2-3. Spells E-G-B-D = Em7; requires review as D-minor ii normally b5.",
+      "request_id": "c79e6094-991a-416a-b4eb-275c8f52abd2",
+      "error": null,
+      "truth": [
+       "Em7",
+       null
+      ]
+     }
+    ]
+   },
+   {
+    "id": "24-classical-block",
+    "source": "generator",
+    "genre": "classical",
+    "key": "G major",
+    "variant": "block",
+    "bars": [
+     {
+      "index": 0,
+      "chords": [
+       "F7",
+       "D7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Onsets 0.0 vs 2.0: F4 A4 C5 Eb5 over bass F2 suggests F7, then D4 F#4 A4 C5 over D2 suggests D7. Clear tetrads plus root bass. Requires human review.",
+      "request_id": "54de63d2-2aa8-4919-b596-be0e1f3aed1e",
+      "error": null,
+      "truth": [
+       "F7",
+       "D7"
+      ]
+     },
+     {
+      "index": 1,
+      "chords": [
+       "F7",
+       "C7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Onsets 0.0 vs 2.0: F4 A4 C5 Eb5 over F2 suggests F7, then C4 Eb4 G4 Bb4 spelled D# A# over C2 suggests C7. Rooted seventh tetrads. Requires human review.",
+      "request_id": "54de63d2-2aa8-4919-b596-be0e1f3aed1e",
+      "error": null,
+      "truth": [
+       "F7",
+       "Cm7"
+      ]
+     },
+     {
+      "index": 2,
+      "chords": [
+       "Cmaj7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Both onsets 0.0 and 2.0 repeat C4 E4 G4 B4 over C2, suggesting sustained Cmaj7. No change within bar. Requires human review.",
+      "request_id": "54de63d2-2aa8-4919-b596-be0e1f3aed1e",
+      "error": null,
+      "truth": [
+       "Cmaj7",
+       null
+      ]
+     },
+     {
+      "index": 3,
+      "chords": [
+       "D7",
+       "Bbmaj7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Onset 0.0 D4 F#4 A4 C5 over D2 suggests D7; onset 2.0 Bb4 D5 F5 A5 spelled A# over Bb2 suggests Bbmaj7. Distinct roots. Requires human review.",
+      "request_id": "54de63d2-2aa8-4919-b596-be0e1f3aed1e",
+      "error": null,
+      "truth": [
+       "D7",
+       "Bbmaj7"
+      ]
+     },
+     {
+      "index": 4,
+      "chords": [
+       "D7",
+       "Am7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Onset 0.0 D4 F#4 A4 C5 over D2 suggests D7; onset 2.0 A4 C5 E5 G5 over A2 suggests Am7. Root basses match tetrads. Requires human review.",
+      "request_id": "54de63d2-2aa8-4919-b596-be0e1f3aed1e",
+      "error": null,
+      "truth": [
+       "D7",
+       "Am7"
+      ]
+     },
+     {
+      "index": 5,
+      "chords": [
+       "Ebmaj7",
+       "D7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Onset 0.0 Eb4 G4 Bb4 D5 spelled D# A# over Eb2 suggests Ebmaj7; onset 2.0 D4 F#4 A4 C5 over D2 suggests D7. Requires human review.",
+      "request_id": "54de63d2-2aa8-4919-b596-be0e1f3aed1e",
+      "error": null,
+      "truth": [
+       "Ebmaj7",
+       "D7"
+      ]
+     },
+     {
+      "index": 6,
+      "chords": [
+       "Gm7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Both onsets repeat G4 Bb4 D5 F5 spelled A# over G2, suggesting sustained Gm7. No internal change. Requires human review.",
+      "request_id": "54de63d2-2aa8-4919-b596-be0e1f3aed1e",
+      "error": null,
+      "truth": [
+       "Gm7",
+       null
+      ]
+     },
+     {
+      "index": 7,
+      "chords": [
+       "Ebmaj7",
+       "Gmaj7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Onset 0.0 Eb4 G4 Bb4 D5 over Eb2 suggests Ebmaj7; onset 2.0 G4 B4 D5 F#5 over G2 suggests Gmaj7. Rooted tetrads. Requires human review.",
+      "request_id": "54de63d2-2aa8-4919-b596-be0e1f3aed1e",
+      "error": null,
+      "truth": [
+       "Ebmaj7",
+       "Gmaj7"
+      ]
+     }
+    ]
+   },
+   {
+    "id": "25-country-rootless",
+    "source": "generator",
+    "genre": "country",
+    "key": "D major",
+    "variant": "rootless",
+    "bars": [
+     {
+      "index": 0,
+      "chords": [
+       "A",
+       "D"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Onsets 0.0 A4-C#5-E5 = A major triad; 2.0 D5-F#5-A5 = D major triad in D major key. Possible harmonization, needs review.",
+      "request_id": "90df81b7-d1c4-4290-8447-64f64e66d7d6",
+      "error": null,
+      "truth": [
+       "Gbm7",
+       "Bm7"
+      ]
+     },
+     {
+      "index": 1,
+      "chords": [
+       "F#m",
+       "Bm"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "0.0 F#4-A4-C#5 = F# minor triad; 2.0 B4-D5-F#5 = B minor triad. Both diatonic in D major. Possible harmonization, needs review.",
+      "request_id": "90df81b7-d1c4-4290-8447-64f64e66d7d6",
+      "error": null,
+      "truth": [
+       "Dmaj7",
+       "Gmaj7"
+      ]
+     },
+     {
+      "index": 2,
+      "chords": [
+       "C#dim",
+       "Bm"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "0.0 C#5-E5-G5 = C# diminished triad vii in D major; 2.0 B4-D5-F#5 = B minor triad. Possible harmonization, needs review.",
+      "request_id": "90df81b7-d1c4-4290-8447-64f64e66d7d6",
+      "error": null,
+      "truth": [
+       "A7",
+       "Gmaj7"
+      ]
+     },
+     {
+      "index": 3,
+      "chords": [
+       "F#m",
+       "D"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "0.0 F#4-A4-C#5 = F# minor; 2.0 D5-F#5-A5 = D major. Sequential triads supplied, bass F# then D. Possible harmonization, needs review.",
+      "request_id": "90df81b7-d1c4-4290-8447-64f64e66d7d6",
+      "error": null,
+      "truth": [
+       "Dmaj7",
+       "Bm7"
+      ]
+     },
+     {
+      "index": 4,
+      "chords": [
+       "F#m",
+       "C#dim"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "0.0 F#4-A4-C#5 = F# minor; 2.0 C#5-E5-G5 = C# diminished. No sustained overlap. Possible harmonization, needs review.",
+      "request_id": "90df81b7-d1c4-4290-8447-64f64e66d7d6",
+      "error": null,
+      "truth": [
+       "Dmaj7",
+       "A7"
+      ]
+     },
+     {
+      "index": 5,
+      "chords": [
+       "D"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Both halves 0.0 and 2.0 D5-F#5-A5 = D major triad repeated. Single sustained harmony plausible. Possible harmonization, needs review.",
+      "request_id": "90df81b7-d1c4-4290-8447-64f64e66d7d6",
+      "error": null,
+      "truth": [
+       "Bm7",
+       null
+      ]
+     },
+     {
+      "index": 6,
+      "chords": [
+       "C#dim",
+       "A"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "0.0 C#5-E5-G5 = C# diminished; 2.0 A4-C#5-E5 = A major triad. Bass C# then A supports change. Possible harmonization, needs review.",
+      "request_id": "90df81b7-d1c4-4290-8447-64f64e66d7d6",
+      "error": null,
+      "truth": [
+       "A7",
+       "Gbm7"
+      ]
+     },
+     {
+      "index": 7,
+      "chords": [
+       "D",
+       "A"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "0.0 D5-F#5-A5 = D major tonic; 2.0 A4-C#5-E5 = A major dominant in D major. Possible harmonization, needs review.",
+      "request_id": "90df81b7-d1c4-4290-8447-64f64e66d7d6",
+      "error": null,
+      "truth": [
+       "Bm7",
+       "Gbm7"
+      ]
+     }
+    ]
+   },
+   {
+    "id": "26-rnb_soul-inversion",
+    "source": "generator",
+    "genre": "rnb_soul",
+    "key": "Eb major",
+    "variant": "inversion",
+    "bars": [
+     {
+      "index": 0,
+      "chords": [
+       "Ebmaj7/G"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Eb4 G4 Bb4 D5 sustained over G2 bass both halves; Ebmaj7 in first inversion in Eb major.",
+      "request_id": "40a29e46-9ec6-4bde-8c61-00d8a5cc9487",
+      "error": null,
+      "truth": [
+       "Ebmaj7/G",
+       null
+      ]
+     },
+     {
+      "index": 1,
+      "chords": [
+       "Ebmaj7/Bb"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Same Eb4 G4 Bb4 D5 upper structure over Bb2 bass both halves; Ebmaj7 third inversion.",
+      "request_id": "40a29e46-9ec6-4bde-8c61-00d8a5cc9487",
+      "error": null,
+      "truth": [
+       "Ebmaj7/Bb",
+       null
+      ]
+     },
+     {
+      "index": 2,
+      "chords": [
+       "Abmaj7/C",
+       "Cm7/Eb"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "First half Ab4 C5 Eb5 G5 over C2 is Abmaj7 first inversion; second C4 Eb4 G4 Bb4 over Eb2 is Cm7 first inversion.",
+      "request_id": "40a29e46-9ec6-4bde-8c61-00d8a5cc9487",
+      "error": null,
+      "truth": [
+       "Abmaj7/C",
+       "Cm7/Eb"
+      ]
+     },
+     {
+      "index": 3,
+      "chords": [
+       "Ebmaj7/G"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Eb4 G4 Bb4 D5 over G2 repeated both halves; identical to m0 Ebmaj7 first inversion.",
+      "request_id": "40a29e46-9ec6-4bde-8c61-00d8a5cc9487",
+      "error": null,
+      "truth": [
+       "Ebmaj7/G",
+       null
+      ]
+     },
+     {
+      "index": 4,
+      "chords": [
+       "Ebmaj7/G",
+       "Cm7/G"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "First half Eb G Bb D over G is Ebmaj7/G; second C4 Eb4 G4 Bb4 over G2 is Cm7 second inversion.",
+      "request_id": "40a29e46-9ec6-4bde-8c61-00d8a5cc9487",
+      "error": null,
+      "truth": [
+       "Ebmaj7/G",
+       "Cm7/G"
+      ]
+     },
+     {
+      "index": 5,
+      "chords": [
+       "Cm7/Eb",
+       "Abmaj7/C"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "First C4 Eb4 G4 Bb4 over Eb2 is Cm7/Eb; second Ab4 C5 Eb5 G5 over C2 is Abmaj7/C.",
+      "request_id": "40a29e46-9ec6-4bde-8c61-00d8a5cc9487",
+      "error": null,
+      "truth": [
+       "Cm7/Eb",
+       "Abmaj7/C"
+      ]
+     },
+     {
+      "index": 6,
+      "chords": [
+       "Cm7/Eb",
+       "Ebmaj7/Bb"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "First C Eb G Bb over Eb2 is Cm7/Eb; second Eb G Bb D over Bb2 is Ebmaj7 third inversion.",
+      "request_id": "40a29e46-9ec6-4bde-8c61-00d8a5cc9487",
+      "error": null,
+      "truth": [
+       "Cm7/Eb",
+       "Ebmaj7/Bb"
+      ]
+     },
+     {
+      "index": 7,
+      "chords": [
+       "Fm7/Ab",
+       "E7/Ab"
+      ],
+      "confidence": "medium",
+      "source": "meta",
+      "evidence": "First F4 Ab4 C5 Eb5 over Ab2 is Fm7 first inversion; second E4 Ab4 B4 D5 over Ab2 spells E-G#-B-D = E7 third in bass, chromatic passing, possible harmonization.",
+      "request_id": "40a29e46-9ec6-4bde-8c61-00d8a5cc9487",
+      "error": null,
+      "truth": [
+       "Fm7/Ab",
+       "E7/G#"
+      ]
+     }
+    ]
+   },
+   {
+    "id": "27-hip_hop-melody",
+    "source": "generator",
+    "genre": "hip_hop",
+    "key": "A minor",
+    "variant": "melody",
+    "bars": [
+     {
+      "index": 0,
+      "chords": [
+       "Abm7b5",
+       "Dmaj7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Beat1 bass Ab2 with sustained Ab4 B4 D5 Gb5 = Ab-B-D-Gb stack; melody E6 D6 B5 Ab5. Beat3 bass D2 with D4 Gb4 A4 Db5 = D-F#-A-C# stack; melody D5 Gb5 A5.",
+      "request_id": "6f35b95d-c5d6-4403-9f78-ebcbca8452fb",
+      "error": null,
+      "truth": [
+       "Abm7b5",
+       "Dmaj7"
+      ]
+     },
+     {
+      "index": 1,
+      "chords": [
+       "Dm7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Both halves bass D2 with sustained D4 F4 A4 C5 = D-F-A-C. Melodies D5 F5 A5 and D5 E5 F5 A5 fit as chord tones with E5 stepwise passing.",
+      "request_id": "6f35b95d-c5d6-4403-9f78-ebcbca8452fb",
+      "error": null,
+      "truth": [
+       "Dm7",
+       null
+      ]
+     },
+     {
+      "index": 2,
+      "chords": [
+       "Bm7b5",
+       "Dm7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Beat1 bass B2 with B4 D5 F5 A5 = B-D-F-A; melody G6 F6 D6 B5 with G/F as upper passing to chord tones. Beat3 bass D2 with D-F-A-C and D5 E5 F5 A5.",
+      "request_id": "6f35b95d-c5d6-4403-9f78-ebcbca8452fb",
+      "error": null,
+      "truth": [
+       "Bm7b5",
+       "Dm7"
+      ]
+     },
+     {
+      "index": 3,
+      "chords": [
+       "Dmaj7",
+       "Bm7b5"
+      ],
+      "confidence": "medium",
+      "source": "meta",
+      "evidence": "Beat1 bass D2 with D4 Gb4 A4 Db5 = D-F#-A-C#; melody Gb5 F5 Gb5 D5 where F5 is chromatic passing. Beat3 bass B2 with B-D-F-A; melody D6 C6 D6 B5 with C6 passing.",
+      "request_id": "6f35b95d-c5d6-4403-9f78-ebcbca8452fb",
+      "error": null,
+      "truth": [
+       "Dmaj7",
+       "Bm7b5"
+      ]
+     },
+     {
+      "index": 4,
+      "chords": [
+       "F#m7",
+       "Bm7b5"
+      ],
+      "confidence": "medium",
+      "source": "meta",
+      "evidence": "Beat1 bass Gb2 with Gb4 A4 Db5 E5 enharmonic F#-A-C#-E; melody D6 Db6 A5 Gb5 with D6 non-chord upper tone. Beat3 bass B2 with B-D-F-A; melody B5 D6 F6 D6.",
+      "request_id": "6f35b95d-c5d6-4403-9f78-ebcbca8452fb",
+      "error": null,
+      "truth": [
+       "Gbm7",
+       "Bm7b5"
+      ]
+     },
+     {
+      "index": 5,
+      "chords": [
+       "Am7",
+       "Abm7b5"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Beat1 bass A2 with A4 C5 E5 G5 = A-C-E-G; melody A5 B5 C6 E6 with B passing. Beat3 bass Ab2 with Ab-B-D-Gb stack; melody E6 D6 B5 Ab5.",
+      "request_id": "6f35b95d-c5d6-4403-9f78-ebcbca8452fb",
+      "error": null,
+      "truth": [
+       "Am7",
+       "Abm7b5"
+      ]
+     },
+     {
+      "index": 6,
+      "chords": [
+       "Amaj7",
+       "Em7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Beat1 bass A2 with A4 Db5 E5 Ab5 = A-C#-E-G#; melody A5 Db6 E6. Beat3 bass E2 with E4 G4 B4 D5 = E-G-B-D; melody G5 F5 G5 E5 with F5 passing.",
+      "request_id": "6f35b95d-c5d6-4403-9f78-ebcbca8452fb",
+      "error": null,
+      "truth": [
+       "Amaj7",
+       "Em7"
+      ]
+     },
+     {
+      "index": 7,
+      "chords": [
+       "Em7",
+       "Am7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Beat1 bass E2 with E-G-B-D; melody G5 F5 G5 E5 with F passing. Beat3 bass A2 with A-C-E-G; melody F6 E6 C6 A5 with F6 as upper neighbor to E6.",
+      "request_id": "6f35b95d-c5d6-4403-9f78-ebcbca8452fb",
+      "error": null,
+      "truth": [
+       "Em7",
+       "Am7"
+      ]
+     }
+    ]
+   },
+   {
+    "id": "28-electronic-sparse",
+    "source": "generator",
+    "genre": "electronic",
+    "key": "F# minor",
+    "variant": "sparse",
+    "bars": [
+     {
+      "index": 0,
+      "chords": [
+       "E7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Supplied pitches E4 G#4 B4 D5 over E2 bass simultaneously spell E-G#-B-D root position seventh; consistent with E7 in F# minor context.",
+      "request_id": "7524d63c-4cb3-4bb0-aefa-c6e1a5fcfccc",
+      "error": null,
+      "truth": [
+       "E7",
+       null
+      ]
+     },
+     {
+      "index": 1,
+      "chords": [
+       "Dmaj7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Supplied D4 F#4 A4 C#5 over D2 bass spell D-F#-A-C# root position major-seventh; Dmaj7 plausible.",
+      "request_id": "7524d63c-4cb3-4bb0-aefa-c6e1a5fcfccc",
+      "error": null,
+      "truth": [
+       "Dmaj7",
+       null
+      ]
+     },
+     {
+      "index": 2,
+      "chords": [
+       "G#m7b5"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Supplied G#4 B4 D5 F#5 over G#2 bass spell G#-B-D-F#, root position half-diminished; iiø in F# minor.",
+      "request_id": "7524d63c-4cb3-4bb0-aefa-c6e1a5fcfccc",
+      "error": null,
+      "truth": [
+       "G#m7b5",
+       null
+      ]
+     },
+     {
+      "index": 3,
+      "chords": [
+       "F#m7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Supplied F#4 A4 C#5 E5 over F#2 bass spell F#-A-C#-E root position minor-seventh; tonic i7.",
+      "request_id": "7524d63c-4cb3-4bb0-aefa-c6e1a5fcfccc",
+      "error": null,
+      "truth": [
+       "F#m7",
+       null
+      ]
+     },
+     {
+      "index": 4,
+      "chords": [
+       "Bm7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Supplied B4 D5 F#5 A5 over B2 bass spell B-D-F#-A root position minor-seventh; iv7 in F# minor.",
+      "request_id": "7524d63c-4cb3-4bb0-aefa-c6e1a5fcfccc",
+      "error": null,
+      "truth": [
+       "Bm7",
+       null
+      ]
+     },
+     {
+      "index": 5,
+      "chords": [
+       "F#m7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Supplied F#4 A4 C#5 E5 over F#2 bass same as m.3 spells F#-A-C#-E; F#m7.",
+      "request_id": "7524d63c-4cb3-4bb0-aefa-c6e1a5fcfccc",
+      "error": null,
+      "truth": [
+       "F#m7",
+       null
+      ]
+     },
+     {
+      "index": 6,
+      "chords": [
+       "E7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Supplied E4 G#4 B4 D5 over E2 bass same as m.0 spells E-G#-B-D; E7.",
+      "request_id": "7524d63c-4cb3-4bb0-aefa-c6e1a5fcfccc",
+      "error": null,
+      "truth": [
+       "E7",
+       null
+      ]
+     },
+     {
+      "index": 7,
+      "chords": [
+       "Bm7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Supplied B4 D5 F#5 A5 over B2 bass same as m.4 spells B-D-F#-A; Bm7.",
+      "request_id": "7524d63c-4cb3-4bb0-aefa-c6e1a5fcfccc",
+      "error": null,
+      "truth": [
+       "Bm7",
+       null
+      ]
+     }
+    ]
+   },
+   {
+    "id": "29-funk-waltz",
+    "source": "generator",
+    "genre": "funk",
+    "key": "F major",
+    "variant": "waltz",
+    "bars": [
+     {
+      "index": 0,
+      "chords": [
+       "Bbmaj7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Bass Bb2 on beat 1; beats 2-3 simultaneous Bb4 D5 F5 A5 = Bb-D-F-A stack. Bbmaj7 in F major.",
+      "request_id": "4ce5b439-d97a-4e28-b7ca-30af40d9523d",
+      "error": null,
+      "truth": [
+       "Bbmaj7",
+       null
+      ]
+     },
+     {
+      "index": 1,
+      "chords": [
+       "Dm7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Bass D2 on beat 1; beats 2-3 simultaneous D4 F4 A4 C5 = D-F-A-C. Dm7 in F major.",
+      "request_id": "4ce5b439-d97a-4e28-b7ca-30af40d9523d",
+      "error": null,
+      "truth": [
+       "Dm7",
+       null
+      ]
+     },
+     {
+      "index": 2,
+      "chords": [
+       "Bbmaj7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Bass Bb2 on beat 1; beats 2-3 simultaneous Bb4 D5 F5 A5 = Bb-D-F-A stack. Bbmaj7 in F major.",
+      "request_id": "4ce5b439-d97a-4e28-b7ca-30af40d9523d",
+      "error": null,
+      "truth": [
+       "Bbmaj7",
+       null
+      ]
+     },
+     {
+      "index": 3,
+      "chords": [
+       "Bbmaj7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Bass Bb2 on beat 1; beats 2-3 simultaneous Bb4 D5 F5 A5 = Bb-D-F-A stack. Bbmaj7 in F major.",
+      "request_id": "4ce5b439-d97a-4e28-b7ca-30af40d9523d",
+      "error": null,
+      "truth": [
+       "Bbmaj7",
+       null
+      ]
+     },
+     {
+      "index": 4,
+      "chords": [
+       "Bbmaj7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Bass Bb2 on beat 1; beats 2-3 simultaneous Bb4 D5 F5 A5 = Bb-D-F-A stack. Bbmaj7 in F major.",
+      "request_id": "4ce5b439-d97a-4e28-b7ca-30af40d9523d",
+      "error": null,
+      "truth": [
+       "Bbmaj7",
+       null
+      ]
+     },
+     {
+      "index": 5,
+      "chords": [
+       "Bbmaj7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Bass Bb2 on beat 1; beats 2-3 simultaneous Bb4 D5 F5 A5 = Bb-D-F-A stack. Bbmaj7 in F major.",
+      "request_id": "4ce5b439-d97a-4e28-b7ca-30af40d9523d",
+      "error": null,
+      "truth": [
+       "Bbmaj7",
+       null
+      ]
+     },
+     {
+      "index": 6,
+      "chords": [
+       "Dm7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Bass D2 on beat 1; beats 2-3 simultaneous D4 F4 A4 C5 = D-F-A-C. Dm7 in F major.",
+      "request_id": "4ce5b439-d97a-4e28-b7ca-30af40d9523d",
+      "error": null,
+      "truth": [
+       "Dm7",
+       null
+      ]
+     },
+     {
+      "index": 7,
+      "chords": [
+       "Gm7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Bass G2 on beat 1; beats 2-3 simultaneous G4 Bb4 D5 F5 = G-Bb-D-F. Gm7 in F major.",
+      "request_id": "4ce5b439-d97a-4e28-b7ca-30af40d9523d",
+      "error": null,
+      "truth": [
+       "Gm7",
+       null
+      ]
+     }
+    ]
+   },
+   {
+    "id": "30-folk-block",
+    "source": "generator",
+    "genre": "folk",
+    "key": "E minor",
+    "variant": "block",
+    "bars": [
+     {
+      "index": 0,
+      "chords": [
+       "D#m7b5",
+       "Bm7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Onsets 0.0 D# F# A C# over D#2 bass, then 2.0 B D F# A over B2 bass; stacked thirds fit possible harmonization; requires human review.",
+      "request_id": "e9653f36-b2d6-489b-9b0f-2c0d46179eec",
+      "error": null,
+      "truth": [
+       "Ebm7b5",
+       "Bm7"
+      ]
+     },
+     {
+      "index": 1,
+      "chords": [
+       "G#m7",
+       "Bm7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Onset 0.0 G# B D# F# over G#2 bass, then B D F# A over B2 bass; clear simultaneity and bass support; requires human review.",
+      "request_id": "e9653f36-b2d6-489b-9b0f-2c0d46179eec",
+      "error": null,
+      "truth": [
+       "Abm7",
+       "Bm7"
+      ]
+     },
+     {
+      "index": 2,
+      "chords": [
+       "G#m7",
+       "C#m7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "0.0 G# B D# F# over G#2 bass, then 2.0 C# E G# B over C#2 bass; both fit seventh stacks; requires human review.",
+      "request_id": "e9653f36-b2d6-489b-9b0f-2c0d46179eec",
+      "error": null,
+      "truth": [
+       "Abm7",
+       "Dbm7"
+      ]
+     },
+     {
+      "index": 3,
+      "chords": [
+       "Bm7",
+       "Amaj7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "0.0 B D F# A over B2 bass, then 2.0 A C# E G# over A2 bass; spellings support minor then major-seventh; requires human review.",
+      "request_id": "e9653f36-b2d6-489b-9b0f-2c0d46179eec",
+      "error": null,
+      "truth": [
+       "Bm7",
+       "Amaj7"
+      ]
+     },
+     {
+      "index": 4,
+      "chords": [
+       "F#m7b5",
+       "F#m7b5"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Both halves F# A C E over F#2 bass sustained at 0.0 and 2.0; diminished fifth C with minor seventh E; requires human review.",
+      "request_id": "e9653f36-b2d6-489b-9b0f-2c0d46179eec",
+      "error": null,
+      "truth": [
+       "Gbm7b5",
+       null
+      ]
+     },
+     {
+      "index": 5,
+      "chords": [
+       "G#m7",
+       "Bm7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "0.0 G# B D# F# over G#2 bass, then B D F# A over B2 bass; same voicing as measure 1; requires human review.",
+      "request_id": "e9653f36-b2d6-489b-9b0f-2c0d46179eec",
+      "error": null,
+      "truth": [
+       "Abm7",
+       "Bm7"
+      ]
+     },
+     {
+      "index": 6,
+      "chords": [
+       "Amaj7",
+       "F#m7b5"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "0.0 A C# E G# over A2 bass, then 2.0 F# A C E over F#2 bass; major-seventh to half-diminished; requires human review.",
+      "request_id": "e9653f36-b2d6-489b-9b0f-2c0d46179eec",
+      "error": null,
+      "truth": [
+       "Amaj7",
+       "Gbm7b5"
+      ]
+     },
+     {
+      "index": 7,
+      "chords": [
+       "Bm7",
+       "Em7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "0.0 B D F# A over B2 bass, then 2.0 E G B D over E2 bass; diatonic to E minor key context; requires human review.",
+      "request_id": "e9653f36-b2d6-489b-9b0f-2c0d46179eec",
+      "error": null,
+      "truth": [
+       "Bm7",
+       "Em7"
+      ]
+     }
+    ]
+   },
+   {
+    "id": "31-gospel-rootless",
+    "source": "generator",
+    "genre": "gospel",
+    "key": "Ab major",
+    "variant": "rootless",
+    "bars": [
+     {
+      "index": 0,
+      "chords": [
+       "Gdim",
+       "Ab"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "0.0-2.0 G4 Bb4 Db5 simultaneous = Gdim vii in Ab major; 2.0-4.0 Ab4 C5 Eb5 simultaneous = Ab major I. Two distinct half-note triads.",
+      "request_id": "13d8ec77-6815-44c9-b619-306082265fe9",
+      "error": null,
+      "truth": [
+       "Eb7",
+       "Fm7"
+      ]
+     },
+     {
+      "index": 1,
+      "chords": [
+       "Ab",
+       "Db"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "0.0-2.0 Ab4 C5 Eb5 = Ab major I; 2.0-4.0 Db5 F5 Ab5 = Db major IV. Two distinct simultaneous triads in Ab major.",
+      "request_id": "13d8ec77-6815-44c9-b619-306082265fe9",
+      "error": null,
+      "truth": [
+       "Fm7",
+       "Bbm7"
+      ]
+     },
+     {
+      "index": 2,
+      "chords": [
+       "Db",
+       "Fm"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "0.0-2.0 Db5 F5 Ab5 = Db major IV; 2.0-4.0 F4 Ab4 C5 = F minor vi. Two distinct half-note triads.",
+      "request_id": "13d8ec77-6815-44c9-b619-306082265fe9",
+      "error": null,
+      "truth": [
+       "Bbm7",
+       "Dbmaj7"
+      ]
+     },
+     {
+      "index": 3,
+      "chords": [
+       "Bbm",
+       "Gdim"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "0.0-2.0 Bb4 Db5 F5 = Bb minor ii; 2.0-4.0 G4 Bb4 Db5 = G diminished vii in Ab major. Two distinct triads.",
+      "request_id": "13d8ec77-6815-44c9-b619-306082265fe9",
+      "error": null,
+      "truth": [
+       "Gm7b5",
+       "Eb7"
+      ]
+     },
+     {
+      "index": 4,
+      "chords": [
+       "Gdim",
+       "Db"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "0.0-2.0 G4 Bb4 Db5 = Gdim; 2.0-4.0 Db5 F5 Ab5 = Db major IV. Two distinct simultaneous triads.",
+      "request_id": "13d8ec77-6815-44c9-b619-306082265fe9",
+      "error": null,
+      "truth": [
+       "Eb7",
+       "Bbm7"
+      ]
+     },
+     {
+      "index": 5,
+      "chords": [
+       "Fm",
+       "Cm"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "0.0-2.0 F4 Ab4 C5 = F minor vi; 2.0-4.0 C5 Eb5 G5 = C minor iii in Ab major. Two distinct triads.",
+      "request_id": "13d8ec77-6815-44c9-b619-306082265fe9",
+      "error": null,
+      "truth": [
+       "Dbmaj7",
+       "Abmaj7"
+      ]
+     },
+     {
+      "index": 6,
+      "chords": [
+       "Fm",
+       "Eb"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "0.0-2.0 F4 Ab4 C5 = F minor vi; 2.0-4.0 Eb4 G4 Bb4 = Eb major V in Ab major. Two distinct triads.",
+      "request_id": "13d8ec77-6815-44c9-b619-306082265fe9",
+      "error": null,
+      "truth": [
+       "Dbmaj7",
+       "Cm7"
+      ]
+     },
+     {
+      "index": 7,
+      "chords": [
+       "Fm"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "0.0-2.0 and 2.0-4.0 both F4 Ab4 C5 = F minor vi. No change, single sustained harmony.",
+      "request_id": "13d8ec77-6815-44c9-b619-306082265fe9",
+      "error": null,
+      "truth": [
+       "Dbmaj7",
+       null
+      ]
+     }
+    ]
+   },
+   {
+    "id": "32-ii-v-i-major-inversion",
+    "source": "canonical",
+    "genre": "jazz",
+    "key": "C major",
+    "variant": "inversion",
+    "bars": [
+     {
+      "index": 0,
+      "chords": [
+       "Dm7/F",
+       "G7/D"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Beats 0-2 D4 F4 A4 C5 over F2 = Dm7 in third inversion; beats 2-4 G4 B4 D5 F5 over D2 = G7 in third inversion. Sustained simultaneities, no ambiguity.",
+      "request_id": "b7c6343b-9884-41c3-8878-67169f56993c",
+      "error": null,
+      "truth": [
+       "Dm7/F",
+       "G7/D"
+      ]
+     },
+     {
+      "index": 1,
+      "chords": [
+       "Cmaj7/G"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Both halves C4 E4 G4 B4 over G2 = Cmaj7 in second inversion sustained. Single harmony across bar, no passing tones.",
+      "request_id": "b7c6343b-9884-41c3-8878-67169f56993c",
+      "error": null,
+      "truth": [
+       "Cmaj7/G",
+       null
+      ]
+     },
+     {
+      "index": 2,
+      "chords": [
+       "Dm7/A",
+       "G7/B"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Beats 0-2 D4 F4 A4 C5 over A2 = Dm7 second inversion; beats 2-4 G4 B4 D5 F5 over B2 = G7 first inversion. Clear inversion walk.",
+      "request_id": "b7c6343b-9884-41c3-8878-67169f56993c",
+      "error": null,
+      "truth": [
+       "Dm7/A",
+       "G7/B"
+      ]
+     },
+     {
+      "index": 3,
+      "chords": [
+       "Cmaj7/E",
+       "A7/E"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Beats 0-2 C4 E4 G4 B4 over E2 = Cmaj7 first inversion; beats 2-4 A4 Db5 E5 G5 over E2, pitch 73 = C# sounding A-C#-E-G = A7 over E. Db spelling is enharmonic.",
+      "request_id": "b7c6343b-9884-41c3-8878-67169f56993c",
+      "error": null,
+      "truth": [
+       "Cmaj7/E",
+       "A7/E"
+      ]
+     },
+     {
+      "index": 4,
+      "chords": [
+       "Dm7/F",
+       "G7/D"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Same as m0: D-F-A-C over F2 = Dm7/F; G-B-D-F over D2 = G7/D. Two sustained 2-beat blocks.",
+      "request_id": "b7c6343b-9884-41c3-8878-67169f56993c",
+      "error": null,
+      "truth": [
+       "Dm7/F",
+       "G7/D"
+      ]
+     },
+     {
+      "index": 5,
+      "chords": [
+       "Em7/B",
+       "C6"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Beats 0-2 E4 G4 B4 D5 over B2 = Em7 third inversion; beats 2-4 A4 C5 E5 G5 over C2 = Am7/C = C6 sound. Bass defines inversions.",
+      "request_id": "b7c6343b-9884-41c3-8878-67169f56993c",
+      "error": null,
+      "truth": [
+       "Em7/B",
+       "Am7/C"
+      ]
+     },
+     {
+      "index": 6,
+      "chords": [
+       "Dm7/F",
+       "G7/D"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Same as m0/m4: D-F-A-C over F2 then G-B-D-F over D2. Two clear sustained seventh chords.",
+      "request_id": "b7c6343b-9884-41c3-8878-67169f56993c",
+      "error": null,
+      "truth": [
+       "Dm7/F",
+       "G7/D"
+      ]
+     },
+     {
+      "index": 7,
+      "chords": [
+       "Cmaj7/G"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Both halves C4 E4 G4 B4 over G2 = Cmaj7/G sustained whole bar, matching opening prolongation.",
+      "request_id": "b7c6343b-9884-41c3-8878-67169f56993c",
+      "error": null,
+      "truth": [
+       "Cmaj7/G",
+       null
+      ]
+     }
+    ]
+   },
+   {
+    "id": "33-ii-v-i-minor-melody",
+    "source": "canonical",
+    "genre": "jazz",
+    "key": "A minor",
+    "variant": "melody",
+    "bars": [
+     {
+      "index": 0,
+      "chords": [
+       "Bm7b5",
+       "E7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Half1 bass B2 with sustained B-D-F-A = Bm7b5; melody D-C-D-B stepwise, C as 9th passing. Half2 bass E2 with E-Ab-B-D = E7, G# spelled Ab; melody E-F-Ab-B with F as b9 passing.",
+      "request_id": "c4f04bb0-f273-4470-999f-fa8491e9ab21",
+      "error": null,
+      "truth": [
+       "Bm7b5",
+       "E7"
+      ]
+     },
+     {
+      "index": 1,
+      "chords": [
+       "Am7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Both halves bass A2 with sustained A-C-E-G = Am7. Melodies A-B-C-E and F-E-C-A fit as chord tones plus B 9th and F b13 passing, no harmony change justified.",
+      "request_id": "c4f04bb0-f273-4470-999f-fa8491e9ab21",
+      "error": null,
+      "truth": [
+       "Am7",
+       null
+      ]
+     },
+     {
+      "index": 2,
+      "chords": [
+       "Dm7",
+       "G7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Half1 bass D2 with D-F-A-C = Dm7; melody F-E-F-D with E 9th passing. Half2 bass G2 with G-B-D-F = G7; melody B-A-B-G with A 9th passing.",
+      "request_id": "c4f04bb0-f273-4470-999f-fa8491e9ab21",
+      "error": null,
+      "truth": [
+       "Dm7",
+       "G7"
+      ]
+     },
+     {
+      "index": 3,
+      "chords": [
+       "Cmaj7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Both halves bass C2 with C-E-G-B = Cmaj7. Melodies C-D-E-G and C-E-G-E use chord tones plus D 9th passing, no second harmony indicated.",
+      "request_id": "c4f04bb0-f273-4470-999f-fa8491e9ab21",
+      "error": null,
+      "truth": [
+       "Cmaj7",
+       null
+      ]
+     },
+     {
+      "index": 4,
+      "chords": [
+       "Bm7b5",
+       "E7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Half1 bass B2 with B-D-F-A = Bm7b5; melody G-F-D-B with G as color passing. Half2 bass E2 with E-Ab-B-D = E7; melody E-Ab-B-Ab chord tones.",
+      "request_id": "c4f04bb0-f273-4470-999f-fa8491e9ab21",
+      "error": null,
+      "truth": [
+       "Bm7b5",
+       "E7"
+      ]
+     },
+     {
+      "index": 5,
+      "chords": [
+       "Am7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Both halves bass A2 with A-C-E-G = Am7. Melody C-B-C-A twice, B as 9th neighbor, no bass or sustained change to support new harmony.",
+      "request_id": "c4f04bb0-f273-4470-999f-fa8491e9ab21",
+      "error": null,
+      "truth": [
+       "Am7",
+       null
+      ]
+     },
+     {
+      "index": 6,
+      "chords": [
+       "Dm7",
+       "E7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Half1 bass D2 with D-F-A-C = Dm7; melody B-A-F-D with B 13th passing. Half2 bass E2 with E-Ab-B-D = E7; melody E-Ab-B-Ab chord tones.",
+      "request_id": "c4f04bb0-f273-4470-999f-fa8491e9ab21",
+      "error": null,
+      "truth": [
+       "Dm7",
+       "E7"
+      ]
+     },
+     {
+      "index": 7,
+      "chords": [
+       "Am6"
+      ],
+      "confidence": "medium",
+      "source": "meta",
+      "evidence": "Both halves bass A2 with A-C-E-Gb/F# = Am6. Melodies F-E-C-A and C-B-C-A; F-natural briefly clashes F# sustained as chromatic passing, so Am6 is possible harmonization requiring review.",
+      "request_id": "c4f04bb0-f273-4470-999f-fa8491e9ab21",
+      "error": null,
+      "truth": [
+       "Am6",
+       null
+      ]
+     }
+    ]
+   },
+   {
+    "id": "34-i-vi-iv-v-sparse",
+    "source": "canonical",
+    "genre": "pop",
+    "key": "G major",
+    "variant": "sparse",
+    "bars": [
+     {
+      "index": 0,
+      "chords": [
+       "G"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Treble G4 B4 D5 over bass G2, simultaneous onset; complete G-major triad consistent with tonic in G major.",
+      "request_id": "1a280f07-d3f8-46ae-b9d1-12483d964e9e",
+      "error": null,
+      "truth": [
+       "G",
+       null
+      ]
+     },
+     {
+      "index": 1,
+      "chords": [
+       "Em"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Treble E4 G4 B4 over bass E2, simultaneous onset; complete E-minor triad consistent with vi in G major.",
+      "request_id": "1a280f07-d3f8-46ae-b9d1-12483d964e9e",
+      "error": null,
+      "truth": [
+       "Em",
+       null
+      ]
+     },
+     {
+      "index": 2,
+      "chords": [
+       "C"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Treble C4 E4 G4 over bass C2, simultaneous onset; complete C-major triad consistent with IV in G major.",
+      "request_id": "1a280f07-d3f8-46ae-b9d1-12483d964e9e",
+      "error": null,
+      "truth": [
+       "C",
+       null
+      ]
+     },
+     {
+      "index": 3,
+      "chords": [
+       "D"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Treble D4 F#4 A4 over bass D2, simultaneous onset; complete D-major triad consistent with V in G major.",
+      "request_id": "1a280f07-d3f8-46ae-b9d1-12483d964e9e",
+      "error": null,
+      "truth": [
+       "D",
+       null
+      ]
+     },
+     {
+      "index": 4,
+      "chords": [
+       "G"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Treble G4 B4 D5 over bass G2, simultaneous onset; complete G-major triad consistent with tonic return.",
+      "request_id": "1a280f07-d3f8-46ae-b9d1-12483d964e9e",
+      "error": null,
+      "truth": [
+       "G",
+       null
+      ]
+     },
+     {
+      "index": 5,
+      "chords": [
+       "Em"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Treble E4 G4 B4 over bass E2, simultaneous onset; complete E-minor triad consistent with vi.",
+      "request_id": "1a280f07-d3f8-46ae-b9d1-12483d964e9e",
+      "error": null,
+      "truth": [
+       "Em",
+       null
+      ]
+     },
+     {
+      "index": 6,
+      "chords": [
+       "C"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Treble C4 E4 G4 over bass C2, simultaneous onset; complete C-major triad consistent with IV.",
+      "request_id": "1a280f07-d3f8-46ae-b9d1-12483d964e9e",
+      "error": null,
+      "truth": [
+       "C",
+       null
+      ]
+     },
+     {
+      "index": 7,
+      "chords": [
+       "G"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Treble G4 B4 D5 over bass G2, simultaneous onset; complete G-major triad consistent with final tonic.",
+      "request_id": "1a280f07-d3f8-46ae-b9d1-12483d964e9e",
+      "error": null,
+      "truth": [
+       "G",
+       null
+      ]
+     }
+    ]
+   },
+   {
+    "id": "35-12-bar-blues-waltz",
+    "source": "canonical",
+    "genre": "blues",
+    "key": "F major",
+    "variant": "waltz",
+    "bars": [
+     {
+      "index": 0,
+      "chords": [
+       "F7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Bass F2 at onset 0 plus simultaneous F4 A4 C5 Eb5 at onsets 1 and 2 forms complete F-A-C-Eb seventh; possible harmonization in F major.",
+      "request_id": "f546341a-b6fc-457e-b7f2-4bbe72d27b60",
+      "error": null,
+      "truth": [
+       "F7",
+       null
+      ]
+     },
+     {
+      "index": 1,
+      "chords": [
+       "Bb7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Bass Bb2 at onset 0 plus simultaneous Bb4 D5 F5 Ab5 at onsets 1 and 2 forms complete Bb-D-F-Ab seventh; possible harmonization.",
+      "request_id": "f546341a-b6fc-457e-b7f2-4bbe72d27b60",
+      "error": null,
+      "truth": [
+       "Bb7",
+       null
+      ]
+     },
+     {
+      "index": 2,
+      "chords": [
+       "F7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Bass F2 at onset 0 plus simultaneous F4 A4 C5 Eb5 at onsets 1 and 2 forms complete F-A-C-Eb seventh; possible harmonization.",
+      "request_id": "f546341a-b6fc-457e-b7f2-4bbe72d27b60",
+      "error": null,
+      "truth": [
+       "F7",
+       null
+      ]
+     },
+     {
+      "index": 3,
+      "chords": [
+       "F7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Bass F2 at onset 0 plus simultaneous F4 A4 C5 Eb5 at onsets 1 and 2 forms complete F-A-C-Eb seventh; possible harmonization.",
+      "request_id": "f546341a-b6fc-457e-b7f2-4bbe72d27b60",
+      "error": null,
+      "truth": [
+       "F7",
+       null
+      ]
+     },
+     {
+      "index": 4,
+      "chords": [
+       "Bb7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Bass Bb2 at onset 0 plus simultaneous Bb4 D5 F5 Ab5 at onsets 1 and 2 forms complete Bb-D-F-Ab seventh; possible harmonization.",
+      "request_id": "f546341a-b6fc-457e-b7f2-4bbe72d27b60",
+      "error": null,
+      "truth": [
+       "Bb7",
+       null
+      ]
+     },
+     {
+      "index": 5,
+      "chords": [
+       "Bb7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Bass Bb2 at onset 0 plus simultaneous Bb4 D5 F5 Ab5 at onsets 1 and 2 forms complete Bb-D-F-Ab seventh; possible harmonization.",
+      "request_id": "f546341a-b6fc-457e-b7f2-4bbe72d27b60",
+      "error": null,
+      "truth": [
+       "Bb7",
+       null
+      ]
+     },
+     {
+      "index": 6,
+      "chords": [
+       "F7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Bass F2 at onset 0 plus simultaneous F4 A4 C5 Eb5 at onsets 1 and 2 forms complete F-A-C-Eb seventh; possible harmonization.",
+      "request_id": "f546341a-b6fc-457e-b7f2-4bbe72d27b60",
+      "error": null,
+      "truth": [
+       "F7",
+       null
+      ]
+     },
+     {
+      "index": 7,
+      "chords": [
+       "F7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Bass F2 at onset 0 plus simultaneous F4 A4 C5 Eb5 at onsets 1 and 2 forms complete F-A-C-Eb seventh; possible harmonization.",
+      "request_id": "f546341a-b6fc-457e-b7f2-4bbe72d27b60",
+      "error": null,
+      "truth": [
+       "F7",
+       null
+      ]
+     },
+     {
+      "index": 8,
+      "chords": [
+       "C7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Bass C2 plus simultaneous C4-E4-G4-Bb4 on beats 2-3 spells C7; V7 in F major, no ambiguity.",
+      "request_id": "94a0e35d-9214-41f1-9820-204ba247c497",
+      "error": null,
+      "truth": [
+       "C7",
+       null
+      ]
+     },
+     {
+      "index": 9,
+      "chords": [
+       "Bb7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Bass Bb2 plus simultaneous Bb4-D5-F5-Ab5 on beats 2-3 spells Bb7; chromatic Ab is supplied, not inferred.",
+      "request_id": "94a0e35d-9214-41f1-9820-204ba247c497",
+      "error": null,
+      "truth": [
+       "Bb7",
+       null
+      ]
+     },
+     {
+      "index": 10,
+      "chords": [
+       "F7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Bass F2 plus simultaneous F4-A4-C5-Eb5 on beats 2-3 spells F7; chromatic Eb is supplied.",
+      "request_id": "94a0e35d-9214-41f1-9820-204ba247c497",
+      "error": null,
+      "truth": [
+       "F7",
+       null
+      ]
+     },
+     {
+      "index": 11,
+      "chords": [
+       "C7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Same as m.8: Bass C2 plus C4-E4-G4-Bb4 stack spells C7; requires human review.",
+      "request_id": "94a0e35d-9214-41f1-9820-204ba247c497",
+      "error": null,
+      "truth": [
+       "C7",
+       null
+      ]
+     }
+    ]
+   },
+   {
+    "id": "36-bossa-maj7-m7-loop-block",
+    "source": "canonical",
+    "genre": "bossa",
+    "key": "D major",
+    "variant": "block",
+    "bars": [
+     {
+      "index": 0,
+      "chords": [
+       "Dmaj7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Supplied D4 F#4 A4 C#5 over bass D2, sustained both halves; D-F#-A-C# = Dmaj7 in D major.",
+      "request_id": "c3b65dd3-7484-42a1-9650-0fc77f252adf",
+      "error": null,
+      "truth": [
+       "Dmaj7",
+       null
+      ]
+     },
+     {
+      "index": 1,
+      "chords": [
+       "Dmaj7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Same as m0: D4 F#4 A4 C#5 over D2 sustained; complete Dmaj7 stack, root bass.",
+      "request_id": "c3b65dd3-7484-42a1-9650-0fc77f252adf",
+      "error": null,
+      "truth": [
+       "Dmaj7",
+       null
+      ]
+     },
+     {
+      "index": 2,
+      "chords": [
+       "Em7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Supplied E4 G4 B4 D5 over bass E2; E-G-B-D = Em7, ii7 in D major.",
+      "request_id": "c3b65dd3-7484-42a1-9650-0fc77f252adf",
+      "error": null,
+      "truth": [
+       "Em7",
+       null
+      ]
+     },
+     {
+      "index": 3,
+      "chords": [
+       "A7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Supplied A4 C#5 E5 G5 over bass A2; A-C#-E-G = A7, V7 in D major.",
+      "request_id": "c3b65dd3-7484-42a1-9650-0fc77f252adf",
+      "error": null,
+      "truth": [
+       "A7",
+       null
+      ]
+     },
+     {
+      "index": 4,
+      "chords": [
+       "F#m7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Supplied F#4 A4 C#5 E5 over bass F#2; F#-A-C#-E = F#m7, iii7 in D major.",
+      "request_id": "c3b65dd3-7484-42a1-9650-0fc77f252adf",
+      "error": null,
+      "truth": [
+       "F#m7",
+       null
+      ]
+     },
+     {
+      "index": 5,
+      "chords": [
+       "Bm7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Supplied B4 D5 F#5 A5 over bass B2; B-D-F#-A = Bm7, vi7 in D major.",
+      "request_id": "c3b65dd3-7484-42a1-9650-0fc77f252adf",
+      "error": null,
+      "truth": [
+       "Bm7",
+       null
+      ]
+     },
+     {
+      "index": 6,
+      "chords": [
+       "Em7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Supplied E4 G4 B4 D5 over bass E2; complete Em7 stack as in m2.",
+      "request_id": "c3b65dd3-7484-42a1-9650-0fc77f252adf",
+      "error": null,
+      "truth": [
+       "Em7",
+       null
+      ]
+     },
+     {
+      "index": 7,
+      "chords": [
+       "A7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Supplied A4 C#5 E5 G5 over bass A2; complete A7 stack as in m3.",
+      "request_id": "c3b65dd3-7484-42a1-9650-0fc77f252adf",
+      "error": null,
+      "truth": [
+       "A7",
+       null
+      ]
+     }
+    ]
+   },
+   {
+    "id": "37-classical-period-rootless",
+    "source": "canonical",
+    "genre": "classical",
+    "key": "C major",
+    "variant": "rootless",
+    "bars": [
+     {
+      "index": 0,
+      "chords": [
+       "C"
+      ],
+      "confidence": "low",
+      "source": "meta",
+      "evidence": "Possible harmonization only, not recovered original: supplied simultaneous E4+G4 dyad sustained 0-4 in C major suggests C major, but Em also fits; dyad ambiguous.",
+      "request_id": "8f8037fc-17a3-4deb-b345-f8fc7e015a1c",
+      "error": null,
+      "truth": [
+       "C",
+       null
+      ]
+     },
+     {
+      "index": 1,
+      "chords": [
+       "G"
+      ],
+      "confidence": "low",
+      "source": "meta",
+      "evidence": "Possible harmonization only, not recovered original: supplied simultaneous B4+D5 dyad sustained 0-4 suggests G major in C major, but Bm/Em7 also possible; dyad ambiguous.",
+      "request_id": "8f8037fc-17a3-4deb-b345-f8fc7e015a1c",
+      "error": null,
+      "truth": [
+       "G/B",
+       null
+      ]
+     },
+     {
+      "index": 2,
+      "chords": [
+       "C"
+      ],
+      "confidence": "low",
+      "source": "meta",
+      "evidence": "Possible harmonization only, not recovered original: supplied simultaneous C5+E5 dyad sustained 0-4 suggests C major in C major, but Am also fits; dyad ambiguous.",
+      "request_id": "8f8037fc-17a3-4deb-b345-f8fc7e015a1c",
+      "error": null,
+      "truth": [
+       "Am",
+       null
+      ]
+     },
+     {
+      "index": 3,
+      "chords": [
+       "G"
+      ],
+      "confidence": "low",
+      "source": "meta",
+      "evidence": "Possible harmonization only, not recovered original: supplied simultaneous B4+D5 dyad sustained 0-4 suggests G major, but Bm/Em7 also possible; dyad ambiguous.",
+      "request_id": "8f8037fc-17a3-4deb-b345-f8fc7e015a1c",
+      "error": null,
+      "truth": [
+       "G",
+       null
+      ]
+     },
+     {
+      "index": 4,
+      "chords": [
+       "C"
+      ],
+      "confidence": "low",
+      "source": "meta",
+      "evidence": "Possible harmonization only, not recovered original: supplied simultaneous E4+G4 dyad sustained 0-4 suggests C major in C major, but Em also fits; dyad ambiguous.",
+      "request_id": "8f8037fc-17a3-4deb-b345-f8fc7e015a1c",
+      "error": null,
+      "truth": [
+       "C",
+       null
+      ]
+     },
+     {
+      "index": 5,
+      "chords": [
+       "C",
+       "F"
+      ],
+      "confidence": "low",
+      "source": "meta",
+      "evidence": "Possible harmonization only, not recovered original: 0-2 E4+G4 suggests C, 2-4 A4+C5 suggests F in C major, but Em and Am also fit; dyads ambiguous so two-part reading is provisional.",
+      "request_id": "8f8037fc-17a3-4deb-b345-f8fc7e015a1c",
+      "error": null,
+      "truth": [
+       "C/E",
+       "F"
+      ]
+     },
+     {
+      "index": 6,
+      "chords": [
+       "F",
+       "G7"
+      ],
+      "confidence": "low",
+      "source": "meta",
+      "evidence": "Possible harmonization only, not recovered original: 0-2 F4+A4 suggests F, 2-4 B4+D5+F5 triad suggests G7 in C major, but Dm/Am alternatives remain; timing supports change.",
+      "request_id": "8f8037fc-17a3-4deb-b345-f8fc7e015a1c",
+      "error": null,
+      "truth": [
+       "Dm/F",
+       "G7"
+      ]
+     },
+     {
+      "index": 7,
+      "chords": [
+       "C"
+      ],
+      "confidence": "low",
+      "source": "meta",
+      "evidence": "Possible harmonization only, not recovered original: supplied simultaneous E4+G4 dyad sustained 0-4 suggests C major resolution in C major, but Em also fits; dyad ambiguous.",
+      "request_id": "8f8037fc-17a3-4deb-b345-f8fc7e015a1c",
+      "error": null,
+      "truth": [
+       "C",
+       null
+      ]
+     }
+    ]
+   },
+   {
+    "id": "38-jazz-inversion",
+    "source": "generator",
+    "genre": "jazz",
+    "key": "Bb major",
+    "variant": "inversion",
+    "bars": [
+     {
+      "index": 0,
+      "chords": [],
+      "confidence": null,
+      "source": "meta",
+      "evidence": "",
+      "request_id": "ed3f552b-95d8-456c-833b-9e37f8371895",
+      "error": "harmony_validation",
+      "truth": [
+       "Eb6/G",
+       null
+      ]
+     },
+     {
+      "index": 1,
+      "chords": [],
+      "confidence": null,
+      "source": "meta",
+      "evidence": "",
+      "request_id": "ed3f552b-95d8-456c-833b-9e37f8371895",
+      "error": "harmony_validation",
+      "truth": [
+       "Am7b5/Eb",
+       "Eb6/Bb"
+      ]
+     },
+     {
+      "index": 2,
+      "chords": [],
+      "confidence": null,
+      "source": "meta",
+      "evidence": "",
+      "request_id": "ed3f552b-95d8-456c-833b-9e37f8371895",
+      "error": "harmony_validation",
+      "truth": [
+       "F9/C",
+       "Gm7/D"
+      ]
+     },
+     {
+      "index": 3,
+      "chords": [],
+      "confidence": null,
+      "source": "meta",
+      "evidence": "",
+      "request_id": "ed3f552b-95d8-456c-833b-9e37f8371895",
+      "error": "harmony_validation",
+      "truth": [
+       "Bbmaj7/F",
+       "Gm7/Bb"
+      ]
+     },
+     {
+      "index": 4,
+      "chords": [],
+      "confidence": null,
+      "source": "meta",
+      "evidence": "",
+      "request_id": "ed3f552b-95d8-456c-833b-9e37f8371895",
+      "error": "harmony_validation",
+      "truth": [
+       "Gm7/Bb",
+       null
+      ]
+     },
+     {
+      "index": 5,
+      "chords": [],
+      "confidence": null,
+      "source": "meta",
+      "evidence": "",
+      "request_id": "ed3f552b-95d8-456c-833b-9e37f8371895",
+      "error": "harmony_validation",
+      "truth": [
+       "F13/C",
+       "Bbmaj7/F"
+      ]
+     },
+     {
+      "index": 6,
+      "chords": [],
+      "confidence": null,
+      "source": "meta",
+      "evidence": "",
+      "request_id": "ed3f552b-95d8-456c-833b-9e37f8371895",
+      "error": "harmony_validation",
+      "truth": [
+       "Bbmaj7/D",
+       "F9/A"
+      ]
+     },
+     {
+      "index": 7,
+      "chords": [],
+      "confidence": null,
+      "source": "meta",
+      "evidence": "",
+      "request_id": "ed3f552b-95d8-456c-833b-9e37f8371895",
+      "error": "harmony_validation",
+      "truth": [
+       "Cm7/G",
+       null
+      ]
+     }
+    ]
+   },
+   {
+    "id": "39-pop-melody",
+    "source": "generator",
+    "genre": "pop",
+    "key": "C major",
+    "variant": "melody",
+    "bars": [
+     {
+      "index": 0,
+      "chords": [
+       "Fmaj7",
+       "Am7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Sustained F4-A4-C5-E5 with bass F2 then A4-C5-E5-G5 with bass A2; melodies F5-G5-A5-C6 and C6-B5-C6-A5 use chord tones with G/B as stepwise 9ths.",
+      "request_id": "5928ec46-0ba8-41f4-9d6a-8b32e5f93d29",
+      "error": null,
+      "truth": [
+       "Fmaj7",
+       "Am7"
+      ]
+     },
+     {
+      "index": 1,
+      "chords": [
+       "Fmaj7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Sustained F4-A4-C5-E5 with bass F2 throughout; melodies A5-G5-A5-F5 fit Fmaj7 with G as stepwise passing 9th, no harmony change justified.",
+      "request_id": "5928ec46-0ba8-41f4-9d6a-8b32e5f93d29",
+      "error": null,
+      "truth": [
+       "Fmaj7",
+       null
+      ]
+     },
+     {
+      "index": 2,
+      "chords": [
+       "Cmaj7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Sustained C4-E4-G4-B4 with bass C2 throughout; melodies A5-G5-E5-C5 and C5-E5-G5-E5 fit Cmaj7 with A/D as passing tones.",
+      "request_id": "5928ec46-0ba8-41f4-9d6a-8b32e5f93d29",
+      "error": null,
+      "truth": [
+       "Cmaj7",
+       null
+      ]
+     },
+     {
+      "index": 3,
+      "chords": [
+       "Fmaj7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Sustained F4-A4-C5-E5 with bass F2 throughout; melodies A5-G5-A5-F5 and F5-G5-A5-C6 fit Fmaj7 with G as passing 9th.",
+      "request_id": "5928ec46-0ba8-41f4-9d6a-8b32e5f93d29",
+      "error": null,
+      "truth": [
+       "Fmaj7",
+       null
+      ]
+     },
+     {
+      "index": 4,
+      "chords": [
+       "Fmaj7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Sustained F4-A4-C5-E5 with bass F2 throughout; melodies A5-G5-A5-F5 and D6-C6-A5-F5 fit Fmaj7 with G as 9th and D as 13th passing tone.",
+      "request_id": "5928ec46-0ba8-41f4-9d6a-8b32e5f93d29",
+      "error": null,
+      "truth": [
+       "Fmaj7",
+       null
+      ]
+     },
+     {
+      "index": 5,
+      "chords": [
+       "Cmaj7",
+       "Am7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Sustained C4-E4-G4-B4 bass C2 then A4-C5-E5-G5 bass A2; melodies E5-D5-E5-C5 and C6-B5-C6-A5 use D/B as stepwise 9ths over Cmaj7 then Am7.",
+      "request_id": "5928ec46-0ba8-41f4-9d6a-8b32e5f93d29",
+      "error": null,
+      "truth": [
+       "Cmaj7",
+       "Am7"
+      ]
+     },
+     {
+      "index": 6,
+      "chords": [
+       "Cmaj7",
+       "Fmaj7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Sustained C4-E4-G4-B4 bass C2 then F4-A4-C5-E5 bass F2; melodies C5-E5-G5-E5 and D6-C6-A5-F5 fit with D as passing 13th over Fmaj7.",
+      "request_id": "5928ec46-0ba8-41f4-9d6a-8b32e5f93d29",
+      "error": null,
+      "truth": [
+       "Cmaj7",
+       "Fmaj7"
+      ]
+     },
+     {
+      "index": 7,
+      "chords": [
+       "Dm7",
+       "Db7"
+      ],
+      "confidence": "medium",
+      "source": "meta",
+      "evidence": "Sustained D4-F4-A4-C5 bass D2 then Db4-F4-Ab4-B4 bass Db2; melodies D5-E5-F5-A5 and Db5-D5-F5-Ab5 fit Dm7 then Db7 with E as 9th and D natural as chromatic passing b9; B spelling equals minor 7th.",
+      "request_id": "5928ec46-0ba8-41f4-9d6a-8b32e5f93d29",
+      "error": null,
+      "truth": [
+       "Dm7",
+       "Db7"
+      ]
+     }
+    ]
+   },
+   {
+    "id": "40-rock-sparse",
+    "source": "generator",
+    "genre": "rock",
+    "key": "E major",
+    "variant": "sparse",
+    "bars": [
+     {
+      "index": 0,
+      "chords": [
+       "Cmaj7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Supplied C4-E4-G4-B4 over bass C2, coincident onsets, stacked thirds = Cmaj7 possible harmonization.",
+      "request_id": "20007be3-2c10-491b-a07f-3f7de690cd1f",
+      "error": null,
+      "truth": [
+       "Cmaj7",
+       null
+      ]
+     },
+     {
+      "index": 1,
+      "chords": [
+       "D7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Supplied D4-F#4-A4-C5 over bass D2, coincident onsets, stacked thirds = D7 possible harmonization.",
+      "request_id": "20007be3-2c10-491b-a07f-3f7de690cd1f",
+      "error": null,
+      "truth": [
+       "D7",
+       null
+      ]
+     },
+     {
+      "index": 2,
+      "chords": [
+       "Em7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Supplied E4-G4-B4-D5 over bass E2, coincident onsets, stacked thirds = Em7 possible harmonization.",
+      "request_id": "20007be3-2c10-491b-a07f-3f7de690cd1f",
+      "error": null,
+      "truth": [
+       "Em7",
+       null
+      ]
+     },
+     {
+      "index": 3,
+      "chords": [
+       "F#m7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Supplied F#4-A4-C#5-E5 over bass F#2, coincident onsets, stacked thirds = F#m7 possible harmonization.",
+      "request_id": "20007be3-2c10-491b-a07f-3f7de690cd1f",
+      "error": null,
+      "truth": [
+       "Gbm7",
+       null
+      ]
+     },
+     {
+      "index": 4,
+      "chords": [
+       "Emaj7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Supplied E4-G#4-B4-D#5 over bass E2, coincident onsets, stacked thirds = Emaj7 possible harmonization.",
+      "request_id": "20007be3-2c10-491b-a07f-3f7de690cd1f",
+      "error": null,
+      "truth": [
+       "Emaj7",
+       null
+      ]
+     },
+     {
+      "index": 5,
+      "chords": [
+       "Emaj7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Supplied E4-G#4-B4-D#5 over bass E2, coincident onsets, same as prior bar = Emaj7 possible harmonization.",
+      "request_id": "20007be3-2c10-491b-a07f-3f7de690cd1f",
+      "error": null,
+      "truth": [
+       "Emaj7",
+       null
+      ]
+     },
+     {
+      "index": 6,
+      "chords": [
+       "Amaj7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Supplied A4-C#5-E5-G#5 over bass A2, coincident onsets, stacked thirds = Amaj7 possible harmonization.",
+      "request_id": "20007be3-2c10-491b-a07f-3f7de690cd1f",
+      "error": null,
+      "truth": [
+       "Amaj7",
+       null
+      ]
+     },
+     {
+      "index": 7,
+      "chords": [
+       "Am7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Supplied A4-C5-E5-G5 over bass A2, coincident onsets, stacked thirds with C natural = Am7 possible harmonization.",
+      "request_id": "20007be3-2c10-491b-a07f-3f7de690cd1f",
+      "error": null,
+      "truth": [
+       "Am7",
+       null
+      ]
+     }
+    ]
+   },
+   {
+    "id": "41-blues-waltz",
+    "source": "generator",
+    "genre": "blues",
+    "key": "A major",
+    "variant": "waltz",
+    "bars": [
+     {
+      "index": 0,
+      "chords": [
+       "E7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Bass E2 with simultaneous E4 G#4 B4 D5 on beats 2-3 forms E-G#-B-D, E7, V7 in A major.",
+      "request_id": "9af60336-1a13-4edc-95dd-52813ab374a8",
+      "error": null,
+      "truth": [
+       "E7#9",
+       null
+      ]
+     },
+     {
+      "index": 1,
+      "chords": [
+       "Amaj7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Bass A2 with simultaneous A4 C#5 E5 G#5 spells A-C#-E-G#, Amaj7, I in A major.",
+      "request_id": "9af60336-1a13-4edc-95dd-52813ab374a8",
+      "error": null,
+      "truth": [
+       "Amaj7",
+       null
+      ]
+     },
+     {
+      "index": 2,
+      "chords": [
+       "Bm7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Bass B2 with simultaneous B4 D5 F#5 A5 spells B-D-F#-A, Bm7, ii7 in A major.",
+      "request_id": "9af60336-1a13-4edc-95dd-52813ab374a8",
+      "error": null,
+      "truth": [
+       "Bm7",
+       null
+      ]
+     },
+     {
+      "index": 3,
+      "chords": [
+       "E7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Same as m0: bass E2 plus E-G#-B-D stack, E7, V7 in A major.",
+      "request_id": "9af60336-1a13-4edc-95dd-52813ab374a8",
+      "error": null,
+      "truth": [
+       "E7",
+       null
+      ]
+     },
+     {
+      "index": 4,
+      "chords": [
+       "E7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Same voicing: bass E2 plus E-G#-B-D stack, E7, V7 in A major.",
+      "request_id": "9af60336-1a13-4edc-95dd-52813ab374a8",
+      "error": null,
+      "truth": [
+       "E7",
+       null
+      ]
+     },
+     {
+      "index": 5,
+      "chords": [
+       "Bm7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Bass B2 plus B-D-F#-A stack, Bm7, ii7 in A major.",
+      "request_id": "9af60336-1a13-4edc-95dd-52813ab374a8",
+      "error": null,
+      "truth": [
+       "Bm7",
+       null
+      ]
+     },
+     {
+      "index": 6,
+      "chords": [
+       "D7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Bass D2 with D4 F#4 A4 C5 spells D-F#-A-C, D7, chromatic IV7 in A major.",
+      "request_id": "9af60336-1a13-4edc-95dd-52813ab374a8",
+      "error": null,
+      "truth": [
+       "D9",
+       null
+      ]
+     },
+     {
+      "index": 7,
+      "chords": [
+       "D7"
+      ],
+      "confidence": "high",
+      "source": "meta",
+      "evidence": "Same as prior: bass D2 with D-F#-A-C natural, D7.",
+      "request_id": "9af60336-1a13-4edc-95dd-52813ab374a8",
+      "error": null,
+      "truth": [
+       "D9",
+       null
+      ]
+     }
+    ]
+   }
+  ],
+  "calls": [
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 6834.714,
+    "cost_usd": 0.009756,
+    "status": "ok",
+    "request_id": "ad2dda6b-ba71-4050-9d32-9bf6ae41cbd8",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 7687.86,
+    "cost_usd": 0.0082255,
+    "status": "ok",
+    "request_id": "006268dd-21a4-4ef3-9b62-176195d6b4d0",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 8193.236,
+    "cost_usd": 0.01067,
+    "status": "ok",
+    "request_id": "9141a358-a50f-4ed3-be00-34d8810aab7c",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 8493.554,
+    "cost_usd": 0.01240225,
+    "status": "ok",
+    "request_id": "09a51c96-70ee-4db3-9db7-3e53f4170781",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 3816.719,
+    "cost_usd": 0.00551175,
+    "status": "ok",
+    "request_id": "46b0e9bc-e0a6-494c-8e35-0577f9d38839",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 5831.174,
+    "cost_usd": 0.008848,
+    "status": "harmony_validation",
+    "request_id": "70379eb3-495f-4a3b-889d-0aceaede0330",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 4978.979,
+    "cost_usd": 0.00833375,
+    "status": "ok",
+    "request_id": "a42d4826-147b-467f-ab93-61f17cb6f2e9",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 6513.352,
+    "cost_usd": 0.008523,
+    "status": "ok",
+    "request_id": "91bb5201-9dc6-4813-b112-c451e4a8223d",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 7468.627,
+    "cost_usd": 0.0116175,
+    "status": "ok",
+    "request_id": "c8424a58-a036-4527-9e26-f8164e764ed8",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 11395.504,
+    "cost_usd": 0.0158643,
+    "status": "ok",
+    "request_id": "2e5486f0-6045-4770-ac13-1e8f5226cacc",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 3361.885,
+    "cost_usd": 0.0057965,
+    "status": "ok",
+    "request_id": "67cd3890-8d03-46dc-b254-d9d261dfd1bb",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 4835.667,
+    "cost_usd": 0.00882075,
+    "status": "ok",
+    "request_id": "7399d19b-3c24-4dee-bfa2-7e1dea670b35",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 4557.379,
+    "cost_usd": 0.008736,
+    "status": "ok",
+    "request_id": "3ab03b93-7170-4be4-9d09-5fe9fdf52160",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 9011.421,
+    "cost_usd": 0.00832325,
+    "status": "harmony_validation",
+    "request_id": "d0d9c99d-9fb7-48fc-a8ad-362128eb5f4e",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 7634.779,
+    "cost_usd": 0.01064425,
+    "status": "ok",
+    "request_id": "b50149e4-6484-4118-afe5-cbbd42aefb38",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 4954.215,
+    "cost_usd": 0.01029625,
+    "status": "ok",
+    "request_id": "41f159de-c8fe-4858-b29b-d2ba77b2432e",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 3988.179,
+    "cost_usd": 0.0068335,
+    "status": "ok",
+    "request_id": "e35172e7-4521-4592-8ff0-cdcc5caf7e72",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 4,
+    "latency_ms": 4509.125,
+    "cost_usd": 0.00574025,
+    "status": "ok",
+    "request_id": "b49057fd-907e-4914-bddb-d35525187e84",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 3536.583,
+    "cost_usd": 0.0063493,
+    "status": "ok",
+    "request_id": "425d9194-6d21-4994-9cc7-2d8fce3c4bb3",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 4558.713,
+    "cost_usd": 0.007486,
+    "status": "ok",
+    "request_id": "e23543c5-aaf7-4bea-9310-bba452b9c6c0",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 6452.606,
+    "cost_usd": 0.00807675,
+    "status": "ok",
+    "request_id": "6bc8b246-5920-4d73-b97b-69d294b7ea6c",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 6406.662,
+    "cost_usd": 0.00913125,
+    "status": "ok",
+    "request_id": "6cd0a21c-c895-4ad0-a1b4-c67c2e7dfb66",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 7221.944,
+    "cost_usd": 0.01328325,
+    "status": "ok",
+    "request_id": "c2e4d415-13e0-44bc-9fa5-ad2d45c3f14c",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 4711.73,
+    "cost_usd": 0.0071465,
+    "status": "ok",
+    "request_id": "ce50a0ec-64a6-4565-b91e-ea28a67d6daa",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 4287.779,
+    "cost_usd": 0.00641905,
+    "status": "ok",
+    "request_id": "c79e6094-991a-416a-b4eb-275c8f52abd2",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 6409.283,
+    "cost_usd": 0.01051075,
+    "status": "ok",
+    "request_id": "54de63d2-2aa8-4919-b596-be0e1f3aed1e",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 4442.432,
+    "cost_usd": 0.00729725,
+    "status": "ok",
+    "request_id": "90df81b7-d1c4-4290-8447-64f64e66d7d6",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 10093.205,
+    "cost_usd": 0.0132495,
+    "status": "ok",
+    "request_id": "40a29e46-9ec6-4bde-8c61-00d8a5cc9487",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 8736.872,
+    "cost_usd": 0.014653,
+    "status": "ok",
+    "request_id": "6f35b95d-c5d6-4403-9f78-ebcbca8452fb",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 4062.386,
+    "cost_usd": 0.00659425,
+    "status": "ok",
+    "request_id": "7524d63c-4cb3-4bb0-aefa-c6e1a5fcfccc",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 3749.251,
+    "cost_usd": 0.0067888,
+    "status": "ok",
+    "request_id": "4ce5b439-d97a-4e28-b7ca-30af40d9523d",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 3929.197,
+    "cost_usd": 0.0081835,
+    "status": "ok",
+    "request_id": "e9653f36-b2d6-489b-9b0f-2c0d46179eec",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 5775.954,
+    "cost_usd": 0.00781325,
+    "status": "ok",
+    "request_id": "13d8ec77-6815-44c9-b619-306082265fe9",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 4998.876,
+    "cost_usd": 0.00918225,
+    "status": "ok",
+    "request_id": "b7c6343b-9884-41c3-8878-67169f56993c",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 7576.699,
+    "cost_usd": 0.01241055,
+    "status": "ok",
+    "request_id": "c4f04bb0-f273-4470-999f-fa8491e9ab21",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 3689.571,
+    "cost_usd": 0.0046878,
+    "status": "ok",
+    "request_id": "1a280f07-d3f8-46ae-b9d1-12483d964e9e",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 3670.488,
+    "cost_usd": 0.00698275,
+    "status": "ok",
+    "request_id": "f546341a-b6fc-457e-b7f2-4bbe72d27b60",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 4,
+    "latency_ms": 4329.122,
+    "cost_usd": 0.0047688,
+    "status": "ok",
+    "request_id": "94a0e35d-9214-41f1-9820-204ba247c497",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 4375.101,
+    "cost_usd": 0.00668855,
+    "status": "ok",
+    "request_id": "c3b65dd3-7484-42a1-9650-0fc77f252adf",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 5347.302,
+    "cost_usd": 0.0076953,
+    "status": "ok",
+    "request_id": "8f8037fc-17a3-4deb-b345-f8fc7e015a1c",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 4925.042,
+    "cost_usd": 0.01020225,
+    "status": "harmony_validation",
+    "request_id": "ed3f552b-95d8-456c-833b-9e37f8371895",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 8361.809,
+    "cost_usd": 0.01459775,
+    "status": "ok",
+    "request_id": "5928ec46-0ba8-41f4-9d6a-8b32e5f93d29",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 3605.493,
+    "cost_usd": 0.00627805,
+    "status": "ok",
+    "request_id": "20007be3-2c10-491b-a07f-3f7de690cd1f",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 3403.126,
+    "cost_usd": 0.00627155,
+    "status": "ok",
+    "request_id": "9af60336-1a13-4edc-95dd-52813ab374a8",
+    "attempts": 1
+   }
+  ],
+  "call_stats": {
+   "calls": 44,
+   "attempts": 44,
+   "retries": 0,
+   "retry_rate": 0.0,
+   "json_validity": 1.0,
+   "failed": {
+    "harmony_validation": 3
+   },
+   "latency_ms_p50": 4954.215,
+   "latency_ms_p95": 9011.421,
+   "cost_usd": 0.387691,
+   "bars_sent": 344,
+   "request_ids": [
+    "ad2dda6b-ba71-4050-9d32-9bf6ae41cbd8",
+    "006268dd-21a4-4ef3-9b62-176195d6b4d0",
+    "9141a358-a50f-4ed3-be00-34d8810aab7c",
+    "09a51c96-70ee-4db3-9db7-3e53f4170781",
+    "46b0e9bc-e0a6-494c-8e35-0577f9d38839",
+    "70379eb3-495f-4a3b-889d-0aceaede0330",
+    "a42d4826-147b-467f-ab93-61f17cb6f2e9",
+    "91bb5201-9dc6-4813-b112-c451e4a8223d",
+    "c8424a58-a036-4527-9e26-f8164e764ed8",
+    "2e5486f0-6045-4770-ac13-1e8f5226cacc",
+    "67cd3890-8d03-46dc-b254-d9d261dfd1bb",
+    "7399d19b-3c24-4dee-bfa2-7e1dea670b35",
+    "3ab03b93-7170-4be4-9d09-5fe9fdf52160",
+    "d0d9c99d-9fb7-48fc-a8ad-362128eb5f4e",
+    "b50149e4-6484-4118-afe5-cbbd42aefb38",
+    "41f159de-c8fe-4858-b29b-d2ba77b2432e",
+    "e35172e7-4521-4592-8ff0-cdcc5caf7e72",
+    "b49057fd-907e-4914-bddb-d35525187e84",
+    "425d9194-6d21-4994-9cc7-2d8fce3c4bb3",
+    "e23543c5-aaf7-4bea-9310-bba452b9c6c0",
+    "6bc8b246-5920-4d73-b97b-69d294b7ea6c",
+    "6cd0a21c-c895-4ad0-a1b4-c67c2e7dfb66",
+    "c2e4d415-13e0-44bc-9fa5-ad2d45c3f14c",
+    "ce50a0ec-64a6-4565-b91e-ea28a67d6daa",
+    "c79e6094-991a-416a-b4eb-275c8f52abd2",
+    "54de63d2-2aa8-4919-b596-be0e1f3aed1e",
+    "90df81b7-d1c4-4290-8447-64f64e66d7d6",
+    "40a29e46-9ec6-4bde-8c61-00d8a5cc9487",
+    "6f35b95d-c5d6-4403-9f78-ebcbca8452fb",
+    "7524d63c-4cb3-4bb0-aefa-c6e1a5fcfccc",
+    "4ce5b439-d97a-4e28-b7ca-30af40d9523d",
+    "e9653f36-b2d6-489b-9b0f-2c0d46179eec",
+    "13d8ec77-6815-44c9-b619-306082265fe9",
+    "b7c6343b-9884-41c3-8878-67169f56993c",
+    "c4f04bb0-f273-4470-999f-fa8491e9ab21",
+    "1a280f07-d3f8-46ae-b9d1-12483d964e9e",
+    "f546341a-b6fc-457e-b7f2-4bbe72d27b60",
+    "94a0e35d-9214-41f1-9820-204ba247c497",
+    "c3b65dd3-7484-42a1-9650-0fc77f252adf",
+    "8f8037fc-17a3-4deb-b345-f8fc7e015a1c",
+    "ed3f552b-95d8-456c-833b-9e37f8371895",
+    "5928ec46-0ba8-41f4-9d6a-8b32e5f93d29",
+    "20007be3-2c10-491b-a07f-3f7de690cd1f",
+    "9af60336-1a13-4edc-95dd-52813ab374a8"
+   ]
+  },
+  "cost_usd": 0.387691,
+  "bars": 344,
+  "metrics": {
+   "slots": 688,
+   "covered": 640,
+   "coverage": 0.9302,
+   "unparseable": 0,
+   "unscored_truth": 0,
+   "all": {
+    "root": 0.8096,
+    "triad": 0.8081,
+    "seventh": 0.8038,
+    "bass": 0.811,
+    "exact": 0.7994
+   },
+   "on_covered": {
+    "root": 0.8703,
+    "triad": 0.8688,
+    "seventh": 0.8641,
+    "bass": 0.8719,
+    "exact": 0.8594
+   },
+   "calibration": {
+    "high": {
+     "slots": 592,
+     "root": 0.8834,
+     "exact": 0.8767
+    },
+    "medium": {
+     "slots": 32,
+     "root": 0.6562,
+     "exact": 0.6562
+    },
+    "low": {
+     "slots": 16,
+     "root": 0.8125,
+     "exact": 0.625
+    }
+   }
+  }
+ },
+ "real": {
+  "label": "one private real score",
+  "created": "2026-10-29T10:22:49+00:00",
+  "complete": true,
+  "stopped": null,
+  "bars_total": 52,
+  "bars_scored": 37,
+  "excluded": {
+   "no_chord_sign": 1,
+   "no_printed_chords": 6,
+   "more_than_two_printed_chords": 8
+  },
+  "timing_estimated_bars": 30,
+  "bars_with_reader_warnings": 30,
+  "meters": {
+   "4/4": 36,
+   "2/4": 1
+  },
+  "key": "G major",
+  "key_source": "inferred",
+  "key_confidence": 0.305,
+  "calls": [
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 12481.722,
+    "cost_usd": 0.0170075,
+    "status": "ok",
+    "request_id": "8a55c928-b443-490b-837b-f5601627886e",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 14379.722,
+    "cost_usd": 0.01648505,
+    "status": "ok",
+    "request_id": "1491eb01-d71e-4fec-bd59-b81f14b30e39",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 10505.409,
+    "cost_usd": 0.015196,
+    "status": "ok",
+    "request_id": "e461a769-750e-4b87-8dce-0e7d2eb2fc59",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 8,
+    "latency_ms": 14571.155,
+    "cost_usd": 0.0187878,
+    "status": "ok",
+    "request_id": "d8cc9358-9aff-4007-a4bb-a558bda84f55",
+    "attempts": 1
+   },
+   {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "bars": 5,
+    "latency_ms": 9151.659,
+    "cost_usd": 0.01007005,
+    "status": "ok",
+    "request_id": "96805fab-a766-4758-928f-60295d622281",
+    "attempts": 1
+   }
+  ],
+  "call_stats": {
+   "calls": 5,
+   "attempts": 5,
+   "retries": 0,
+   "retry_rate": 0.0,
+   "json_validity": 1.0,
+   "failed": {},
+   "latency_ms_p50": 12481.722,
+   "latency_ms_p95": 14571.155,
+   "cost_usd": 0.077546,
+   "bars_sent": 37,
+   "request_ids": [
+    "8a55c928-b443-490b-837b-f5601627886e",
+    "1491eb01-d71e-4fec-bd59-b81f14b30e39",
+    "e461a769-750e-4b87-8dce-0e7d2eb2fc59",
+    "d8cc9358-9aff-4007-a4bb-a558bda84f55",
+    "96805fab-a766-4758-928f-60295d622281"
+   ]
+  },
+  "cost_usd": 0.077546,
+  "metrics": {
+   "slots": 74,
+   "covered": 58,
+   "coverage": 0.7838,
+   "unparseable": 0,
+   "unscored_truth": 0,
+   "all": {
+    "root": 0.5405,
+    "triad": 0.5,
+    "seventh": 0.4459,
+    "bass": 0.4595,
+    "exact": 0.2973
+   },
+   "on_covered": {
+    "root": 0.6897,
+    "triad": 0.6379,
+    "seventh": 0.569,
+    "bass": 0.5862,
+    "exact": 0.3793
+   },
+   "calibration": {
+    "medium": {
+     "slots": 10,
+     "root": 0.7,
+     "exact": 0.5
+    },
+    "low": {
+     "slots": 44,
+     "root": 0.6591,
+     "exact": 0.2955
+    },
+    "high": {
+     "slots": 4,
+     "root": 1.0,
+     "exact": 1.0
+    }
+   }
+  }
+ }
+}
