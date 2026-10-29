@@ -7,7 +7,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict
 
-from app.models.export import MAX_EXPORT_BYTES, MAX_EXPORT_MEASURES
+from app.models.export import MAX_EXPORT_BYTES, MAX_EXPORT_MEASURES, MIN_MIDI_BYTES
 from app.models.score_import import MAX_SCORE_BYTES, MAX_SCORE_MEASURES
 
 SCHEMA_VERSION = "1.0"
@@ -16,6 +16,7 @@ MAX_MCP_RESULT_BYTES = 6 * 1024 * 1024
 MAX_MCP_REQUEST_BYTES = 12 * 1024 * 1024
 TOOLS = ("capabilities", "list_models", "list_genres", "get_genre_preset", "generate_section",
          "build_song", "render_midi", "import_score", "export_daw")
+_MIDI_BASE64_KEYS = ("midi_b64", "dataBase64")  # build_song's and render_midi's MIDI bytes
 
 
 class ContractEnvelope(BaseModel):
@@ -25,26 +26,34 @@ class ContractEnvelope(BaseModel):
 
 
 def json_size(value: Any) -> int:
+    """UTF-8 bytes of the compact JSON encoding; NaN and Infinity are rejected."""
     return len(json.dumps(value, ensure_ascii=False, allow_nan=False, separators=(",", ":")).encode("utf8"))
+
+
+def _base64_length(byte_count: int) -> int:
+    return 4 * ((byte_count + 2) // 3)
+
+
+def _check_midi_base64(encoded: Any) -> None:
+    if not isinstance(encoded, str) or len(encoded) > _base64_length(MAX_EXPORT_BYTES):
+        raise ValueError("MIDI exceeds the 4 MiB binary limit.")
+    try:
+        binary = base64.b64decode(encoded, validate=True)
+    except (binascii.Error, ValueError):
+        raise ValueError("The MIDI result is not valid base64.") from None
+    if not MIN_MIDI_BYTES <= len(binary) <= MAX_EXPORT_BYTES or not binary.startswith(b"MThd"):
+        raise ValueError("The MIDI result is invalid or exceeds 4 MiB.")
 
 
 def contract_result(data: BaseModel | dict) -> ContractEnvelope:
     payload = data.model_dump(mode="json") if isinstance(data, BaseModel) else data
     # Binary content has its own limit; music JSON remains bounded independently.
-    state = {key: value for key, value in payload.items() if key not in ("midi_b64", "dataBase64")}
+    state = {key: value for key, value in payload.items() if key not in _MIDI_BASE64_KEYS}
     if json_size(state) > MAX_JSON_STATE_BYTES:
         raise ValueError("Music JSON exceeds the 1 MiB state limit.")
-    for key in ("midi_b64", "dataBase64"):
+    for key in _MIDI_BASE64_KEYS:
         if key in payload:
-            encoded = payload[key]
-            if not isinstance(encoded, str) or len(encoded) > 4 * ((MAX_EXPORT_BYTES + 2) // 3):
-                raise ValueError("MIDI exceeds the 4 MiB binary limit.")
-            try:
-                binary = base64.b64decode(encoded, validate=True)
-            except (binascii.Error, ValueError):
-                raise ValueError("The MIDI result is not valid base64.") from None
-            if not 14 <= len(binary) <= MAX_EXPORT_BYTES or not binary.startswith(b"MThd"):
-                raise ValueError("The MIDI result is invalid or exceeds 4 MiB.")
+            _check_midi_base64(payload[key])
     envelope = ContractEnvelope(data=payload)
     if json_size(envelope.model_dump()) > MAX_MCP_RESULT_BYTES:
         raise ValueError("The tool result exceeds the 6 MiB envelope limit.")
@@ -55,15 +64,25 @@ def capabilities() -> ContractEnvelope:
     return contract_result({
         "name": "TheArtist", "transport": "streamable-http", "endpoint": "/mcp/",
         "tools": list(TOOLS),
-        "contracts": {"generate_section": "SectionGenerateRequest / SectionGenerateResponse",
-                      "build_song": "SongGenerateRequest / SongGenerateResponse",
-                      "render_midi": "ExportSpec / MIDI bytes", "import_score": "ScoreImportRequest / ScoreImportResponse"},
-        "limits": {"jsonStateBytes": MAX_JSON_STATE_BYTES, "midiBytes": MAX_EXPORT_BYTES,
-                   "toolResultBytes": MAX_MCP_RESULT_BYTES, "requestBytes": MAX_MCP_REQUEST_BYTES,
-                   "scoreFileBytes": MAX_SCORE_BYTES, "scoreMeasures": MAX_SCORE_MEASURES, "metaScoreMeasures": 128,
-                   "exportMeasures": MAX_EXPORT_MEASURES, "generatedBars": 64},
-        "sourceFields": {"generate_section": ["source", "modelUsed"], "build_song": ["model_used", "tracks.*.source", "seed"],
-                         "import_score": ["analysisSource", "model", "requestId", "mode", "measures.*.chordBasis", "measures.*.confidence", "measures.*.note", "measures.*.notes", "measures.*.writtenNotes", "measures.*.bassNotes", "measures.*.noChord"]},
+        "contracts": {
+            "generate_section": "SectionGenerateRequest / SectionGenerateResponse",
+            "build_song": "SongGenerateRequest / SongGenerateResponse",
+            "render_midi": "ExportSpec / MIDI bytes",
+            "import_score": "ScoreImportRequest / ScoreImportResponse",
+        },
+        "limits": {
+            "jsonStateBytes": MAX_JSON_STATE_BYTES, "midiBytes": MAX_EXPORT_BYTES,
+            "toolResultBytes": MAX_MCP_RESULT_BYTES, "requestBytes": MAX_MCP_REQUEST_BYTES,
+            "scoreFileBytes": MAX_SCORE_BYTES, "scoreMeasures": MAX_SCORE_MEASURES, "metaScoreMeasures": 128,
+            "exportMeasures": MAX_EXPORT_MEASURES, "generatedBars": 64,
+        },
+        "sourceFields": {
+            "generate_section": ["source", "modelUsed"],
+            "build_song": ["model_used", "tracks.*.source", "seed"],
+            "import_score": ["analysisSource", "model", "requestId", "mode", "measures.*.chordBasis",
+                             "measures.*.confidence", "measures.*.note", "measures.*.notes",
+                             "measures.*.writtenNotes", "measures.*.bassNotes", "measures.*.noChord"],
+        },
         "limitations": ["build_song returns one arrangement; candidate fan-out is not implemented.",
                         "Score import defaults to local vector-PDF reading. Meta/auto requires explicit selection and may incur API cost.",
                         "Note-based harmony analysis is opt-in and returns reviewable interpretations, not verified original chords or imported melody notes.",

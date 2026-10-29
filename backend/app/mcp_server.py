@@ -4,8 +4,9 @@ import base64
 import ipaddress
 import logging
 import os
+from collections.abc import Callable
 from functools import partial
-from typing import Annotated
+from typing import Annotated, Any
 
 import anyio
 from fastapi import HTTPException
@@ -27,6 +28,14 @@ READ = ToolAnnotations(readOnlyHint=True, destructiveHint=False, idempotentHint=
 GENERATE = ToolAnnotations(readOnlyHint=True, destructiveHint=False, idempotentHint=False, openWorldHint=False)
 IMPORT = ToolAnnotations(readOnlyHint=False, destructiveHint=False, idempotentHint=False, openWorldHint=True)
 LOCAL_WRITE = ToolAnnotations(readOnlyHint=False, destructiveHint=False, idempotentHint=False, openWorldHint=False)
+_INSTRUCTIONS = (
+    "Shared music services for TheVoyager, the editor, and future plugin clients. "
+    "Preserve source/model fields. Never claim rule-based output came from a model. "
+    "Send only explicitly attached score files; never collect private photos or journals. "
+    "Confirm local DAW handoff with the user before using export_daw."
+)
+_MAX_SECTION_CONTEXT_MEASURES = 512
+_PROXY_HEADERS = ("forwarded", "x-forwarded-for", "x-real-ip")
 
 
 def _result(envelope: ContractEnvelope) -> CallToolResult:
@@ -35,13 +44,14 @@ def _result(envelope: ContractEnvelope) -> CallToolResult:
                           structuredContent=envelope.model_dump(mode="json"))
 
 
-async def _invoke(function, *args) -> CallToolResult:
+async def _invoke(function: Callable[..., Any], *args: Any) -> CallToolResult:
+    """Run a blocking application call in a worker thread; its failures become tool errors."""
     try:
         output = await anyio.to_thread.run_sync(partial(function, *args))
         return _result(contracts.contract_result(output))
     except HTTPException as exc:
         raise ToolError(f"HTTP {exc.status_code}: {exc.detail}") from None
-    except smf_export.ExportError as exc:
+    except smf_export.ExportError as exc:  # a ValueError that carries its HTTP status
         raise ToolError(f"HTTP {exc.status_code}: {exc}") from None
     except ValueError as exc:
         raise ToolError(str(exc)) from None
@@ -56,10 +66,11 @@ def _bounded_state(request: BaseModel) -> None:
 
 
 def _local_request(ctx: Context) -> bool:
+    """A direct connection from a loopback address, not one relayed by a proxy."""
     request = ctx.request_context.request
     if request is None or request.client is None:
         return False
-    if any(name in request.headers for name in ("forwarded", "x-forwarded-for", "x-real-ip")):
+    if any(name in request.headers for name in _PROXY_HEADERS):
         return False
     try:
         return ipaddress.ip_address(request.client.host).is_loopback
@@ -67,12 +78,16 @@ def _local_request(ctx: Context) -> bool:
         return False
 
 
+def _midi_file(spec: ExportSpec) -> dict[str, Any]:
+    """The same bytes as POST /api/export/midi, as a base64 file record."""
+    data = smf_export.render_midi(spec)
+    return {"mimeType": "audio/midi", "filename": smf_export.safe_title(spec.title) + ".mid",
+            "byteLength": len(data), "dataBase64": base64.b64encode(data).decode("ascii")}
+
+
 def create_mcp_server() -> FastMCP:
     server = FastMCP(
-        "TheArtist", instructions="Shared music services for TheVoyager, the editor, and future plugin clients. "
-        "Preserve source/model fields. Never claim rule-based output came from a model. "
-        "Send only explicitly attached score files; never collect private photos or journals. "
-        "Confirm local DAW handoff with the user before using export_daw.",
+        "TheArtist", instructions=_INSTRUCTIONS,
         streamable_http_path="/", json_response=True, stateless_http=True,
         max_request_body_size=contracts.MAX_MCP_REQUEST_BYTES,
     )
@@ -109,8 +124,8 @@ def create_mcp_server() -> FastMCP:
     async def generate_section(request: SectionGenerateRequest) -> ContractEnvelope:
         """Use the same section composer as POST /api/generate/section; return explicit source/model fields."""
         _bounded_state(request)
-        if len(request.context) > 512:
-            raise ToolError("A section request supports at most 512 context measures.")
+        if len(request.context) > _MAX_SECTION_CONTEXT_MEASURES:
+            raise ToolError(f"A section request supports at most {_MAX_SECTION_CONTEXT_MEASURES} context measures.")
         return await _invoke(generate.generate_section, request)
 
     @server.tool(annotations=GENERATE)
@@ -125,12 +140,7 @@ def create_mcp_server() -> FastMCP:
     async def render_midi(spec: ExportSpec) -> ContractEnvelope:
         """Render the same validated ExportSpec as POST /api/export/midi; returns bounded base64 MIDI without saving files."""
         _bounded_state(spec)
-
-        def render():
-            data = smf_export.render_midi(spec)
-            return {"mimeType": "audio/midi", "filename": smf_export.safe_title(spec.title) + ".mid",
-                    "byteLength": len(data), "dataBase64": base64.b64encode(data).decode("ascii")}
-        return await _invoke(render)
+        return await _invoke(_midi_file, spec)
 
     @server.tool(annotations=IMPORT)
     async def import_score(request: ScoreImportRequest, attachmentConfirmed: StrictBool = False) -> ContractEnvelope:

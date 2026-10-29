@@ -1,6 +1,8 @@
+from collections.abc import Callable, Coroutine
+from typing import Any
 from urllib.parse import quote
 
-from fastapi import APIRouter, HTTPException, Response
+from fastapi import APIRouter, HTTPException, Request, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.routing import APIRoute
 
@@ -8,11 +10,14 @@ from app.models.export import DawOpenRequest, DawOpenResponse, DawTargetsRespons
 from app.services.daw_launcher import DawError, daw_targets, open_daw
 from app.services.smf_export import ExportError, render_midi, safe_title
 
+
 class ExportRoute(APIRoute):
-    def get_route_handler(self):
+    """Reports the first request validation error as one readable 422 message."""
+
+    def get_route_handler(self) -> Callable[[Request], Coroutine[Any, Any, Response]]:
         handler = super().get_route_handler()
 
-        async def validated(request):
+        async def validated(request: Request) -> Response:
             try:
                 return await handler(request)
             except RequestValidationError as exc:
@@ -34,6 +39,7 @@ def export_midi_route(spec: ExportSpec) -> Response:
         raise HTTPException(status_code=exc.status_code, detail=str(exc)) from None
     filename = quote(safe_title(spec.title) + ".mid", safe="")
     return Response(content=data, media_type="audio/midi", headers={
+        # An ASCII fallback name, then the UTF-8 title for clients that read filename*.
         "Content-Disposition": f"attachment; filename=\"score.mid\"; filename*=UTF-8''{filename}",
         "Cache-Control": "no-store",
     })

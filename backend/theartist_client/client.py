@@ -14,10 +14,22 @@ from mcp.client.streamable_http import streamable_http_client
 SCHEMA_VERSION = "1.0"
 MAX_RESULT_BYTES = 6 * 1024 * 1024
 MAX_MIDI_BYTES = 4 * 1024 * 1024
+_MIN_MIDI_BYTES = 14  # a MIDI file holds at least its 14-byte MThd header chunk
+_MAX_ERROR_CHARS = 2000
 
 
 class ArtistClientError(RuntimeError):
     pass
+
+
+def _is_envelope(payload: object) -> bool:
+    """A {"schemaVersion": "1.0", "data": {...}} tool result."""
+    return (isinstance(payload, dict) and payload.get("schemaVersion") == SCHEMA_VERSION
+            and isinstance(payload.get("data"), dict))
+
+
+def _base64_length(byte_count: int) -> int:
+    return 4 * ((byte_count + 2) // 3)
 
 
 class ArtistClient:
@@ -57,9 +69,9 @@ class ArtistClient:
         result = await self._session.call_tool(name, arguments or {})
         if result.isError:
             text = " ".join(block.text for block in result.content if block.type == "text")
-            raise ArtistClientError(text[:2000] or "TheArtist tool failed.")
+            raise ArtistClientError(text[:_MAX_ERROR_CHARS] or "TheArtist tool failed.")
         payload = result.structuredContent
-        if not isinstance(payload, dict) or payload.get("schemaVersion") != SCHEMA_VERSION or not isinstance(payload.get("data"), dict):
+        if not _is_envelope(payload):
             raise ArtistClientError("TheArtist returned an unsupported or missing schema envelope.")
         if len(json.dumps(payload, ensure_ascii=False, allow_nan=False).encode("utf8")) > MAX_RESULT_BYTES:
             raise ArtistClientError("TheArtist result exceeds the 6 MiB limit.")
@@ -77,13 +89,14 @@ class ArtistClient:
     async def render_midi(self, spec: dict[str, Any]) -> bytes:
         result = await self.call_tool("render_midi", {"spec": spec})
         encoded = result.get("dataBase64")
-        if not isinstance(encoded, str) or len(encoded) > 4 * ((MAX_MIDI_BYTES + 2) // 3):
+        if not isinstance(encoded, str) or len(encoded) > _base64_length(MAX_MIDI_BYTES):
             raise ArtistClientError("The MIDI result exceeds 4 MiB or has no bytes.")
         try:
             data = base64.b64decode(encoded, validate=True)
         except (ValueError, binascii.Error):
             raise ArtistClientError("The MIDI result is not valid base64.") from None
-        if not data.startswith(b"MThd") or not 14 <= len(data) <= MAX_MIDI_BYTES or result.get("byteLength") != len(data):
+        if (not data.startswith(b"MThd") or not _MIN_MIDI_BYTES <= len(data) <= MAX_MIDI_BYTES
+                or result.get("byteLength") != len(data)):
             raise ArtistClientError("The MIDI result is invalid or has an inconsistent byte length.")
         return data
 

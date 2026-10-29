@@ -10,12 +10,15 @@ from app.services.genre_tables import DRUM_PATTERNS, HARMONY_INSTRUMENTS, HARMON
 MAX_EXPORT_MEASURES = 512
 MAX_EXPORT_NOTES = 100_000
 MAX_EXPORT_BYTES = 4 * 1024 * 1024
+MIN_MIDI_BYTES = 14  # a MIDI file holds at least its 14-byte MThd header chunk
 MIDI_PITCH = Annotated[int, Field(ge=0, le=127)]
 VOLUME = Annotated[float, Field(ge=0, le=1)]
 _ROOT = r"[A-G](?:#|b)?"
-_CHORD = re.compile(rf"({_ROOT})([^/\s]*(?:/[0-9]+)?)(?:/({_ROOT}))?")
+# A numeric extension such as 6/9 is part of the quality, not a slash bass.
+_CHORD = re.compile(rf"(?P<root>{_ROOT})(?P<quality>[^/\s]*(?:/[0-9]+)?)(?:/(?P<bass>{_ROOT}))?")
 _KEY = re.compile(rf"({_ROOT}) (major|minor)")
-_RHYTHMS = {preset["id"] for preset in HARMONY_RHYTHM_PRESETS}
+_RHYTHM_IDS = {preset["id"] for preset in HARMONY_RHYTHM_PRESETS}
+_BASS_OCTAVE_C = 36  # C2; exported bass notes are C2..B2
 NOTE_PC = {"C": 0, "C#": 1, "Db": 1, "D": 2, "D#": 3, "Eb": 3, "E": 4, "F": 5,
            "F#": 6, "Gb": 6, "G": 7, "G#": 8, "Ab": 8, "A": 9, "A#": 10, "Bb": 10,
            "B": 11, "Cb": 11, "B#": 0, "Fb": 4, "E#": 5}
@@ -38,9 +41,10 @@ class ExportChord(ExportModel):
 
     @property
     def bass_pitch(self) -> int:
+        """MIDI pitch of the slash bass, else the root, in the C2 octave."""
         match = _CHORD.fullmatch(self.symbol)
         assert match is not None  # validated above
-        return 36 + NOTE_PC[match[3] or match[1]]
+        return _BASS_OCTAVE_C + NOTE_PC[match["bass"] or match["root"]]
 
 
 class ExportMeasure(ExportModel):
@@ -74,7 +78,7 @@ class ExportPlay(ExportModel):
     @field_validator("harmonyRhythmId")
     @classmethod
     def known_rhythm(cls, value: str | None) -> str | None:
-        if value is not None and value not in _RHYTHMS:
+        if value is not None and value not in _RHYTHM_IDS:
             raise ValueError("unknown harmony rhythm")
         return value
 
