@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import type { Chord, Song } from '../models/types.ts';
 import { DEFAULT_PLAY_SETTINGS } from './playSettings.ts';
 import {
-  buildExportSpec, isLoopbackHostname, requestMidiExport, safeExportFilename,
+  buildExportSpec, isLoopbackHostname, requestMidiExport, requestScripterExport, safeExportFilename,
 } from './exportSpec.ts';
 
 const chord: Chord = { root: 'C', quality: 'maj', romanNumeral: 'I', extensions: [], voicing: [60, 64, 67] };
@@ -79,6 +79,12 @@ test('filenames preserve Korean titles without paths or reserved names', () => {
   assert.equal(safeExportFilename('가'.repeat(200), 'pdf'), `${'가'.repeat(100)}.pdf`);
 });
 
+test('the Scripter script is named after the title with the TheArtist marker', () => {
+  assert.equal(safeExportFilename('  한글/곡: 연습?  ', 'js'), '한글-곡- 연습-.theartist.js');
+  assert.equal(safeExportFilename('CON', 'js'), '_CON.theartist.js');
+  assert.equal(safeExportFilename('\u0000\n . ', 'js'), 'Untitled.theartist.js');
+});
+
 test('automatic DAW handoff is restricted to loopback hosts', () => {
   for (const host of ['localhost', 'LOCALHOST', '127.0.0.1', '127.10.0.3', '[::1]', '::1']) assert.ok(isLoopbackHostname(host));
   for (const host of ['example.com', '192.168.1.2', 'localhost.example.com', '127.999.0.1', '']) assert.equal(isLoopbackHostname(host), false);
@@ -98,4 +104,41 @@ test('MIDI requests send the complete snapshot and reject successful non-MIDI re
   await assert.rejects(requestMidiExport(spec), /did not return a MIDI/);
   mock.mock.mockImplementation(async () => new Response(JSON.stringify({ detail: 'Too many notes.' }), { status: 422 }));
   await assert.rejects(requestMidiExport(spec), /Too many notes/);
+});
+
+test('Scripter requests send the complete snapshot and accept only a JavaScript response', async (t) => {
+  const spec = buildExportSpec(song(), DEFAULT_PLAY_SETTINGS);
+  const script = 'var NeedsTimingInfo = true;';
+  let body = '';
+  const mock = t.mock.method(globalThis, 'fetch', async (url: unknown, init?: RequestInit) => {
+    assert.equal(url, '/api/export/scripter');
+    body = String(init?.body);
+    return new Response(script, { headers: { 'Content-Type': 'text/javascript; charset=utf-8' } });
+  });
+  assert.equal(await (await requestScripterExport(spec)).text(), script);
+  assert.deepEqual(JSON.parse(body), spec);
+  mock.mock.mockImplementation(async () => new Response(script, { headers: { 'Content-Type': 'application/javascript' } }));
+  assert.equal(await (await requestScripterExport(spec)).text(), script);
+  // A proxy's error page, then a body with no declared type at all.
+  mock.mock.mockImplementation(async () => new Response('<html>proxy error</html>', { headers: { 'Content-Type': 'text/html' } }));
+  await assert.rejects(requestScripterExport(spec), /did not return a Scripter script/);
+  mock.mock.mockImplementation(async () => new Response(new TextEncoder().encode(script)));
+  await assert.rejects(requestScripterExport(spec), /did not return a Scripter script/);
+  mock.mock.mockImplementation(async () => new Response('', { headers: { 'Content-Type': 'text/javascript' } }));
+  await assert.rejects(requestScripterExport(spec), /did not return a Scripter script/);
+  mock.mock.mockImplementation(async () => new Response(JSON.stringify({ detail: 'Too many notes.' }), { status: 422 }));
+  await assert.rejects(requestScripterExport(spec), /Too many notes/);
+});
+
+test('a Scripter export that outlives the timeout fails as a timeout', async (t) => {
+  const spec = buildExportSpec(song(), DEFAULT_PLAY_SETTINGS);
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  // A fetch that ends only when its signal aborts, as a stalled server would.
+  t.mock.method(globalThis, 'fetch', (_url: unknown, init?: RequestInit) => new Promise<Response>((_resolve, reject) => {
+    const signal = init?.signal;
+    signal?.addEventListener('abort', () => reject(signal.reason));
+  }));
+  const rejection = assert.rejects(requestScripterExport(spec), /Scripter export timed out/);
+  t.mock.timers.tick(60_000);
+  await rejection;
 });

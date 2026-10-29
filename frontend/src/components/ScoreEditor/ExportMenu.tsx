@@ -3,7 +3,7 @@ import { useSongStore } from '../../store/songStore';
 import { usePlayStore } from '../../store/playStore';
 import {
   buildExportSpec, downloadExportBlob, exportResponseError,
-  isLoopbackHostname, requestMidiExport, safeExportFilename,
+  isLoopbackHostname, requestMidiExport, requestScripterExport, safeExportFilename,
 } from '../../engine/exportSpec';
 import type { ExportSpec } from '../../engine/exportSpec';
 import type { PdfTheme } from '../../engine/pdf';
@@ -12,7 +12,7 @@ type DawId = 'logic' | 'ableton';
 /** How the server hands the MIDI over: opened in the DAW, or shown in Finder. */
 type DawHandoff = 'open' | 'reveal';
 interface DawTarget { id: DawId; name: string; available: boolean; action: DawHandoff }
-type ExportAction = 'midi' | PdfTheme | DawId;
+type ExportAction = 'midi' | 'scripter' | PdfTheme | DawId;
 
 const DAW_DETECTION_TIMEOUT_MS = 10_000;
 const DAW_HANDOFF_TIMEOUT_MS = 60_000;
@@ -132,6 +132,10 @@ export default function ExportMenu() {
         const blob = await requestMidiExport(buildExportSpec(song, settings), controller.signal);
         downloadExportBlob(blob, safeExportFilename(song.title, 'mid'));
         setFeedback({ text: 'MIDI downloaded. Import it into a DAW to choose sounds and continue arranging.', error: false });
+      } else if (action === 'scripter') {
+        const blob = await requestScripterExport(buildExportSpec(song, settings), controller.signal);
+        downloadExportBlob(blob, safeExportFilename(song.title, 'js'));
+        setFeedback({ text: 'Scripter script downloaded. In Logic: MIDI FX ▸ Scripter ▸ Open Script in Editor, paste, Run Script.', error: false });
       } else if (action === 'logic' || action === 'ableton') {
         if (!onLocalhost) throw new Error('Download MIDI and open it on your computer. DAW handoff requires localhost.');
         const handoff = await handOffToDaw(action, buildExportSpec(song, settings), controller);
@@ -182,6 +186,8 @@ export default function ExportMenu() {
         style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)' }}>
         {actionButton('Download MIDI', 'midi')}
         <p className="px-3 pb-2 text-[10px]" style={{ color: 'var(--text-muted)' }}>Harmony, bass and drums · DAW sounds may differ.</p>
+        {actionButton('Logic Scripter script', 'scripter')}
+        <p className="px-3 pb-2 text-[10px]" style={{ color: 'var(--text-muted)' }}>Harmony and bass, played by Logic's Scripter MIDI FX.</p>
         <div style={{ borderTop: '1px solid var(--border)' }}>
           {actionButton('PDF · Current theme', 'current')}
           {actionButton('PDF · Light (print)', 'light')}

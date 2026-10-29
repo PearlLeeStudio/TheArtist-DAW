@@ -22,10 +22,13 @@ const MAX_EXPORT_SECTIONS = 128;
 const MAX_VOICING_NOTES = 16;
 const MAX_MIDI_NOTE = 127;
 
-/** How long the backend may take to render a MIDI file. */
-const MIDI_EXPORT_TIMEOUT_MS = 60_000;
+/** How long the backend may take to render an export file. */
+const EXPORT_TIMEOUT_MS = 60_000;
 /** The chunk id every Standard MIDI File starts with. */
 const MIDI_FILE_HEADER = 'MThd';
+/** The media types a JavaScript file is served under: the current one and the
+ *  older registration servers and proxies still send. */
+const JAVASCRIPT_MEDIA_TYPES = new Set(['text/javascript', 'application/javascript']);
 
 const WINDOWS_RESERVED_NAME = /^(con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)/i;
 const MAX_FILENAME_STEM_CHARS = 100;
@@ -110,7 +113,7 @@ function isNotAsciiControl(char: string): boolean {
   return code >= 32 && code !== 127;
 }
 
-export function safeExportFilename(title: string, extension: 'mid' | 'pdf'): string {
+export function safeExportFilename(title: string, extension: 'mid' | 'pdf' | 'js'): string {
   // Preserve readable Unicode titles while excluding path separators and OS-reserved names.
   const cleaned = Array.from(title.normalize('NFKC'))
     .filter(isNotAsciiControl)
@@ -121,7 +124,8 @@ export function safeExportFilename(title: string, extension: 'mid' | 'pdf'): str
   // Cut by code point so no surrogate pair is split, then trim the new end.
   let stem = Array.from(cleaned).slice(0, MAX_FILENAME_STEM_CHARS).join('').replace(/[. ]+$/g, '') || 'Untitled';
   if (WINDOWS_RESERVED_NAME.test(stem)) stem = `_${stem}`;
-  return `${stem}.${extension}`;
+  // The Scripter script lands among a Downloads folder's other .js files; the marker says whose it is.
+  return extension === 'js' ? `${stem}.theartist.js` : `${stem}.${extension}`;
 }
 
 /** 127.x.y.z with every part at most 255. */
@@ -158,30 +162,63 @@ function isMidiFileHeader(bytes: Uint8Array): boolean {
   return bytes.length === MIDI_FILE_HEADER.length && String.fromCharCode(...bytes) === MIDI_FILE_HEADER;
 }
 
-export async function requestMidiExport(spec: ExportSpec, signal?: AbortSignal): Promise<Blob> {
+/** Whether a Content-Type header names a JavaScript file, its parameters aside. */
+function isJavaScriptContentType(contentType: string | null): boolean {
+  return JAVASCRIPT_MEDIA_TYPES.has(contentType?.split(';', 1)[0].trim().toLowerCase() ?? '');
+}
+
+/** POST the spec to an export route and hand the response to `readFile`. One
+ *  timer bounds the exchange body included, so a stalled download fails like a
+ *  stalled render; `signal` cancels either. */
+async function requestExportFile(path: string, spec: ExportSpec, signal: AbortSignal | undefined,
+  timeoutMessage: string, readFile: (response: Response) => Promise<Blob>): Promise<Blob> {
   const controller = new AbortController();
   const cancel = () => controller.abort(signal?.reason);
   if (signal?.aborted) cancel();
   else signal?.addEventListener('abort', cancel, { once: true });
   let timedOut = false;
-  const timer = setTimeout(() => { timedOut = true; controller.abort(); }, MIDI_EXPORT_TIMEOUT_MS);
+  const timer = setTimeout(() => { timedOut = true; controller.abort(); }, EXPORT_TIMEOUT_MS);
   try {
-    const response = await fetch('/api/export/midi', {
+    const response = await fetch(path, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(spec), signal: controller.signal,
     });
     if (!response.ok) throw await exportResponseError(response);
-    const blob = await response.blob();
-    const header = new Uint8Array(await blob.slice(0, MIDI_FILE_HEADER.length).arrayBuffer());
-    if (!isMidiFileHeader(header)) throw new Error('The server did not return a MIDI file.');
-    return blob;
+    return await readFile(response);
   } catch (error) {
-    if (timedOut) throw new Error('MIDI export timed out. Please try again.', { cause: error });
+    if (timedOut) throw new Error(timeoutMessage, { cause: error });
     throw error;
   } finally {
     clearTimeout(timer);
     signal?.removeEventListener('abort', cancel);
   }
+}
+
+async function readMidiFile(response: Response): Promise<Blob> {
+  const blob = await response.blob();
+  const header = new Uint8Array(await blob.slice(0, MIDI_FILE_HEADER.length).arrayBuffer());
+  if (!isMidiFileHeader(header)) throw new Error('The server did not return a MIDI file.');
+  return blob;
+}
+
+export function requestMidiExport(spec: ExportSpec, signal?: AbortSignal): Promise<Blob> {
+  return requestExportFile('/api/export/midi', spec, signal, 'MIDI export timed out. Please try again.', readMidiFile);
+}
+
+/** A script has no magic bytes, so the declared type is the check: a proxy's
+ *  HTML error page or a JSON body must not be saved as a .js file. */
+async function readScripterFile(response: Response): Promise<Blob> {
+  if (!isJavaScriptContentType(response.headers.get('Content-Type'))) {
+    throw new Error('The server did not return a Scripter script.');
+  }
+  const blob = await response.blob();
+  if (!blob.size) throw new Error('The server did not return a Scripter script.');
+  return blob;
+}
+
+/** The Logic Pro Scripter script of the song, rendered from the same spec as the MIDI file. */
+export function requestScripterExport(spec: ExportSpec, signal?: AbortSignal): Promise<Blob> {
+  return requestExportFile('/api/export/scripter', spec, signal, 'Scripter export timed out. Please try again.', readScripterFile);
 }
 
 export function downloadExportBlob(blob: Blob, filename: string): void {
