@@ -7,6 +7,7 @@
  * schedule carries the Play-panel settings, voicing and bass layer.
  */
 import { useCallback, useState } from 'react';
+import type { ReactNode } from 'react';
 import type { SlotAddress, Song } from '../../../models/types';
 import { useSongStore } from '../../../store/songStore';
 import { applyEditorPlayConfig, usePlayStore } from '../../../store/playStore';
@@ -29,6 +30,7 @@ import './Transport.css';
 
 /** Measures the back and forward keys move. */
 const JUMP = 4;
+/** Six key columns; play/pause, the third, is the widest. */
 const COLUMNS = 'repeat(2, minmax(0, 1fr)) minmax(0, 1.65fr) repeat(3, minmax(0, 1fr))';
 const KEY_STYLE = { height: 42 };
 
@@ -92,6 +94,12 @@ function songHasAnyChord(song: Song): boolean {
   return song.measures.some((m) => m.chords.some((c) => c !== null));
 }
 
+/** The staff selection in schedule form: undefined (the whole song) when
+ *  nothing is selected. */
+function selectionSlots(selectedSlots: SlotAddress[]): SlotAddress[] | undefined {
+  return selectedSlots.length > 0 ? selectedSlots : undefined;
+}
+
 /** A selection as a comparable string; 'all' for the whole song. */
 function slotsKey(slots: SlotAddress[] | undefined): string {
   return slots ? slots.map((s) => `${s.measureIndex}-${s.slotIndex}`).join(',') : 'all';
@@ -116,6 +124,41 @@ function sameScore(a: Song, b: Song): boolean {
  *  from. Module state like the engine's schedule, so a paused schedule
  *  still resumes after the Play panel unmounts and mounts again. */
 let scheduled: { key: string; song: Song | null } = { key: '', song: null };
+
+/** Play can resume the paused schedule: it was built from the selection
+ *  keyed `key` and still plays this score. */
+function canResume(key: string, song: Song): boolean {
+  const last = scheduled;
+  return getIsPaused() && key === last.key && last.song !== null && sameScore(last.song, song);
+}
+
+/** The play key's tooltip and accessible name. */
+function playKeyTitle(playing: boolean, selectedCount: number): string {
+  if (playing) return 'Pause';
+  if (selectedCount === 0) return 'Play full song';
+  return `Play selection (${selectedCount} slot${selectedCount > 1 ? 's' : ''})`;
+}
+
+interface TransportKeyProps {
+  /** Accessible name, and the tooltip unless `title` differs. */
+  label: string;
+  title?: string;
+  onClick: () => void;
+  active?: boolean;
+  /** The play/pause key, lit while the song plays. */
+  play?: boolean;
+  children: ReactNode;
+}
+
+/** One transport key: an md key at the transport's height, with an icon. */
+function TransportKey({ label, title = label, onClick, active, play, children }: TransportKeyProps) {
+  const className = play ? 'te-transport__key te-transport__key--play' : 'te-transport__key';
+  return (
+    <KeyButton className={className} size="md" style={KEY_STYLE} onClick={onClick} title={title} ariaLabel={label} active={active}>
+      {children}
+    </KeyButton>
+  );
+}
 
 export default function Transport() {
   const song = useSongStore((s) => s.song);
@@ -166,10 +209,9 @@ export default function Transport() {
       setPlaying(false);
       return;
     }
-    const slots = selectedSlots.length > 0 ? selectedSlots : undefined;
+    const slots = selectionSlots(selectedSlots);
     const key = slotsKey(slots);
-    const last = scheduled;
-    if (getIsPaused() && key === last.key && last.song !== null && sameScore(last.song, song)) {
+    if (canResume(key, song)) {
       applyEditorPlayConfig();
       setLiveBpm(song.bpm || 80);
       resumePlayback();
@@ -194,7 +236,7 @@ export default function Transport() {
       setPlaybackPosition(null);
       return;
     }
-    play(undefined, slotsKey(selectedSlots.length > 0 ? selectedSlots : undefined));
+    play(undefined, slotsKey(selectionSlots(selectedSlots)));
   }, [song, selectedSlots, play, setPlaying, setPlaybackPosition]);
 
   const handleStop = useCallback(() => {
@@ -235,11 +277,7 @@ export default function Transport() {
     setLoopEnabled(next);
   }, [loop]);
 
-  const playTitle = playing
-    ? 'Pause'
-    : selectedSlots.length > 0
-      ? `Play selection (${selectedSlots.length} slot${selectedSlots.length > 1 ? 's' : ''})`
-      : 'Play full song';
+  const playTitle = playKeyTitle(playing, selectedSlots.length);
 
   return (
     <div
@@ -249,46 +287,18 @@ export default function Transport() {
       data-playing={playing ? 'true' : 'false'}
     >
       <div className="te-transport__keys" style={{ gridTemplateColumns: COLUMNS }}>
-        <KeyButton className="te-transport__key" size="md" style={KEY_STYLE} onClick={handleStop} title="Stop and go to start" ariaLabel="Stop and go to start">
-          {STOP_ICON}
-        </KeyButton>
-        <KeyButton className="te-transport__key" size="md" style={KEY_STYLE} onClick={handleBack} title={`Back ${JUMP} measures`} ariaLabel={`Back ${JUMP} measures`}>
-          {BACK_ICON}
-        </KeyButton>
-        <KeyButton
-          className="te-transport__key te-transport__key--play"
-          size="md"
-          style={KEY_STYLE}
-          onClick={handlePlay}
-          title={playTitle}
-          ariaLabel={playTitle}
-        >
+        <TransportKey label="Stop and go to start" onClick={handleStop}>{STOP_ICON}</TransportKey>
+        <TransportKey label={`Back ${JUMP} measures`} onClick={handleBack}>{BACK_ICON}</TransportKey>
+        <TransportKey play label={playTitle} onClick={handlePlay}>
           {playing ? PAUSE_ICON : PLAY_ICON}
-        </KeyButton>
-        <KeyButton className="te-transport__key" size="md" style={KEY_STYLE} onClick={handleForward} title={`Forward ${JUMP} measures`} ariaLabel={`Forward ${JUMP} measures`}>
-          {FORWARD_ICON}
-        </KeyButton>
-        <KeyButton
-          className="te-transport__key"
-          size="md"
-          style={KEY_STYLE}
-          onClick={handleLoop}
-          title={loop ? 'Loop on' : 'Loop off'}
-          ariaLabel="Loop"
-          active={loop}
-        >
+        </TransportKey>
+        <TransportKey label={`Forward ${JUMP} measures`} onClick={handleForward}>{FORWARD_ICON}</TransportKey>
+        <TransportKey label="Loop" title={loop ? 'Loop on' : 'Loop off'} onClick={handleLoop} active={loop}>
           {LOOP_ICON}
-        </KeyButton>
-        <KeyButton
-          className="te-transport__key"
-          size="md"
-          style={KEY_STYLE}
-          onClick={handlePlayFullSong}
-          title="Play full song (ignore selection)"
-          ariaLabel="Play full song from the start"
-        >
+        </TransportKey>
+        <TransportKey label="Play full song from the start" title="Play full song (ignore selection)" onClick={handlePlayFullSong}>
           {PLAY_FULL_ICON}
-        </KeyButton>
+        </TransportKey>
       </div>
       <div className="te-transport__disc" aria-hidden="true">💿</div>
     </div>

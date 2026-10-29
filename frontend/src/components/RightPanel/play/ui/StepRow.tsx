@@ -15,17 +15,18 @@ interface StepRowProps {
   label?: string;
   /** Whole row muted (e.g. bass off). */
   dim?: boolean;
-  /** Extra gap every n cells (default 4; 0 = none). */
-  group?: number;
-  /** Flat LED row height in pixels. */
-  height?: number;
-  labelSize?: number;
 }
 
-/** Fits a four-letter label in 9px device type. */
-const LABEL_WIDTH = 26;
+/** Flat LED row height in pixels. */
+const ROW_HEIGHT = 10;
+/** Label type size in pixels. */
+const LABEL_SIZE = 11;
+/** Fits a four-letter label at LABEL_SIZE. */
+const LABEL_WIDTH = 42;
 const LABEL_GAP = 4;
 const CELL_GAP = 2;
+/** Cells per group: one beat of 16ths. */
+const GROUP = 4;
 /** Added to CELL_GAP at each group boundary. */
 const GROUP_GAP = 3;
 
@@ -57,9 +58,11 @@ function cellStyle(cell: StepCell, here: boolean, groupStart: boolean): CSSPrope
 }
 
 /** Flat green LEDs on a black meter, with the live beat marked. */
-export default function StepRow({ cells, playhead = null, label, dim = false, group = 4, height = 10, labelSize = 9 }: StepRowProps) {
+export default function StepRow({ cells, playhead = null, label, dim = false }: StepRowProps) {
   const onSteps = cells.flatMap((cell, i) => (cell.level > 0 ? [i + 1] : []));
-  const name = `${label ? `${label}: ` : ''}${onSteps.length > 0 ? `steps ${onSteps.join(' ')}` : 'no steps'}${dim ? ', muted' : ''}`;
+  const prefix = label ? `${label}: ` : '';
+  const steps = onSteps.length > 0 ? `steps ${onSteps.join(' ')}` : 'no steps';
+  const name = `${prefix}${steps}${dim ? ', muted' : ''}`;
 
   return (
     <div
@@ -67,7 +70,7 @@ export default function StepRow({ cells, playhead = null, label, dim = false, gr
       aria-label={name}
       className="flex w-full min-w-0 items-center"
       style={{
-        height,
+        height: ROW_HEIGHT,
         opacity: dim ? 0.35 : 1,
         filter: dim ? 'saturate(0.4)' : undefined,
         transition: 'opacity 0.15s ease',
@@ -77,10 +80,10 @@ export default function StepRow({ cells, playhead = null, label, dim = false, gr
         <span
           className="shrink-0 truncate uppercase"
           style={{
-            width: labelSize > 9 ? 42 : LABEL_WIDTH,
+            width: LABEL_WIDTH,
             marginRight: LABEL_GAP,
             fontFamily: 'var(--font-device)',
-            fontSize: labelSize,
+            fontSize: LABEL_SIZE,
             lineHeight: 1,
             letterSpacing: '0.06em',
             color: 'var(--key-text-dim)',
@@ -93,7 +96,7 @@ export default function StepRow({ cells, playhead = null, label, dim = false, gr
         {cells.map((cell, i) => (
           <span
             key={i}
-            style={cellStyle(cell, i === playhead, group > 0 && i > 0 && i % group === 0)}
+            style={cellStyle(cell, i === playhead, i > 0 && i % GROUP === 0)}
           />
         ))}
       </div>

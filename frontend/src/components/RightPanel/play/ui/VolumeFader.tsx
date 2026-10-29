@@ -12,13 +12,15 @@ interface VolumeFaderProps {
   ariaLabel?: string;
 }
 
+/** Snap `value` to the step grid that starts at `min`, then clamp it to [min, max]. */
 const bounded = (value: number, min: number, max: number, step: number): number =>
   Math.min(max, Math.max(min, min + Math.round((value - min) / step) * step));
 
 /** Native vertical range behavior with a quiet, recessed hardware face. */
 export default function VolumeFader({ label, value, defaultValue, onChange,
   min = 0, max = 100, step = 1, ariaLabel }: VolumeFaderProps) {
-  const current = bounded(value, min, max, step);
+  const snap = (raw: number) => bounded(raw, min, max, step);
+  const current = snap(value);
   const percent = (current - min) / (max - min) * 100;
 
   const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
@@ -29,7 +31,7 @@ export default function VolumeFader({ label, value, defaultValue, onChange,
     else if (event.key === 'End') next = max;
     else return;
     event.preventDefault();
-    onChange(bounded(next, min, max, step));
+    onChange(snap(next));
   };
 
   return (
@@ -47,9 +49,9 @@ export default function VolumeFader({ label, value, defaultValue, onChange,
           aria-valuemin={min}
           aria-valuemax={max}
           aria-valuenow={current}
-          onChange={(event) => onChange(bounded(Number(event.currentTarget.value), min, max, step))}
+          onChange={(event) => onChange(snap(Number(event.currentTarget.value)))}
           onKeyDown={handleKeyDown}
-          onDoubleClick={() => onChange(bounded(defaultValue, min, max, step))}
+          onDoubleClick={() => onChange(snap(defaultValue))}
         />
         <span className="te-volume-fader-groove" aria-hidden="true" />
         <span

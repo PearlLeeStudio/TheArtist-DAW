@@ -14,11 +14,11 @@ import RhythmPane from './RhythmPane';
 import DrumsPane from './DrumsPane';
 import ControllerPane from './ControllerPane';
 
-/** Rail keys: `label` on the key cap, `name` for screen readers. */
-const PANES: { id: PlayPane; label: string; name: string; title: string }[] = [
-  { id: 'instrument', label: 'INSTR', name: 'Instrument', title: 'Instrument: the harmony sound' },
-  { id: 'rhythm', label: 'RHYTHM', name: 'Rhythm', title: 'Rhythm: comping rhythm and bass' },
-  { id: 'drums', label: 'DRUMS', name: 'Drums', title: 'Drums: drum pattern' },
+/** Pane tabs: `name` on the key and for screen readers, `title` as the tooltip. */
+const PANES: { id: PlayPane; name: string; title: string }[] = [
+  { id: 'instrument', name: 'Instrument', title: 'Instrument: the harmony sound' },
+  { id: 'rhythm', name: 'Rhythm', title: 'Rhythm: comping rhythm and bass' },
+  { id: 'drums', name: 'Drums', title: 'Drums: drum pattern' },
 ];
 
 interface PlayPanelProps {
@@ -32,7 +32,7 @@ export default function PlayPanel({ midiActiveNotes }: PlayPanelProps) {
   const tabId = (id: PlayPane) => `${baseId}-tab-${id}`;
   const panelId = `${baseId}-panel`;
 
-  const open = PANES.find((p) => p.id === pane) ?? PANES[0];
+  const openPane = PANES.find((p) => p.id === pane) ?? PANES[0];
 
   // Roving focus follows the horizontal tab row.
   const handleRailKey = (e: KeyboardEvent<HTMLDivElement>) => {
@@ -61,20 +61,22 @@ export default function PlayPanel({ midiActiveNotes }: PlayPanelProps) {
       <div className="te-performance-panel shrink-0">
         <Transport />
         <div className="te-live-display flex flex-col gap-2">
-          <VisualPane midiActiveNotes={midiActiveNotes} compact />
+          <VisualPane midiActiveNotes={midiActiveNotes} />
           <PlaybackStatus />
         </div>
       </div>
 
       <div className="shrink-0 flex items-end gap-2">
-          <div
-            role="tablist"
-            aria-label="Play panes"
-            aria-orientation="horizontal"
-            className="min-w-0 flex-1 grid grid-cols-3 gap-1"
-            onKeyDown={handleRailKey}
-          >
-            {PANES.map((p) => (
+        <div
+          role="tablist"
+          aria-label="Play panes"
+          aria-orientation="horizontal"
+          className="min-w-0 flex-1 grid grid-cols-3 gap-1"
+          onKeyDown={handleRailKey}
+        >
+          {PANES.map((p) => {
+            const selected = pane === p.id;
+            return (
               <KeyButton
                 key={p.id}
                 size="sm"
@@ -84,21 +86,20 @@ export default function PlayPanel({ midiActiveNotes }: PlayPanelProps) {
                 role="tab"
                 id={tabId(p.id)}
                 ariaControls={panelId}
-                tabIndex={pane === p.id ? 0 : -1}
-                active={pane === p.id}
-                ariaSelected={pane === p.id}
+                tabIndex={selected ? 0 : -1}
+                active={selected}
                 onClick={() => setPane(p.id)}
                 className="te-pane-tab"
               />
-            ))}
-          </div>
-
+            );
+          })}
+        </div>
       </div>
 
-      <div role="tabpanel" id={panelId} aria-labelledby={tabId(open.id)} className="te-selection-pane min-w-0 shrink-0">
-          {pane === 'instrument' && <InstrumentPane />}
-          {pane === 'rhythm' && <RhythmPane />}
-          {pane === 'drums' && <DrumsPane />}
+      <div role="tabpanel" id={panelId} aria-labelledby={tabId(openPane.id)} className="te-selection-pane min-w-0 shrink-0">
+        {pane === 'instrument' && <InstrumentPane />}
+        {pane === 'rhythm' && <RhythmPane />}
+        {pane === 'drums' && <DrumsPane />}
       </div>
       <div className="shrink-0 pt-2" style={{ borderTop: '1px solid var(--panel-border)' }}>
         <ControllerPane />

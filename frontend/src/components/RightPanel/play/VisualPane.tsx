@@ -13,9 +13,10 @@ import GuitarFretboard from '../GuitarFretboard';
 import KeyButton from './ui/KeyButton';
 import Screen from './ui/Screen';
 
-const SCREEN_HEIGHT = 56;
-/** The drawing frame's widest size, which caps the pane's height. */
+/** The drawing frame's widest size, which caps the pane's height; a
+ *  fretboard's frame stays narrower. */
 const DRAWING_MAX_WIDTH = 320;
+const FRETBOARD_MAX_WIDTH = 220;
 const MUTED_FRETS = [-1, -1, -1, -1, -1, -1];
 
 /** Where the drawn chord comes from, highest priority first. */
@@ -38,9 +39,9 @@ const SOURCE_COLOR: Record<Source, string> = {
   score: 'var(--brand-yellow)',
 };
 
-const MODES: { mode: VisualDisplayMode; label: string; emoji: string }[] = [
-  { mode: 'piano', label: 'Piano', emoji: '🎹' },
-  { mode: 'guitar', label: 'Guitar', emoji: '🎸' },
+const MODES: { mode: VisualDisplayMode; label: string; emoji: string; title: string }[] = [
+  { mode: 'piano', label: 'Piano', emoji: '🎹', title: 'Show the chord on a piano keyboard' },
+  { mode: 'guitar', label: 'Guitar', emoji: '🎸', title: 'Show the chord on a guitar fretboard' },
 ];
 
 function chordAt(measures: Measure[], slot: SlotAddress): Chord | null {
@@ -71,12 +72,45 @@ function noteNames(notes: number[]): string {
   return [...new Set(notes)].sort((a, b) => a - b).map(midiToNoteName).join(' ');
 }
 
-function modeTitle(mode: VisualDisplayMode): string {
-  return mode === 'piano' ? 'Show the chord on a piano keyboard' : 'Show the chord on a guitar fretboard';
+/** Piano/Guitar keys: the arrows, Home and End pick one (no wrap-around). */
+function handleDisplayKey(event: KeyboardEvent<HTMLDivElement>) {
+  const radios = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="radio"]'));
+  if (!radios.includes(event.target as HTMLButtonElement)) return;
+  let next: number;
+  if (event.key === 'ArrowDown' || event.key === 'ArrowRight' || event.key === 'End') next = 1;
+  else if (event.key === 'ArrowUp' || event.key === 'ArrowLeft' || event.key === 'Home') next = 0;
+  else return;
+  event.preventDefault();
+  radios[next]?.click();
+  radios[next]?.focus();
+}
+
+interface ChordReadoutProps {
+  showHint: boolean;
+  source: Source | null;
+  chordName: string | null;
+  midiNotes: number[];
+}
+
+/** The screen's main line: a prompt, the held MIDI notes, the chord name,
+ *  or a dash for an empty slot under the playhead. */
+function ChordReadout({ showHint, source, chordName, midiNotes }: ChordReadoutProps) {
+  if (showHint) return <span style={{ color: 'var(--screen-text-dim)' }}>Select a chord</span>;
+  if (source === 'midi-raw') {
+    return <span className="min-w-0 flex-1 truncate" style={{ fontSize: 13 }}>{noteNames(midiNotes)}</span>;
+  }
+  if (chordName) {
+    return (
+      <span className="min-w-0 flex-1 truncate" style={{ fontSize: 24, lineHeight: '32px', fontWeight: 600 }}>
+        {chordName}
+      </span>
+    );
+  }
+  return <span style={{ fontSize: 22, lineHeight: '28px', color: 'var(--screen-text-dim)' }}>—</span>;
 }
 
 /** The active chord on a keyboard or fretboard, and the shape it is voiced in. */
-export default function VisualPane({ midiActiveNotes, compact = false }: { midiActiveNotes: number[]; compact?: boolean }) {
+export default function VisualPane({ midiActiveNotes }: { midiActiveNotes: number[] }) {
   const measures = useSongStore((s) => s.song.measures);
   const genre = useSongStore((s) => s.song.genre);
   const selectedSlots = useSongStore((s) => s.selectedSlots);
@@ -104,104 +138,63 @@ export default function VisualPane({ midiActiveNotes, compact = false }: { midiA
   const pianoNotes = source === 'midi-raw' ? midiActiveNotes : chord ? resolvePianoVoicing(chord) : [];
   const guitarFrets = chord ? generateGuitarVoicing(chord) : MUTED_FRETS;
 
-  const handleDisplayKey = (event: KeyboardEvent<HTMLDivElement>) => {
-    const radios = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="radio"]'));
-    if (!radios.includes(event.target as HTMLButtonElement)) return;
-    let next: number;
-    if (event.key === 'ArrowDown' || event.key === 'ArrowRight' || event.key === 'End') next = 1;
-    else if (event.key === 'ArrowUp' || event.key === 'ArrowLeft' || event.key === 'Home') next = 0;
-    else return;
-    event.preventDefault();
-    radios[next]?.click();
-    radios[next]?.focus();
-  };
-
   return (
     <div role="group" aria-label="Visual voicing" className="flex flex-col min-w-0 gap-2">
-      <Screen style={{ height: compact ? 48 : SCREEN_HEIGHT, padding: compact ? '8px' : undefined }}>
-        {/* Header in the look of Screen's label row: source (or the pane name), rule, instrument. */}
-        {!compact && <div
-          className="flex items-center uppercase"
-          style={{
-            height: 12,
-            marginBottom: 2,
-            gap: 6,
-            fontSize: 9,
-            lineHeight: '12px',
-            letterSpacing: '0.1em',
-            color: 'var(--screen-text-dim)',
-          }}
-        >
-          {showHint || !source ? (
-            <span className="shrink-0">Visual</span>
-          ) : (
-            <span className="flex items-center gap-[4px] shrink-0" title="Where the chord comes from">
-              <span
-                aria-hidden
-                style={{ width: 5, height: 5, borderRadius: '50%', background: highlight, boxShadow: `0 0 4px ${highlight}` }}
-              />
-              <span style={{ color: 'var(--screen-text)' }}>{SOURCE_TAG[source]}</span>
-            </span>
-          )}
-          <span className="flex-1" style={{ height: 1, background: 'currentColor', opacity: 0.3 }} />
-          <span className="min-w-0 truncate" title="Harmony instrument">{instrumentName}</span>
-        </div>}
-        <div className="flex items-center gap-2" style={{ height: compact ? 32 : 28 }}>
-          {compact && <span className="shrink-0 text-[11px] uppercase" style={{ color: highlight }}>{source ? SOURCE_TAG[source] : 'Visual'}</span>}
-          {showHint ? (
-            <span style={{ color: 'var(--screen-text-dim)' }}>Select a chord</span>
-          ) : source === 'midi-raw' ? (
-            <span className="min-w-0 flex-1 truncate" style={{ fontSize: 13 }}>{noteNames(midiActiveNotes)}</span>
-          ) : chordName ? (
-            <span className="min-w-0 flex-1 truncate" style={{ fontSize: 24, lineHeight: '32px', fontWeight: 600 }}>
-              {chordName}
-            </span>
-          ) : (
-            // an empty slot under the playhead
-            <span style={{ fontSize: 22, lineHeight: '28px', color: 'var(--screen-text-dim)' }}>—</span>
-          )}
-          {compact && <span className="ml-auto min-w-0 truncate" style={{ maxWidth: 78, fontSize: 12, color: 'var(--screen-text-dim)' }} title={instrumentName}>{instrumentName}</span>}
+      <Screen style={{ height: 48, padding: '8px' }}>
+        <div className="flex items-center gap-2" style={{ height: 32 }}>
+          <span className="shrink-0 text-[11px] uppercase" style={{ color: highlight }}>{source ? SOURCE_TAG[source] : 'Visual'}</span>
+          <ChordReadout showHint={showHint} source={source} chordName={chordName} midiNotes={midiActiveNotes} />
+          <span className="ml-auto min-w-0 truncate" style={{ maxWidth: 78, fontSize: 12, color: 'var(--screen-text-dim)' }} title={instrumentName}>{instrumentName}</span>
         </div>
       </Screen>
 
-      <div className={compact ? 'grid min-w-0 items-center gap-1.5' : 'flex min-w-0 flex-col gap-2'} style={compact ? { gridTemplateColumns: 'minmax(0, 1fr) 32px', height: shape === 'piano' ? 72 : 'clamp(72px, 8dvh, 132px)' } : undefined}>
-      <div className={`te-visual-selector grid gap-[3px] ${compact ? 'grid-cols-1' : 'grid-cols-2'}`} role="radiogroup" aria-label="Piano or guitar display" onKeyDown={handleDisplayKey} style={compact ? { gridColumn: 2, gridRow: 1 } : undefined}>
-        {MODES.map(({ mode, label, emoji }) => {
-          const chosen = shape === mode;
-          return (
-            <KeyButton
-              key={mode}
-              label={label}
-              ariaLabel={label}
-              active={chosen}
-              role="radio"
-              tabIndex={chosen ? 0 : -1}
-              onClick={() => setDisplayMode(mode)}
-              className="te-visual-key"
-              title={modeTitle(mode)}
-            ><span aria-hidden="true" style={{ fontSize: 17, lineHeight: '20px' }}>{emoji}</span></KeyButton>
-          );
-        })}
-      </div>
-
       <div
-        className="te-voicing-drawing w-full mx-auto"
-        role="img"
-        aria-label={`${shape === 'guitar' ? 'Guitar shape' : 'Keyboard voicing'}${chordName ? ` of ${chordName}` : ''}`}
-        style={{
-          maxWidth: compact && shape === 'guitar' ? 220 : DRAWING_MAX_WIDTH,
-          padding: compact ? 4 : 6,
-          gridColumn: compact ? 1 : undefined,
-          gridRow: compact ? 1 : undefined,
-          background: 'transparent',
-        }}
+        className="grid min-w-0 items-center gap-1.5"
+        style={{ gridTemplateColumns: 'minmax(0, 1fr) 32px', height: shape === 'piano' ? 72 : 'clamp(72px, 8dvh, 132px)' }}
       >
-        {shape === 'guitar' ? (
-          <GuitarFretboard frets={guitarFrets} highlightColor={highlight} />
-        ) : (
-          <PianoKeyboard activeNotes={pianoNotes} highlightColor={highlight} />
-        )}
-      </div>
+        <div
+          className="te-visual-selector grid gap-[3px] grid-cols-1"
+          role="radiogroup"
+          aria-label="Piano or guitar display"
+          onKeyDown={handleDisplayKey}
+          style={{ gridColumn: 2, gridRow: 1 }}
+        >
+          {MODES.map(({ mode, label, emoji, title }) => {
+            const chosen = shape === mode;
+            return (
+              <KeyButton
+                key={mode}
+                label={label}
+                ariaLabel={label}
+                active={chosen}
+                role="radio"
+                tabIndex={chosen ? 0 : -1}
+                onClick={() => setDisplayMode(mode)}
+                className="te-visual-key"
+                title={title}
+              ><span aria-hidden="true" style={{ fontSize: 17, lineHeight: '20px' }}>{emoji}</span></KeyButton>
+            );
+          })}
+        </div>
+
+        <div
+          className="te-voicing-drawing w-full mx-auto"
+          role="img"
+          aria-label={`${shape === 'guitar' ? 'Guitar shape' : 'Keyboard voicing'}${chordName ? ` of ${chordName}` : ''}`}
+          style={{
+            maxWidth: shape === 'guitar' ? FRETBOARD_MAX_WIDTH : DRAWING_MAX_WIDTH,
+            padding: 4,
+            gridColumn: 1,
+            gridRow: 1,
+            background: 'transparent',
+          }}
+        >
+          {shape === 'guitar' ? (
+            <GuitarFretboard frets={guitarFrets} highlightColor={highlight} />
+          ) : (
+            <PianoKeyboard activeNotes={pianoNotes} highlightColor={highlight} />
+          )}
+        </div>
       </div>
     </div>
   );
