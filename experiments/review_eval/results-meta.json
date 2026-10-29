@@ -1,0 +1,6715 @@
+{
+ "ts": "2026-10-29T13:58:08+00:00",
+ "judge": "meta",
+ "provider": "meta",
+ "model": "muse-spark-1.3",
+ "effort": "low",
+ "limits": {
+  "maxUsd": 1.5,
+  "reviewMaxUsd": 0.03,
+  "reviewMaxTokens": 2048,
+  "reviewTimeoutS": 30.0
+ },
+ "source": {
+  "path": "experiments/agent_eval/results/meta-medium.json",
+  "sha256": "f7e68cbdbc22cde1653cc4fa6338cc0e1b8935ace3d8189990d17922214cba4e",
+  "ts": "2026-10-29T09:19:51+00:00",
+  "planner": "meta",
+  "effort": "medium",
+  "runs": 20
+ },
+ "orders": [
+  "ABC",
+  "BCA",
+  "CAB"
+ ],
+ "ledger": {
+  "before": {
+   "path": "backend/.ledger/meta_ledger.json",
+   "capUsd": 25.0,
+   "spentUsd": 4.89968575,
+   "outstandingUsd": 0.01904925
+  },
+  "after": {
+   "path": "backend/.ledger/meta_ledger.json",
+   "capUsd": 25.0,
+   "spentUsd": 5.1440531,
+   "outstandingUsd": 0.01904925
+  }
+ },
+ "spentUsd": 0.24436735,
+ "stopped": null,
+ "sections": [
+  {
+   "request": "complete_bossa_f_16bar_64",
+   "kind": "complete",
+   "genre": "bossa",
+   "key": "F major",
+   "sectionType": "b_section",
+   "bars": 16,
+   "cadence": "half_iv_v",
+   "regenerated": false,
+   "modelUsed": "ft_f1_lora_bossa",
+   "candidates": [
+    {
+     "letter": "A",
+     "label": "Option A — F1 + LoRA: bossa (balanced)",
+     "creativity": "balanced"
+    },
+    {
+     "letter": "B",
+     "label": "Option B — F1 + LoRA: bossa (conservative)",
+     "creativity": "conservative"
+    },
+    {
+     "letter": "C",
+     "label": "Option C — F1 + LoRA: bossa (creative)",
+     "creativity": "creative"
+    }
+   ],
+   "plannerRulesSlots": [
+    0,
+    30,
+    31
+   ],
+   "rulesSlotsMatch": true,
+   "facts": [
+    {
+     "label": "A",
+     "outOfKeyRatio": 0.125,
+     "changedSlots": 32,
+     "repetitionVsPrevious": 0.031,
+     "r1Roughness": 0.848,
+     "rulesSlots": [
+      0,
+      30,
+      31
+     ]
+    },
+    {
+     "label": "B",
+     "outOfKeyRatio": 0.188,
+     "changedSlots": 32,
+     "repetitionVsPrevious": 0.125,
+     "r1Roughness": 0.865,
+     "rulesSlots": [
+      0,
+      30,
+      31
+     ]
+    },
+    {
+     "label": "C",
+     "outOfKeyRatio": 0.219,
+     "changedSlots": 32,
+     "repetitionVsPrevious": 0.094,
+     "r1Roughness": 0.816,
+     "rulesSlots": [
+      0,
+      30,
+      31
+     ]
+    }
+   ],
+   "r1Pick": [
+    "C"
+   ],
+   "rawR1Pick": [
+    "A"
+   ],
+   "body": {
+    "key": "F major",
+    "genre": "bossa",
+    "sectionType": "b_section",
+    "original": [
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ]
+    ],
+    "candidates": [
+     {
+      "label": "A",
+      "chords": [
+       [
+        "Bbmaj7",
+        "F/A"
+       ],
+       [
+        "Dm7/A",
+        "Dm7/A"
+       ],
+       [
+        "Bb",
+        "Bb"
+       ],
+       [
+        "G7",
+        "G7"
+       ],
+       [
+        "C/G",
+        "C/G"
+       ],
+       [
+        "F",
+        "F"
+       ],
+       [
+        "F",
+        "F"
+       ],
+       [
+        "Bb/F",
+        "Bb/F"
+       ],
+       [
+        "Gm7",
+        "Gm7"
+       ],
+       [
+        "F",
+        "F"
+       ],
+       [
+        "C7/E",
+        "C7/E"
+       ],
+       [
+        "C7/E",
+        "C7/E"
+       ],
+       [
+        "Am7/E",
+        "Am7/E"
+       ],
+       [
+        "D9",
+        "D9"
+       ],
+       [
+        "Gm7/D",
+        "Gm7/D"
+       ],
+       [
+        "Bbmaj7/D",
+        "C7"
+       ]
+      ]
+     },
+     {
+      "label": "B",
+      "chords": [
+       [
+        "Bbmaj7",
+        "F/A"
+       ],
+       [
+        "F/A",
+        "F/A"
+       ],
+       [
+        "Bbmaj7",
+        "Bbmaj7"
+       ],
+       [
+        "A7",
+        "A7"
+       ],
+       [
+        "Dm7/A",
+        "Dm7/A"
+       ],
+       [
+        "G7",
+        "G7"
+       ],
+       [
+        "Gm7",
+        "Gm7"
+       ],
+       [
+        "C/G",
+        "C/G"
+       ],
+       [
+        "C7/G",
+        "C7/G"
+       ],
+       [
+        "C7/G",
+        "C7/G"
+       ],
+       [
+        "Am7",
+        "Am7"
+       ],
+       [
+        "D7/A",
+        "D7/A"
+       ],
+       [
+        "Gm",
+        "Gm"
+       ],
+       [
+        "C7/G",
+        "C7/G"
+       ],
+       [
+        "Gm7",
+        "Gm7"
+       ],
+       [
+        "Bbmaj7",
+        "C7"
+       ]
+      ]
+     },
+     {
+      "label": "C",
+      "chords": [
+       [
+        "Bbmaj7",
+        "Gm7/Bb"
+       ],
+       [
+        "Bbmaj7",
+        "Bbmaj7"
+       ],
+       [
+        "Ebmaj7/Bb",
+        "Dm7/A"
+       ],
+       [
+        "Cm7",
+        "Dm7"
+       ],
+       [
+        "Ebmaj7",
+        "Ebmaj7"
+       ],
+       [
+        "Gm7/D",
+        "A7/Db"
+       ],
+       [
+        "Dm7",
+        "Dm7"
+       ],
+       [
+        "Dm7",
+        "Dm7"
+       ],
+       [
+        "Fmaj7",
+        "Fmaj7"
+       ],
+       [
+        "Bb/F",
+        "Bb/F"
+       ],
+       [
+        "C/E",
+        "C/E"
+       ],
+       [
+        "Fmaj7",
+        "Fmaj7"
+       ],
+       [
+        "Dm7/F",
+        "Dm7/F"
+       ],
+       [
+        "G7",
+        "G7"
+       ],
+       [
+        "Bb",
+        "C7"
+       ],
+       [
+        "Bbmaj7",
+        "C7"
+       ]
+      ]
+     }
+    ],
+    "previousSection": [
+     [
+      "Fmaj7",
+      null
+     ],
+     [
+      "Gm7",
+      "C7"
+     ],
+     [
+      "Fmaj7",
+      null
+     ],
+     [
+      "Am7",
+      "D7"
+     ],
+     [
+      "Gm7",
+      null
+     ],
+     [
+      "C7",
+      null
+     ],
+     [
+      "Fmaj7",
+      "Dm7"
+     ],
+     [
+      "Gm7",
+      "C7"
+     ],
+     [
+      "Fmaj7",
+      null
+     ],
+     [
+      "Gm7",
+      "C7"
+     ],
+     [
+      "Bbmaj7",
+      null
+     ],
+     [
+      "Am7",
+      "D7"
+     ],
+     [
+      "Gm7",
+      null
+     ],
+     [
+      "C7",
+      null
+     ],
+     [
+      "Fmaj7",
+      "Dm7"
+     ],
+     [
+      "Gm7",
+      "C7"
+     ]
+    ]
+   }
+  },
+  {
+   "request": "complete_country_g_16bar_32",
+   "kind": "complete",
+   "genre": "country",
+   "key": "G major",
+   "sectionType": "bridge",
+   "bars": 4,
+   "cadence": "half_iv_v",
+   "regenerated": false,
+   "modelUsed": "ft_f1_lora_country",
+   "candidates": [
+    {
+     "letter": "A",
+     "label": "Option A — F1 + LoRA: country (conservative)",
+     "creativity": "conservative"
+    },
+    {
+     "letter": "B",
+     "label": "Option B — F1 + LoRA: country (creative)",
+     "creativity": "creative"
+    },
+    {
+     "letter": "C",
+     "label": "Option C — F1 + LoRA: country (balanced)",
+     "creativity": "balanced"
+    }
+   ],
+   "plannerRulesSlots": [
+    0,
+    6,
+    7
+   ],
+   "rulesSlotsMatch": true,
+   "facts": [
+    {
+     "label": "A",
+     "outOfKeyRatio": 0.0,
+     "changedSlots": 8,
+     "repetitionVsPrevious": 0.25,
+     "r1Roughness": 0.726,
+     "rulesSlots": [
+      0,
+      6,
+      7
+     ]
+    },
+    {
+     "label": "B",
+     "outOfKeyRatio": 0.0,
+     "changedSlots": 8,
+     "repetitionVsPrevious": 0.125,
+     "r1Roughness": 0.685,
+     "rulesSlots": [
+      0,
+      6,
+      7
+     ]
+    },
+    {
+     "label": "C",
+     "outOfKeyRatio": 0.125,
+     "changedSlots": 8,
+     "repetitionVsPrevious": 0.125,
+     "r1Roughness": 0.499,
+     "rulesSlots": [
+      0,
+      6,
+      7
+     ]
+    }
+   ],
+   "r1Pick": [
+    "C"
+   ],
+   "rawR1Pick": [
+    "A"
+   ],
+   "body": {
+    "key": "G major",
+    "genre": "country",
+    "sectionType": "bridge",
+    "original": [
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ]
+    ],
+    "candidates": [
+     {
+      "label": "A",
+      "chords": [
+       [
+        "Cmaj7",
+        "G/B"
+       ],
+       [
+        "Am",
+        "Am"
+       ],
+       [
+        "G",
+        "G"
+       ],
+       [
+        "Cmaj7/G",
+        "D7/F#"
+       ]
+      ]
+     },
+     {
+      "label": "B",
+      "chords": [
+       [
+        "Cmaj7",
+        "D"
+       ],
+       [
+        "D",
+        "D"
+       ],
+       [
+        "Am",
+        "Em"
+       ],
+       [
+        "Cmaj7/E",
+        "D7"
+       ]
+      ]
+     },
+     {
+      "label": "C",
+      "chords": [
+       [
+        "C",
+        "Am"
+       ],
+       [
+        "G",
+        "Em"
+       ],
+       [
+        "G",
+        "A"
+       ],
+       [
+        "Cmaj7",
+        "D7"
+       ]
+      ]
+     }
+    ],
+    "previousSection": [
+     [
+      "C",
+      "G"
+     ],
+     [
+      "D",
+      "G"
+     ],
+     [
+      "C",
+      "G"
+     ],
+     [
+      "Em",
+      "D"
+     ]
+    ]
+   }
+  },
+  {
+   "request": "complete_hiphop_amin_8bar_32",
+   "kind": "complete",
+   "genre": "hip_hop",
+   "key": "A minor",
+   "sectionType": "chorus",
+   "bars": 8,
+   "cadence": "authentic",
+   "regenerated": false,
+   "modelUsed": "ft_f1_lora_hip_hop",
+   "candidates": [
+    {
+     "letter": "A",
+     "label": "Option A — F1 + LoRA: hip-hop (balanced)",
+     "creativity": "balanced"
+    },
+    {
+     "letter": "B",
+     "label": "Option B — F1 + LoRA: hip-hop (conservative)",
+     "creativity": "conservative"
+    },
+    {
+     "letter": "C",
+     "label": "Option C — F1 + LoRA: hip-hop (creative)",
+     "creativity": "creative"
+    }
+   ],
+   "plannerRulesSlots": [
+    14,
+    15
+   ],
+   "rulesSlotsMatch": true,
+   "facts": [
+    {
+     "label": "A",
+     "outOfKeyRatio": 0.062,
+     "changedSlots": 16,
+     "repetitionVsPrevious": 0.0,
+     "r1Roughness": 0.483,
+     "rulesSlots": [
+      14,
+      15
+     ]
+    },
+    {
+     "label": "B",
+     "outOfKeyRatio": 0.0,
+     "changedSlots": 16,
+     "repetitionVsPrevious": 0.125,
+     "r1Roughness": 0.549,
+     "rulesSlots": [
+      14,
+      15
+     ]
+    },
+    {
+     "label": "C",
+     "outOfKeyRatio": 0.0,
+     "changedSlots": 16,
+     "repetitionVsPrevious": 0.125,
+     "r1Roughness": 0.542,
+     "rulesSlots": [
+      14,
+      15
+     ]
+    }
+   ],
+   "r1Pick": [
+    "A"
+   ],
+   "rawR1Pick": [
+    "A"
+   ],
+   "body": {
+    "key": "A minor",
+    "genre": "hip_hop",
+    "sectionType": "chorus",
+    "original": [
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ]
+    ],
+    "candidates": [
+     {
+      "label": "A",
+      "chords": [
+       [
+        "Em",
+        "Dm"
+       ],
+       [
+        "E7",
+        "Am"
+       ],
+       [
+        "G",
+        "Am"
+       ],
+       [
+        "D/A",
+        "E/Ab"
+       ],
+       [
+        "D/A",
+        "A"
+       ],
+       [
+        "Am",
+        "Am"
+       ],
+       [
+        "Am",
+        "D/A"
+       ],
+       [
+        "E7/Ab",
+        "Am"
+       ]
+      ]
+     },
+     {
+      "label": "B",
+      "chords": [
+       [
+        "F",
+        "C/E"
+       ],
+       [
+        "G",
+        "Am"
+       ],
+       [
+        "E7/Ab",
+        "F"
+       ],
+       [
+        "C/E",
+        "G"
+       ],
+       [
+        "Am",
+        "C"
+       ],
+       [
+        "E7/B",
+        "Am"
+       ],
+       [
+        "G",
+        "F"
+       ],
+       [
+        "E7",
+        "Am"
+       ]
+      ]
+     },
+     {
+      "label": "C",
+      "chords": [
+       [
+        "D7",
+        "Dm"
+       ],
+       [
+        "G/D",
+        "C"
+       ],
+       [
+        "Am",
+        "Dm"
+       ],
+       [
+        "C",
+        "Em"
+       ],
+       [
+        "F",
+        "Dm"
+       ],
+       [
+        "E",
+        "Am"
+       ],
+       [
+        "Am",
+        "D7/A"
+       ],
+       [
+        "E7/Ab",
+        "Am"
+       ]
+      ]
+     }
+    ],
+    "previousSection": [
+     [
+      "Am",
+      "F"
+     ],
+     [
+      "G",
+      "Em"
+     ],
+     [
+      "Am",
+      "F"
+     ],
+     [
+      "G",
+      "E7"
+     ],
+     [
+      "Dm",
+      "Am"
+     ],
+     [
+      "F",
+      "G"
+     ],
+     [
+      "Dm",
+      "E7"
+     ],
+     [
+      "Am",
+      null
+     ]
+    ]
+   }
+  },
+  {
+   "request": "complete_jazz_f_8bar_32",
+   "kind": "complete",
+   "genre": "jazz",
+   "key": "F major",
+   "sectionType": "a_section",
+   "bars": 8,
+   "cadence": "authentic",
+   "regenerated": false,
+   "modelUsed": "ft_f4",
+   "candidates": [
+    {
+     "letter": "A",
+     "label": "Option A — F4 — 1K pop mix (balanced)",
+     "creativity": "balanced"
+    },
+    {
+     "letter": "B",
+     "label": "Option B — F4 — 1K pop mix (creative)",
+     "creativity": "creative"
+    },
+    {
+     "letter": "C",
+     "label": "Option C — F4 — 1K pop mix (conservative)",
+     "creativity": "conservative"
+    }
+   ],
+   "plannerRulesSlots": [
+    14,
+    15
+   ],
+   "rulesSlotsMatch": true,
+   "facts": [
+    {
+     "label": "A",
+     "outOfKeyRatio": 0.562,
+     "changedSlots": 16,
+     "repetitionVsPrevious": 0.0,
+     "r1Roughness": 0.849,
+     "rulesSlots": [
+      14,
+      15
+     ]
+    },
+    {
+     "label": "B",
+     "outOfKeyRatio": 0.188,
+     "changedSlots": 16,
+     "repetitionVsPrevious": 0.0,
+     "r1Roughness": 0.812,
+     "rulesSlots": [
+      14,
+      15
+     ]
+    },
+    {
+     "label": "C",
+     "outOfKeyRatio": 0.438,
+     "changedSlots": 16,
+     "repetitionVsPrevious": 0.062,
+     "r1Roughness": 1.026,
+     "rulesSlots": [
+      14,
+      15
+     ]
+    }
+   ],
+   "r1Pick": [
+    "B"
+   ],
+   "rawR1Pick": [
+    "A"
+   ],
+   "body": {
+    "key": "F major",
+    "genre": "jazz",
+    "sectionType": "a_section",
+    "original": [
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ]
+    ],
+    "candidates": [
+     {
+      "label": "A",
+      "chords": [
+       [
+        "F6",
+        "Gm7"
+       ],
+       [
+        "Abdim7",
+        "Am7"
+       ],
+       [
+        "Dm7/A",
+        "Dm7/A"
+       ],
+       [
+        "Bm7b5",
+        "E7/B"
+       ],
+       [
+        "Amaj7",
+        "Bm7"
+       ],
+       [
+        "Dbm7",
+        "Dbm7"
+       ],
+       [
+        "F#m7/Db",
+        "F#m7/Db"
+       ],
+       [
+        "C7",
+        "F"
+       ]
+      ]
+     },
+     {
+      "label": "B",
+      "chords": [
+       [
+        "F6",
+        "F6"
+       ],
+       [
+        "F6",
+        "Am7b5"
+       ],
+       [
+        "Gm6",
+        "Gm6"
+       ],
+       [
+        "Gm7",
+        "Gm7"
+       ],
+       [
+        "Em7b5/G",
+        "Em7b5/G"
+       ],
+       [
+        "A7b9",
+        "A7b9"
+       ],
+       [
+        "Dm",
+        "Dm"
+       ],
+       [
+        "C7",
+        "F"
+       ]
+      ]
+     },
+     {
+      "label": "C",
+      "chords": [
+       [
+        "F6",
+        "F7"
+       ],
+       [
+        "Bb6/F",
+        "Bb6/F"
+       ],
+       [
+        "Am7b5",
+        "Am7b5"
+       ],
+       [
+        "D7b9/A",
+        "D7b9/A"
+       ],
+       [
+        "Gm7",
+        "Gm7"
+       ],
+       [
+        "Eb7/G",
+        "Eb7/G"
+       ],
+       [
+        "Am7",
+        "Am7"
+       ],
+       [
+        "C7",
+        "F"
+       ]
+      ]
+     }
+    ],
+    "previousSection": [
+     [
+      "Fmaj7",
+      "Dm7"
+     ],
+     [
+      "Gm7",
+      "C7"
+     ],
+     [
+      "Fmaj7",
+      "Bbmaj7"
+     ],
+     [
+      "Em7b5",
+      "A7"
+     ],
+     [
+      "Dm7",
+      "G7"
+     ],
+     [
+      "Gm7",
+      "C7"
+     ],
+     [
+      "Am7",
+      "D7"
+     ],
+     [
+      "Gm7",
+      "C7"
+     ]
+    ]
+   }
+  },
+  {
+   "request": "complete_pop_c_8bar_32",
+   "kind": "complete",
+   "genre": "pop",
+   "key": "C major",
+   "sectionType": "pre_chorus",
+   "bars": 4,
+   "cadence": "half",
+   "regenerated": true,
+   "modelUsed": "ft_f1",
+   "candidates": [
+    {
+     "letter": "A",
+     "label": "Option A — F1 — 10K pop mix (creative)",
+     "creativity": "creative"
+    },
+    {
+     "letter": "B",
+     "label": "Option B — F1 — 10K pop mix (balanced)",
+     "creativity": "balanced"
+    },
+    {
+     "letter": "C",
+     "label": "Option C — F1 — 10K pop mix (conservative)",
+     "creativity": "conservative"
+    }
+   ],
+   "plannerRulesSlots": [
+    7
+   ],
+   "rulesSlotsMatch": true,
+   "facts": [
+    {
+     "label": "A",
+     "outOfKeyRatio": 0.0,
+     "changedSlots": 8,
+     "repetitionVsPrevious": 0.0,
+     "r1Roughness": 0.516,
+     "rulesSlots": [
+      7
+     ]
+    },
+    {
+     "label": "B",
+     "outOfKeyRatio": 0.0,
+     "changedSlots": 8,
+     "repetitionVsPrevious": 0.25,
+     "r1Roughness": 0.507,
+     "rulesSlots": [
+      7
+     ]
+    },
+    {
+     "label": "C",
+     "outOfKeyRatio": 0.0,
+     "changedSlots": 8,
+     "repetitionVsPrevious": 0.0,
+     "r1Roughness": 0.797,
+     "rulesSlots": [
+      7
+     ]
+    }
+   ],
+   "r1Pick": [
+    "B"
+   ],
+   "rawR1Pick": [
+    "B"
+   ],
+   "body": {
+    "key": "C major",
+    "genre": "pop",
+    "sectionType": "pre_chorus",
+    "original": [
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ]
+    ],
+    "candidates": [
+     {
+      "label": "A",
+      "chords": [
+       [
+        "G",
+        "Em"
+       ],
+       [
+        "Am",
+        "Dm"
+       ],
+       [
+        "G7/D",
+        "C"
+       ],
+       [
+        "Am",
+        "G7"
+       ]
+      ]
+     },
+     {
+      "label": "B",
+      "chords": [
+       [
+        "G",
+        "Am"
+       ],
+       [
+        "Em",
+        "F"
+       ],
+       [
+        "C/E",
+        "F"
+       ],
+       [
+        "G7",
+        "G7"
+       ]
+      ]
+     },
+     {
+      "label": "C",
+      "chords": [
+       [
+        "Dm",
+        "G7/D"
+       ],
+       [
+        "Am",
+        "Em7/G"
+       ],
+       [
+        "F",
+        "Dm7/F"
+       ],
+       [
+        "G7",
+        "G7"
+       ]
+      ]
+     }
+    ],
+    "previousSection": [
+     [
+      "C",
+      "Am"
+     ],
+     [
+      "F",
+      "G"
+     ],
+     [
+      "C",
+      "Am"
+     ],
+     [
+      "F",
+      "G"
+     ]
+    ]
+   }
+  },
+  {
+   "request": "complete_rock_e_8bar_32",
+   "kind": "complete",
+   "genre": "rock",
+   "key": "E major",
+   "sectionType": "pre_chorus",
+   "bars": 4,
+   "cadence": "half",
+   "regenerated": false,
+   "modelUsed": "ft_f1_lora_rock",
+   "candidates": [
+    {
+     "letter": "A",
+     "label": "Option A — F1 + LoRA: rock (conservative)",
+     "creativity": "conservative"
+    },
+    {
+     "letter": "B",
+     "label": "Option B — F1 + LoRA: rock (balanced)",
+     "creativity": "balanced"
+    },
+    {
+     "letter": "C",
+     "label": "Option C — F1 + LoRA: rock (creative)",
+     "creativity": "creative"
+    }
+   ],
+   "plannerRulesSlots": [
+    7
+   ],
+   "rulesSlotsMatch": true,
+   "facts": [
+    {
+     "label": "A",
+     "outOfKeyRatio": 0.125,
+     "changedSlots": 8,
+     "repetitionVsPrevious": 0.0,
+     "r1Roughness": 0.416,
+     "rulesSlots": [
+      7
+     ]
+    },
+    {
+     "label": "B",
+     "outOfKeyRatio": 0.125,
+     "changedSlots": 8,
+     "repetitionVsPrevious": 0.125,
+     "r1Roughness": 0.443,
+     "rulesSlots": [
+      7
+     ]
+    },
+    {
+     "label": "C",
+     "outOfKeyRatio": 0.25,
+     "changedSlots": 8,
+     "repetitionVsPrevious": 0.125,
+     "r1Roughness": 0.401,
+     "rulesSlots": [
+      7
+     ]
+    }
+   ],
+   "r1Pick": [
+    "C"
+   ],
+   "rawR1Pick": [
+    "A"
+   ],
+   "body": {
+    "key": "E major",
+    "genre": "rock",
+    "sectionType": "pre_chorus",
+    "original": [
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ]
+    ],
+    "candidates": [
+     {
+      "label": "A",
+      "chords": [
+       [
+        "A",
+        "E/Ab"
+       ],
+       [
+        "B",
+        "A"
+       ],
+       [
+        "D/A",
+        "A"
+       ],
+       [
+        "B",
+        "B7"
+       ]
+      ]
+     },
+     {
+      "label": "B",
+      "chords": [
+       [
+        "B",
+        "E/B"
+       ],
+       [
+        "D",
+        "A/Db"
+       ],
+       [
+        "B",
+        "Dbm"
+       ],
+       [
+        "A/Db",
+        "B7"
+       ]
+      ]
+     },
+     {
+      "label": "C",
+      "chords": [
+       [
+        "D",
+        "Dbm"
+       ],
+       [
+        "C",
+        "B"
+       ],
+       [
+        "B",
+        "A"
+       ],
+       [
+        "B",
+        "B7"
+       ]
+      ]
+     }
+    ],
+    "previousSection": [
+     [
+      "E",
+      "A"
+     ],
+     [
+      "E",
+      "B"
+     ],
+     [
+      "E",
+      "D"
+     ],
+     [
+      "A",
+      "B"
+     ]
+    ]
+   }
+  },
+  {
+   "request": "new_blues_32",
+   "kind": "new",
+   "genre": "blues",
+   "key": "E major",
+   "sectionType": "intro",
+   "bars": 8,
+   "cadence": "half",
+   "regenerated": false,
+   "modelUsed": "ft_f1_lora_blues",
+   "candidates": [
+    {
+     "letter": "A",
+     "label": "Option A — F1 + LoRA: blues (balanced)",
+     "creativity": "balanced"
+    },
+    {
+     "letter": "B",
+     "label": "Option B — F1 + LoRA: blues (conservative)",
+     "creativity": "conservative"
+    },
+    {
+     "letter": "C",
+     "label": "Option C — F1 + LoRA: blues (creative)",
+     "creativity": "creative"
+    }
+   ],
+   "plannerRulesSlots": [
+    0,
+    15
+   ],
+   "rulesSlotsMatch": false,
+   "facts": [
+    {
+     "label": "A",
+     "outOfKeyRatio": 0.062,
+     "changedSlots": 16,
+     "repetitionVsPrevious": null,
+     "r1Roughness": 0.438,
+     "rulesSlots": [
+      0
+     ]
+    },
+    {
+     "label": "B",
+     "outOfKeyRatio": 0.188,
+     "changedSlots": 16,
+     "repetitionVsPrevious": null,
+     "r1Roughness": 0.422,
+     "rulesSlots": [
+      0
+     ]
+    },
+    {
+     "label": "C",
+     "outOfKeyRatio": 0.125,
+     "changedSlots": 16,
+     "repetitionVsPrevious": null,
+     "r1Roughness": 0.474,
+     "rulesSlots": [
+      0
+     ]
+    }
+   ],
+   "r1Pick": [
+    "B"
+   ],
+   "rawR1Pick": [
+    "A"
+   ],
+   "body": {
+    "key": "E major",
+    "genre": "blues",
+    "sectionType": "intro",
+    "original": [
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ]
+    ],
+    "candidates": [
+     {
+      "label": "A",
+      "chords": [
+       [
+        "E",
+        "A/E"
+       ],
+       [
+        "E",
+        "B/Eb"
+       ],
+       [
+        "A/E",
+        "E"
+       ],
+       [
+        "A/E",
+        "B/Eb"
+       ],
+       [
+        "E",
+        "C#m"
+       ],
+       [
+        "A/Db",
+        "D"
+       ],
+       [
+        "A/Db",
+        "F#m"
+       ],
+       [
+        "B/F#",
+        "B7/F#"
+       ]
+      ]
+     },
+     {
+      "label": "B",
+      "chords": [
+       [
+        "E",
+        "A/E"
+       ],
+       [
+        "E",
+        "B/Eb"
+       ],
+       [
+        "A/E",
+        "E"
+       ],
+       [
+        "A/E",
+        "B/Eb"
+       ],
+       [
+        "E",
+        "D"
+       ],
+       [
+        "A/Db",
+        "C"
+       ],
+       [
+        "B",
+        "E/B"
+       ],
+       [
+        "D",
+        "B7"
+       ]
+      ]
+     },
+     {
+      "label": "C",
+      "chords": [
+       [
+        "E",
+        "F#"
+       ],
+       [
+        "A",
+        "B"
+       ],
+       [
+        "E/B",
+        "A"
+       ],
+       [
+        "E/Ab",
+        "B7"
+       ],
+       [
+        "A",
+        "E/Ab"
+       ],
+       [
+        "B",
+        "E/B"
+       ],
+       [
+        "A",
+        "C#/Ab"
+       ],
+       [
+        "F#m",
+        "B7/F#"
+       ]
+      ]
+     }
+    ],
+    "previousSection": null
+   }
+  },
+  {
+   "request": "new_blues_64",
+   "kind": "new",
+   "genre": "blues",
+   "key": "E major",
+   "sectionType": "intro",
+   "bars": 4,
+   "cadence": "half",
+   "regenerated": false,
+   "modelUsed": "ft_f1_lora_blues",
+   "candidates": [
+    {
+     "letter": "A",
+     "label": "Option A — F1 + LoRA: blues (conservative)",
+     "creativity": "conservative"
+    },
+    {
+     "letter": "B",
+     "label": "Option B — F1 + LoRA: blues (balanced)",
+     "creativity": "balanced"
+    },
+    {
+     "letter": "C",
+     "label": "Option C — F1 + LoRA: blues (creative)",
+     "creativity": "creative"
+    }
+   ],
+   "plannerRulesSlots": [
+    0,
+    7
+   ],
+   "rulesSlotsMatch": false,
+   "facts": [
+    {
+     "label": "A",
+     "outOfKeyRatio": 0.0,
+     "changedSlots": 8,
+     "repetitionVsPrevious": null,
+     "r1Roughness": 0.438,
+     "rulesSlots": [
+      0
+     ]
+    },
+    {
+     "label": "B",
+     "outOfKeyRatio": 0.0,
+     "changedSlots": 8,
+     "repetitionVsPrevious": null,
+     "r1Roughness": 0.436,
+     "rulesSlots": [
+      0
+     ]
+    },
+    {
+     "label": "C",
+     "outOfKeyRatio": 0.25,
+     "changedSlots": 8,
+     "repetitionVsPrevious": null,
+     "r1Roughness": 0.506,
+     "rulesSlots": [
+      0
+     ]
+    }
+   ],
+   "r1Pick": [
+    "B"
+   ],
+   "rawR1Pick": [
+    "A"
+   ],
+   "body": {
+    "key": "E major",
+    "genre": "blues",
+    "sectionType": "intro",
+    "original": [
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ]
+    ],
+    "candidates": [
+     {
+      "label": "A",
+      "chords": [
+       [
+        "E",
+        "A/E"
+       ],
+       [
+        "E",
+        "B/Eb"
+       ],
+       [
+        "A/E",
+        "E"
+       ],
+       [
+        "A/E",
+        "B7/Eb"
+       ]
+      ]
+     },
+     {
+      "label": "B",
+      "chords": [
+       [
+        "E",
+        "A/E"
+       ],
+       [
+        "E",
+        "B/Eb"
+       ],
+       [
+        "E",
+        "E"
+       ],
+       [
+        "C#m",
+        "B7"
+       ]
+      ]
+     },
+     {
+      "label": "C",
+      "chords": [
+       [
+        "E",
+        "B/Eb"
+       ],
+       [
+        "E",
+        "E7"
+       ],
+       [
+        "A/E",
+        "E"
+       ],
+       [
+        "F#",
+        "B7/F#"
+       ]
+      ]
+     }
+    ],
+    "previousSection": null
+   }
+  },
+  {
+   "request": "new_electronic_32",
+   "kind": "new",
+   "genre": "electronic",
+   "key": "A minor",
+   "sectionType": "intro",
+   "bars": 8,
+   "cadence": "none",
+   "regenerated": false,
+   "modelUsed": "ft_f1_lora_electronic",
+   "candidates": [
+    {
+     "letter": "A",
+     "label": "Option A — F1 + LoRA: electronic (creative)",
+     "creativity": "creative"
+    },
+    {
+     "letter": "B",
+     "label": "Option B — F1 + LoRA: electronic (conservative)",
+     "creativity": "conservative"
+    },
+    {
+     "letter": "C",
+     "label": "Option C — F1 + LoRA: electronic (balanced)",
+     "creativity": "balanced"
+    }
+   ],
+   "plannerRulesSlots": [
+    0
+   ],
+   "rulesSlotsMatch": true,
+   "facts": [
+    {
+     "label": "A",
+     "outOfKeyRatio": 0.0,
+     "changedSlots": 16,
+     "repetitionVsPrevious": null,
+     "r1Roughness": 0.436,
+     "rulesSlots": [
+      0
+     ]
+    },
+    {
+     "label": "B",
+     "outOfKeyRatio": 0.0,
+     "changedSlots": 16,
+     "repetitionVsPrevious": null,
+     "r1Roughness": 0.45,
+     "rulesSlots": [
+      0
+     ]
+    },
+    {
+     "label": "C",
+     "outOfKeyRatio": 0.0,
+     "changedSlots": 16,
+     "repetitionVsPrevious": null,
+     "r1Roughness": 0.479,
+     "rulesSlots": [
+      0
+     ]
+    }
+   ],
+   "r1Pick": [
+    "A"
+   ],
+   "rawR1Pick": [
+    "B"
+   ],
+   "body": {
+    "key": "A minor",
+    "genre": "electronic",
+    "sectionType": "intro",
+    "original": [
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ]
+    ],
+    "candidates": [
+     {
+      "label": "A",
+      "chords": [
+       [
+        "Am",
+        "G"
+       ],
+       [
+        "F",
+        "Dm"
+       ],
+       [
+        "Em",
+        "C/E"
+       ],
+       [
+        "Am",
+        "Em"
+       ],
+       [
+        "D",
+        "Am"
+       ],
+       [
+        "Em",
+        "F"
+       ],
+       [
+        "C/E",
+        "Am"
+       ],
+       [
+        "Dm",
+        "G/D"
+       ]
+      ]
+     },
+     {
+      "label": "B",
+      "chords": [
+       [
+        "Am7",
+        "G"
+       ],
+       [
+        "Am",
+        "F/A"
+       ],
+       [
+        "C",
+        "Dm"
+       ],
+       [
+        "C",
+        "F/C"
+       ],
+       [
+        "Am",
+        "G"
+       ],
+       [
+        "F",
+        "C/E"
+       ],
+       [
+        "G",
+        "C/G"
+       ],
+       [
+        "F",
+        "Am"
+       ]
+      ]
+     },
+     {
+      "label": "C",
+      "chords": [
+       [
+        "Am7",
+        "C"
+       ],
+       [
+        "F/C",
+        "G/B"
+       ],
+       [
+        "Dm",
+        "G/D"
+       ],
+       [
+        "C",
+        "G/B"
+       ],
+       [
+        "Am",
+        "Dm"
+       ],
+       [
+        "C",
+        "F/C"
+       ],
+       [
+        "G/B",
+        "C"
+       ],
+       [
+        "Am",
+        "F/A"
+       ]
+      ]
+     }
+    ],
+    "previousSection": null
+   }
+  },
+  {
+   "request": "new_electronic_64",
+   "kind": "new",
+   "genre": "electronic",
+   "key": "A minor",
+   "sectionType": "intro",
+   "bars": 8,
+   "cadence": "none",
+   "regenerated": false,
+   "modelUsed": "ft_f1_lora_electronic",
+   "candidates": [
+    {
+     "letter": "A",
+     "label": "Option A — F1 + LoRA: electronic (conservative)",
+     "creativity": "conservative"
+    },
+    {
+     "letter": "B",
+     "label": "Option B — F1 + LoRA: electronic (balanced)",
+     "creativity": "balanced"
+    },
+    {
+     "letter": "C",
+     "label": "Option C — F1 + LoRA: electronic (creative)",
+     "creativity": "creative"
+    }
+   ],
+   "plannerRulesSlots": [
+    0
+   ],
+   "rulesSlotsMatch": true,
+   "facts": [
+    {
+     "label": "A",
+     "outOfKeyRatio": 0.0,
+     "changedSlots": 16,
+     "repetitionVsPrevious": null,
+     "r1Roughness": 0.411,
+     "rulesSlots": [
+      0
+     ]
+    },
+    {
+     "label": "B",
+     "outOfKeyRatio": 0.0,
+     "changedSlots": 16,
+     "repetitionVsPrevious": null,
+     "r1Roughness": 0.436,
+     "rulesSlots": [
+      0
+     ]
+    },
+    {
+     "label": "C",
+     "outOfKeyRatio": 0.0,
+     "changedSlots": 16,
+     "repetitionVsPrevious": null,
+     "r1Roughness": 0.471,
+     "rulesSlots": [
+      0
+     ]
+    }
+   ],
+   "r1Pick": [
+    "A"
+   ],
+   "rawR1Pick": [
+    "A"
+   ],
+   "body": {
+    "key": "A minor",
+    "genre": "electronic",
+    "sectionType": "intro",
+    "original": [
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ]
+    ],
+    "candidates": [
+     {
+      "label": "A",
+      "chords": [
+       [
+        "Am7",
+        "G"
+       ],
+       [
+        "Am",
+        "Em"
+       ],
+       [
+        "F",
+        "C/E"
+       ],
+       [
+        "Dm",
+        "G/D"
+       ],
+       [
+        "F",
+        "Am"
+       ],
+       [
+        "G",
+        "F"
+       ],
+       [
+        "G",
+        "Am"
+       ],
+       [
+        "Em",
+        "F"
+       ]
+      ]
+     },
+     {
+      "label": "B",
+      "chords": [
+       [
+        "Am",
+        "Em"
+       ],
+       [
+        "Am",
+        "F/A"
+       ],
+       [
+        "Dm",
+        "C"
+       ],
+       [
+        "E/B",
+        "Am"
+       ],
+       [
+        "E/Ab",
+        "F"
+       ],
+       [
+        "G",
+        "Am"
+       ],
+       [
+        "Em",
+        "Am"
+       ],
+       [
+        "F/A",
+        "Dm"
+       ]
+      ]
+     },
+     {
+      "label": "C",
+      "chords": [
+       [
+        "Am7",
+        "F/A"
+       ],
+       [
+        "G",
+        "C/G"
+       ],
+       [
+        "F",
+        "C/E"
+       ],
+       [
+        "G",
+        "Dm"
+       ],
+       [
+        "G/D",
+        "F"
+       ],
+       [
+        "C/E",
+        "G"
+       ],
+       [
+        "Dm",
+        "G/D"
+       ],
+       [
+        "F",
+        "Am"
+       ]
+      ]
+     }
+    ],
+    "previousSection": null
+   }
+  },
+  {
+   "request": "new_gospel_32",
+   "kind": "new",
+   "genre": "gospel",
+   "key": "F major",
+   "sectionType": "intro",
+   "bars": 4,
+   "cadence": "half",
+   "regenerated": false,
+   "modelUsed": "ft_f1_lora_gospel",
+   "candidates": [
+    {
+     "letter": "A",
+     "label": "Option A — F1 + LoRA: gospel (balanced)",
+     "creativity": "balanced"
+    },
+    {
+     "letter": "B",
+     "label": "Option B — F1 + LoRA: gospel (creative)",
+     "creativity": "creative"
+    },
+    {
+     "letter": "C",
+     "label": "Option C — F1 + LoRA: gospel (conservative)",
+     "creativity": "conservative"
+    }
+   ],
+   "plannerRulesSlots": [
+    0,
+    7
+   ],
+   "rulesSlotsMatch": false,
+   "facts": [
+    {
+     "label": "A",
+     "outOfKeyRatio": 0.0,
+     "changedSlots": 8,
+     "repetitionVsPrevious": null,
+     "r1Roughness": 0.591,
+     "rulesSlots": [
+      0
+     ]
+    },
+    {
+     "label": "B",
+     "outOfKeyRatio": 0.0,
+     "changedSlots": 8,
+     "repetitionVsPrevious": null,
+     "r1Roughness": 0.538,
+     "rulesSlots": [
+      0
+     ]
+    },
+    {
+     "label": "C",
+     "outOfKeyRatio": 0.0,
+     "changedSlots": 8,
+     "repetitionVsPrevious": null,
+     "r1Roughness": 0.641,
+     "rulesSlots": [
+      0
+     ]
+    }
+   ],
+   "r1Pick": [
+    "B"
+   ],
+   "rawR1Pick": [
+    "B"
+   ],
+   "body": {
+    "key": "F major",
+    "genre": "gospel",
+    "sectionType": "intro",
+    "original": [
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ]
+    ],
+    "candidates": [
+     {
+      "label": "A",
+      "chords": [
+       [
+        "F",
+        "Bb/F"
+       ],
+       [
+        "C/E",
+        "F"
+       ],
+       [
+        "Dm",
+        "Gm"
+       ],
+       [
+        "C/G",
+        "C7/G"
+       ]
+      ]
+     },
+     {
+      "label": "B",
+      "chords": [
+       [
+        "F",
+        "Bb/F"
+       ],
+       [
+        "C/E",
+        "F"
+       ],
+       [
+        "C/E",
+        "Gm"
+       ],
+       [
+        "Bb",
+        "C7"
+       ]
+      ]
+     },
+     {
+      "label": "C",
+      "chords": [
+       [
+        "F",
+        "Bb/F"
+       ],
+       [
+        "F",
+        "C/E"
+       ],
+       [
+        "Bb/F",
+        "C/E"
+       ],
+       [
+        "F",
+        "C7/E"
+       ]
+      ]
+     }
+    ],
+    "previousSection": null
+   }
+  },
+  {
+   "request": "new_gospel_64",
+   "kind": "new",
+   "genre": "gospel",
+   "key": "F major",
+   "sectionType": "intro",
+   "bars": 8,
+   "cadence": "none",
+   "regenerated": false,
+   "modelUsed": "ft_f1_lora_gospel",
+   "candidates": [
+    {
+     "letter": "A",
+     "label": "Option A — F1 + LoRA: gospel (creative)",
+     "creativity": "creative"
+    },
+    {
+     "letter": "B",
+     "label": "Option B — F1 + LoRA: gospel (balanced)",
+     "creativity": "balanced"
+    },
+    {
+     "letter": "C",
+     "label": "Option C — F1 + LoRA: gospel (conservative)",
+     "creativity": "conservative"
+    }
+   ],
+   "plannerRulesSlots": [
+    0
+   ],
+   "rulesSlotsMatch": true,
+   "facts": [
+    {
+     "label": "A",
+     "outOfKeyRatio": 0.0,
+     "changedSlots": 16,
+     "repetitionVsPrevious": null,
+     "r1Roughness": 0.459,
+     "rulesSlots": [
+      0
+     ]
+    },
+    {
+     "label": "B",
+     "outOfKeyRatio": 0.125,
+     "changedSlots": 16,
+     "repetitionVsPrevious": null,
+     "r1Roughness": 0.633,
+     "rulesSlots": [
+      0
+     ]
+    },
+    {
+     "label": "C",
+     "outOfKeyRatio": 0.125,
+     "changedSlots": 16,
+     "repetitionVsPrevious": null,
+     "r1Roughness": 0.642,
+     "rulesSlots": [
+      0
+     ]
+    }
+   ],
+   "r1Pick": [
+    "A"
+   ],
+   "rawR1Pick": [
+    "A"
+   ],
+   "body": {
+    "key": "F major",
+    "genre": "gospel",
+    "sectionType": "intro",
+    "original": [
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ]
+    ],
+    "candidates": [
+     {
+      "label": "A",
+      "chords": [
+       [
+        "F",
+        "C/E"
+       ],
+       [
+        "Dm",
+        "Am"
+       ],
+       [
+        "Bb",
+        "F/A"
+       ],
+       [
+        "Gm7",
+        "C/G"
+       ],
+       [
+        "F",
+        "Gm"
+       ],
+       [
+        "F",
+        "Bb/F"
+       ],
+       [
+        "Gm",
+        "C/G"
+       ],
+       [
+        "Bb",
+        "Am7"
+       ]
+      ]
+     },
+     {
+      "label": "B",
+      "chords": [
+       [
+        "Fmaj7",
+        "F"
+       ],
+       [
+        "C/E",
+        "G7"
+       ],
+       [
+        "C/G",
+        "C7/G"
+       ],
+       [
+        "F",
+        "C/E"
+       ],
+       [
+        "G",
+        "C/G"
+       ],
+       [
+        "C7/G",
+        "F"
+       ],
+       [
+        "Dm",
+        "F"
+       ],
+       [
+        "F",
+        "F"
+       ]
+      ]
+     },
+     {
+      "label": "C",
+      "chords": [
+       [
+        "F",
+        "C7/E"
+       ],
+       [
+        "F",
+        "Bb/F"
+       ],
+       [
+        "F",
+        "C/E"
+       ],
+       [
+        "F",
+        "F7"
+       ],
+       [
+        "Bb/F",
+        "F"
+       ],
+       [
+        "C/E",
+        "F"
+       ],
+       [
+        "F7",
+        "Bb/F"
+       ],
+       [
+        "C7/E",
+        "F"
+       ]
+      ]
+     }
+    ],
+    "previousSection": null
+   }
+  },
+  {
+   "request": "new_jazz_32",
+   "kind": "new",
+   "genre": "jazz",
+   "key": "F major",
+   "sectionType": "a_section",
+   "bars": 8,
+   "cadence": "authentic",
+   "regenerated": false,
+   "modelUsed": "ft_f4",
+   "candidates": [
+    {
+     "letter": "A",
+     "label": "Option A — F4 — 1K pop mix (balanced)",
+     "creativity": "balanced"
+    },
+    {
+     "letter": "B",
+     "label": "Option B — F4 — 1K pop mix (conservative)",
+     "creativity": "conservative"
+    },
+    {
+     "letter": "C",
+     "label": "Option C — F4 — 1K pop mix (creative)",
+     "creativity": "creative"
+    }
+   ],
+   "plannerRulesSlots": [
+    14,
+    15
+   ],
+   "rulesSlotsMatch": true,
+   "facts": [
+    {
+     "label": "A",
+     "outOfKeyRatio": 0.125,
+     "changedSlots": 16,
+     "repetitionVsPrevious": null,
+     "r1Roughness": 0.787,
+     "rulesSlots": [
+      14,
+      15
+     ]
+    },
+    {
+     "label": "B",
+     "outOfKeyRatio": 0.25,
+     "changedSlots": 16,
+     "repetitionVsPrevious": null,
+     "r1Roughness": 0.89,
+     "rulesSlots": [
+      14,
+      15
+     ]
+    },
+    {
+     "label": "C",
+     "outOfKeyRatio": 0.5,
+     "changedSlots": 16,
+     "repetitionVsPrevious": null,
+     "r1Roughness": 1.243,
+     "rulesSlots": [
+      14,
+      15
+     ]
+    }
+   ],
+   "r1Pick": [
+    "A"
+   ],
+   "rawR1Pick": [
+    "A"
+   ],
+   "body": {
+    "key": "F major",
+    "genre": "jazz",
+    "sectionType": "a_section",
+    "original": [
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ]
+    ],
+    "candidates": [
+     {
+      "label": "A",
+      "chords": [
+       [
+        "F",
+        "F"
+       ],
+       [
+        "Dm7/F",
+        "Dm7/F"
+       ],
+       [
+        "Bb7/F",
+        "Bb7/F"
+       ],
+       [
+        "C/E",
+        "C/E"
+       ],
+       [
+        "Am7/E",
+        "Am7/E"
+       ],
+       [
+        "Bb/F",
+        "Bb/F"
+       ],
+       [
+        "F",
+        "F"
+       ],
+       [
+        "C7/E",
+        "F"
+       ]
+      ]
+     },
+     {
+      "label": "B",
+      "chords": [
+       [
+        "Fmaj7",
+        "Fmaj7"
+       ],
+       [
+        "D7",
+        "D7"
+       ],
+       [
+        "Gm7/D",
+        "Gm7/D"
+       ],
+       [
+        "C7",
+        "C7"
+       ],
+       [
+        "Fmaj7/C",
+        "Fmaj7/C"
+       ],
+       [
+        "Cm7",
+        "F7/C"
+       ],
+       [
+        "Bbmaj7",
+        "Bbmaj7"
+       ],
+       [
+        "C7",
+        "F"
+       ]
+      ]
+     },
+     {
+      "label": "C",
+      "chords": [
+       [
+        "Bbmaj7",
+        "Bbmaj7"
+       ],
+       [
+        "Eb7/Bb",
+        "Eb7/Bb"
+       ],
+       [
+        "D7/A",
+        "D7/A"
+       ],
+       [
+        "Db7/Ab",
+        "Db7/Ab"
+       ],
+       [
+        "C7/G",
+        "C7/G"
+       ],
+       [
+        "C7/G",
+        "C7/G"
+       ],
+       [
+        "Cm7/G",
+        "Cm7/G"
+       ],
+       [
+        "C7/G",
+        "F"
+       ]
+      ]
+     }
+    ],
+    "previousSection": null
+   }
+  },
+  {
+   "request": "new_jazz_64",
+   "kind": "new",
+   "genre": "jazz",
+   "key": "F major",
+   "sectionType": "intro",
+   "bars": 8,
+   "cadence": "none",
+   "regenerated": false,
+   "modelUsed": "ft_f4",
+   "candidates": [
+    {
+     "letter": "A",
+     "label": "Option A — F4 — 1K pop mix (balanced)",
+     "creativity": "balanced"
+    },
+    {
+     "letter": "B",
+     "label": "Option B — F4 — 1K pop mix (conservative)",
+     "creativity": "conservative"
+    },
+    {
+     "letter": "C",
+     "label": "Option C — F4 — 1K pop mix (creative)",
+     "creativity": "creative"
+    }
+   ],
+   "plannerRulesSlots": [
+    0
+   ],
+   "rulesSlotsMatch": true,
+   "facts": [
+    {
+     "label": "A",
+     "outOfKeyRatio": 0.25,
+     "changedSlots": 16,
+     "repetitionVsPrevious": null,
+     "r1Roughness": 0.88,
+     "rulesSlots": [
+      0
+     ]
+    },
+    {
+     "label": "B",
+     "outOfKeyRatio": 0.312,
+     "changedSlots": 16,
+     "repetitionVsPrevious": null,
+     "r1Roughness": 0.979,
+     "rulesSlots": [
+      0
+     ]
+    },
+    {
+     "label": "C",
+     "outOfKeyRatio": 0.438,
+     "changedSlots": 16,
+     "repetitionVsPrevious": null,
+     "r1Roughness": 1.074,
+     "rulesSlots": [
+      0
+     ]
+    }
+   ],
+   "r1Pick": [
+    "A"
+   ],
+   "rawR1Pick": [
+    "A"
+   ],
+   "body": {
+    "key": "F major",
+    "genre": "jazz",
+    "sectionType": "intro",
+    "original": [
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ]
+    ],
+    "candidates": [
+     {
+      "label": "A",
+      "chords": [
+       [
+        "Fmaj7",
+        "Fmaj7"
+       ],
+       [
+        "F6",
+        "F6"
+       ],
+       [
+        "Gm7",
+        "Gm7"
+       ],
+       [
+        "C7/G",
+        "C7/G"
+       ],
+       [
+        "Fmaj7",
+        "Fmaj7"
+       ],
+       [
+        "F7",
+        "F7"
+       ],
+       [
+        "Bbmaj7/F",
+        "Bbmaj7/F"
+       ],
+       [
+        "Bbm6/F",
+        "Bbm6/F"
+       ]
+      ]
+     },
+     {
+      "label": "B",
+      "chords": [
+       [
+        "Fmaj7",
+        "Dmaj7"
+       ],
+       [
+        "Dmaj7",
+        "Dmaj7"
+       ],
+       [
+        "Dm7",
+        "Dm7"
+       ],
+       [
+        "G7/D",
+        "G7/D"
+       ],
+       [
+        "Gm7/D",
+        "Gm7/D"
+       ],
+       [
+        "C7",
+        "C7"
+       ],
+       [
+        "Fmaj7/C",
+        "Fmaj7/C"
+       ],
+       [
+        "Fmaj7/C",
+        "Fmaj7/C"
+       ]
+      ]
+     },
+     {
+      "label": "C",
+      "chords": [
+       [
+        "Fmaj7",
+        "Bbmaj7/F"
+       ],
+       [
+        "D7",
+        "D7"
+       ],
+       [
+        "Gm7/D",
+        "Gm7/D"
+       ],
+       [
+        "Cm7",
+        "Cm7"
+       ],
+       [
+        "F7/C",
+        "F7/C"
+       ],
+       [
+        "Bb6",
+        "Gm7/Bb"
+       ],
+       [
+        "Dm7/A",
+        "Db7/Ab"
+       ],
+       [
+        "C7/G",
+        "C7/G"
+       ]
+      ]
+     }
+    ],
+    "previousSection": null
+   }
+  },
+  {
+   "request": "new_pop_32",
+   "kind": "new",
+   "genre": "pop",
+   "key": "C major",
+   "sectionType": "intro",
+   "bars": 4,
+   "cadence": "none",
+   "regenerated": false,
+   "modelUsed": "ft_f1",
+   "candidates": [
+    {
+     "letter": "A",
+     "label": "Option A — F1 — 10K pop mix (creative)",
+     "creativity": "creative"
+    },
+    {
+     "letter": "B",
+     "label": "Option B — F1 — 10K pop mix (conservative)",
+     "creativity": "conservative"
+    },
+    {
+     "letter": "C",
+     "label": "Option C — F1 — 10K pop mix (balanced)",
+     "creativity": "balanced"
+    }
+   ],
+   "plannerRulesSlots": [
+    0
+   ],
+   "rulesSlotsMatch": true,
+   "facts": [
+    {
+     "label": "A",
+     "outOfKeyRatio": 0.375,
+     "changedSlots": 8,
+     "repetitionVsPrevious": null,
+     "r1Roughness": 0.476,
+     "rulesSlots": [
+      0
+     ]
+    },
+    {
+     "label": "B",
+     "outOfKeyRatio": 0.0,
+     "changedSlots": 8,
+     "repetitionVsPrevious": null,
+     "r1Roughness": 0.407,
+     "rulesSlots": [
+      0
+     ]
+    },
+    {
+     "label": "C",
+     "outOfKeyRatio": 0.25,
+     "changedSlots": 8,
+     "repetitionVsPrevious": null,
+     "r1Roughness": 0.534,
+     "rulesSlots": [
+      0
+     ]
+    }
+   ],
+   "r1Pick": [
+    "B"
+   ],
+   "rawR1Pick": [
+    "B"
+   ],
+   "body": {
+    "key": "C major",
+    "genre": "pop",
+    "sectionType": "intro",
+    "original": [
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ]
+    ],
+    "candidates": [
+     {
+      "label": "A",
+      "chords": [
+       [
+        "Cmaj7",
+        "F/C"
+       ],
+       [
+        "Em",
+        "D"
+       ],
+       [
+        "C",
+        "A"
+       ],
+       [
+        "D/A",
+        "G"
+       ]
+      ]
+     },
+     {
+      "label": "B",
+      "chords": [
+       [
+        "C",
+        "Dm"
+       ],
+       [
+        "F",
+        "G"
+       ],
+       [
+        "Am",
+        "G"
+       ],
+       [
+        "C/G",
+        "G"
+       ]
+      ]
+     },
+     {
+      "label": "C",
+      "chords": [
+       [
+        "Cmaj7",
+        "Bb"
+       ],
+       [
+        "F/A",
+        "C"
+       ],
+       [
+        "G/B",
+        "C"
+       ],
+       [
+        "D",
+        "C"
+       ]
+      ]
+     }
+    ],
+    "previousSection": null
+   }
+  },
+  {
+   "request": "new_pop_64",
+   "kind": "new",
+   "genre": "pop",
+   "key": "C major",
+   "sectionType": "intro",
+   "bars": 4,
+   "cadence": "none",
+   "regenerated": false,
+   "modelUsed": "ft_f1",
+   "candidates": [
+    {
+     "letter": "A",
+     "label": "Option A — F1 — 10K pop mix (conservative)",
+     "creativity": "conservative"
+    },
+    {
+     "letter": "B",
+     "label": "Option B — F1 — 10K pop mix (balanced)",
+     "creativity": "balanced"
+    },
+    {
+     "letter": "C",
+     "label": "Option C — F1 — 10K pop mix (creative)",
+     "creativity": "creative"
+    }
+   ],
+   "plannerRulesSlots": [
+    0
+   ],
+   "rulesSlotsMatch": true,
+   "facts": [
+    {
+     "label": "A",
+     "outOfKeyRatio": 0.0,
+     "changedSlots": 8,
+     "repetitionVsPrevious": null,
+     "r1Roughness": 0.455,
+     "rulesSlots": [
+      0
+     ]
+    },
+    {
+     "label": "B",
+     "outOfKeyRatio": 0.0,
+     "changedSlots": 8,
+     "repetitionVsPrevious": null,
+     "r1Roughness": 0.479,
+     "rulesSlots": [
+      0
+     ]
+    },
+    {
+     "label": "C",
+     "outOfKeyRatio": 0.0,
+     "changedSlots": 8,
+     "repetitionVsPrevious": null,
+     "r1Roughness": 0.45,
+     "rulesSlots": [
+      0
+     ]
+    }
+   ],
+   "r1Pick": [
+    "C"
+   ],
+   "rawR1Pick": [
+    "A"
+   ],
+   "body": {
+    "key": "C major",
+    "genre": "pop",
+    "sectionType": "intro",
+    "original": [
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ]
+    ],
+    "candidates": [
+     {
+      "label": "A",
+      "chords": [
+       [
+        "C",
+        "Am"
+       ],
+       [
+        "F/A",
+        "G"
+       ],
+       [
+        "C/G",
+        "G"
+       ],
+       [
+        "Am",
+        "F/A"
+       ]
+      ]
+     },
+     {
+      "label": "B",
+      "chords": [
+       [
+        "C",
+        "F/C"
+       ],
+       [
+        "C",
+        "G/B"
+       ],
+       [
+        "Am",
+        "F/A"
+       ],
+       [
+        "G",
+        "C/G"
+       ]
+      ]
+     },
+     {
+      "label": "C",
+      "chords": [
+       [
+        "C",
+        "F/C"
+       ],
+       [
+        "Dm",
+        "G/D"
+       ],
+       [
+        "C",
+        "G/B"
+       ],
+       [
+        "Am",
+        "Dm"
+       ]
+      ]
+     }
+    ],
+    "previousSection": null
+   }
+  },
+  {
+   "request": "tight_blues_a_12bar_16_high",
+   "kind": "tight",
+   "genre": "blues",
+   "key": "A major",
+   "sectionType": "bridge",
+   "bars": 2,
+   "cadence": "half_iv_v",
+   "regenerated": false,
+   "modelUsed": "ft_f1_lora_blues",
+   "candidates": [
+    {
+     "letter": "A",
+     "label": "Option A — F1 + LoRA: blues (creative)",
+     "creativity": "creative"
+    },
+    {
+     "letter": "B",
+     "label": "Option B — F1 + LoRA: blues (conservative)",
+     "creativity": "conservative"
+    },
+    {
+     "letter": "C",
+     "label": "Option C — F1 + LoRA: blues (balanced)",
+     "creativity": "balanced"
+    }
+   ],
+   "plannerRulesSlots": [
+    0,
+    2,
+    3
+   ],
+   "rulesSlotsMatch": true,
+   "facts": [
+    {
+     "label": "A",
+     "outOfKeyRatio": 0.0,
+     "changedSlots": 4,
+     "repetitionVsPrevious": 0.0,
+     "r1Roughness": 0.634,
+     "rulesSlots": [
+      0,
+      2,
+      3
+     ]
+    },
+    {
+     "label": "B",
+     "outOfKeyRatio": 0.25,
+     "changedSlots": 4,
+     "repetitionVsPrevious": 0.0,
+     "r1Roughness": 0.819,
+     "rulesSlots": [
+      0,
+      2,
+      3
+     ]
+    },
+    {
+     "label": "C",
+     "outOfKeyRatio": 0.25,
+     "changedSlots": 4,
+     "repetitionVsPrevious": 0.0,
+     "r1Roughness": 0.819,
+     "rulesSlots": [
+      0,
+      2,
+      3
+     ]
+    }
+   ],
+   "r1Pick": [
+    "A"
+   ],
+   "rawR1Pick": [
+    "A"
+   ],
+   "body": {
+    "key": "A major",
+    "genre": "blues",
+    "sectionType": "bridge",
+    "original": [
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ]
+    ],
+    "candidates": [
+     {
+      "label": "A",
+      "chords": [
+       [
+        "D",
+        "A/Db"
+       ],
+       [
+        "Dmaj7",
+        "E7"
+       ]
+      ]
+     },
+     {
+      "label": "B",
+      "chords": [
+       [
+        "Dmaj7",
+        "A7/Db"
+       ],
+       [
+        "Dmaj7",
+        "E7"
+       ]
+      ]
+     },
+     {
+      "label": "C",
+      "chords": [
+       [
+        "Dmaj7",
+        "A7/Db"
+       ],
+       [
+        "Dmaj7",
+        "E7"
+       ]
+      ]
+     }
+    ],
+    "previousSection": [
+     [
+      "A7",
+      null
+     ],
+     [
+      "D7",
+      null
+     ]
+    ]
+   }
+  },
+  {
+   "request": "tight_blues_e_12bar_48_outro",
+   "kind": "tight",
+   "genre": "blues",
+   "key": "E major",
+   "sectionType": "verse",
+   "bars": 12,
+   "cadence": "authentic",
+   "regenerated": false,
+   "modelUsed": "ft_f1_lora_blues",
+   "candidates": [
+    {
+     "letter": "A",
+     "label": "Option A — F1 + LoRA: blues (conservative)",
+     "creativity": "conservative"
+    },
+    {
+     "letter": "B",
+     "label": "Option B — F1 + LoRA: blues (balanced)",
+     "creativity": "balanced"
+    },
+    {
+     "letter": "C",
+     "label": "Option C — F1 + LoRA: blues (creative)",
+     "creativity": "creative"
+    }
+   ],
+   "plannerRulesSlots": [
+    22,
+    23
+   ],
+   "rulesSlotsMatch": true,
+   "facts": [
+    {
+     "label": "A",
+     "outOfKeyRatio": 0.5,
+     "changedSlots": 24,
+     "repetitionVsPrevious": 0.083,
+     "r1Roughness": 0.679,
+     "rulesSlots": [
+      22,
+      23
+     ]
+    },
+    {
+     "label": "B",
+     "outOfKeyRatio": 0.667,
+     "changedSlots": 24,
+     "repetitionVsPrevious": 0.125,
+     "r1Roughness": 0.873,
+     "rulesSlots": [
+      22,
+      23
+     ]
+    },
+    {
+     "label": "C",
+     "outOfKeyRatio": 0.792,
+     "changedSlots": 24,
+     "repetitionVsPrevious": 0.083,
+     "r1Roughness": 1.156,
+     "rulesSlots": [
+      22,
+      23
+     ]
+    }
+   ],
+   "r1Pick": [
+    "A"
+   ],
+   "rawR1Pick": [
+    "A"
+   ],
+   "body": {
+    "key": "E major",
+    "genre": "blues",
+    "sectionType": "verse",
+    "original": [
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ]
+    ],
+    "candidates": [
+     {
+      "label": "A",
+      "chords": [
+       [
+        "E7",
+        "E7"
+       ],
+       [
+        "F#7",
+        "F#7"
+       ],
+       [
+        "E7",
+        "E7"
+       ],
+       [
+        "G7",
+        "G7"
+       ],
+       [
+        "F#7",
+        "F#7"
+       ],
+       [
+        "B7/F#",
+        "B7/F#"
+       ],
+       [
+        "B7/F#",
+        "B7/F#"
+       ],
+       [
+        "E",
+        "E"
+       ],
+       [
+        "E",
+        "E"
+       ],
+       [
+        "E7",
+        "E7"
+       ],
+       [
+        "A/E",
+        "A/E"
+       ],
+       [
+        "B7/Eb",
+        "E"
+       ]
+      ]
+     },
+     {
+      "label": "B",
+      "chords": [
+       [
+        "E7",
+        "E7"
+       ],
+       [
+        "F#7",
+        "F#7"
+       ],
+       [
+        "B/F#",
+        "B/F#"
+       ],
+       [
+        "E7",
+        "E7"
+       ],
+       [
+        "A9/E",
+        "A9/E"
+       ],
+       [
+        "E",
+        "E"
+       ],
+       [
+        "E",
+        "E"
+       ],
+       [
+        "E7",
+        "E7"
+       ],
+       [
+        "E9",
+        "E9"
+       ],
+       [
+        "A9/E",
+        "A9/E"
+       ],
+       [
+        "E9",
+        "E9"
+       ],
+       [
+        "B7/Eb",
+        "E"
+       ]
+      ]
+     },
+     {
+      "label": "C",
+      "chords": [
+       [
+        "E7",
+        "E7"
+       ],
+       [
+        "A9/E",
+        "A9/E"
+       ],
+       [
+        "A9/E",
+        "A9/E"
+       ],
+       [
+        "E7",
+        "E7"
+       ],
+       [
+        "E9",
+        "B7/Eb"
+       ],
+       [
+        "A9/E",
+        "A9/E"
+       ],
+       [
+        "A7/E",
+        "A7/E"
+       ],
+       [
+        "E9",
+        "E9"
+       ],
+       [
+        "A9/E",
+        "A9/E"
+       ],
+       [
+        "E9",
+        "E9"
+       ],
+       [
+        "B7/Eb",
+        "B7/Eb"
+       ],
+       [
+        "B7/Eb",
+        "E"
+       ]
+      ]
+     }
+    ],
+    "previousSection": [
+     [
+      "E7",
+      null
+     ],
+     [
+      "A7",
+      null
+     ],
+     [
+      "E7",
+      null
+     ],
+     [
+      "E7",
+      null
+     ],
+     [
+      "A7",
+      null
+     ],
+     [
+      "A7",
+      null
+     ],
+     [
+      "E7",
+      null
+     ],
+     [
+      "E7",
+      null
+     ],
+     [
+      "B7",
+      null
+     ],
+     [
+      "A7",
+      null
+     ],
+     [
+      "E7",
+      null
+     ],
+     [
+      "E7",
+      "B7"
+     ]
+    ]
+   }
+  },
+  {
+   "request": "tight_folk_g_14bar_16_outro",
+   "kind": "tight",
+   "genre": "folk",
+   "key": "G major",
+   "sectionType": "outro",
+   "bars": 2,
+   "cadence": "plagal",
+   "regenerated": true,
+   "modelUsed": "ft_f1_lora_folk",
+   "candidates": [
+    {
+     "letter": "A",
+     "label": "Option A — F1 + LoRA: folk (creative)",
+     "creativity": "creative"
+    },
+    {
+     "letter": "B",
+     "label": "Option B — F1 + LoRA: folk (conservative)",
+     "creativity": "conservative"
+    },
+    {
+     "letter": "C",
+     "label": "Option C — F1 + LoRA: folk (balanced)",
+     "creativity": "balanced"
+    }
+   ],
+   "plannerRulesSlots": [
+    2,
+    3
+   ],
+   "rulesSlotsMatch": true,
+   "facts": [
+    {
+     "label": "A",
+     "outOfKeyRatio": 0.5,
+     "changedSlots": 4,
+     "repetitionVsPrevious": 0.25,
+     "r1Roughness": 0.904,
+     "rulesSlots": [
+      2,
+      3
+     ]
+    },
+    {
+     "label": "B",
+     "outOfKeyRatio": 0.0,
+     "changedSlots": 4,
+     "repetitionVsPrevious": 0.25,
+     "r1Roughness": 0.747,
+     "rulesSlots": [
+      2,
+      3
+     ]
+    },
+    {
+     "label": "C",
+     "outOfKeyRatio": 0.0,
+     "changedSlots": 4,
+     "repetitionVsPrevious": 0.25,
+     "r1Roughness": 0.597,
+     "rulesSlots": [
+      2,
+      3
+     ]
+    }
+   ],
+   "r1Pick": [
+    "C"
+   ],
+   "rawR1Pick": [
+    "C"
+   ],
+   "body": {
+    "key": "G major",
+    "genre": "folk",
+    "sectionType": "outro",
+    "original": [
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ]
+    ],
+    "candidates": [
+     {
+      "label": "A",
+      "chords": [
+       [
+        "E7",
+        "E7"
+       ],
+       [
+        "Cmaj7/E",
+        "G"
+       ]
+      ]
+     },
+     {
+      "label": "B",
+      "chords": [
+       [
+        "D7",
+        "D7"
+       ],
+       [
+        "Cmaj7",
+        "G"
+       ]
+      ]
+     },
+     {
+      "label": "C",
+      "chords": [
+       [
+        "Am7",
+        "Am7"
+       ],
+       [
+        "Cmaj7",
+        "G"
+       ]
+      ]
+     }
+    ],
+    "previousSection": [
+     [
+      "C",
+      "G"
+     ],
+     [
+      "D",
+      "G"
+     ]
+    ]
+   }
+  },
+  {
+   "request": "tight_pop_c_10bar_32_high",
+   "kind": "tight",
+   "genre": "pop",
+   "key": "C major",
+   "sectionType": "pre_chorus",
+   "bars": 4,
+   "cadence": "half_iv_v",
+   "regenerated": false,
+   "modelUsed": "ft_f1",
+   "candidates": [
+    {
+     "letter": "A",
+     "label": "Option A — F1 — 10K pop mix (conservative)",
+     "creativity": "conservative"
+    },
+    {
+     "letter": "B",
+     "label": "Option B — F1 — 10K pop mix (creative)",
+     "creativity": "creative"
+    },
+    {
+     "letter": "C",
+     "label": "Option C — F1 — 10K pop mix (balanced)",
+     "creativity": "balanced"
+    }
+   ],
+   "plannerRulesSlots": [
+    6,
+    7
+   ],
+   "rulesSlotsMatch": false,
+   "facts": [
+    {
+     "label": "A",
+     "outOfKeyRatio": 0.0,
+     "changedSlots": 8,
+     "repetitionVsPrevious": 0.5,
+     "r1Roughness": 0.765,
+     "rulesSlots": [
+      7
+     ]
+    },
+    {
+     "label": "B",
+     "outOfKeyRatio": 0.125,
+     "changedSlots": 8,
+     "repetitionVsPrevious": 0.25,
+     "r1Roughness": 0.685,
+     "rulesSlots": [
+      7
+     ]
+    },
+    {
+     "label": "C",
+     "outOfKeyRatio": 0.25,
+     "changedSlots": 8,
+     "repetitionVsPrevious": 0.25,
+     "r1Roughness": 0.707,
+     "rulesSlots": [
+      7
+     ]
+    }
+   ],
+   "r1Pick": [
+    "B"
+   ],
+   "rawR1Pick": [
+    "A"
+   ],
+   "body": {
+    "key": "C major",
+    "genre": "pop",
+    "sectionType": "pre_chorus",
+    "original": [
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ],
+     [
+      null,
+      null
+     ]
+    ],
+    "candidates": [
+     {
+      "label": "A",
+      "chords": [
+       [
+        "C",
+        "F/C"
+       ],
+       [
+        "Dm7",
+        "G/D"
+       ],
+       [
+        "G7/D",
+        "C"
+       ],
+       [
+        "Fmaj7/C",
+        "G7/B"
+       ]
+      ]
+     },
+     {
+      "label": "B",
+      "chords": [
+       [
+        "C",
+        "C7"
+       ],
+       [
+        "Am7/C",
+        "Dm7"
+       ],
+       [
+        "Em",
+        "F"
+       ],
+       [
+        "Fmaj7",
+        "G7"
+       ]
+      ]
+     },
+     {
+      "label": "C",
+      "chords": [
+       [
+        "C",
+        "E7/B"
+       ],
+       [
+        "Am",
+        "C7"
+       ],
+       [
+        "F/C",
+        "Dm7"
+       ],
+       [
+        "Fmaj7",
+        "G7"
+       ]
+      ]
+     }
+    ],
+    "previousSection": [
+     [
+      "C",
+      "Am"
+     ],
+     [
+      "Dm7",
+      "G7"
+     ]
+    ]
+   }
+  }
+ ],
+ "reviews": [
+  {
+   "request": "complete_bossa_f_16bar_64",
+   "order": "ABC",
+   "letters": {
+    "A": "A",
+    "B": "B",
+    "C": "C"
+   },
+   "status": "ok",
+   "choice": "C",
+   "choiceStored": "C",
+   "reasons": [
+    {
+     "fact": "outOfKeyRatio=0.219",
+     "factName": "outOfKeyRatio",
+     "value": 0.219,
+     "claim": "Adds bossa-typical chromatic color beyond F major.",
+     "confirmed": true,
+     "analyzerValue": 0.219,
+     "rank": "highest"
+    },
+    {
+     "fact": "repetitionVsPrevious=0.094",
+     "factName": "repetitionVsPrevious",
+     "value": 0.094,
+     "claim": "Keeps strong contrast with previous section for a B section.",
+     "confirmed": true,
+     "analyzerValue": 0.094,
+     "rank": "neither"
+    }
+   ],
+   "factsAsBuilt": true,
+   "error": null,
+   "requestId": "64c2839f-2900-4a7c-b805-3daa6e5b90c4",
+   "costUsd": 0.0067955,
+   "latencyMs": 5898,
+   "attempts": 1,
+   "replies": 1,
+   "provider": "meta",
+   "model": "muse-spark-1.3"
+  },
+  {
+   "request": "complete_bossa_f_16bar_64",
+   "order": "BCA",
+   "letters": {
+    "A": "B",
+    "B": "C",
+    "C": "A"
+   },
+   "status": "ok",
+   "choice": "B",
+   "choiceStored": "C",
+   "reasons": [
+    {
+     "fact": "outOfKeyRatio=0.219",
+     "factName": "outOfKeyRatio",
+     "value": 0.219,
+     "claim": "Chromatic color fits bossa's jazz harmony.",
+     "confirmed": true,
+     "analyzerValue": 0.219,
+     "rank": "highest"
+    },
+    {
+     "fact": "r1Roughness=0.816",
+     "factName": "r1Roughness",
+     "value": 0.816,
+     "claim": "Lowest roughness gives smooth mellow bossa sound.",
+     "confirmed": true,
+     "analyzerValue": 0.816,
+     "rank": "lowest"
+    }
+   ],
+   "factsAsBuilt": true,
+   "error": null,
+   "requestId": "15493df4-2121-47e9-abfa-d9e9733fc771",
+   "costUsd": 0.00554175,
+   "latencyMs": 4591,
+   "attempts": 1,
+   "replies": 1,
+   "provider": "meta",
+   "model": "muse-spark-1.3"
+  },
+  {
+   "request": "complete_bossa_f_16bar_64",
+   "order": "CAB",
+   "letters": {
+    "A": "C",
+    "B": "A",
+    "C": "B"
+   },
+   "status": "ok",
+   "choice": "A",
+   "choiceStored": "C",
+   "reasons": [
+    {
+     "fact": "outOfKeyRatio=0.219",
+     "factName": "outOfKeyRatio",
+     "value": 0.219,
+     "claim": "Bossa welcomes chromatic chords, fitting this contrast section.",
+     "confirmed": true,
+     "analyzerValue": 0.219,
+     "rank": "highest"
+    },
+    {
+     "fact": "repetitionVsPrevious=0.094",
+     "factName": "repetitionVsPrevious",
+     "value": 0.094,
+     "claim": "Low repetition gives the B section fresh contrast.",
+     "confirmed": true,
+     "analyzerValue": 0.094,
+     "rank": "neither"
+    }
+   ],
+   "factsAsBuilt": true,
+   "error": null,
+   "requestId": "0b2068aa-416e-4fec-ab9d-c8b8ff4bf160",
+   "costUsd": 0.00489575,
+   "latencyMs": 5153,
+   "attempts": 1,
+   "replies": 1,
+   "provider": "meta",
+   "model": "muse-spark-1.3"
+  },
+  {
+   "request": "complete_country_g_16bar_32",
+   "order": "ABC",
+   "letters": {
+    "A": "A",
+    "B": "B",
+    "C": "C"
+   },
+   "status": "ok",
+   "choice": "B",
+   "choiceStored": "B",
+   "reasons": [
+    {
+     "fact": "outOfKeyRatio=0",
+     "factName": "outOfKeyRatio",
+     "value": 0.0,
+     "claim": "Stays fully in G major as country expects.",
+     "confirmed": true,
+     "analyzerValue": 0.0,
+     "rank": "neither"
+    },
+    {
+     "fact": "repetitionVsPrevious=0.125",
+     "factName": "repetitionVsPrevious",
+     "value": 0.125,
+     "claim": "Low repeat gives bridge needed contrast.",
+     "confirmed": true,
+     "analyzerValue": 0.125,
+     "rank": "neither"
+    }
+   ],
+   "factsAsBuilt": true,
+   "error": null,
+   "requestId": "4d2f6cfc-5090-4491-9e98-71ce58e5557e",
+   "costUsd": 0.00336825,
+   "latencyMs": 3443,
+   "attempts": 1,
+   "replies": 1,
+   "provider": "meta",
+   "model": "muse-spark-1.3"
+  },
+  {
+   "request": "complete_country_g_16bar_32",
+   "order": "BCA",
+   "letters": {
+    "A": "B",
+    "B": "C",
+    "C": "A"
+   },
+   "status": "ok",
+   "choice": "A",
+   "choiceStored": "B",
+   "reasons": [
+    {
+     "fact": "outOfKeyRatio=0",
+     "factName": "outOfKeyRatio",
+     "value": 0.0,
+     "claim": "Stays fully in G major as country prefers.",
+     "confirmed": true,
+     "analyzerValue": 0.0,
+     "rank": "neither"
+    },
+    {
+     "fact": "repetitionVsPrevious=0.125",
+     "factName": "repetitionVsPrevious",
+     "value": 0.125,
+     "claim": "Low repeat of previous section gives bridge contrast.",
+     "confirmed": true,
+     "analyzerValue": 0.125,
+     "rank": "neither"
+    }
+   ],
+   "factsAsBuilt": true,
+   "error": null,
+   "requestId": "ab54cc90-524f-44bd-a08e-1a137f805b6a",
+   "costUsd": 0.00485575,
+   "latencyMs": 3734,
+   "attempts": 1,
+   "replies": 1,
+   "provider": "meta",
+   "model": "muse-spark-1.3"
+  },
+  {
+   "request": "complete_country_g_16bar_32",
+   "order": "CAB",
+   "letters": {
+    "A": "C",
+    "B": "A",
+    "C": "B"
+   },
+   "status": "ok",
+   "choice": "C",
+   "choiceStored": "B",
+   "reasons": [
+    {
+     "fact": "outOfKeyRatio=0",
+     "factName": "outOfKeyRatio",
+     "value": 0.0,
+     "claim": "Stays fully in G major as country expects.",
+     "confirmed": true,
+     "analyzerValue": 0.0,
+     "rank": "neither"
+    },
+    {
+     "fact": "repetitionVsPrevious=0.125",
+     "factName": "repetitionVsPrevious",
+     "value": 0.125,
+     "claim": "Gives bridge fresh contrast versus previous section.",
+     "confirmed": true,
+     "analyzerValue": 0.125,
+     "rank": "neither"
+    }
+   ],
+   "factsAsBuilt": true,
+   "error": null,
+   "requestId": "4882cb64-3345-4044-b2d9-2356e4528118",
+   "costUsd": 0.00314725,
+   "latencyMs": 2231,
+   "attempts": 1,
+   "replies": 1,
+   "provider": "meta",
+   "model": "muse-spark-1.3"
+  },
+  {
+   "request": "complete_hiphop_amin_8bar_32",
+   "order": "ABC",
+   "letters": {
+    "A": "A",
+    "B": "B",
+    "C": "C"
+   },
+   "status": "ok",
+   "choice": "C",
+   "choiceStored": "C",
+   "reasons": [
+    {
+     "fact": "outOfKeyRatio=0",
+     "factName": "outOfKeyRatio",
+     "value": 0.0,
+     "claim": "Stays fully in A minor as hip_hop prefers.",
+     "confirmed": true,
+     "analyzerValue": 0.0,
+     "rank": "neither"
+    },
+    {
+     "fact": "repetitionVsPrevious=0.125",
+     "factName": "repetitionVsPrevious",
+     "value": 0.125,
+     "claim": "Low repeat of previous section gives chorus contrast.",
+     "confirmed": true,
+     "analyzerValue": 0.125,
+     "rank": "neither"
+    }
+   ],
+   "factsAsBuilt": true,
+   "error": null,
+   "requestId": "416190b4-7c3e-4b4e-8a05-0e98f27c30e9",
+   "costUsd": 0.00485075,
+   "latencyMs": 3088,
+   "attempts": 1,
+   "replies": 1,
+   "provider": "meta",
+   "model": "muse-spark-1.3"
+  },
+  {
+   "request": "complete_hiphop_amin_8bar_32",
+   "order": "BCA",
+   "letters": {
+    "A": "B",
+    "B": "C",
+    "C": "A"
+   },
+   "status": "ok",
+   "choice": "B",
+   "choiceStored": "C",
+   "reasons": [
+    {
+     "fact": "outOfKeyRatio=0",
+     "factName": "outOfKeyRatio",
+     "value": 0.0,
+     "claim": "Stays fully in A minor, fitting hip_hop's in-key preference.",
+     "confirmed": true,
+     "analyzerValue": 0.0,
+     "rank": "neither"
+    },
+    {
+     "fact": "r1Roughness=0.542",
+     "factName": "r1Roughness",
+     "value": 0.542,
+     "claim": "Most consonant in-key option for a smooth chorus.",
+     "confirmed": true,
+     "analyzerValue": 0.542,
+     "rank": "neither"
+    }
+   ],
+   "factsAsBuilt": true,
+   "error": null,
+   "requestId": "d75801b3-48d8-4eeb-8572-3c686c27ff88",
+   "costUsd": 0.003529,
+   "latencyMs": 2541,
+   "attempts": 1,
+   "replies": 1,
+   "provider": "meta",
+   "model": "muse-spark-1.3"
+  },
+  {
+   "request": "complete_hiphop_amin_8bar_32",
+   "order": "CAB",
+   "letters": {
+    "A": "C",
+    "B": "A",
+    "C": "B"
+   },
+   "status": "ok",
+   "choice": "A",
+   "choiceStored": "C",
+   "reasons": [
+    {
+     "fact": "outOfKeyRatio=0",
+     "factName": "outOfKeyRatio",
+     "value": 0.0,
+     "claim": "Stays fully in A minor as hip_hop prefers diatonic writing.",
+     "confirmed": true,
+     "analyzerValue": 0.0,
+     "rank": "neither"
+    },
+    {
+     "fact": "repetitionVsPrevious=0.125",
+     "factName": "repetitionVsPrevious",
+     "value": 0.125,
+     "claim": "Low overlap with previous section gives the chorus contrast.",
+     "confirmed": true,
+     "analyzerValue": 0.125,
+     "rank": "neither"
+    }
+   ],
+   "factsAsBuilt": true,
+   "error": null,
+   "requestId": "d5814ff9-5e1d-4297-8fb8-0df8000eccb1",
+   "costUsd": 0.0034865,
+   "latencyMs": 2925,
+   "attempts": 1,
+   "replies": 1,
+   "provider": "meta",
+   "model": "muse-spark-1.3"
+  },
+  {
+   "request": "complete_jazz_f_8bar_32",
+   "order": "ABC",
+   "letters": {
+    "A": "A",
+    "B": "B",
+    "C": "C"
+   },
+   "status": "ok",
+   "choice": "A",
+   "choiceStored": "A",
+   "reasons": [
+    {
+     "fact": "outOfKeyRatio=0.562",
+     "factName": "outOfKeyRatio",
+     "value": 0.562,
+     "claim": "High chromatic share fits jazz harmony that welcomes outside-key chords.",
+     "confirmed": true,
+     "analyzerValue": 0.562,
+     "rank": "highest"
+    },
+    {
+     "fact": "repetitionVsPrevious=0",
+     "factName": "repetitionVsPrevious",
+     "value": 0.0,
+     "claim": "Zero repeat of previous section gives fresh contrast.",
+     "confirmed": true,
+     "analyzerValue": 0.0,
+     "rank": "neither"
+    }
+   ],
+   "factsAsBuilt": true,
+   "error": null,
+   "requestId": "d3c93551-abb6-444b-a6ed-0d626db03655",
+   "costUsd": 0.0044675,
+   "latencyMs": 2672,
+   "attempts": 1,
+   "replies": 1,
+   "provider": "meta",
+   "model": "muse-spark-1.3"
+  },
+  {
+   "request": "complete_jazz_f_8bar_32",
+   "order": "BCA",
+   "letters": {
+    "A": "B",
+    "B": "C",
+    "C": "A"
+   },
+   "status": "ok",
+   "choice": "B",
+   "choiceStored": "C",
+   "reasons": [
+    {
+     "fact": "outOfKeyRatio=0.438",
+     "factName": "outOfKeyRatio",
+     "value": 0.438,
+     "claim": "Moderate chromatic color fits jazz while staying near F major.",
+     "confirmed": true,
+     "analyzerValue": 0.438,
+     "rank": "neither"
+    },
+    {
+     "fact": "repetitionVsPrevious=0.062",
+     "factName": "repetitionVsPrevious",
+     "value": 0.062,
+     "claim": "Almost no slot repeats previous section, giving fresh contrast.",
+     "confirmed": true,
+     "analyzerValue": 0.062,
+     "rank": "highest"
+    }
+   ],
+   "factsAsBuilt": true,
+   "error": null,
+   "requestId": "c59cbdf1-b538-4662-8daf-6edf94eb8155",
+   "costUsd": 0.005292,
+   "latencyMs": 3535,
+   "attempts": 1,
+   "replies": 1,
+   "provider": "meta",
+   "model": "muse-spark-1.3"
+  },
+  {
+   "request": "complete_jazz_f_8bar_32",
+   "order": "CAB",
+   "letters": {
+    "A": "C",
+    "B": "A",
+    "C": "B"
+   },
+   "status": "ok",
+   "choice": "B",
+   "choiceStored": "A",
+   "reasons": [
+    {
+     "fact": "outOfKeyRatio=0.562",
+     "factName": "outOfKeyRatio",
+     "value": 0.562,
+     "claim": "Rich chromaticism suits jazz harmony.",
+     "confirmed": true,
+     "analyzerValue": 0.562,
+     "rank": "highest"
+    },
+    {
+     "fact": "repetitionVsPrevious=0",
+     "factName": "repetitionVsPrevious",
+     "value": 0.0,
+     "claim": "Creates contrast by not copying previous section.",
+     "confirmed": true,
+     "analyzerValue": 0.0,
+     "rank": "neither"
+    }
+   ],
+   "factsAsBuilt": true,
+   "error": null,
+   "requestId": "e3ca74db-7fe8-44c6-adb5-c6ec89287d81",
+   "costUsd": 0.00477775,
+   "latencyMs": 6579,
+   "attempts": 1,
+   "replies": 1,
+   "provider": "meta",
+   "model": "muse-spark-1.3"
+  },
+  {
+   "request": "complete_pop_c_8bar_32",
+   "order": "ABC",
+   "letters": {
+    "A": "A",
+    "B": "B",
+    "C": "C"
+   },
+   "status": "ok",
+   "choice": "A",
+   "choiceStored": "A",
+   "reasons": [
+    {
+     "fact": "repetitionVsPrevious=0",
+     "factName": "repetitionVsPrevious",
+     "value": 0.0,
+     "claim": "Gives full contrast to previous section with no repeats for pre-chorus lift.",
+     "confirmed": true,
+     "analyzerValue": 0.0,
+     "rank": "neither"
+    },
+    {
+     "fact": "r1Roughness=0.516",
+     "factName": "r1Roughness",
+     "value": 0.516,
+     "claim": "Stays smooth and consonant for pop with low roughness.",
+     "confirmed": true,
+     "analyzerValue": 0.516,
+     "rank": "neither"
+    }
+   ],
+   "factsAsBuilt": true,
+   "error": null,
+   "requestId": "444c5774-a4e8-46bd-9fdd-2db6270df724",
+   "costUsd": 0.00319775,
+   "latencyMs": 2285,
+   "attempts": 1,
+   "replies": 1,
+   "provider": "meta",
+   "model": "muse-spark-1.3"
+  },
+  {
+   "request": "complete_pop_c_8bar_32",
+   "order": "BCA",
+   "letters": {
+    "A": "B",
+    "B": "C",
+    "C": "A"
+   },
+   "status": "ok",
+   "choice": "C",
+   "choiceStored": "A",
+   "reasons": [
+    {
+     "fact": "repetitionVsPrevious=0",
+     "factName": "repetitionVsPrevious",
+     "value": 0.0,
+     "claim": "Pre-chorus adds contrast instead of repeating previous section.",
+     "confirmed": true,
+     "analyzerValue": 0.0,
+     "rank": "neither"
+    },
+    {
+     "fact": "r1Roughness=0.516",
+     "factName": "r1Roughness",
+     "value": 0.516,
+     "claim": "Low roughness keeps pop pre-chorus smooth and consonant.",
+     "confirmed": true,
+     "analyzerValue": 0.516,
+     "rank": "neither"
+    }
+   ],
+   "factsAsBuilt": true,
+   "error": null,
+   "requestId": "7c04f3bf-4b32-4891-b7a5-8ed54703aa7c",
+   "costUsd": 0.00360575,
+   "latencyMs": 2663,
+   "attempts": 1,
+   "replies": 1,
+   "provider": "meta",
+   "model": "muse-spark-1.3"
+  },
+  {
+   "request": "complete_pop_c_8bar_32",
+   "order": "CAB",
+   "letters": {
+    "A": "C",
+    "B": "A",
+    "C": "B"
+   },
+   "status": "ok",
+   "choice": "B",
+   "choiceStored": "A",
+   "reasons": [
+    {
+     "fact": "repetitionVsPrevious=0",
+     "factName": "repetitionVsPrevious",
+     "value": 0.0,
+     "claim": "Creates fresh contrast for pre-chorus with zero repeat of previous.",
+     "confirmed": true,
+     "analyzerValue": 0.0,
+     "rank": "neither"
+    },
+    {
+     "fact": "r1Roughness=0.516",
+     "factName": "r1Roughness",
+     "value": 0.516,
+     "claim": "Low roughness keeps pop pre-chorus smooth and consonant.",
+     "confirmed": true,
+     "analyzerValue": 0.516,
+     "rank": "neither"
+    }
+   ],
+   "factsAsBuilt": true,
+   "error": null,
+   "requestId": "ac3990e6-e679-439b-b753-f85001d268a6",
+   "costUsd": 0.004358,
+   "latencyMs": 3422,
+   "attempts": 1,
+   "replies": 1,
+   "provider": "meta",
+   "model": "muse-spark-1.3"
+  },
+  {
+   "request": "complete_rock_e_8bar_32",
+   "order": "ABC",
+   "letters": {
+    "A": "A",
+    "B": "B",
+    "C": "C"
+   },
+   "status": "ok",
+   "choice": "A",
+   "choiceStored": "A",
+   "reasons": [
+    {
+     "fact": "outOfKeyRatio=0.125",
+     "factName": "outOfKeyRatio",
+     "value": 0.125,
+     "claim": "Stays diatonic for rock in E major with low chromaticism.",
+     "confirmed": true,
+     "analyzerValue": 0.125,
+     "rank": "neither"
+    },
+    {
+     "fact": "repetitionVsPrevious=0",
+     "factName": "repetitionVsPrevious",
+     "value": 0.0,
+     "claim": "Gives pre-chorus contrast with no carryover from previous section.",
+     "confirmed": true,
+     "analyzerValue": 0.0,
+     "rank": "lowest"
+    }
+   ],
+   "factsAsBuilt": true,
+   "error": null,
+   "requestId": "c88ae2ce-9cb1-46d8-8fe3-6e02a6af7fe2",
+   "costUsd": 0.00326875,
+   "latencyMs": 2644,
+   "attempts": 1,
+   "replies": 1,
+   "provider": "meta",
+   "model": "muse-spark-1.3"
+  },
+  {
+   "request": "complete_rock_e_8bar_32",
+   "order": "BCA",
+   "letters": {
+    "A": "B",
+    "B": "C",
+    "C": "A"
+   },
+   "status": "ok",
+   "choice": "C",
+   "choiceStored": "A",
+   "reasons": [
+    {
+     "fact": "outOfKeyRatio=0.125",
+     "factName": "outOfKeyRatio",
+     "value": 0.125,
+     "claim": "Keeps chromatic tones low for E major rock.",
+     "confirmed": true,
+     "analyzerValue": 0.125,
+     "rank": "neither"
+    },
+    {
+     "fact": "repetitionVsPrevious=0",
+     "factName": "repetitionVsPrevious",
+     "value": 0.0,
+     "claim": "Gives pre-chorus full contrast instead of repeating previous section.",
+     "confirmed": true,
+     "analyzerValue": 0.0,
+     "rank": "lowest"
+    }
+   ],
+   "factsAsBuilt": true,
+   "error": null,
+   "requestId": "eb65501c-870f-4803-97af-0befdcaac7e4",
+   "costUsd": 0.00318375,
+   "latencyMs": 2127,
+   "attempts": 1,
+   "replies": 1,
+   "provider": "meta",
+   "model": "muse-spark-1.3"
+  },
+  {
+   "request": "complete_rock_e_8bar_32",
+   "order": "CAB",
+   "letters": {
+    "A": "C",
+    "B": "A",
+    "C": "B"
+   },
+   "status": "ok",
+   "choice": "B",
+   "choiceStored": "A",
+   "reasons": [
+    {
+     "fact": "outOfKeyRatio=0.125",
+     "factName": "outOfKeyRatio",
+     "value": 0.125,
+     "claim": "Stays mostly in key, fitting rock's diatonic preference.",
+     "confirmed": true,
+     "analyzerValue": 0.125,
+     "rank": "neither"
+    },
+    {
+     "fact": "repetitionVsPrevious=0",
+     "factName": "repetitionVsPrevious",
+     "value": 0.0,
+     "claim": "Adds contrast before chorus instead of repeating previous section.",
+     "confirmed": true,
+     "analyzerValue": 0.0,
+     "rank": "lowest"
+    }
+   ],
+   "factsAsBuilt": true,
+   "error": null,
+   "requestId": "8fb34b97-4b25-425e-a771-3f3a1d014198",
+   "costUsd": 0.0027481,
+   "latencyMs": 2108,
+   "attempts": 1,
+   "replies": 1,
+   "provider": "meta",
+   "model": "muse-spark-1.3"
+  },
+  {
+   "request": "new_blues_32",
+   "order": "ABC",
+   "letters": {
+    "A": "A",
+    "B": "B",
+    "C": "C"
+   },
+   "status": "ok",
+   "choice": "B",
+   "choiceStored": "B",
+   "reasons": [
+    {
+     "fact": "outOfKeyRatio=0.188",
+     "factName": "outOfKeyRatio",
+     "value": 0.188,
+     "claim": "Chromatic color suits blues intro style well.",
+     "confirmed": true,
+     "analyzerValue": 0.188,
+     "rank": "highest"
+    },
+    {
+     "fact": "r1Roughness=0.422",
+     "factName": "r1Roughness",
+     "value": 0.422,
+     "claim": "Lowest roughness keeps intro smooth and consonant.",
+     "confirmed": true,
+     "analyzerValue": 0.422,
+     "rank": "lowest"
+    }
+   ],
+   "factsAsBuilt": true,
+   "error": null,
+   "requestId": "201bec13-7969-4750-9f2a-bedad30a48fc",
+   "costUsd": 0.00385575,
+   "latencyMs": 2468,
+   "attempts": 1,
+   "replies": 1,
+   "provider": "meta",
+   "model": "muse-spark-1.3"
+  },
+  {
+   "request": "new_blues_32",
+   "order": "BCA",
+   "letters": {
+    "A": "B",
+    "B": "C",
+    "C": "A"
+   },
+   "status": "ok",
+   "choice": "A",
+   "choiceStored": "B",
+   "reasons": [
+    {
+     "fact": "outOfKeyRatio=0.188",
+     "factName": "outOfKeyRatio",
+     "value": 0.188,
+     "claim": "Blues welcomes chromatic chords, so the highest out-of-key share fits the genre.",
+     "confirmed": true,
+     "analyzerValue": 0.188,
+     "rank": "highest"
+    },
+    {
+     "fact": "r1Roughness=0.422",
+     "factName": "r1Roughness",
+     "value": 0.422,
+     "claim": "Lowest roughness keeps the intro smooth and consonant.",
+     "confirmed": true,
+     "analyzerValue": 0.422,
+     "rank": "lowest"
+    }
+   ],
+   "factsAsBuilt": true,
+   "error": null,
+   "requestId": "e289f90f-71bb-48f7-9ec5-209c765d8781",
+   "costUsd": 0.00390675,
+   "latencyMs": 2756,
+   "attempts": 1,
+   "replies": 1,
+   "provider": "meta",
+   "model": "muse-spark-1.3"
+  },
+  {
+   "request": "new_blues_32",
+   "order": "CAB",
+   "letters": {
+    "A": "C",
+    "B": "A",
+    "C": "B"
+   },
+   "status": "ok",
+   "choice": "C",
+   "choiceStored": "B",
+   "reasons": [
+    {
+     "fact": "outOfKeyRatio=0.188",
+     "factName": "outOfKeyRatio",
+     "value": 0.188,
+     "claim": "Blues welcomes chromatic color so higher out-of-key share fits intro.",
+     "confirmed": true,
+     "analyzerValue": 0.188,
+     "rank": "highest"
+    },
+    {
+     "fact": "r1Roughness=0.422",
+     "factName": "r1Roughness",
+     "value": 0.422,
+     "claim": "Lower roughness keeps the intro consonant and inviting.",
+     "confirmed": true,
+     "analyzerValue": 0.422,
+     "rank": "lowest"
+    }
+   ],
+   "factsAsBuilt": true,
+   "error": null,
+   "requestId": "f6049dfe-2425-4711-ac2a-06eb7534082e",
+   "costUsd": 0.0036135,
+   "latencyMs": 2399,
+   "attempts": 1,
+   "replies": 1,
+   "provider": "meta",
+   "model": "muse-spark-1.3"
+  },
+  {
+   "request": "new_blues_64",
+   "order": "ABC",
+   "letters": {
+    "A": "A",
+    "B": "B",
+    "C": "C"
+   },
+   "status": "ok",
+   "choice": "C",
+   "choiceStored": "C",
+   "reasons": [
+    {
+     "fact": "outOfKeyRatio=0.25",
+     "factName": "outOfKeyRatio",
+     "value": 0.25,
+     "claim": "Adds chromatic blues color that blues welcomes.",
+     "confirmed": true,
+     "analyzerValue": 0.25,
+     "rank": "highest"
+    }
+   ],
+   "factsAsBuilt": true,
+   "error": null,
+   "requestId": "f2dd8dad-0f80-40ca-a7ca-8e79dceefcae",
+   "costUsd": 0.005268,
+   "latencyMs": 4185,
+   "attempts": 1,
+   "replies": 1,
+   "provider": "meta",
+   "model": "muse-spark-1.3"
+  },
+  {
+   "request": "new_blues_64",
+   "order": "BCA",
+   "letters": {
+    "A": "B",
+    "B": "C",
+    "C": "A"
+   },
+   "status": "ok",
+   "choice": "B",
+   "choiceStored": "C",
+   "reasons": [
+    {
+     "fact": "outOfKeyRatio=0.25",
+     "factName": "outOfKeyRatio",
+     "value": 0.25,
+     "claim": "Chromatic color suits blues which welcomes out-of-key chords.",
+     "confirmed": true,
+     "analyzerValue": 0.25,
+     "rank": "highest"
+    }
+   ],
+   "factsAsBuilt": true,
+   "error": null,
+   "requestId": "7eab27f4-c7f9-45c4-be0f-b663d8e60b92",
+   "costUsd": 0.004911,
+   "latencyMs": 3786,
+   "attempts": 1,
+   "replies": 1,
+   "provider": "meta",
+   "model": "muse-spark-1.3"
+  },
+  {
+   "request": "new_blues_64",
+   "order": "CAB",
+   "letters": {
+    "A": "C",
+    "B": "A",
+    "C": "B"
+   },
+   "status": "ok",
+   "choice": "A",
+   "choiceStored": "C",
+   "reasons": [
+    {
+     "fact": "outOfKeyRatio=0.25",
+     "factName": "outOfKeyRatio",
+     "value": 0.25,
+     "claim": "Chromatic tones are welcome in blues and add authentic color.",
+     "confirmed": true,
+     "analyzerValue": 0.25,
+     "rank": "highest"
+    }
+   ],
+   "factsAsBuilt": true,
+   "error": null,
+   "requestId": "2ee8560b-aa50-44a9-a12a-9c073d92552e",
+   "costUsd": 0.007274,
+   "latencyMs": 5828,
+   "attempts": 1,
+   "replies": 1,
+   "provider": "meta",
+   "model": "muse-spark-1.3"
+  },
+  {
+   "request": "new_electronic_32",
+   "order": "ABC",
+   "letters": {
+    "A": "A",
+    "B": "B",
+    "C": "C"
+   },
+   "status": "ok",
+   "choice": "A",
+   "choiceStored": "A",
+   "reasons": [
+    {
+     "fact": "outOfKeyRatio=0",
+     "factName": "outOfKeyRatio",
+     "value": 0.0,
+     "claim": "Stays fully in A minor, fitting electronic staying in key.",
+     "confirmed": true,
+     "analyzerValue": 0.0,
+     "rank": "neither"
+    },
+    {
+     "fact": "r1Roughness=0.436",
+     "factName": "r1Roughness",
+     "value": 0.436,
+     "claim": "Lowest roughness gives smooth consonant intro.",
+     "confirmed": true,
+     "analyzerValue": 0.436,
+     "rank": "lowest"
+    }
+   ],
+   "factsAsBuilt": true,
+   "error": null,
+   "requestId": "c11826f5-47cf-4703-ae47-0e11b8899f35",
+   "costUsd": 0.0039955,
+   "latencyMs": 3161,
+   "attempts": 1,
+   "replies": 1,
+   "provider": "meta",
+   "model": "muse-spark-1.3"
+  },
+  {
+   "request": "new_electronic_32",
+   "order": "BCA",
+   "letters": {
+    "A": "B",
+    "B": "C",
+    "C": "A"
+   },
+   "status": "ok",
+   "choice": "C",
+   "choiceStored": "A",
+   "reasons": [
+    {
+     "fact": "outOfKeyRatio=0",
+     "factName": "outOfKeyRatio",
+     "value": 0.0,
+     "claim": "Stays fully in A minor, fitting electronic that usually stays in key.",
+     "confirmed": true,
+     "analyzerValue": 0.0,
+     "rank": "neither"
+    },
+    {
+     "fact": "r1Roughness=0.436",
+     "factName": "r1Roughness",
+     "value": 0.436,
+     "claim": "Most consonant option suits a smooth intro opening.",
+     "confirmed": true,
+     "analyzerValue": 0.436,
+     "rank": "lowest"
+    }
+   ],
+   "factsAsBuilt": true,
+   "error": null,
+   "requestId": "9dd12199-d665-408e-8c3d-23800ebce3b6",
+   "costUsd": 0.00283735,
+   "latencyMs": 2284,
+   "attempts": 1,
+   "replies": 1,
+   "provider": "meta",
+   "model": "muse-spark-1.3"
+  },
+  {
+   "request": "new_electronic_32",
+   "order": "CAB",
+   "letters": {
+    "A": "C",
+    "B": "A",
+    "C": "B"
+   },
+   "status": "ok",
+   "choice": "B",
+   "choiceStored": "A",
+   "reasons": [
+    {
+     "fact": "r1Roughness=0.436",
+     "factName": "r1Roughness",
+     "value": 0.436,
+     "claim": "Lowest roughness gives smooth consonant electronic intro in A minor.",
+     "confirmed": true,
+     "analyzerValue": 0.436,
+     "rank": "lowest"
+    },
+    {
+     "fact": "outOfKeyRatio=0",
+     "factName": "outOfKeyRatio",
+     "value": 0.0,
+     "claim": "Stays fully in key as electronic prefers.",
+     "confirmed": true,
+     "analyzerValue": 0.0,
+     "rank": "neither"
+    }
+   ],
+   "factsAsBuilt": true,
+   "error": null,
+   "requestId": "070f41a6-66b2-465c-9f9c-f9b2593d1d1b",
+   "costUsd": 0.00243785,
+   "latencyMs": 1934,
+   "attempts": 1,
+   "replies": 1,
+   "provider": "meta",
+   "model": "muse-spark-1.3"
+  },
+  {
+   "request": "new_electronic_64",
+   "order": "ABC",
+   "letters": {
+    "A": "A",
+    "B": "B",
+    "C": "C"
+   },
+   "status": "ok",
+   "choice": "A",
+   "choiceStored": "A",
+   "reasons": [
+    {
+     "fact": "outOfKeyRatio=0",
+     "factName": "outOfKeyRatio",
+     "value": 0.0,
+     "claim": "Stays fully in A minor, fitting electronic that usually stays in key.",
+     "confirmed": true,
+     "analyzerValue": 0.0,
+     "rank": "neither"
+    },
+    {
+     "fact": "r1Roughness=0.411",
+     "factName": "r1Roughness",
+     "value": 0.411,
+     "claim": "Most consonant intro with lowest roughness for a smooth opening.",
+     "confirmed": true,
+     "analyzerValue": 0.411,
+     "rank": "lowest"
+    }
+   ],
+   "factsAsBuilt": true,
+   "error": null,
+   "requestId": "252fd46b-c32b-4b97-9124-ba8013bdaeb7",
+   "costUsd": 0.0031145,
+   "latencyMs": 2005,
+   "attempts": 1,
+   "replies": 1,
+   "provider": "meta",
+   "model": "muse-spark-1.3"
+  },
+  {
+   "request": "new_electronic_64",
+   "order": "BCA",
+   "letters": {
+    "A": "B",
+    "B": "C",
+    "C": "A"
+   },
+   "status": "ok",
+   "choice": "C",
+   "choiceStored": "A",
+   "reasons": [
+    {
+     "fact": "outOfKeyRatio=0",
+     "factName": "outOfKeyRatio",
+     "value": 0.0,
+     "claim": "Stays fully in A minor as electronic expects.",
+     "confirmed": true,
+     "analyzerValue": 0.0,
+     "rank": "neither"
+    },
+    {
+     "fact": "r1Roughness=0.411",
+     "factName": "r1Roughness",
+     "value": 0.411,
+     "claim": "Most consonant intro for smooth electronic opening.",
+     "confirmed": true,
+     "analyzerValue": 0.411,
+     "rank": "lowest"
+    }
+   ],
+   "factsAsBuilt": true,
+   "error": null,
+   "requestId": "c33d8d91-ca76-4eca-a3d3-1ce3177e0bf9",
+   "costUsd": 0.0039985,
+   "latencyMs": 2609,
+   "attempts": 1,
+   "replies": 1,
+   "provider": "meta",
+   "model": "muse-spark-1.3"
+  },
+  {
+   "request": "new_electronic_64",
+   "order": "CAB",
+   "letters": {
+    "A": "C",
+    "B": "A",
+    "C": "B"
+   },
+   "status": "ok",
+   "choice": "B",
+   "choiceStored": "A",
+   "reasons": [
+    {
+     "fact": "r1Roughness=0.411",
+     "factName": "r1Roughness",
+     "value": 0.411,
+     "claim": "Lowest roughness gives smoothest most consonant intro.",
+     "confirmed": true,
+     "analyzerValue": 0.411,
+     "rank": "lowest"
+    },
+    {
+     "fact": "outOfKeyRatio=0",
+     "factName": "outOfKeyRatio",
+     "value": 0.0,
+     "claim": "Stays fully in key as electronic prefers.",
+     "confirmed": true,
+     "analyzerValue": 0.0,
+     "rank": "neither"
+    }
+   ],
+   "factsAsBuilt": true,
+   "error": null,
+   "requestId": "d8f2e197-f447-4452-ba6f-cf4771ae18f6",
+   "costUsd": 0.003412,
+   "latencyMs": 2406,
+   "attempts": 1,
+   "replies": 1,
+   "provider": "meta",
+   "model": "muse-spark-1.3"
+  },
+  {
+   "request": "new_gospel_32",
+   "order": "ABC",
+   "letters": {
+    "A": "A",
+    "B": "B",
+    "C": "C"
+   },
+   "status": "ok",
+   "choice": "B",
+   "choiceStored": "B",
+   "reasons": [
+    {
+     "fact": "r1Roughness=0.538",
+     "factName": "r1Roughness",
+     "value": 0.538,
+     "claim": "Lowest roughness gives smooth consonant gospel intro",
+     "confirmed": true,
+     "analyzerValue": 0.538,
+     "rank": "lowest"
+    },
+    {
+     "fact": "outOfKeyRatio=0",
+     "factName": "outOfKeyRatio",
+     "value": 0.0,
+     "claim": "Stays fully in F major as gospel prefers",
+     "confirmed": true,
+     "analyzerValue": 0.0,
+     "rank": "neither"
+    }
+   ],
+   "factsAsBuilt": true,
+   "error": null,
+   "requestId": "c73e1e1b-1e87-4556-bd22-6d409d4b895e",
+   "costUsd": 0.00326175,
+   "latencyMs": 2277,
+   "attempts": 1,
+   "replies": 1,
+   "provider": "meta",
+   "model": "muse-spark-1.3"
+  },
+  {
+   "request": "new_gospel_32",
+   "order": "BCA",
+   "letters": {
+    "A": "B",
+    "B": "C",
+    "C": "A"
+   },
+   "status": "ok",
+   "choice": "A",
+   "choiceStored": "B",
+   "reasons": [
+    {
+     "fact": "outOfKeyRatio=0",
+     "factName": "outOfKeyRatio",
+     "value": 0.0,
+     "claim": "Stays fully in F major as gospel expects.",
+     "confirmed": true,
+     "analyzerValue": 0.0,
+     "rank": "neither"
+    },
+    {
+     "fact": "r1Roughness=0.538",
+     "factName": "r1Roughness",
+     "value": 0.538,
+     "claim": "Most consonant option for a smooth gospel intro.",
+     "confirmed": true,
+     "analyzerValue": 0.538,
+     "rank": "lowest"
+    }
+   ],
+   "factsAsBuilt": true,
+   "error": null,
+   "requestId": "916c67ff-aa1c-4900-9697-7d84fde79ca4",
+   "costUsd": 0.00339775,
+   "latencyMs": 2263,
+   "attempts": 1,
+   "replies": 1,
+   "provider": "meta",
+   "model": "muse-spark-1.3"
+  },
+  {
+   "request": "new_gospel_32",
+   "order": "CAB",
+   "letters": {
+    "A": "C",
+    "B": "A",
+    "C": "B"
+   },
+   "status": "ok",
+   "choice": "C",
+   "choiceStored": "B",
+   "reasons": [
+    {
+     "fact": "outOfKeyRatio=0",
+     "factName": "outOfKeyRatio",
+     "value": 0.0,
+     "claim": "Stays fully in F major as gospel style prefers.",
+     "confirmed": true,
+     "analyzerValue": 0.0,
+     "rank": "neither"
+    },
+    {
+     "fact": "r1Roughness=0.538",
+     "factName": "r1Roughness",
+     "value": 0.538,
+     "claim": "Lowest roughness gives smooth consonant intro.",
+     "confirmed": true,
+     "analyzerValue": 0.538,
+     "rank": "lowest"
+    }
+   ],
+   "factsAsBuilt": true,
+   "error": null,
+   "requestId": "65b3e218-f29c-4290-af13-d2c3fd17dba4",
+   "costUsd": 0.003776,
+   "latencyMs": 2823,
+   "attempts": 1,
+   "replies": 1,
+   "provider": "meta",
+   "model": "muse-spark-1.3"
+  },
+  {
+   "request": "new_gospel_64",
+   "order": "ABC",
+   "letters": {
+    "A": "A",
+    "B": "B",
+    "C": "C"
+   },
+   "status": "ok",
+   "choice": "A",
+   "choiceStored": "A",
+   "reasons": [
+    {
+     "fact": "outOfKeyRatio=0",
+     "factName": "outOfKeyRatio",
+     "value": 0.0,
+     "claim": "Stays fully in F major, fitting gospel's diatonic preference.",
+     "confirmed": true,
+     "analyzerValue": 0.0,
+     "rank": "lowest"
+    },
+    {
+     "fact": "r1Roughness=0.459",
+     "factName": "r1Roughness",
+     "value": 0.459,
+     "claim": "Lowest roughness gives consonant intro suitable for gospel.",
+     "confirmed": true,
+     "analyzerValue": 0.459,
+     "rank": "lowest"
+    }
+   ],
+   "factsAsBuilt": true,
+   "error": null,
+   "requestId": "1e40149e-6b86-45ab-809e-fc672db2d7df",
+   "costUsd": 0.0035115,
+   "latencyMs": 2555,
+   "attempts": 1,
+   "replies": 1,
+   "provider": "meta",
+   "model": "muse-spark-1.3"
+  },
+  {
+   "request": "new_gospel_64",
+   "order": "BCA",
+   "letters": {
+    "A": "B",
+    "B": "C",
+    "C": "A"
+   },
+   "status": "ok",
+   "choice": "C",
+   "choiceStored": "A",
+   "reasons": [
+    {
+     "fact": "outOfKeyRatio=0",
+     "factName": "outOfKeyRatio",
+     "value": 0.0,
+     "claim": "Stays fully in F major as gospel prefers.",
+     "confirmed": true,
+     "analyzerValue": 0.0,
+     "rank": "lowest"
+    },
+    {
+     "fact": "r1Roughness=0.459",
+     "factName": "r1Roughness",
+     "value": 0.459,
+     "claim": "Most consonant intro with lowest roughness.",
+     "confirmed": true,
+     "analyzerValue": 0.459,
+     "rank": "lowest"
+    }
+   ],
+   "factsAsBuilt": true,
+   "error": null,
+   "requestId": "47e4c99c-9623-4eb1-a3f7-e53301f66a58",
+   "costUsd": 0.003112,
+   "latencyMs": 1871,
+   "attempts": 1,
+   "replies": 1,
+   "provider": "meta",
+   "model": "muse-spark-1.3"
+  },
+  {
+   "request": "new_gospel_64",
+   "order": "CAB",
+   "letters": {
+    "A": "C",
+    "B": "A",
+    "C": "B"
+   },
+   "status": "ok",
+   "choice": "B",
+   "choiceStored": "A",
+   "reasons": [
+    {
+     "fact": "outOfKeyRatio=0",
+     "factName": "outOfKeyRatio",
+     "value": 0.0,
+     "claim": "Stays fully in F major, fitting gospel's in-key preference.",
+     "confirmed": true,
+     "analyzerValue": 0.0,
+     "rank": "lowest"
+    },
+    {
+     "fact": "r1Roughness=0.459",
+     "factName": "r1Roughness",
+     "value": 0.459,
+     "claim": "Most consonant option for a welcoming gospel intro.",
+     "confirmed": true,
+     "analyzerValue": 0.459,
+     "rank": "lowest"
+    }
+   ],
+   "factsAsBuilt": true,
+   "error": null,
+   "requestId": "31b9a3d5-3e9d-4729-8d99-1f67f59a1a8e",
+   "costUsd": 0.00269335,
+   "latencyMs": 2383,
+   "attempts": 1,
+   "replies": 1,
+   "provider": "meta",
+   "model": "muse-spark-1.3"
+  },
+  {
+   "request": "new_jazz_32",
+   "order": "ABC",
+   "letters": {
+    "A": "A",
+    "B": "B",
+    "C": "C"
+   },
+   "status": "ok",
+   "choice": "B",
+   "choiceStored": "B",
+   "reasons": [
+    {
+     "fact": "outOfKeyRatio=0.25",
+     "factName": "outOfKeyRatio",
+     "value": 0.25,
+     "claim": "Its chromatic color fits jazz while staying rooted in F major.",
+     "confirmed": true,
+     "analyzerValue": 0.25,
+     "rank": "neither"
+    }
+   ],
+   "factsAsBuilt": true,
+   "error": null,
+   "requestId": "8fddd550-9552-4651-8124-75b5576dcbfd",
+   "costUsd": 0.004241,
+   "latencyMs": 3160,
+   "attempts": 1,
+   "replies": 1,
+   "provider": "meta",
+   "model": "muse-spark-1.3"
+  },
+  {
+   "request": "new_jazz_32",
+   "order": "BCA",
+   "letters": {
+    "A": "B",
+    "B": "C",
+    "C": "A"
+   },
+   "status": "ok",
+   "choice": "A",
+   "choiceStored": "B",
+   "reasons": [
+    {
+     "fact": "outOfKeyRatio=0.25",
+     "factName": "outOfKeyRatio",
+     "value": 0.25,
+     "claim": "Adds jazz-appropriate chromatic color while staying mostly in F major",
+     "confirmed": true,
+     "analyzerValue": 0.25,
+     "rank": "neither"
+    },
+    {
+     "fact": "r1Roughness=0.89",
+     "factName": "r1Roughness",
+     "value": 0.89,
+     "claim": "Keeps voicings smooth and consonant for an A section",
+     "confirmed": true,
+     "analyzerValue": 0.89,
+     "rank": "neither"
+    }
+   ],
+   "factsAsBuilt": true,
+   "error": null,
+   "requestId": "01682642-2298-4d06-b545-441c5400e4da",
+   "costUsd": 0.00411775,
+   "latencyMs": 3105,
+   "attempts": 1,
+   "replies": 1,
+   "provider": "meta",
+   "model": "muse-spark-1.3"
+  },
+  {
+   "request": "new_jazz_32",
+   "order": "CAB",
+   "letters": {
+    "A": "C",
+    "B": "A",
+    "C": "B"
+   },
+   "status": "ok",
+   "choice": "C",
+   "choiceStored": "B",
+   "reasons": [
+    {
+     "fact": "outOfKeyRatio=0.25",
+     "factName": "outOfKeyRatio",
+     "value": 0.25,
+     "claim": "Moderate chromaticism suits jazz harmony style.",
+     "confirmed": true,
+     "analyzerValue": 0.25,
+     "rank": "neither"
+    },
+    {
+     "fact": "r1Roughness=0.89",
+     "factName": "r1Roughness",
+     "value": 0.89,
+     "claim": "Balanced roughness keeps jazz color yet consonant.",
+     "confirmed": true,
+     "analyzerValue": 0.89,
+     "rank": "neither"
+    }
+   ],
+   "factsAsBuilt": true,
+   "error": null,
+   "requestId": "d697c267-d84f-472a-a31a-03022f30ac80",
+   "costUsd": 0.0030021,
+   "latencyMs": 2669,
+   "attempts": 1,
+   "replies": 1,
+   "provider": "meta",
+   "model": "muse-spark-1.3"
+  },
+  {
+   "request": "new_jazz_64",
+   "order": "ABC",
+   "letters": {
+    "A": "A",
+    "B": "B",
+    "C": "C"
+   },
+   "status": "ok",
+   "choice": "A",
+   "choiceStored": "A",
+   "reasons": [
+    {
+     "fact": "r1Roughness=0.88",
+     "factName": "r1Roughness",
+     "value": 0.88,
+     "claim": "Most consonant intro gently establishes tonic before jazz harmony unfolds.",
+     "confirmed": true,
+     "analyzerValue": 0.88,
+     "rank": "lowest"
+    },
+    {
+     "fact": "outOfKeyRatio=0.25",
+     "factName": "outOfKeyRatio",
+     "value": 0.25,
+     "claim": "Light chromatic color fits jazz while keeping F major center clear.",
+     "confirmed": true,
+     "analyzerValue": 0.25,
+     "rank": "lowest"
+    }
+   ],
+   "factsAsBuilt": true,
+   "error": null,
+   "requestId": "2a987d32-4abb-4023-8546-98ac8a5e9fff",
+   "costUsd": 0.006433,
+   "latencyMs": 5682,
+   "attempts": 1,
+   "replies": 1,
+   "provider": "meta",
+   "model": "muse-spark-1.3"
+  },
+  {
+   "request": "new_jazz_64",
+   "order": "BCA",
+   "letters": {
+    "A": "B",
+    "B": "C",
+    "C": "A"
+   },
+   "status": "ok",
+   "choice": "B",
+   "choiceStored": "C",
+   "reasons": [
+    {
+     "fact": "outOfKeyRatio=0.438",
+     "factName": "outOfKeyRatio",
+     "value": 0.438,
+     "claim": "Jazz intro welcomes chromatic color and turnaround movement.",
+     "confirmed": true,
+     "analyzerValue": 0.438,
+     "rank": "highest"
+    }
+   ],
+   "factsAsBuilt": true,
+   "error": null,
+   "requestId": "47825175-72fb-435f-8af7-93b79c9f61cf",
+   "costUsd": 0.00337085,
+   "latencyMs": 2851,
+   "attempts": 1,
+   "replies": 1,
+   "provider": "meta",
+   "model": "muse-spark-1.3"
+  },
+  {
+   "request": "new_jazz_64",
+   "order": "CAB",
+   "letters": {
+    "A": "C",
+    "B": "A",
+    "C": "B"
+   },
+   "status": "ok",
+   "choice": "B",
+   "choiceStored": "A",
+   "reasons": [
+    {
+     "fact": "r1Roughness=0.88",
+     "factName": "r1Roughness",
+     "value": 0.88,
+     "claim": "Most consonant intro cleanly establishes F major tonic.",
+     "confirmed": true,
+     "analyzerValue": 0.88,
+     "rank": "lowest"
+    },
+    {
+     "fact": "outOfKeyRatio=0.25",
+     "factName": "outOfKeyRatio",
+     "value": 0.25,
+     "claim": "Stays closest to key while keeping jazz color via F7.",
+     "confirmed": true,
+     "analyzerValue": 0.25,
+     "rank": "lowest"
+    }
+   ],
+   "factsAsBuilt": true,
+   "error": null,
+   "requestId": "6cb5adc4-21dc-477c-943f-dc46e5aaa9d6",
+   "costUsd": 0.00540875,
+   "latencyMs": 4426,
+   "attempts": 1,
+   "replies": 1,
+   "provider": "meta",
+   "model": "muse-spark-1.3"
+  },
+  {
+   "request": "new_pop_32",
+   "order": "ABC",
+   "letters": {
+    "A": "A",
+    "B": "B",
+    "C": "C"
+   },
+   "status": "ok",
+   "choice": "B",
+   "choiceStored": "B",
+   "reasons": [
+    {
+     "fact": "outOfKeyRatio=0",
+     "factName": "outOfKeyRatio",
+     "value": 0.0,
+     "claim": "Stays fully in C major as pop intro expects.",
+     "confirmed": true,
+     "analyzerValue": 0.0,
+     "rank": "lowest"
+    },
+    {
+     "fact": "r1Roughness=0.407",
+     "factName": "r1Roughness",
+     "value": 0.407,
+     "claim": "Most consonant option for a clear pop intro.",
+     "confirmed": true,
+     "analyzerValue": 0.407,
+     "rank": "lowest"
+    }
+   ],
+   "factsAsBuilt": true,
+   "error": null,
+   "requestId": "ee3714c7-a687-4d89-a2e8-ee44ae403beb",
+   "costUsd": 0.003508,
+   "latencyMs": 2141,
+   "attempts": 1,
+   "replies": 1,
+   "provider": "meta",
+   "model": "muse-spark-1.3"
+  },
+  {
+   "request": "new_pop_32",
+   "order": "BCA",
+   "letters": {
+    "A": "B",
+    "B": "C",
+    "C": "A"
+   },
+   "status": "ok",
+   "choice": "A",
+   "choiceStored": "B",
+   "reasons": [
+    {
+     "fact": "outOfKeyRatio=0",
+     "factName": "outOfKeyRatio",
+     "value": 0.0,
+     "claim": "Stays fully in C major as pop intro expects.",
+     "confirmed": true,
+     "analyzerValue": 0.0,
+     "rank": "lowest"
+    },
+    {
+     "fact": "r1Roughness=0.407",
+     "factName": "r1Roughness",
+     "value": 0.407,
+     "claim": "Lowest roughness gives smooth consonant intro.",
+     "confirmed": true,
+     "analyzerValue": 0.407,
+     "rank": "lowest"
+    }
+   ],
+   "factsAsBuilt": true,
+   "error": null,
+   "requestId": "6429fa29-b976-42a3-ab45-4daa37a24377",
+   "costUsd": 0.00273235,
+   "latencyMs": 2285,
+   "attempts": 1,
+   "replies": 1,
+   "provider": "meta",
+   "model": "muse-spark-1.3"
+  },
+  {
+   "request": "new_pop_32",
+   "order": "CAB",
+   "letters": {
+    "A": "C",
+    "B": "A",
+    "C": "B"
+   },
+   "status": "ok",
+   "choice": "C",
+   "choiceStored": "B",
+   "reasons": [
+    {
+     "fact": "outOfKeyRatio=0",
+     "factName": "outOfKeyRatio",
+     "value": 0.0,
+     "claim": "Stays fully in key for pop intro in C major.",
+     "confirmed": true,
+     "analyzerValue": 0.0,
+     "rank": "lowest"
+    },
+    {
+     "fact": "r1Roughness=0.407",
+     "factName": "r1Roughness",
+     "value": 0.407,
+     "claim": "Most consonant with lowest roughness.",
+     "confirmed": true,
+     "analyzerValue": 0.407,
+     "rank": "lowest"
+    }
+   ],
+   "factsAsBuilt": true,
+   "error": null,
+   "requestId": "970cdaf5-2469-4563-9c36-5b8b8684224e",
+   "costUsd": 0.00291725,
+   "latencyMs": 1863,
+   "attempts": 1,
+   "replies": 1,
+   "provider": "meta",
+   "model": "muse-spark-1.3"
+  },
+  {
+   "request": "new_pop_64",
+   "order": "ABC",
+   "letters": {
+    "A": "A",
+    "B": "B",
+    "C": "C"
+   },
+   "status": "ok",
+   "choice": "C",
+   "choiceStored": "C",
+   "reasons": [
+    {
+     "fact": "outOfKeyRatio=0",
+     "factName": "outOfKeyRatio",
+     "value": 0.0,
+     "claim": "Stays fully in C major as pop requires.",
+     "confirmed": true,
+     "analyzerValue": 0.0,
+     "rank": "neither"
+    },
+    {
+     "fact": "r1Roughness=0.45",
+     "factName": "r1Roughness",
+     "value": 0.45,
+     "claim": "Most consonant option for a smooth pop intro.",
+     "confirmed": true,
+     "analyzerValue": 0.45,
+     "rank": "lowest"
+    }
+   ],
+   "factsAsBuilt": true,
+   "error": null,
+   "requestId": "0fb2d525-e94b-494a-a470-f0c7dce6785b",
+   "costUsd": 0.0027761,
+   "latencyMs": 2292,
+   "attempts": 1,
+   "replies": 1,
+   "provider": "meta",
+   "model": "muse-spark-1.3"
+  },
+  {
+   "request": "new_pop_64",
+   "order": "BCA",
+   "letters": {
+    "A": "B",
+    "B": "C",
+    "C": "A"
+   },
+   "status": "ok",
+   "choice": "B",
+   "choiceStored": "C",
+   "reasons": [
+    {
+     "fact": "r1Roughness=0.45",
+     "factName": "r1Roughness",
+     "value": 0.45,
+     "claim": "Lowest roughness gives smooth consonant pop intro.",
+     "confirmed": true,
+     "analyzerValue": 0.45,
+     "rank": "lowest"
+    },
+    {
+     "fact": "outOfKeyRatio=0",
+     "factName": "outOfKeyRatio",
+     "value": 0.0,
+     "claim": "Fully in-key writing suits pop that usually stays in key.",
+     "confirmed": true,
+     "analyzerValue": 0.0,
+     "rank": "neither"
+    }
+   ],
+   "factsAsBuilt": true,
+   "error": null,
+   "requestId": "30d06e2d-328b-4605-8e39-45ec8d5f42f3",
+   "costUsd": 0.0028016,
+   "latencyMs": 2158,
+   "attempts": 1,
+   "replies": 1,
+   "provider": "meta",
+   "model": "muse-spark-1.3"
+  },
+  {
+   "request": "new_pop_64",
+   "order": "CAB",
+   "letters": {
+    "A": "C",
+    "B": "A",
+    "C": "B"
+   },
+   "status": "ok",
+   "choice": "A",
+   "choiceStored": "C",
+   "reasons": [
+    {
+     "fact": "r1Roughness=0.45",
+     "factName": "r1Roughness",
+     "value": 0.45,
+     "claim": "Most consonant intro fits pop staying clear and welcoming.",
+     "confirmed": true,
+     "analyzerValue": 0.45,
+     "rank": "lowest"
+    },
+    {
+     "fact": "outOfKeyRatio=0",
+     "factName": "outOfKeyRatio",
+     "value": 0.0,
+     "claim": "Stays fully in C major as pop intros usually do.",
+     "confirmed": true,
+     "analyzerValue": 0.0,
+     "rank": "neither"
+    }
+   ],
+   "factsAsBuilt": true,
+   "error": null,
+   "requestId": "85e0348e-a535-4839-8916-6bb69c249f47",
+   "costUsd": 0.0031905,
+   "latencyMs": 2378,
+   "attempts": 1,
+   "replies": 1,
+   "provider": "meta",
+   "model": "muse-spark-1.3"
+  },
+  {
+   "request": "tight_blues_a_12bar_16_high",
+   "order": "ABC",
+   "letters": {
+    "A": "A",
+    "B": "B",
+    "C": "C"
+   },
+   "status": "ok",
+   "choice": "B",
+   "choiceStored": "B",
+   "reasons": [
+    {
+     "fact": "outOfKeyRatio=0.25",
+     "factName": "outOfKeyRatio",
+     "value": 0.25,
+     "claim": "Blues welcomes chromatic chords, so out-of-key color fits the genre.",
+     "confirmed": true,
+     "analyzerValue": 0.25,
+     "rank": "neither"
+    },
+    {
+     "fact": "repetitionVsPrevious=0",
+     "factName": "repetitionVsPrevious",
+     "value": 0.0,
+     "claim": "Zero overlap with previous section gives the bridge needed contrast.",
+     "confirmed": true,
+     "analyzerValue": 0.0,
+     "rank": "neither"
+    }
+   ],
+   "factsAsBuilt": true,
+   "error": null,
+   "requestId": "c3f9c98a-db38-4028-83ee-c80d5f09199f",
+   "costUsd": 0.00492835,
+   "latencyMs": 4842,
+   "attempts": 1,
+   "replies": 1,
+   "provider": "meta",
+   "model": "muse-spark-1.3"
+  },
+  {
+   "request": "tight_blues_a_12bar_16_high",
+   "order": "BCA",
+   "letters": {
+    "A": "B",
+    "B": "C",
+    "C": "A"
+   },
+   "status": "ok",
+   "choice": "A",
+   "choiceStored": "B",
+   "reasons": [
+    {
+     "fact": "outOfKeyRatio=0.25",
+     "factName": "outOfKeyRatio",
+     "value": 0.25,
+     "claim": "Blues welcomes chromatic tones so out-of-key color fits the bridge.",
+     "confirmed": true,
+     "analyzerValue": 0.25,
+     "rank": "neither"
+    },
+    {
+     "fact": "repetitionVsPrevious=0",
+     "factName": "repetitionVsPrevious",
+     "value": 0.0,
+     "claim": "Zero carryover gives the bridge clear contrast from previous section.",
+     "confirmed": true,
+     "analyzerValue": 0.0,
+     "rank": "neither"
+    }
+   ],
+   "factsAsBuilt": true,
+   "error": null,
+   "requestId": "3107ac31-64ee-4b2d-b2ac-ce54c8218847",
+   "costUsd": 0.004667,
+   "latencyMs": 3661,
+   "attempts": 1,
+   "replies": 1,
+   "provider": "meta",
+   "model": "muse-spark-1.3"
+  },
+  {
+   "request": "tight_blues_a_12bar_16_high",
+   "order": "CAB",
+   "letters": {
+    "A": "C",
+    "B": "A",
+    "C": "B"
+   },
+   "status": "ok",
+   "choice": "A",
+   "choiceStored": "C",
+   "reasons": [
+    {
+     "fact": "outOfKeyRatio=0.25",
+     "factName": "outOfKeyRatio",
+     "value": 0.25,
+     "claim": "Blues welcomes chromatic color so out-of-key tones fit well.",
+     "confirmed": true,
+     "analyzerValue": 0.25,
+     "rank": "neither"
+    },
+    {
+     "fact": "repetitionVsPrevious=0",
+     "factName": "repetitionVsPrevious",
+     "value": 0.0,
+     "claim": "Bridge gives full contrast with no repeat of prior section.",
+     "confirmed": true,
+     "analyzerValue": 0.0,
+     "rank": "neither"
+    }
+   ],
+   "factsAsBuilt": true,
+   "error": null,
+   "requestId": "e8d2ea37-94d0-4d88-bbe1-79161d4286dc",
+   "costUsd": 0.00400825,
+   "latencyMs": 3312,
+   "attempts": 1,
+   "replies": 1,
+   "provider": "meta",
+   "model": "muse-spark-1.3"
+  },
+  {
+   "request": "tight_blues_e_12bar_48_outro",
+   "order": "ABC",
+   "letters": {
+    "A": "A",
+    "B": "B",
+    "C": "C"
+   },
+   "status": "ok",
+   "choice": "A",
+   "choiceStored": "A",
+   "reasons": [
+    {
+     "fact": "r1Roughness=0.679",
+     "factName": "r1Roughness",
+     "value": 0.679,
+     "claim": "Lowest roughness keeps the blues verse consonant and smooth.",
+     "confirmed": true,
+     "analyzerValue": 0.679,
+     "rank": "lowest"
+    },
+    {
+     "fact": "repetitionVsPrevious=0.083",
+     "factName": "repetitionVsPrevious",
+     "value": 0.083,
+     "claim": "Low overlap with previous section gives fresh contrast.",
+     "confirmed": true,
+     "analyzerValue": 0.083,
+     "rank": "neither"
+    }
+   ],
+   "factsAsBuilt": true,
+   "error": null,
+   "requestId": "b47a200a-bcc8-4d11-bbaa-ef67654d708b",
+   "costUsd": 0.00563585,
+   "latencyMs": 4643,
+   "attempts": 1,
+   "replies": 1,
+   "provider": "meta",
+   "model": "muse-spark-1.3"
+  },
+  {
+   "request": "tight_blues_e_12bar_48_outro",
+   "order": "BCA",
+   "letters": {
+    "A": "B",
+    "B": "C",
+    "C": "A"
+   },
+   "status": "ok",
+   "choice": "C",
+   "choiceStored": "A",
+   "reasons": [
+    {
+     "fact": "r1Roughness=0.679",
+     "factName": "r1Roughness",
+     "value": 0.679,
+     "claim": "Lowest roughness gives most consonant blues verse sound.",
+     "confirmed": true,
+     "analyzerValue": 0.679,
+     "rank": "lowest"
+    },
+    {
+     "fact": "repetitionVsPrevious=0.083",
+     "factName": "repetitionVsPrevious",
+     "value": 0.083,
+     "claim": "Low overlap adds contrast instead of repeating previous section.",
+     "confirmed": true,
+     "analyzerValue": 0.083,
+     "rank": "neither"
+    }
+   ],
+   "factsAsBuilt": true,
+   "error": null,
+   "requestId": "3f8839db-8609-4c72-af2e-3980b031dd29",
+   "costUsd": 0.00514925,
+   "latencyMs": 4136,
+   "attempts": 1,
+   "replies": 1,
+   "provider": "meta",
+   "model": "muse-spark-1.3"
+  },
+  {
+   "request": "tight_blues_e_12bar_48_outro",
+   "order": "CAB",
+   "letters": {
+    "A": "C",
+    "B": "A",
+    "C": "B"
+   },
+   "status": "ok",
+   "choice": "B",
+   "choiceStored": "A",
+   "reasons": [
+    {
+     "fact": "r1Roughness=0.679",
+     "factName": "r1Roughness",
+     "value": 0.679,
+     "claim": "Lowest roughness voicings stay smooth and driving for a blues verse.",
+     "confirmed": true,
+     "analyzerValue": 0.679,
+     "rank": "lowest"
+    },
+    {
+     "fact": "outOfKeyRatio=0.5",
+     "factName": "outOfKeyRatio",
+     "value": 0.5,
+     "claim": "Chromatic color fits blues which welcomes outside-key chords.",
+     "confirmed": true,
+     "analyzerValue": 0.5,
+     "rank": "lowest"
+    }
+   ],
+   "factsAsBuilt": true,
+   "error": null,
+   "requestId": "5f15a9a0-4700-474e-b3d0-bd80ba34987c",
+   "costUsd": 0.00387,
+   "latencyMs": 2950,
+   "attempts": 1,
+   "replies": 1,
+   "provider": "meta",
+   "model": "muse-spark-1.3"
+  },
+  {
+   "request": "tight_folk_g_14bar_16_outro",
+   "order": "ABC",
+   "letters": {
+    "A": "A",
+    "B": "B",
+    "C": "C"
+   },
+   "status": "ok",
+   "choice": "C",
+   "choiceStored": "C",
+   "reasons": [
+    {
+     "fact": "outOfKeyRatio=0",
+     "factName": "outOfKeyRatio",
+     "value": 0.0,
+     "claim": "Stays fully in G major as folk prefers diatonic harmony.",
+     "confirmed": true,
+     "analyzerValue": 0.0,
+     "rank": "neither"
+    },
+    {
+     "fact": "r1Roughness=0.597",
+     "factName": "r1Roughness",
+     "value": 0.597,
+     "claim": "Lowest roughness gives calm consonant folk outro close.",
+     "confirmed": true,
+     "analyzerValue": 0.597,
+     "rank": "lowest"
+    }
+   ],
+   "factsAsBuilt": true,
+   "error": null,
+   "requestId": "73af26cc-f591-4ac5-af2a-efb7d7eb890f",
+   "costUsd": 0.0040435,
+   "latencyMs": 3584,
+   "attempts": 1,
+   "replies": 1,
+   "provider": "meta",
+   "model": "muse-spark-1.3"
+  },
+  {
+   "request": "tight_folk_g_14bar_16_outro",
+   "order": "BCA",
+   "letters": {
+    "A": "B",
+    "B": "C",
+    "C": "A"
+   },
+   "status": "ok",
+   "choice": "B",
+   "choiceStored": "C",
+   "reasons": [
+    {
+     "fact": "outOfKeyRatio=0",
+     "factName": "outOfKeyRatio",
+     "value": 0.0,
+     "claim": "Fits folk staying in key with no chromatic chords.",
+     "confirmed": true,
+     "analyzerValue": 0.0,
+     "rank": "neither"
+    },
+    {
+     "fact": "r1Roughness=0.597",
+     "factName": "r1Roughness",
+     "value": 0.597,
+     "claim": "Lowest roughness suits gentle folk outro.",
+     "confirmed": true,
+     "analyzerValue": 0.597,
+     "rank": "lowest"
+    }
+   ],
+   "factsAsBuilt": true,
+   "error": null,
+   "requestId": "e17a5820-553f-4438-8667-44a43fccdf0a",
+   "costUsd": 0.002794,
+   "latencyMs": 1729,
+   "attempts": 1,
+   "replies": 1,
+   "provider": "meta",
+   "model": "muse-spark-1.3"
+  },
+  {
+   "request": "tight_folk_g_14bar_16_outro",
+   "order": "CAB",
+   "letters": {
+    "A": "C",
+    "B": "A",
+    "C": "B"
+   },
+   "status": "ok",
+   "choice": "A",
+   "choiceStored": "C",
+   "reasons": [
+    {
+     "fact": "outOfKeyRatio=0",
+     "factName": "outOfKeyRatio",
+     "value": 0.0,
+     "claim": "Stays fully in G major as folk prefers.",
+     "confirmed": true,
+     "analyzerValue": 0.0,
+     "rank": "neither"
+    },
+    {
+     "fact": "r1Roughness=0.597",
+     "factName": "r1Roughness",
+     "value": 0.597,
+     "claim": "Most consonant option suits gentle folk outro.",
+     "confirmed": true,
+     "analyzerValue": 0.597,
+     "rank": "lowest"
+    }
+   ],
+   "factsAsBuilt": true,
+   "error": null,
+   "requestId": "714cc867-125d-4be0-8100-a1c62fdd07bc",
+   "costUsd": 0.0039075,
+   "latencyMs": 3068,
+   "attempts": 1,
+   "replies": 1,
+   "provider": "meta",
+   "model": "muse-spark-1.3"
+  },
+  {
+   "request": "tight_pop_c_10bar_32_high",
+   "order": "ABC",
+   "letters": {
+    "A": "A",
+    "B": "B",
+    "C": "C"
+   },
+   "status": "ok",
+   "choice": "B",
+   "choiceStored": "B",
+   "reasons": [
+    {
+     "fact": "outOfKeyRatio=0.125",
+     "factName": "outOfKeyRatio",
+     "value": 0.125,
+     "claim": "Mostly diatonic writing suits pop that usually stays in key.",
+     "confirmed": true,
+     "analyzerValue": 0.125,
+     "rank": "neither"
+    },
+    {
+     "fact": "repetitionVsPrevious=0.25",
+     "factName": "repetitionVsPrevious",
+     "value": 0.25,
+     "claim": "Low carryover gives pre-chorus contrast instead of repeating verse.",
+     "confirmed": true,
+     "analyzerValue": 0.25,
+     "rank": "neither"
+    }
+   ],
+   "factsAsBuilt": true,
+   "error": null,
+   "requestId": "03c4d137-4c20-46db-880d-eafecbc334a4",
+   "costUsd": 0.004768,
+   "latencyMs": 3360,
+   "attempts": 1,
+   "replies": 1,
+   "provider": "meta",
+   "model": "muse-spark-1.3"
+  },
+  {
+   "request": "tight_pop_c_10bar_32_high",
+   "order": "BCA",
+   "letters": {
+    "A": "B",
+    "B": "C",
+    "C": "A"
+   },
+   "status": "ok",
+   "choice": "A",
+   "choiceStored": "B",
+   "reasons": [
+    {
+     "fact": "outOfKeyRatio=0.125",
+     "factName": "outOfKeyRatio",
+     "value": 0.125,
+     "claim": "Mostly diatonic for pop with only slight chromatic color.",
+     "confirmed": true,
+     "analyzerValue": 0.125,
+     "rank": "neither"
+    },
+    {
+     "fact": "repetitionVsPrevious=0.25",
+     "factName": "repetitionVsPrevious",
+     "value": 0.25,
+     "claim": "Low carryover from previous section gives pre-chorus contrast.",
+     "confirmed": true,
+     "analyzerValue": 0.25,
+     "rank": "neither"
+    }
+   ],
+   "factsAsBuilt": true,
+   "error": null,
+   "requestId": "6e8777da-9853-4fb5-bf8b-2510506369da",
+   "costUsd": 0.00493375,
+   "latencyMs": 3776,
+   "attempts": 1,
+   "replies": 1,
+   "provider": "meta",
+   "model": "muse-spark-1.3"
+  },
+  {
+   "request": "tight_pop_c_10bar_32_high",
+   "order": "CAB",
+   "letters": {
+    "A": "C",
+    "B": "A",
+    "C": "B"
+   },
+   "status": "ok",
+   "choice": "C",
+   "choiceStored": "B",
+   "reasons": [
+    {
+     "fact": "outOfKeyRatio=0.125",
+     "factName": "outOfKeyRatio",
+     "value": 0.125,
+     "claim": "Mostly diatonic harmony suits pop in C major",
+     "confirmed": true,
+     "analyzerValue": 0.125,
+     "rank": "neither"
+    },
+    {
+     "fact": "repetitionVsPrevious=0.25",
+     "factName": "repetitionVsPrevious",
+     "value": 0.25,
+     "claim": "Low overlap with previous section gives pre-chorus contrast",
+     "confirmed": true,
+     "analyzerValue": 0.25,
+     "rank": "neither"
+    }
+   ],
+   "factsAsBuilt": true,
+   "error": null,
+   "requestId": "29a4a46d-f2c4-44e7-bbac-928491339b9a",
+   "costUsd": 0.00741575,
+   "latencyMs": 6340,
+   "attempts": 1,
+   "replies": 1,
+   "provider": "meta",
+   "model": "muse-spark-1.3"
+  }
+ ]
+}
