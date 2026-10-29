@@ -57,3 +57,7 @@ backend/.ledger/
 
 # Local MIDI handoff files; created only when opening a DAW
 backend/.exports/
+
+# Private evaluation material (the owner's real-song set and anything realized from it) never enters this repo
+eval_real_songs*
+*real-songs-dataset*
