@@ -1,0 +1,138 @@
+{
+  "genre": "pop",
+  "key": "C major",
+  "bpm": 108,
+  "timeSignature": [
+    4,
+    4
+  ],
+  "measures": [
+    {
+      "index": 0,
+      "chords": [
+        "C",
+        "G"
+      ],
+      "roman": [
+        "I",
+        "V"
+      ]
+    },
+    {
+      "index": 1,
+      "chords": [
+        "Am",
+        "F"
+      ],
+      "roman": [
+        "vi",
+        "IV"
+      ]
+    },
+    {
+      "index": 2,
+      "chords": [
+        "C",
+        "G"
+      ],
+      "roman": [
+        "I",
+        "V"
+      ]
+    },
+    {
+      "index": 3,
+      "chords": [
+        "Am",
+        "F"
+      ],
+      "roman": [
+        "vi",
+        "IV"
+      ]
+    },
+    {
+      "index": 4,
+      "chords": [
+        "Dm",
+        "Am"
+      ],
+      "roman": [
+        "ii",
+        "vi"
+      ]
+    },
+    {
+      "index": 5,
+      "chords": [
+        "F",
+        "G"
+      ],
+      "roman": [
+        "IV",
+        "V"
+      ]
+    },
+    {
+      "index": 6,
+      "chords": [
+        "Em",
+        "Am"
+      ],
+      "roman": [
+        "iii",
+        "vi"
+      ]
+    },
+    {
+      "index": 7,
+      "chords": [
+        "F",
+        "G"
+      ],
+      "roman": [
+        "IV",
+        "V"
+      ]
+    },
+    {
+      "index": 8,
+      "chords": [
+        "C",
+        "Am"
+      ],
+      "roman": [
+        "I",
+        "vi"
+      ]
+    },
+    {
+      "index": 9,
+      "chords": [
+        "Dm7",
+        "G7"
+      ],
+      "roman": [
+        "ii7",
+        "V7"
+      ]
+    }
+  ],
+  "sections": [
+    {
+      "type": "verse",
+      "start": 0,
+      "length": 8,
+      "label": "Verse 1"
+    },
+    {
+      "type": "turnaround",
+      "start": 8,
+      "length": 2,
+      "label": "Turnaround"
+    }
+  ],
+  "targetBars": 32,
+  "wantOutro": false,
+  "contrast": "high"
+}

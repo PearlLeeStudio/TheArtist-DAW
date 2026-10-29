@@ -1,0 +1,110 @@
+{
+  "genre": "rock",
+  "key": "E major",
+  "bpm": 124,
+  "timeSignature": [
+    4,
+    4
+  ],
+  "measures": [
+    {
+      "index": 0,
+      "chords": [
+        "E",
+        "A"
+      ],
+      "roman": [
+        "I",
+        "IV"
+      ]
+    },
+    {
+      "index": 1,
+      "chords": [
+        "E",
+        "B"
+      ],
+      "roman": [
+        "I",
+        "V"
+      ]
+    },
+    {
+      "index": 2,
+      "chords": [
+        "E",
+        "D"
+      ],
+      "roman": [
+        "I",
+        "bVII"
+      ]
+    },
+    {
+      "index": 3,
+      "chords": [
+        "A",
+        "B"
+      ],
+      "roman": [
+        "IV",
+        "V"
+      ]
+    },
+    {
+      "index": 4,
+      "chords": [
+        "C#m",
+        "A"
+      ],
+      "roman": [
+        "vi",
+        "IV"
+      ]
+    },
+    {
+      "index": 5,
+      "chords": [
+        "E",
+        "B"
+      ],
+      "roman": [
+        "I",
+        "V"
+      ]
+    },
+    {
+      "index": 6,
+      "chords": [
+        "A",
+        "D"
+      ],
+      "roman": [
+        "IV",
+        "bVII"
+      ]
+    },
+    {
+      "index": 7,
+      "chords": [
+        "E",
+        null
+      ],
+      "roman": [
+        "I",
+        null
+      ]
+    }
+  ],
+  "sections": [
+    {
+      "type": "verse",
+      "start": 0,
+      "length": 8,
+      "label": "Verse 1"
+    }
+  ],
+  "targetBars": 32,
+  "wantOutro": false,
+  "contrast": "high"
+}
