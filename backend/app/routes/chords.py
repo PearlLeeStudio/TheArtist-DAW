@@ -2,9 +2,10 @@
 
 import logging
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 
 from app.models.schemas import ChordGenerateRequest, ContextMeasure, ErrorResponse
+from app.routes.generate import parse_key
 
 log = logging.getLogger(__name__)
 from app.services.inference import (
@@ -51,9 +52,9 @@ def generate_chords(req: ChordGenerateRequest) -> dict:
       n=1 (default, backward-compat): {"bars": [...], ...}
       n>1: {"candidates": [{"bars": [...], "temperature": ..., "seed": null}], ...}
     """
-    parts = req.key.strip().split()
-    if len(parts) != 2 or parts[1].lower() not in ("major", "minor"):
-        raise HTTPException(status_code=400, detail="Expected key format: 'C major' or 'A minor'")
+    # Shared with /api/generate: a root the rules generator cannot parse
+    # used to come back as a 500, and the AI path echoed it in a 200.
+    parse_key(req.key)
 
     # Build context measures from context_bars
     context_measures: list[ContextMeasure] = []

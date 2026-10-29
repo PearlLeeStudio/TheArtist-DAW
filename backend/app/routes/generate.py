@@ -50,8 +50,12 @@ SECTION_POSITION = {
 DEFAULT_SECTION_POSITION = 0.5
 
 
-def _parse_key(key: str) -> tuple[str, bool]:
-    """Return (key_root, is_minor). Raises HTTPException(400) on a bad key."""
+def parse_key(key: str) -> tuple[str, bool]:
+    """Return (key_root, is_minor). Raises HTTPException(400) on a bad key.
+
+    Also the key check of /api/generate/chords, so every route rejects the
+    same keys before any model is touched.
+    """
     parts = key.strip().split()
     if (
         len(parts) != 2
@@ -70,7 +74,7 @@ def _validate_request(req: GenerateRequest) -> tuple[str, bool, str | None]:
 
     Returns (key_root, is_minor, section). Raises HTTPException on bad input.
     """
-    key_root, is_minor = _parse_key(req.key)
+    key_root, is_minor = parse_key(req.key)
 
     if not req.selectedMeasures:
         raise HTTPException(status_code=400, detail="No measures selected")
@@ -349,7 +353,7 @@ def _section_response(
 )
 def generate_section(req: SectionGenerateRequest) -> SectionGenerateResponse:
     """Compose one song-form section after the given context measures."""
-    key_root, is_minor = _parse_key(req.key)
+    key_root, is_minor = parse_key(req.key)
     context, selected = _section_measures(req)
     ai = _section_ai(req, context, selected) if TORCH_AVAILABLE else None
     return _section_response(req, context, selected, ai, key_root, is_minor)
@@ -360,7 +364,7 @@ async def generate_section_stream(req: SectionGenerateRequest):
     """/generate/section with the /generate/stream phase events; the
     `result` frame carries the SectionGenerateResponse plus `elapsed_ms`."""
     try:
-        key_root, is_minor = _parse_key(req.key)
+        key_root, is_minor = parse_key(req.key)
     except HTTPException as exc:
         return _error_stream(exc.detail)
     context, selected = _section_measures(req)

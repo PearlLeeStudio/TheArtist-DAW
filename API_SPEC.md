@@ -403,6 +403,12 @@ Simplified chord-generation endpoint for **programmatic callers** (TheVoyager an
 
 `model_used` echoes the actual checkpoint name (or `"rules"` if AI fallback fired). `bpm` echoes the request value (`null` if not provided). `temperature` per candidate is the actual temperature used for sampling (spread around `req.temperature` for diversity). `seed` is `null` (reserved for deterministic sampling).
 
+**Errors:**
+
+| Status | Body | When |
+|---|---|---|
+| 400 | `{"detail": "Expected key format: 'C major' or 'A minor'"}` | Bad key format: the same root and mode check as `/api/generate`, applied before any model is loaded on both the AI and the rules path. |
+
 ---
 
 ### Model Checkpoints
