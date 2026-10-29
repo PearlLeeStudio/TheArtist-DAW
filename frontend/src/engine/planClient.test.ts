@@ -14,6 +14,14 @@ import {
   type PlanTrace,
 } from './planClient.ts';
 
+// Node's own localStorage wants a storage file and warns without one; the
+// session id (metaSession.ts) is kept here.
+const storage = new Map<string, string>();
+Object.defineProperty(globalThis, 'localStorage', { configurable: true, value: {
+  getItem: (key: string) => storage.get(key) ?? null,
+  setItem: (key: string, value: string) => { storage.set(key, value); },
+} });
+
 const chord = (root: string, quality: string): Chord => ({ root, quality, extensions: [], romanNumeral: '', voicing: [] });
 const measure = (index: number, chords: [Chord | null, Chord | null]): Measure => ({ id: `m${index}`, index, chords });
 
@@ -193,6 +201,27 @@ test('a run that failed on the server resolves with its error trace, so the spen
 test('an error frame without a trace rejects with the server message', async (t) => {
   t.mock.method(globalThis, 'fetch', async () => streamResponse([frame('error', { detail: 'Song planning failed' })]));
   await assert.rejects(runPlan(buildPlanRequest(song, options)), /Song planning failed/);
+});
+
+test('every run sends the browser\'s session id, and a 429 shows the server\'s detail with its reset time', async (t) => {
+  const sent: Headers[] = [];
+  const mock = t.mock.method(globalThis, 'fetch', async (_input: RequestInfo | URL, init?: RequestInit) => {
+    sent.push(new Headers(init?.headers));
+    return streamResponse([frame('complete', trace())]);
+  });
+  await runPlan(buildPlanRequest(song, options));
+  await runPlan(buildPlanRequest(song, options));
+  const [first, second] = sent.map((headers) => headers.get('X-TheArtist-Session'));
+  assert.match(first ?? '', /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
+  assert.equal(second, first);
+  assert.equal(storage.get('theartist-meta-session'), first);
+  assert.equal(sent[0].get('Content-Type'), 'application/json');
+  mock.mock.restore();
+  t.mock.method(globalThis, 'fetch', async () => new Response(JSON.stringify({
+    detail: 'This session\'s daily Meta allowance is used up: $0.95 admitted today + this request\'s worst case $0.10 '
+      + 'would pass $1.00. Allowances reset at 00:00 UTC.',
+  }), { status: 429, headers: { 'Content-Type': 'application/json', 'Retry-After': '3600' } }));
+  await assert.rejects(runPlan(buildPlanRequest(song, options)), /allowance is used up: .* Allowances reset at 00:00 UTC\.$/);
 });
 
 test('HTTP errors keep the backend validation message', async (t) => {

@@ -9,11 +9,14 @@
  * them. Errors reject like chordGenerator.ts: an unreachable server, the
  * HTTP error detail, or an SSE error frame without a trace. A run that
  * failed server-side resolves with its trace (status 'error') so the spend
- * and request ids stay visible.
+ * and request ids stay visible. The request carries the browser's session id
+ * (metaSession.ts), the key a server with spend limits admits it under; a 429
+ * detail says when that allowance resets.
  */
 import type { Chord, SectionType, Song } from '../models/types';
 import { chordToString } from './chordParser.ts';
 import type { SectionGenerateResponse } from './chordGenerator.ts';
+import { metaHeaders } from './metaSession.ts';
 import { calculateRomanNumeral } from './romanNumeral.ts';
 import { sectionPlacement } from './songForm.ts';
 import { readSSEFrames } from './sseStream.ts';
@@ -270,7 +273,7 @@ export function buildPlanRequest(song: Song, options: PlanOptions): PlanRequest 
 
 /** Readable text for a backend error `detail`: a plain string, or FastAPI's
  *  422 list of `{ loc, msg }` validation errors (as chordGenerator.ts reads it). */
-function formatErrorDetail(detail: unknown): string | null {
+export function formatErrorDetail(detail: unknown): string | null {
   if (typeof detail === 'string') return detail.trim() || null;
   if (!Array.isArray(detail)) return null;
   const parts = detail.map((item) => {
@@ -356,7 +359,7 @@ export async function runPlan(
   try {
     res = await fetch('/api/plan/song/stream', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...metaHeaders() },
       body: JSON.stringify(request),
       signal: options.signal,
     });
