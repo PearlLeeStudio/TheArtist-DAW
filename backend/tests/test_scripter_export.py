@@ -62,6 +62,12 @@ class ScripterExportTest(unittest.TestCase):
                          [(0, 0, "F/C", 0.0), (0, 1, "G7", 1.5), (1, 0, "C", 3.0)])  # the empty slot is left out
         self.assertEqual((song["title"], song["key"], song["bpm"], song["timeSignature"]),
                          ("테스트 악보", "F major", 120, [6, 8]))
+        # The song form the plugin plays from, in bar order
+        self.assertEqual(song["sections"], [{"label": "Verse", "startBar": 0, "bars": 1},
+                                            {"label": "후렴", "startBar": 1, "bars": 1}])
+        reordered = spec(sections=list(reversed(spec()["sections"])))
+        self.assertEqual([s["label"] for s in scripter_song(ExportSpec.model_validate(reordered))["sections"]],
+                         ["Verse", "후렴"])
         bass_off = scripter_song(ExportSpec.model_validate(spec(play={**spec()["play"], "bassEnabled": False})))
         self.assertEqual({note["part"] for note in bass_off["notes"]}, {"harmony"})
 

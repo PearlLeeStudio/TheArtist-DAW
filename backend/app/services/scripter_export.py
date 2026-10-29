@@ -34,9 +34,12 @@ def scripter_song(spec: ExportSpec) -> dict:
               for slot, chord in enumerate(measure.chords) if chord is not None]
     notes = sorted(_notes("bass", parts.bass) + _notes("harmony", parts.harmony),
                    key=lambda note: (note["start"], note["part"] != "bass", note["pitch"]))
+    # The song form the script plays from: the whole form or one of these sections, never beyond it
+    sections = [{"label": section.label, "startBar": section.startMeasure, "bars": section.length}
+                for section in sorted(spec.sections, key=lambda section: section.startMeasure)]
     return {"title": spec.title, "key": spec.key, "bpm": spec.bpm, "timeSignature": list(spec.timeSignature),
             "quartersPerBar": grid.numerator * grid.quarters_per_beat, "lengthQuarters": grid.song_quarters,
-            "chords": chords, "notes": notes}
+            "sections": sections, "chords": chords, "notes": notes}
 
 
 def render_scripter(spec: ExportSpec) -> str:

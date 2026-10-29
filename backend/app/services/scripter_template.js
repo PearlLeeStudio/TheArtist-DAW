@@ -7,21 +7,42 @@
  * keeps the voicings, comping rhythm, swing and bass line of the editor's Play
  * panel. Notes you play on the track pass straight through.
  *
+ * It works on the song form set in TheArtist, not on Logic's open timeline:
+ * it plays the whole form or one chosen section from the Start bar, and is
+ * silent beyond it. To change the form, edit it in TheArtist and export again.
+ *
  * Logic's JavaScript engine is used, so this file stays ES5.
  */
 
 var NeedsTimingInfo = true;
 
 // Written by the server: the arrangement in quarter-note beats, bar 0 at 0.
-var SONG = /*__SONG_JSON__*/{"title":"","key":"C major","bpm":80,"timeSignature":[4,4],"quartersPerBar":4,"lengthQuarters":0,"chords":[],"notes":[]};
+var SONG = /*__SONG_JSON__*/{"title":"","key":"C major","bpm":80,"timeSignature":[4,4],"quartersPerBar":4,"lengthQuarters":0,"sections":[],"chords":[],"notes":[]};
+
+function songSections() {
+  return SONG.sections || [];
+}
+
+// The menu of what can be played: the whole form, then each section of it
+function sectionNames() {
+  var bars = Math.round(SONG.lengthQuarters / (SONG.quartersPerBar || 4));
+  var names = ["Whole form (" + bars + " bars)"];
+  var sections = songSections();
+  for (var i = 0; i < sections.length; i++) {
+    var s = sections[i];
+    names.push(s.label + " (bars " + (s.startBar + 1) + "-" + (s.startBar + s.bars) + ")");
+  }
+  return names;
+}
 
 var PluginParameters = [
+  {name: "Section", type: "menu", valueStrings: sectionNames(), defaultValue: 0},
   {name: "Start bar", type: "lin", minValue: 1, maxValue: 999, numberOfSteps: 998, defaultValue: 1},
   {name: "Transpose", type: "lin", minValue: -12, maxValue: 12, numberOfSteps: 24, defaultValue: 0},
   {name: "Harmony", type: "checkbox", defaultValue: 1},
   {name: "Bass", type: "checkbox", defaultValue: 1},
   {name: "Velocity %", type: "lin", minValue: 10, maxValue: 150, numberOfSteps: 140, defaultValue: 100},
-  {name: "Loop song", type: "checkbox", defaultValue: 0},
+  {name: "Loop", type: "checkbox", defaultValue: 0},
   // Logic's ruler counts the meter's denominator as one beat; a quarter-note
   // ruler is offered in case a host build reports quarter beats instead.
   {name: "Beat unit", type: "menu", valueStrings: ["Logic ruler (meter denominator)", "Quarter note"], defaultValue: 0},
@@ -83,11 +104,30 @@ function allOff() {
   tracedChord = -1;
 }
 
+function sectionOfBar(bar) {
+  var sections = songSections();
+  for (var i = 0; i < sections.length; i++) {
+    if (bar >= sections[i].startBar && bar < sections[i].startBar + sections[i].bars) return sections[i].label;
+  }
+  return "";
+}
+
 function traceChord(index) {
   if (index === tracedChord) return;
   tracedChord = index;
   var chord = SONG.chords[index];
-  if (chord) Trace("bar " + (chord.bar + 1) + (chord.slot ? "+" : "") + ": " + chord.symbol);
+  if (!chord) return;
+  var section = sectionOfBar(chord.bar);
+  Trace((section ? section + " · " : "") + "bar " + (chord.bar + 1) + (chord.slot ? "+" : "") + ": " + chord.symbol);
+}
+
+// What is played, in song quarters: the whole form, or the section chosen in the menu
+function activeWindow() {
+  var chosen = songSections()[Math.round(param("Section")) - 1];
+  if (!chosen) return {start: 0, end: SONG.lengthQuarters};
+  var quartersPerBar = SONG.quartersPerBar || 4;
+  return {start: chosen.startBar * quartersPerBar,
+          end: Math.min(SONG.lengthQuarters, (chosen.startBar + chosen.bars) * quartersPerBar)};
 }
 
 function chordAt(quarter) {
@@ -98,8 +138,9 @@ function chordAt(quarter) {
   return found;
 }
 
-// Strike every note whose onset lies in [fromQ, toQ) of the song, offset to host beats.
-function scheduleSpan(fromQ, toQ, songOffsetQ, hostOriginBeat, qph) {
+// Strike every note whose onset lies in [fromQ, toQ) of the song; the window's start lands on
+// hostOriginBeat, and nothing sounds past the window's end.
+function scheduleSpan(fromQ, toQ, win, hostOriginBeat, qph) {
   var notes = SONG.notes;
   for (var i = 0; i < notes.length; i++) {
     var note = notes[i];
@@ -107,37 +148,40 @@ function scheduleSpan(fromQ, toQ, songOffsetQ, hostOriginBeat, qph) {
     if (!playsPart(note.part)) continue;
     var pitch = pitchOf(note);
     if (pitch < 0) continue;
-    var onBeat = hostOriginBeat + (note.start - songOffsetQ) / qph;
+    var onBeat = hostOriginBeat + (note.start - win.start) / qph;
     var on = new NoteOn();
     on.pitch = pitch;
     on.velocity = velocityOf(note);
     on.sendAtBeat(onBeat);
     sounding[pitch] = (sounding[pitch] || 0) + 1;
-    pending.push({pitch: pitch, beat: hostOriginBeat + (note.end - songOffsetQ) / qph});
+    pending.push({pitch: pitch, beat: hostOriginBeat + (Math.min(note.end, win.end) - win.start) / qph});
     if (note.part !== "bass") traceChord(chordAt(note.start));
   }
 }
 
-// Map one host-beat range onto the song, looping when asked, and strike its notes.
+// Map one host-beat range onto the chosen window of the form, looping when asked.
 function processRange(blockStart, blockEnd, info) {
   var qph = quartersPerHostBeat(info);
   var origin = startBeat(info);
+  var win = activeWindow();
+  var length = win.end - win.start;
   var fromQ = (blockStart - origin) * qph;
   var toQ = (blockEnd - origin) * qph;
-  if (toQ <= 0) return;
+  if (toQ <= 0 || length <= 0) return;
   if (fromQ < 0) fromQ = 0;
-  var length = SONG.lengthQuarters;
-  if (!(param("Loop song") === 1 && length > 0)) {
-    scheduleSpan(fromQ, toQ, 0, origin, qph);
+  if (param("Loop") !== 1) {
+    // Once through the window; the timeline after it stays silent
+    if (fromQ >= length) return;
+    scheduleSpan(win.start + fromQ, win.start + Math.min(toQ, length), win, origin, qph);
     return;
   }
-  // Looping: walk the range one song pass at a time so a block may cross the join.
+  // Looping: walk the range one pass at a time so a block may cross the join.
   var cursor = fromQ;
   while (cursor < toQ - EPS) {
-    var pass = Math.floor(cursor / length);
-    var passStartQ = pass * length;
+    var passStartQ = Math.floor(cursor / length) * length;
     var spanEnd = Math.min(toQ, passStartQ + length);
-    scheduleSpan(cursor - passStartQ, spanEnd - passStartQ, 0, origin + passStartQ / qph, qph);
+    scheduleSpan(win.start + cursor - passStartQ, win.start + spanEnd - passStartQ, win,
+                 origin + passStartQ / qph, qph);
     cursor = spanEnd;
   }
 }
@@ -193,5 +237,7 @@ function Reset() {
 
 function ParameterChanged(index, value) {
   var name = PluginParameters[index] && PluginParameters[index].name;
-  if (name === "Harmony" || name === "Bass" || name === "Transpose") allOff();
+  if (name === "Harmony" || name === "Bass" || name === "Transpose" || name === "Section" || name === "Start bar") {
+    allOff();
+  }
 }
