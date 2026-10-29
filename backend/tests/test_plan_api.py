@@ -11,6 +11,7 @@ from pathlib import Path
 from unittest import mock
 
 from fastapi.testclient import TestClient
+from starlette.requests import ClientDisconnect
 
 import app.main
 from app.models.plan import PlanRequest
@@ -45,6 +46,77 @@ def body(**overrides) -> dict:
            "targetBars": 32, "wantOutro": True}
     req.update(overrides)
     return req
+
+
+class UnstartedPlanStreamTest(unittest.TestCase):
+    def test_disconnect_during_headers_refunds_without_starting_a_worker(self):
+        admission = Admission("test-day", "test-session", planner.MAX_RUN_USD)
+
+        async def disconnect():
+            headers_started = asyncio.Event()
+
+            async def send(message):
+                if message["type"] == "http.response.start":
+                    headers_started.set()
+                    await asyncio.Future()  # response-header backpressure
+
+            async def receive():
+                await headers_started.wait()
+                return {"type": "http.disconnect"}
+
+            response = await plan_routes.plan_song_stream(PlanRequest(**body()))
+            await asyncio.wait_for(response({"type": "http", "asgi": {"spec_version": "2.3"}}, receive, send), 2)
+
+        with mock.patch.object(plan_routes, "_admit", return_value=admission), \
+                mock.patch.object(plan_routes.limits.limiter, "settle") as settle, \
+                mock.patch.object(planner, "complete_form") as complete:
+            asyncio.run(disconnect())
+        complete.assert_not_called()
+        settle.assert_called_once_with(admission, 0.0)
+
+    def test_header_send_failure_refunds_on_newer_asgi_servers(self):
+        admission = Admission("test-day", "test-session", planner.MAX_RUN_USD)
+
+        async def disconnect():
+            async def send(_message):
+                raise OSError("client disconnected before body")
+
+            async def receive():
+                raise AssertionError("ASGI 2.4 handles disconnects through send")
+
+            response = await plan_routes.plan_song_stream(PlanRequest(**body()))
+            with self.assertRaises(ClientDisconnect):
+                await response({"type": "http", "asgi": {"spec_version": "2.4"}}, receive, send)
+
+        with mock.patch.object(plan_routes, "_admit", return_value=admission), \
+                mock.patch.object(plan_routes.limits.limiter, "settle") as settle, \
+                mock.patch.object(planner, "complete_form") as complete:
+            asyncio.run(disconnect())
+        complete.assert_not_called()
+        settle.assert_called_once_with(admission, 0.0)
+
+    def test_executor_rejection_refunds_once_across_both_cleanup_paths(self):
+        admission = Admission("test-day", "test-session", planner.MAX_RUN_USD)
+
+        async def rejected():
+            async def send(_message):
+                pass
+
+            async def receive():
+                raise AssertionError("ASGI 2.4 handles disconnects through send")
+
+            response = await plan_routes.plan_song_stream(PlanRequest(**body()))
+            with mock.patch.object(asyncio.get_running_loop(), "run_in_executor",
+                                   side_effect=RuntimeError("executor stopped")), \
+                    self.assertRaisesRegex(RuntimeError, "executor stopped"):
+                await response({"type": "http", "asgi": {"spec_version": "2.4"}}, receive, send)
+
+        with mock.patch.object(plan_routes, "_admit", return_value=admission), \
+                mock.patch.object(plan_routes.limits.limiter, "settle") as settle, \
+                mock.patch.object(planner, "complete_form") as complete:
+            asyncio.run(rejected())
+        complete.assert_not_called()
+        settle.assert_called_once_with(admission, 0.0)
 
 
 class PlanApiTest(unittest.TestCase):

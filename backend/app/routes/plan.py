@@ -9,14 +9,15 @@ one `complete` or `error` frame carrying the trace. Nothing is applied server-si
 import asyncio
 import logging
 import threading
-from collections.abc import Callable
+from collections.abc import AsyncIterator, Callable
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import JSONResponse, StreamingResponse
+from starlette.types import Receive, Scope, Send
 
 from app.models.plan import PlanError, PlanRequest, PlanTrace
-from app.routes.generate import _sse, _sse_response
+from app.routes.generate import _SSE_HEADERS, _sse
 from app.services import limits, planner
 from app.services.limits import Admission, Caller
 
@@ -28,6 +29,20 @@ router = APIRouter()
 _STATUS = {"disabled": 503, "config": 503, "budget": 429, "timeout": 504, "llm": 502, "invalid": 502,
            "generation": 500}
 _STREAM_DONE = object()
+
+
+class _PlanStreamResponse(StreamingResponse):
+    """Close the admission even when sending headers fails before the body starts."""
+
+    def __init__(self, frames: AsyncIterator[bytes], on_close: Callable[[], None]) -> None:
+        super().__init__(frames, media_type="text/event-stream", headers=_SSE_HEADERS)
+        self._on_close = on_close
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        try:
+            await super().__call__(scope, receive, send)
+        finally:
+            self._on_close()
 
 
 def error_status(error: PlanError) -> int:
@@ -95,11 +110,23 @@ async def plan_song_stream(req: PlanRequest,
     """The same run as SSE: plan, validate, revise, generate_section (one per section, also
     for a regeneration), judge, then one terminal complete or error frame with the trace."""
     admission = _admit(req, caller)  # refused here, so an over-limit run is a 429, never a stream
+    cancelled = threading.Event()
+    worker_started = False
+    unstarted_settled = False
+
+    def close() -> None:
+        nonlocal unstarted_settled
+        cancelled.set()
+        # A body generator's finally does not run if the client disconnects
+        # during response headers. No worker then exists to settle its charge.
+        if not worker_started and not unstarted_settled:
+            unstarted_settled = True
+            limits.limiter.settle(admission, 0.0)
 
     async def stream():
+        nonlocal worker_started
         loop = asyncio.get_running_loop()
         queue: asyncio.Queue = asyncio.Queue()
-        cancelled = threading.Event()
 
         def on_event(event: str, payload: dict) -> None:
             # The run is on a worker thread; call_soon_threadsafe keeps the frames in order
@@ -120,10 +147,13 @@ async def plan_song_stream(req: PlanRequest,
 
         # Await only the event queue, never the executor future: cancelling this
         # generator must not discard the worker's trace or its actual settlement.
-        future: asyncio.Future = loop.run_in_executor(
-            None, _complete_and_settle, req, admission, on_event, cancelled.is_set)
-        future.add_done_callback(worker_done)
         try:
+            future: asyncio.Future = loop.run_in_executor(
+                None, _complete_and_settle, req, admission, on_event, cancelled.is_set)
+            # No await separates submission and this flag: response cleanup
+            # cannot refund a worker that already owns the actual settlement.
+            worker_started = True
+            future.add_done_callback(worker_done)
             while (item := await queue.get()) is not _STREAM_DONE:
                 yield _sse(*item)
             try:
@@ -136,6 +166,6 @@ async def plan_song_stream(req: PlanRequest,
         finally:
             # The current bounded HTTP/model call finishes, records its cost,
             # then the planner stops before starting another call or section.
-            cancelled.set()
+            close()
 
-    return _sse_response(stream())
+    return _PlanStreamResponse(stream(), close)
