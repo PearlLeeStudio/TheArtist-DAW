@@ -514,18 +514,21 @@ class _Run:
         try:
             result = client.chat_json(messages, schema, label=f"plan.{step}", **options)
         except LLMError as exc:
-            if not isinstance(exc, (BudgetExceeded, LLMConfigError, LedgerError, LLMSchemaError)):
-                # Anything else got past the ledger's reservation, so it was sent and settled
-                # (a timeout at the full reservation): a call of the run, whatever the transport raised
+            cost = max(0.0, _spent(client) - spent_before)
+            if cost > 0 or not isinstance(exc, (BudgetExceeded, LLMConfigError, LedgerError, LLMSchemaError)):
+                # A retry may be refused after its first attempt already settled.
+                # Keep that spend too, as well as a timeout's full reservation.
                 latency = round((time.perf_counter() - started) * 1000)
                 self.meta_ms += latency
                 self.reserved_usd += prepared.reserve_usd
-                cost = max(0.0, _spent(client) - spent_before)
                 self._record(step, attempt, client, exc.request_id, cost, latency, sent_effort, ok=False)
             raise PlanFailure(_kind(exc), _message(exc), exc.request_id) from None
-        self.meta_ms += round((time.perf_counter() - started) * 1000)
+        latency = round((time.perf_counter() - started) * 1000)
+        self.meta_ms += latency
         self.reserved_usd += prepared.reserve_usd * result.attempts
-        self._record(step, attempt, client, result.request_id, result.cost_usd, result.latency_ms, sent_effort)
+        # The result prices only the last attempt; the ledger contains the rejected first reply too.
+        cost = result.cost_usd if result.attempts == 1 else max(result.cost_usd, _spent(client) - spent_before)
+        self._record(step, attempt, client, result.request_id, cost, latency, sent_effort)
         return result
 
     def _record(self, step: str, attempt: int, client: LLMClient, request_id: str | None, cost: float,

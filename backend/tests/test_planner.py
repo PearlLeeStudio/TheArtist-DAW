@@ -326,6 +326,35 @@ class PlannerRunTest(unittest.TestCase):
         self.assertAlmostEqual(trace.spendUsd, 3 * CALL_COST, places=8)
         self.assertEqual(self.composer.requests, [])
 
+    def test_an_open_weight_json_retry_counts_both_attempts(self):
+        transport = Replies(completion("Here is the plan."), completion(VALID_PLAN))
+        config = LLMConfig(provider="baseten", base_url="https://inference.baseten.co/v1",
+                           model="meta-models/muse-spark-open-1026", api_key=KEY, key_source="BASETEN_API_KEY")
+        client = LLMClient(config, self.ledger, transport)
+        with mock.patch.object(planner, "get_client", return_value=client):
+            trace = planner.plan_song(request())
+        self.assertEqual((trace.status, len(transport.calls)), ("ok", 2))
+        self.assertAlmostEqual(trace.spendUsd, 2 * CALL_COST)
+        self.assertAlmostEqual(trace.calls[0].costUsd, 2 * CALL_COST)
+        self.assertAlmostEqual(trace.spendUsd, self.ledger.snapshot()["spent_usd"])
+
+    def test_a_refused_open_weight_retry_keeps_the_first_attempts_cost(self):
+        transport = Replies(completion("Here is the plan."), completion(VALID_PLAN))
+        config = LLMConfig(provider="baseten", base_url="https://inference.baseten.co/v1",
+                           model="meta-models/muse-spark-open-1026", api_key=KEY, key_source="BASETEN_API_KEY")
+        probe = LLMClient(config, self.ledger, transport)
+        reserve = probe.prepare(planner._plan_messages(request()), planner.PLAN_SCHEMA, name="song_plan",
+                                max_completion_tokens=planner.PLAN_MAX_TOKENS, timeout_s=planner.CALL_TIMEOUT_S,
+                                max_request_usd=planner.MAX_REQUEST_USD,
+                                reasoning_effort=planner.PLAN_EFFORT).reserve_usd
+        client = LLMClient(config, Ledger(self.ledger.path, reserve + CALL_COST / 2), transport)
+        with mock.patch.object(planner, "get_client", return_value=client):
+            trace = planner.plan_song(request())
+        self.assertEqual((trace.status, trace.error.kind, len(transport.calls)), ("error", "budget", 1))
+        self.assertEqual([(call.step, call.ok) for call in trace.calls], [("plan_song", False)])
+        self.assertAlmostEqual(trace.spendUsd, CALL_COST)
+        self.assertAlmostEqual(trace.spendUsd, client.ledger.snapshot()["spent_usd"])
+
     def test_judge_regenerates_each_target_once_and_judges_twice_at_most(self):
         first = {"decision": "regenerate", "targets": [{"section": 1, "reason": "repeats the chorus"},
                                                         {"section": 1, "reason": "twice"}]}
