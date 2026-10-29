@@ -2,6 +2,1215 @@
  "engine": "openweight",
  "provider": "baseten",
  "model": "meta-models/muse-spark-open-1026",
- "not_run": "BASETEN_API_KEY is not set, so provider baseten cannot be called",
- "attempted": "2026-10-29T10:24:05+00:00"
+ "settings": {
+  "provider": "baseten",
+  "model": "meta-models/muse-spark-open-1026",
+  "reasoning_effort": "high",
+  "timeout_s": 45.0,
+  "max_completion_tokens": 4096,
+  "max_request_usd": 0.1,
+  "ledger_cap_usd": 8.0,
+  "batch": {
+   "max_measures": 8,
+   "max_notes": 512
+  }
+ },
+ "dataset": {
+  "label": "130-song test split of the training corpora, private; excerpts realized with the product's voicing code",
+  "sha256": "b5dcef9c9fdefef028b8b067f7b50c25c8c8bdc08cf7278df9103995f1195daf",
+  "seed": 20261029,
+  "songs_in_file": 130,
+  "songs_dropped": {
+   "meter": 1
+  },
+  "bars_left_out": {
+   "more_than_two_chords": 72
+  },
+  "songs_used": 40,
+  "excerpts": 40,
+  "bars": 320,
+  "slots": 640,
+  "genres": {
+   "blues": 3,
+   "bossa": 3,
+   "classical": 3,
+   "country": 3,
+   "electronic": 3,
+   "folk": 4,
+   "funk": 3,
+   "gospel": 3,
+   "hip_hop": 3,
+   "jazz": 3,
+   "pop": 3,
+   "rnb_soul": 3,
+   "rock": 3
+  },
+  "variants": {
+   "block": 7,
+   "rootless": 7,
+   "inversion": 8,
+   "melody": 6,
+   "sparse": 6,
+   "waltz": 6
+  },
+  "meters": {
+   "4/4": 34,
+   "3/4": 6
+  },
+  "key_sources": {
+   "estimated": 32,
+   "file": 8
+  }
+ },
+ "real_songs": {
+  "created": "2026-10-29T12:47:17+00:00",
+  "complete": true,
+  "stopped": null,
+  "calls": [
+   {
+    "provider": "baseten",
+    "model": "meta-models/muse-spark-open-1026",
+    "bars": 8,
+    "latency_ms": 5880.826,
+    "cost_usd": 0.01041975,
+    "status": "ok",
+    "request_id": "54ca701a187b350917b879d4445b17b866fbd",
+    "attempts": 1
+   },
+   {
+    "provider": "baseten",
+    "model": "meta-models/muse-spark-open-1026",
+    "bars": 8,
+    "latency_ms": 10930.119,
+    "cost_usd": 0.01435075,
+    "status": "ok",
+    "request_id": "54ca701a187b3670970db8c83b10c5ef7d1f0",
+    "attempts": 1
+   },
+   {
+    "provider": "baseten",
+    "model": "meta-models/muse-spark-open-1026",
+    "bars": 8,
+    "latency_ms": 11219.376,
+    "cost_usd": 0.014137,
+    "status": "ok",
+    "request_id": "54ca701a187b391c77935b7208f578c739a81",
+    "attempts": 1
+   },
+   {
+    "provider": "baseten",
+    "model": "meta-models/muse-spark-open-1026",
+    "bars": 8,
+    "latency_ms": 21785.225,
+    "cost_usd": 0.0515855,
+    "status": "length",
+    "request_id": "54ca701a187b3bd8e7cd3b0524f8f27b265eb",
+    "attempts": 1
+   },
+   {
+    "provider": "baseten",
+    "model": "meta-models/muse-spark-open-1026",
+    "bars": 8,
+    "latency_ms": 7303.945,
+    "cost_usd": 0.011374,
+    "status": "ok",
+    "request_id": "54ca701a187b412a877fba4f490411bd8e742",
+    "attempts": 1
+   },
+   {
+    "provider": "baseten",
+    "model": "meta-models/muse-spark-open-1026",
+    "bars": 8,
+    "latency_ms": 6544.278,
+    "cost_usd": 0.0129487,
+    "status": "ok",
+    "request_id": "54ca701a187b42f3977b28fbd55c6a69d58b4",
+    "attempts": 1
+   },
+   {
+    "provider": "baseten",
+    "model": "meta-models/muse-spark-open-1026",
+    "bars": 8,
+    "latency_ms": 9528.278,
+    "cost_usd": 0.01509825,
+    "status": "ok",
+    "request_id": "54ca701a187b448ca7f24bfae766d36252a53",
+    "attempts": 1
+   },
+   {
+    "provider": "baseten",
+    "model": "meta-models/muse-spark-open-1026",
+    "bars": 8,
+    "latency_ms": 8662.87,
+    "cost_usd": 0.01561575,
+    "status": "ok",
+    "request_id": "54ca701a187b46e067b8f928333317f4c7edd",
+    "attempts": 1
+   },
+   {
+    "provider": "baseten",
+    "model": "meta-models/muse-spark-open-1026",
+    "bars": 8,
+    "latency_ms": 5572.582,
+    "cost_usd": 0.00796425,
+    "status": "ok",
+    "request_id": "54ca701a187b48fde784f960a0a423014f505",
+    "attempts": 1
+   },
+   {
+    "provider": "baseten",
+    "model": "meta-models/muse-spark-open-1026",
+    "bars": 8,
+    "latency_ms": 7595.45,
+    "cost_usd": 0.01470475,
+    "status": "ok",
+    "request_id": "54ca701a187b4a5ac79f9a1c24cf47ea6dd8b",
+    "attempts": 1
+   },
+   {
+    "provider": "baseten",
+    "model": "meta-models/muse-spark-open-1026",
+    "bars": 8,
+    "latency_ms": 7084.408,
+    "cost_usd": 0.00919375,
+    "status": "ok",
+    "request_id": "54ca701a187b4c35278cd82ece6103eff5e06",
+    "attempts": 1
+   },
+   {
+    "provider": "baseten",
+    "model": "meta-models/muse-spark-open-1026",
+    "bars": 8,
+    "latency_ms": 6286.795,
+    "cost_usd": 0.02072025,
+    "status": "harmony_validation",
+    "request_id": "54ca701a187b4df007431b4845342b49b2109",
+    "attempts": 1
+   },
+   {
+    "provider": "baseten",
+    "model": "meta-models/muse-spark-open-1026",
+    "bars": 8,
+    "latency_ms": 9556.982,
+    "cost_usd": 0.01189,
+    "status": "ok",
+    "request_id": "54ca701a187b4f79176989a63f0198d2c1c15",
+    "attempts": 1
+   },
+   {
+    "provider": "baseten",
+    "model": "meta-models/muse-spark-open-1026",
+    "bars": 8,
+    "latency_ms": 9460.013,
+    "cost_usd": 0.012602,
+    "status": "ok",
+    "request_id": "54ca701a187b51ce9736482a500b73b552e56",
+    "attempts": 1
+   },
+   {
+    "provider": "baseten",
+    "model": "meta-models/muse-spark-open-1026",
+    "bars": 8,
+    "latency_ms": 6062.813,
+    "cost_usd": 0.01043375,
+    "status": "harmony_validation",
+    "request_id": "54ca701a187b541df7c6b9dbc87bdbf94e51b",
+    "attempts": 1
+   },
+   {
+    "provider": "baseten",
+    "model": "meta-models/muse-spark-open-1026",
+    "bars": 8,
+    "latency_ms": 7412.291,
+    "cost_usd": 0.0316665,
+    "status": "harmony_validation",
+    "request_id": "54ca701a187b5599274fdbf1921dd2c3c55bd",
+    "attempts": 1
+   },
+   {
+    "provider": "baseten",
+    "model": "meta-models/muse-spark-open-1026",
+    "bars": 8,
+    "latency_ms": 5859.472,
+    "cost_usd": 0.00992675,
+    "status": "ok",
+    "request_id": "54ca701a187b576867bbfa59b7b38f1561235",
+    "attempts": 1
+   },
+   {
+    "provider": "baseten",
+    "model": "meta-models/muse-spark-open-1026",
+    "bars": 8,
+    "latency_ms": 7061.594,
+    "cost_usd": 0.0106555,
+    "status": "ok",
+    "request_id": "54ca701a187b58d677b638f51ff787095e257",
+    "attempts": 1
+   },
+   {
+    "provider": "baseten",
+    "model": "meta-models/muse-spark-open-1026",
+    "bars": 8,
+    "latency_ms": 8328.834,
+    "cost_usd": 0.01296245,
+    "status": "ok",
+    "request_id": "54ca701a187b5a9047060bf277ee13d06514d",
+    "attempts": 1
+   },
+   {
+    "provider": "baseten",
+    "model": "meta-models/muse-spark-open-1026",
+    "bars": 8,
+    "latency_ms": 7157.061,
+    "cost_usd": 0.01183925,
+    "status": "ok",
+    "request_id": "54ca701a187b5c98e716cabd0a45a77ff3387",
+    "attempts": 1
+   },
+   {
+    "provider": "baseten",
+    "model": "meta-models/muse-spark-open-1026",
+    "bars": 8,
+    "latency_ms": 10004.268,
+    "cost_usd": 0.012132,
+    "status": "ok",
+    "request_id": "54ca701a187b5e5907b5a9be7fd4d095a006b",
+    "attempts": 1
+   },
+   {
+    "provider": "baseten",
+    "model": "meta-models/muse-spark-open-1026",
+    "bars": 8,
+    "latency_ms": 8010.551,
+    "cost_usd": 0.01238375,
+    "status": "ok",
+    "request_id": "54ca701a187b60c9d7b70bcddc89062a45ebb",
+    "attempts": 1
+   },
+   {
+    "provider": "baseten",
+    "model": "meta-models/muse-spark-open-1026",
+    "bars": 8,
+    "latency_ms": 13433.243,
+    "cost_usd": 0.01786175,
+    "status": "ok",
+    "request_id": "54ca701a187b62bea738b8a64aa79aee4556d",
+    "attempts": 1
+   },
+   {
+    "provider": "baseten",
+    "model": "meta-models/muse-spark-open-1026",
+    "bars": 8,
+    "latency_ms": 13276.259,
+    "cost_usd": 0.01577,
+    "status": "ok",
+    "request_id": "54ca701a187b66074774f91fa7807e701a628",
+    "attempts": 1
+   },
+   {
+    "provider": "baseten",
+    "model": "meta-models/muse-spark-open-1026",
+    "bars": 8,
+    "latency_ms": 7820.205,
+    "cost_usd": 0.0151505,
+    "status": "ok",
+    "request_id": "54ca701a187b69447750d92c3d10cbef2e9ef",
+    "attempts": 1
+   },
+   {
+    "provider": "baseten",
+    "model": "meta-models/muse-spark-open-1026",
+    "bars": 8,
+    "latency_ms": 7071.784,
+    "cost_usd": 0.0123275,
+    "status": "ok",
+    "request_id": "54ca701a187b6b2d77236ae9da69272a64273",
+    "attempts": 1
+   },
+   {
+    "provider": "baseten",
+    "model": "meta-models/muse-spark-open-1026",
+    "bars": 8,
+    "latency_ms": 9419.87,
+    "cost_usd": 0.0159755,
+    "status": "ok",
+    "request_id": "54ca701a187b6ce78753aab048ee2b58a4add",
+    "attempts": 1
+   },
+   {
+    "provider": "baseten",
+    "model": "meta-models/muse-spark-open-1026",
+    "bars": 8,
+    "latency_ms": 6500.298,
+    "cost_usd": 0.01014675,
+    "status": "ok",
+    "request_id": "54ca701a187b6f3407427926915fd01f8d28a",
+    "attempts": 1
+   },
+   {
+    "provider": "baseten",
+    "model": "meta-models/muse-spark-open-1026",
+    "bars": 8,
+    "latency_ms": 9776.659,
+    "cost_usd": 0.01606475,
+    "status": "ok",
+    "request_id": "54ca701a187b70cad73dbb093c53c1c9acc44",
+    "attempts": 1
+   },
+   {
+    "provider": "baseten",
+    "model": "meta-models/muse-spark-open-1026",
+    "bars": 8,
+    "latency_ms": 9461.781,
+    "cost_usd": 0.012632,
+    "status": "ok",
+    "request_id": "54ca701a187b732de7c22b8e9c18e6e83b486",
+    "attempts": 1
+   },
+   {
+    "provider": "baseten",
+    "model": "meta-models/muse-spark-open-1026",
+    "bars": 8,
+    "latency_ms": 7565.911,
+    "cost_usd": 0.011079,
+    "status": "ok",
+    "request_id": "54ca701a187b757d570ff81c6dd7fc638315e",
+    "attempts": 1
+   },
+   {
+    "provider": "baseten",
+    "model": "meta-models/muse-spark-open-1026",
+    "bars": 8,
+    "latency_ms": 5224.57,
+    "cost_usd": 0.0073545,
+    "status": "ok",
+    "request_id": "54ca701a187b775647c00a6401dbe7a9e1b83",
+    "attempts": 1
+   },
+   {
+    "provider": "baseten",
+    "model": "meta-models/muse-spark-open-1026",
+    "bars": 8,
+    "latency_ms": 5679.757,
+    "cost_usd": 0.0081255,
+    "status": "ok",
+    "request_id": "54ca701a187b789ce7e25b7e1a6e2068a7797",
+    "attempts": 1
+   },
+   {
+    "provider": "baseten",
+    "model": "meta-models/muse-spark-open-1026",
+    "bars": 8,
+    "latency_ms": 5504.565,
+    "cost_usd": 0.00808675,
+    "status": "ok",
+    "request_id": "54ca701a187b7a00373d790b963adf2d22116",
+    "attempts": 1
+   },
+   {
+    "provider": "baseten",
+    "model": "meta-models/muse-spark-open-1026",
+    "bars": 8,
+    "latency_ms": 8481.762,
+    "cost_usd": 0.01220775,
+    "status": "ok",
+    "request_id": "54ca701a187b7b5867be3bc7266b7c6253b56",
+    "attempts": 1
+   },
+   {
+    "provider": "baseten",
+    "model": "meta-models/muse-spark-open-1026",
+    "bars": 8,
+    "latency_ms": 15003.384,
+    "cost_usd": 0.0200415,
+    "status": "length",
+    "request_id": "54ca701a187b7d6a5783fa69fb9595769eb8a",
+    "attempts": 1
+   },
+   {
+    "provider": "baseten",
+    "model": "meta-models/muse-spark-open-1026",
+    "bars": 8,
+    "latency_ms": 14649.746,
+    "cost_usd": 0.01737975,
+    "status": "ok",
+    "request_id": "54ca701a187b8114771399b6de87a39afa37e",
+    "attempts": 1
+   },
+   {
+    "provider": "baseten",
+    "model": "meta-models/muse-spark-open-1026",
+    "bars": 8,
+    "latency_ms": 13659.155,
+    "cost_usd": 0.0432755,
+    "status": "length",
+    "request_id": "54ca701a187b84a86759c946be2980d7bd1f1",
+    "attempts": 1
+   },
+   {
+    "provider": "baseten",
+    "model": "meta-models/muse-spark-open-1026",
+    "bars": 8,
+    "latency_ms": 18680.172,
+    "cost_usd": 0.0416855,
+    "status": "length",
+    "request_id": "54ca701a187b87fe3743982461233cf0ab991",
+    "attempts": 1
+   },
+   {
+    "provider": "baseten",
+    "model": "meta-models/muse-spark-open-1026",
+    "bars": 8,
+    "latency_ms": 8415.052,
+    "cost_usd": 0.013161,
+    "status": "ok",
+    "request_id": "54ca701a187b8c8dd788391ecbafd3a0b6ec8",
+    "attempts": 1
+   }
+  ],
+  "call_stats": {
+   "calls": 40,
+   "attempts": 40,
+   "retries": 0,
+   "retry_rate": 0.0,
+   "json_validity": 1.0,
+   "failed": {
+    "length": 4,
+    "harmony_validation": 3
+   },
+   "latency_ms_p50": 8010.551,
+   "latency_ms_p95": 15003.384,
+   "cost_usd": 0.63293,
+   "bars_sent": 320,
+   "request_ids": [
+    "54ca701a187b350917b879d4445b17b866fbd",
+    "54ca701a187b3670970db8c83b10c5ef7d1f0",
+    "54ca701a187b391c77935b7208f578c739a81",
+    "54ca701a187b3bd8e7cd3b0524f8f27b265eb",
+    "54ca701a187b412a877fba4f490411bd8e742",
+    "54ca701a187b42f3977b28fbd55c6a69d58b4",
+    "54ca701a187b448ca7f24bfae766d36252a53",
+    "54ca701a187b46e067b8f928333317f4c7edd",
+    "54ca701a187b48fde784f960a0a423014f505",
+    "54ca701a187b4a5ac79f9a1c24cf47ea6dd8b",
+    "54ca701a187b4c35278cd82ece6103eff5e06",
+    "54ca701a187b4df007431b4845342b49b2109",
+    "54ca701a187b4f79176989a63f0198d2c1c15",
+    "54ca701a187b51ce9736482a500b73b552e56",
+    "54ca701a187b541df7c6b9dbc87bdbf94e51b",
+    "54ca701a187b5599274fdbf1921dd2c3c55bd",
+    "54ca701a187b576867bbfa59b7b38f1561235",
+    "54ca701a187b58d677b638f51ff787095e257",
+    "54ca701a187b5a9047060bf277ee13d06514d",
+    "54ca701a187b5c98e716cabd0a45a77ff3387",
+    "54ca701a187b5e5907b5a9be7fd4d095a006b",
+    "54ca701a187b60c9d7b70bcddc89062a45ebb",
+    "54ca701a187b62bea738b8a64aa79aee4556d",
+    "54ca701a187b66074774f91fa7807e701a628",
+    "54ca701a187b69447750d92c3d10cbef2e9ef",
+    "54ca701a187b6b2d77236ae9da69272a64273",
+    "54ca701a187b6ce78753aab048ee2b58a4add",
+    "54ca701a187b6f3407427926915fd01f8d28a",
+    "54ca701a187b70cad73dbb093c53c1c9acc44",
+    "54ca701a187b732de7c22b8e9c18e6e83b486",
+    "54ca701a187b757d570ff81c6dd7fc638315e",
+    "54ca701a187b775647c00a6401dbe7a9e1b83",
+    "54ca701a187b789ce7e25b7e1a6e2068a7797",
+    "54ca701a187b7a00373d790b963adf2d22116",
+    "54ca701a187b7b5867be3bc7266b7c6253b56",
+    "54ca701a187b7d6a5783fa69fb9595769eb8a",
+    "54ca701a187b8114771399b6de87a39afa37e",
+    "54ca701a187b84a86759c946be2980d7bd1f1",
+    "54ca701a187b87fe3743982461233cf0ab991",
+    "54ca701a187b8c8dd788391ecbafd3a0b6ec8"
+   ]
+  },
+  "cost_usd": 0.63293,
+  "excerpts": 40,
+  "bars": 320,
+  "metrics": {
+   "slots": 640,
+   "covered": 528,
+   "coverage": 0.825,
+   "unparseable": 0,
+   "unscored_truth": 0,
+   "all": {
+    "root": 0.7562,
+    "triad": 0.7531,
+    "seventh": 0.7438,
+    "bass": 0.75,
+    "exact": 0.7375
+   },
+   "on_covered": {
+    "root": 0.9167,
+    "triad": 0.9129,
+    "seventh": 0.9015,
+    "bass": 0.9091,
+    "exact": 0.8939
+   },
+   "calibration": {
+    "high": {
+     "slots": 330,
+     "root": 1.0,
+     "exact": 1.0
+    },
+    "low": {
+     "slots": 92,
+     "root": 0.5217,
+     "exact": 0.3913
+    },
+    "medium": {
+     "slots": 106,
+     "root": 1.0,
+     "exact": 1.0
+    }
+   }
+  },
+  "by_variant": {
+   "block": {
+    "slots": 112,
+    "covered": 64,
+    "coverage": 0.5714,
+    "unparseable": 0,
+    "unscored_truth": 0,
+    "all": {
+     "root": 0.5714,
+     "triad": 0.5714,
+     "seventh": 0.5714,
+     "bass": 0.5714,
+     "exact": 0.5714
+    },
+    "on_covered": {
+     "root": 1.0,
+     "triad": 1.0,
+     "seventh": 1.0,
+     "bass": 1.0,
+     "exact": 1.0
+    },
+    "calibration": {
+     "high": {
+      "slots": 54,
+      "root": 1.0,
+      "exact": 1.0
+     },
+     "medium": {
+      "slots": 10,
+      "root": 1.0,
+      "exact": 1.0
+     }
+    }
+   },
+   "rootless": {
+    "slots": 112,
+    "covered": 80,
+    "coverage": 0.7143,
+    "unparseable": 0,
+    "unscored_truth": 0,
+    "all": {
+     "root": 0.3214,
+     "triad": 0.3214,
+     "seventh": 0.2679,
+     "bass": 0.2857,
+     "exact": 0.2321
+    },
+    "on_covered": {
+     "root": 0.45,
+     "triad": 0.45,
+     "seventh": 0.375,
+     "bass": 0.4,
+     "exact": 0.325
+    },
+    "calibration": {
+     "low": {
+      "slots": 80,
+      "root": 0.45,
+      "exact": 0.325
+     }
+    }
+   },
+   "inversion": {
+    "slots": 128,
+    "covered": 128,
+    "coverage": 1.0,
+    "unparseable": 0,
+    "unscored_truth": 0,
+    "all": {
+     "root": 1.0,
+     "triad": 1.0,
+     "seventh": 1.0,
+     "bass": 1.0,
+     "exact": 1.0
+    },
+    "on_covered": {
+     "root": 1.0,
+     "triad": 1.0,
+     "seventh": 1.0,
+     "bass": 1.0,
+     "exact": 1.0
+    },
+    "calibration": {
+     "high": {
+      "slots": 74,
+      "root": 1.0,
+      "exact": 1.0
+     },
+     "medium": {
+      "slots": 44,
+      "root": 1.0,
+      "exact": 1.0
+     },
+     "low": {
+      "slots": 10,
+      "root": 1.0,
+      "exact": 1.0
+     }
+    }
+   },
+   "melody": {
+    "slots": 96,
+    "covered": 96,
+    "coverage": 1.0,
+    "unparseable": 0,
+    "unscored_truth": 0,
+    "all": {
+     "root": 1.0,
+     "triad": 1.0,
+     "seventh": 1.0,
+     "bass": 1.0,
+     "exact": 1.0
+    },
+    "on_covered": {
+     "root": 1.0,
+     "triad": 1.0,
+     "seventh": 1.0,
+     "bass": 1.0,
+     "exact": 1.0
+    },
+    "calibration": {
+     "high": {
+      "slots": 74,
+      "root": 1.0,
+      "exact": 1.0
+     },
+     "medium": {
+      "slots": 22,
+      "root": 1.0,
+      "exact": 1.0
+     }
+    }
+   },
+   "sparse": {
+    "slots": 96,
+    "covered": 96,
+    "coverage": 1.0,
+    "unparseable": 0,
+    "unscored_truth": 0,
+    "all": {
+     "root": 1.0,
+     "triad": 1.0,
+     "seventh": 1.0,
+     "bass": 1.0,
+     "exact": 1.0
+    },
+    "on_covered": {
+     "root": 1.0,
+     "triad": 1.0,
+     "seventh": 1.0,
+     "bass": 1.0,
+     "exact": 1.0
+    },
+    "calibration": {
+     "high": {
+      "slots": 74,
+      "root": 1.0,
+      "exact": 1.0
+     },
+     "medium": {
+      "slots": 22,
+      "root": 1.0,
+      "exact": 1.0
+     }
+    }
+   },
+   "waltz": {
+    "slots": 96,
+    "covered": 64,
+    "coverage": 0.6667,
+    "unparseable": 0,
+    "unscored_truth": 0,
+    "all": {
+     "root": 0.6667,
+     "triad": 0.6458,
+     "seventh": 0.6458,
+     "bass": 0.6667,
+     "exact": 0.6458
+    },
+    "on_covered": {
+     "root": 1.0,
+     "triad": 0.9688,
+     "seventh": 0.9688,
+     "bass": 1.0,
+     "exact": 0.9688
+    },
+    "calibration": {
+     "high": {
+      "slots": 54,
+      "root": 1.0,
+      "exact": 1.0
+     },
+     "low": {
+      "slots": 2,
+      "root": 1.0,
+      "exact": 0.0
+     },
+     "medium": {
+      "slots": 8,
+      "root": 1.0,
+      "exact": 1.0
+     }
+    }
+   }
+  },
+  "by_genre": {
+   "blues": {
+    "slots": 48,
+    "covered": 48,
+    "coverage": 1.0,
+    "unparseable": 0,
+    "unscored_truth": 0,
+    "all": {
+     "root": 0.6667,
+     "triad": 0.6667,
+     "seventh": 0.6667,
+     "bass": 0.6667,
+     "exact": 0.6667
+    },
+    "on_covered": {
+     "root": 0.6667,
+     "triad": 0.6667,
+     "seventh": 0.6667,
+     "bass": 0.6667,
+     "exact": 0.6667
+    },
+    "calibration": {
+     "high": {
+      "slots": 32,
+      "root": 1.0,
+      "exact": 1.0
+     },
+     "low": {
+      "slots": 16,
+      "root": 0.0,
+      "exact": 0.0
+     }
+    }
+   },
+   "bossa": {
+    "slots": 48,
+    "covered": 32,
+    "coverage": 0.6667,
+    "unparseable": 0,
+    "unscored_truth": 0,
+    "all": {
+     "root": 0.6667,
+     "triad": 0.6667,
+     "seventh": 0.6667,
+     "bass": 0.6667,
+     "exact": 0.6667
+    },
+    "on_covered": {
+     "root": 1.0,
+     "triad": 1.0,
+     "seventh": 1.0,
+     "bass": 1.0,
+     "exact": 1.0
+    },
+    "calibration": {
+     "high": {
+      "slots": 32,
+      "root": 1.0,
+      "exact": 1.0
+     }
+    }
+   },
+   "classical": {
+    "slots": 48,
+    "covered": 48,
+    "coverage": 1.0,
+    "unparseable": 0,
+    "unscored_truth": 0,
+    "all": {
+     "root": 1.0,
+     "triad": 1.0,
+     "seventh": 1.0,
+     "bass": 1.0,
+     "exact": 1.0
+    },
+    "on_covered": {
+     "root": 1.0,
+     "triad": 1.0,
+     "seventh": 1.0,
+     "bass": 1.0,
+     "exact": 1.0
+    },
+    "calibration": {
+     "high": {
+      "slots": 36,
+      "root": 1.0,
+      "exact": 1.0
+     },
+     "medium": {
+      "slots": 12,
+      "root": 1.0,
+      "exact": 1.0
+     }
+    }
+   },
+   "country": {
+    "slots": 48,
+    "covered": 32,
+    "coverage": 0.6667,
+    "unparseable": 0,
+    "unscored_truth": 0,
+    "all": {
+     "root": 0.6667,
+     "triad": 0.6667,
+     "seventh": 0.6667,
+     "bass": 0.6667,
+     "exact": 0.6667
+    },
+    "on_covered": {
+     "root": 1.0,
+     "triad": 1.0,
+     "seventh": 1.0,
+     "bass": 1.0,
+     "exact": 1.0
+    },
+    "calibration": {
+     "high": {
+      "slots": 28,
+      "root": 1.0,
+      "exact": 1.0
+     },
+     "medium": {
+      "slots": 4,
+      "root": 1.0,
+      "exact": 1.0
+     }
+    }
+   },
+   "electronic": {
+    "slots": 48,
+    "covered": 32,
+    "coverage": 0.6667,
+    "unparseable": 0,
+    "unscored_truth": 0,
+    "all": {
+     "root": 0.6667,
+     "triad": 0.625,
+     "seventh": 0.625,
+     "bass": 0.6667,
+     "exact": 0.625
+    },
+    "on_covered": {
+     "root": 1.0,
+     "triad": 0.9375,
+     "seventh": 0.9375,
+     "bass": 1.0,
+     "exact": 0.9375
+    },
+    "calibration": {
+     "medium": {
+      "slots": 20,
+      "root": 1.0,
+      "exact": 1.0
+     },
+     "high": {
+      "slots": 10,
+      "root": 1.0,
+      "exact": 1.0
+     },
+     "low": {
+      "slots": 2,
+      "root": 1.0,
+      "exact": 0.0
+     }
+    }
+   },
+   "folk": {
+    "slots": 64,
+    "covered": 48,
+    "coverage": 0.75,
+    "unparseable": 0,
+    "unscored_truth": 0,
+    "all": {
+     "root": 0.75,
+     "triad": 0.75,
+     "seventh": 0.6562,
+     "bass": 0.75,
+     "exact": 0.6562
+    },
+    "on_covered": {
+     "root": 1.0,
+     "triad": 1.0,
+     "seventh": 0.875,
+     "bass": 1.0,
+     "exact": 0.875
+    },
+    "calibration": {
+     "high": {
+      "slots": 16,
+      "root": 1.0,
+      "exact": 1.0
+     },
+     "low": {
+      "slots": 16,
+      "root": 1.0,
+      "exact": 0.625
+     },
+     "medium": {
+      "slots": 16,
+      "root": 1.0,
+      "exact": 1.0
+     }
+    }
+   },
+   "funk": {
+    "slots": 48,
+    "covered": 48,
+    "coverage": 1.0,
+    "unparseable": 0,
+    "unscored_truth": 0,
+    "all": {
+     "root": 0.8333,
+     "triad": 0.8333,
+     "seventh": 0.8333,
+     "bass": 0.8333,
+     "exact": 0.8333
+    },
+    "on_covered": {
+     "root": 0.8333,
+     "triad": 0.8333,
+     "seventh": 0.8333,
+     "bass": 0.8333,
+     "exact": 0.8333
+    },
+    "calibration": {
+     "high": {
+      "slots": 22,
+      "root": 1.0,
+      "exact": 1.0
+     },
+     "medium": {
+      "slots": 10,
+      "root": 1.0,
+      "exact": 1.0
+     },
+     "low": {
+      "slots": 16,
+      "root": 0.5,
+      "exact": 0.5
+     }
+    }
+   },
+   "gospel": {
+    "slots": 48,
+    "covered": 48,
+    "coverage": 1.0,
+    "unparseable": 0,
+    "unscored_truth": 0,
+    "all": {
+     "root": 0.75,
+     "triad": 0.75,
+     "seventh": 0.75,
+     "bass": 0.6667,
+     "exact": 0.6667
+    },
+    "on_covered": {
+     "root": 0.75,
+     "triad": 0.75,
+     "seventh": 0.75,
+     "bass": 0.6667,
+     "exact": 0.6667
+    },
+    "calibration": {
+     "low": {
+      "slots": 16,
+      "root": 0.25,
+      "exact": 0.0
+     },
+     "medium": {
+      "slots": 16,
+      "root": 1.0,
+      "exact": 1.0
+     },
+     "high": {
+      "slots": 16,
+      "root": 1.0,
+      "exact": 1.0
+     }
+    }
+   },
+   "hip_hop": {
+    "slots": 48,
+    "covered": 48,
+    "coverage": 1.0,
+    "unparseable": 0,
+    "unscored_truth": 0,
+    "all": {
+     "root": 1.0,
+     "triad": 1.0,
+     "seventh": 1.0,
+     "bass": 1.0,
+     "exact": 1.0
+    },
+    "on_covered": {
+     "root": 1.0,
+     "triad": 1.0,
+     "seventh": 1.0,
+     "bass": 1.0,
+     "exact": 1.0
+    },
+    "calibration": {
+     "high": {
+      "slots": 40,
+      "root": 1.0,
+      "exact": 1.0
+     },
+     "medium": {
+      "slots": 8,
+      "root": 1.0,
+      "exact": 1.0
+     }
+    }
+   },
+   "jazz": {
+    "slots": 48,
+    "covered": 48,
+    "coverage": 1.0,
+    "unparseable": 0,
+    "unscored_truth": 0,
+    "all": {
+     "root": 1.0,
+     "triad": 1.0,
+     "seventh": 1.0,
+     "bass": 1.0,
+     "exact": 1.0
+    },
+    "on_covered": {
+     "root": 1.0,
+     "triad": 1.0,
+     "seventh": 1.0,
+     "bass": 1.0,
+     "exact": 1.0
+    },
+    "calibration": {
+     "high": {
+      "slots": 34,
+      "root": 1.0,
+      "exact": 1.0
+     },
+     "medium": {
+      "slots": 14,
+      "root": 1.0,
+      "exact": 1.0
+     }
+    }
+   },
+   "pop": {
+    "slots": 48,
+    "covered": 48,
+    "coverage": 1.0,
+    "unparseable": 0,
+    "unscored_truth": 0,
+    "all": {
+     "root": 1.0,
+     "triad": 1.0,
+     "seventh": 1.0,
+     "bass": 1.0,
+     "exact": 1.0
+    },
+    "on_covered": {
+     "root": 1.0,
+     "triad": 1.0,
+     "seventh": 1.0,
+     "bass": 1.0,
+     "exact": 1.0
+    },
+    "calibration": {
+     "high": {
+      "slots": 48,
+      "root": 1.0,
+      "exact": 1.0
+     }
+    }
+   },
+   "rnb_soul": {
+    "slots": 48,
+    "covered": 32,
+    "coverage": 0.6667,
+    "unparseable": 0,
+    "unscored_truth": 0,
+    "all": {
+     "root": 0.5,
+     "triad": 0.5,
+     "seventh": 0.5,
+     "bass": 0.5,
+     "exact": 0.5
+    },
+    "on_covered": {
+     "root": 0.75,
+     "triad": 0.75,
+     "seventh": 0.75,
+     "bass": 0.75,
+     "exact": 0.75
+    },
+    "calibration": {
+     "high": {
+      "slots": 16,
+      "root": 1.0,
+      "exact": 1.0
+     },
+     "low": {
+      "slots": 16,
+      "root": 0.5,
+      "exact": 0.5
+     }
+    }
+   },
+   "rock": {
+    "slots": 48,
+    "covered": 16,
+    "coverage": 0.3333,
+    "unparseable": 0,
+    "unscored_truth": 0,
+    "all": {
+     "root": 0.3333,
+     "triad": 0.3333,
+     "seventh": 0.3333,
+     "bass": 0.3333,
+     "exact": 0.3333
+    },
+    "on_covered": {
+     "root": 1.0,
+     "triad": 1.0,
+     "seventh": 1.0,
+     "bass": 1.0,
+     "exact": 1.0
+    },
+    "calibration": {
+     "low": {
+      "slots": 10,
+      "root": 1.0,
+      "exact": 1.0
+     },
+     "medium": {
+      "slots": 6,
+      "root": 1.0,
+      "exact": 1.0
+     }
+    }
+   }
+  }
+ }
 }
