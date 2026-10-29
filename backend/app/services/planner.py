@@ -57,6 +57,7 @@ from app.services.llm import (
     BudgetExceeded,
     LedgerError,
     LLMClient,
+    LLMCancelled,
     LLMConfigError,
     LLMConnectionError,
     LLMDisabled,
@@ -460,6 +461,7 @@ def section_report(index: int, section: PlanSectionResult, before: list[str | No
 class _Run:
     request: PlanRequest
     on_event: OnEvent | None = None
+    cancelled: Callable[[], bool] | None = None
     started: float = field(default_factory=time.perf_counter)
     client: LLMClient | None = None
     judge_client: LLMClient | None = None
@@ -482,8 +484,13 @@ class _Run:
             self.on_event(event, {**payload, "t_ms": self.elapsed_ms()})
 
     def check_clock(self) -> None:
+        self.check_cancelled()
         if self.elapsed_ms() >= RUN_BUDGET_S * 1000:
             raise PlanFailure("timeout", f"the run passed its {RUN_BUDGET_S:g} s budget")
+
+    def check_cancelled(self) -> None:
+        if self.cancelled is not None and self.cancelled():
+            raise PlanFailure("generation", "The song-form run was cancelled")
 
     def call(self, client: LLMClient, step: str, attempt: int, messages: list[dict[str, str]],
              schema: dict[str, Any], *, name: str, effort: str, max_tokens: int) -> LLMResult:
@@ -512,10 +519,10 @@ class _Run:
                                         f"${MAX_RUN_USD:.2f} cap (${self.spend_usd:.4f} spent so far)")
         started = time.perf_counter()
         try:
-            result = client.chat_json(messages, schema, label=f"plan.{step}", **options)
+            result = client.chat_json(messages, schema, label=f"plan.{step}", cancelled=self.cancelled, **options)
         except LLMError as exc:
             cost = max(0.0, _spent(client) - spent_before)
-            if cost > 0 or not isinstance(exc, (BudgetExceeded, LLMConfigError, LedgerError, LLMSchemaError)):
+            if cost > 0 or not isinstance(exc, (BudgetExceeded, LLMConfigError, LedgerError, LLMSchemaError, LLMCancelled)):
                 # A retry may be refused after its first attempt already settled.
                 # Keep that spend too, as well as a timeout's full reservation.
                 latency = round((time.perf_counter() - started) * 1000)
@@ -529,6 +536,7 @@ class _Run:
         # The result prices only the last attempt; the ledger contains the rejected first reply too.
         cost = result.cost_usd if result.attempts == 1 else max(result.cost_usd, _spent(client) - spent_before)
         self._record(step, attempt, client, result.request_id, cost, latency, sent_effort)
+        self.check_cancelled()
         return result
 
     def _record(self, step: str, attempt: int, client: LLMClient, request_id: str | None, cost: float,
@@ -558,6 +566,8 @@ def _spent(client: LLMClient) -> float:
 
 
 def _kind(exc: LLMError) -> str:
+    if isinstance(exc, LLMCancelled):
+        return "generation"
     if isinstance(exc, LLMDisabled):
         return "disabled"
     if isinstance(exc, (LLMConfigError, LedgerError)):
@@ -596,6 +606,7 @@ def _client(role: str) -> LLMClient:
 
 def _plan(run: _Run) -> None:
     """plan_song: the plan, validated, revised at most MAX_REVISIONS times."""
+    run.check_clock()
     request = run.request
     if request.planner == "rules":
         plan = rules_plan(request)
@@ -664,6 +675,7 @@ def _generate_section(run: _Run, index: int, regenerated: bool = False) -> PlanS
         raise PlanFailure("generation", "Chord generation failed") from None
     finally:
         run.generation_ms += round((time.perf_counter() - started) * 1000)
+    run.check_cancelled()
     return PlanSectionResult(
         **response.model_dump(), cadence=planned.cadence,
         rulesSlots=rule_slots(planned.type, response.chordCount, planned.cadence),
@@ -758,10 +770,12 @@ def plan_song(request: PlanRequest, on_event: OnEvent | None = None) -> PlanTrac
     return run.trace()
 
 
-def complete_form(request: PlanRequest, on_event: OnEvent | None = None) -> PlanTrace:
+def complete_form(request: PlanRequest, on_event: OnEvent | None = None,
+                  cancelled: Callable[[], bool] | None = None) -> PlanTrace:
     """The whole run behind POST /api/plan/song: plan, generate every section, judge once or twice."""
-    run = _Run(request, on_event)
+    run = _Run(request, on_event, cancelled)
     try:
+        run.check_clock()
         if request.planner == "meta":
             run.client = _client("default")
             run.judge_client = _client("judge")

@@ -1,9 +1,11 @@
 """API tests for /api/plan/song (+ /stream): the happy path with a fake Meta transport and the
 rules-path section composer, the Meta flag off (503), the failure status codes and the SSE order."""
 
+import asyncio
 import logging
 import os
 import tempfile
+import threading
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -11,9 +13,12 @@ from unittest import mock
 from fastapi.testclient import TestClient
 
 import app.main
+from app.models.plan import PlanRequest
+from app.routes import plan as plan_routes
 from app.services import llm, planner
+from app.services.limits import Admission
 from app.services.llm import Ledger, LLMClient, LLMConfig
-from tests.test_planner import ACCEPT, SHORT_PLAN, SKETCH, VALID_PLAN, Replies, completion
+from tests.test_planner import ACCEPT, CALL_COST, SHORT_PLAN, SKETCH, VALID_PLAN, Replies, completion
 from tests.test_section_api import sse_events
 
 CLIENT = TestClient(app.main.app)
@@ -159,7 +164,10 @@ class PlanApiTest(unittest.TestCase):
 
     def test_stream_events_arrive_in_run_order(self):
         self.fake_meta(completion(SHORT_PLAN), completion(VALID_PLAN), completion(ACCEPT))
-        res = CLIENT.post(PLAN_STREAM, json=body())
+        with mock.patch.object(plan_routes.limits.limiter, "settle") as settle:
+            res = CLIENT.post(PLAN_STREAM, json=body())
+        settle.assert_called_once()
+        self.assertAlmostEqual(settle.call_args.args[1], 3 * CALL_COST)
         self.assertEqual(res.status_code, 200)
         self.assertTrue(res.headers["content-type"].startswith("text/event-stream"))
         events = sse_events(res.text)
@@ -176,6 +184,52 @@ class PlanApiTest(unittest.TestCase):
         trace = events[-1][1]
         self.assertEqual(set(trace), TRACE_KEYS)
         self.assertEqual((trace["status"], len(trace["calls"]), len(trace["sections"])), ("ok", 3, 3))
+
+    def test_stream_disconnect_stops_after_the_in_flight_call_and_settles_once(self):
+        transport = self.fake_meta(completion(VALID_PLAN), completion(ACCEPT))
+        started, release, settled = threading.Event(), threading.Event(), threading.Event()
+        client = planner.get_client()
+
+        def blocking_transport(request):
+            started.set()
+            if not release.wait(3):
+                raise AssertionError("test did not release the in-flight request")
+            return transport(request)
+
+        client._transport = blocking_transport
+        admission = Admission("test-day", "test-session", planner.MAX_RUN_USD)
+
+        async def disconnect():
+            response = await plan_routes.plan_song_stream(PlanRequest(**body()))
+            waiting = asyncio.create_task(anext(response.body_iterator))
+            try:
+                self.assertTrue(await asyncio.to_thread(started.wait, 2))
+                waiting.cancel()  # Starlette closes the consumer task on an HTTP disconnect.
+                with self.assertRaises(asyncio.CancelledError):
+                    await waiting
+                settle.assert_not_called()  # the in-flight request still has to settle its own ledger
+            finally:
+                release.set()
+            self.assertTrue(await asyncio.to_thread(settled.wait, 2))
+
+        with mock.patch.object(plan_routes, "_admit", return_value=admission), \
+                mock.patch.object(plan_routes.limits.limiter, "settle", side_effect=lambda *_: settled.set()) as settle, \
+                mock.patch.object(planner, "compose_section") as compose:
+            asyncio.run(disconnect())
+        compose.assert_not_called()
+        self.assertEqual(len(transport.calls), 1)
+        settle.assert_called_once_with(admission, CALL_COST)
+        self.assertAlmostEqual(client.ledger.snapshot()["spent_usd"], CALL_COST)
+        self.assertEqual(client.ledger.snapshot()["outstanding_usd"], 0)
+
+    def test_unexpected_worker_failure_keeps_the_admitted_charge(self):
+        admission = Admission("test-day", "test-session", planner.MAX_RUN_USD)
+        with mock.patch.object(plan_routes, "_admit", return_value=admission), \
+                mock.patch.object(planner, "complete_form", side_effect=RuntimeError("worker failure")), \
+                mock.patch.object(plan_routes.limits.limiter, "settle") as settle:
+            events = sse_events(CLIENT.post(PLAN_STREAM, json=body()).text)
+        self.assertEqual(events, [("error", {"detail": "Song planning failed"})])
+        settle.assert_called_once_with(admission, admission.estimate_usd)
 
     def test_stream_failure_ends_with_one_error_frame(self):
         self.fake_meta(completion(VALID_PLAN), TimeoutError("read timed out"))

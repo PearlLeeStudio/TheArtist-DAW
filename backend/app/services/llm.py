@@ -116,6 +116,10 @@ class LLMTimeout(LLMError):
     """No response within the timeout; settled at the full reservation."""
 
 
+class LLMCancelled(LLMError):
+    """The caller stopped the run; no subsequent HTTP attempt is started."""
+
+
 class LLMConnectionError(LLMError):
     """The endpoint could not be reached; settled at the full reservation."""
 
@@ -894,13 +898,17 @@ class LLMClient:
     def chat_json(self, messages: Sequence[Mapping[str, Any]], schema: Mapping[str, Any], *, name: str,
                   label: str, max_completion_tokens: int = 2048, timeout_s: float | None = None,
                   input_token_upper_bound: int | None = None,
-                  max_request_usd: float | None = None, reasoning_effort: str | None = None) -> LLMResult:
+                  max_request_usd: float | None = None, reasoning_effort: str | None = None,
+                  cancelled: Callable[[], bool] | None = None) -> LLMResult:
         """Send one strict-JSON request; return the checked object or raise an LLMError.
 
         A provider that does not enforce json_schema gets exactly one retry after a reply that is
         not JSON or not the schema, with the rejection appended as a user message and ledgered
-        as a second call; meta never retries.
+        as a second call; meta never retries. A cancelled caller stops before
+        the next attempt; an in-flight attempt still finishes and settles.
         """
+        if cancelled is not None and cancelled():
+            raise LLMCancelled("LLM request was cancelled")
         cfg = self.config
         options = dict(name=name, max_completion_tokens=max_completion_tokens, timeout_s=timeout_s,
                        max_request_usd=max_request_usd, reasoning_effort=reasoning_effort)
@@ -908,12 +916,16 @@ class LLMClient:
         if not cfg.api_key:
             raise LLMConfigError(f"{cfg.key_source} is not set, so provider {cfg.provider} cannot be called")
         transport = self._get_transport()
+        if cancelled is not None and cancelled():
+            raise LLMCancelled("LLM request was cancelled")
         try:
             return self._attempt(transport, prepared, label, 1)
         except LLMResponseError as exc:
             if not _guards_json(cfg.provider) or exc.kind not in _RETRIED_KINDS:
                 raise
             rejected = exc
+        if cancelled is not None and cancelled():
+            raise LLMCancelled("LLM request was cancelled", request_id=rejected.request_id)
         log.warning("llm retrying provider=%s model=%s label=%s once after %s", cfg.provider, cfg.model, label,
                     rejected.kind)
         note = (f"Your previous reply was rejected ({rejected.kind}): {rejected.args[0]}. Reply again with a "
@@ -927,6 +939,8 @@ class LLMClient:
         # A caller's bound covers the first request's input; the added text counts a token per character
         bound = None if input_token_upper_bound is None else input_token_upper_bound + len(note)
         prepared = self.prepare(retry_messages, schema, input_token_upper_bound=bound, **options)
+        if cancelled is not None and cancelled():
+            raise LLMCancelled("LLM request was cancelled", request_id=rejected.request_id)
         return self._attempt(transport, prepared, label, 2)
 
     def _attempt(self, transport: Transport, prepared: PreparedRequest, label: str, attempts: int) -> LLMResult:

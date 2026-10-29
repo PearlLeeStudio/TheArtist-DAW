@@ -567,6 +567,32 @@ class SchemaTests(unittest.TestCase):
 
 
 class OpenWeightTests(LLMTestCase):
+    def test_cancel_before_a_call_sends_nothing_and_reserves_nothing(self):
+        transport = FakeTransport(response(json.dumps(GOOD)))
+        client = self.client(transport)
+        with self.assertRaises(llm.LLMCancelled):
+            self.call(client, cancelled=lambda: True)
+        self.assertEqual(transport.calls, [])
+        self.assertEqual(client.ledger.snapshot()["spent_usd"], 0)
+        self.assertEqual(client.ledger.snapshot()["outstanding_usd"], 0)
+
+    def test_cancel_during_a_bad_reply_keeps_its_cost_without_starting_a_retry(self):
+        cancelled = threading.Event()
+        transport = Replies(response("not JSON"), response(json.dumps(GOOD)))
+
+        def cancel_after_reply(request):
+            reply = transport(request)
+            cancelled.set()
+            return reply
+
+        client = self.client(cancel_after_reply, **BASETEN)
+        with self.assertRaises(llm.LLMCancelled) as ctx:
+            self.call(client, cancelled=cancelled.is_set)
+        self.assertEqual(ctx.exception.request_id, "req_1")
+        self.assertEqual(len(transport.calls), 1)
+        self.assertAlmostEqual(client.ledger.snapshot()["spent_usd"], USAGE_COST)
+        self.assertEqual(client.ledger.snapshot()["outstanding_usd"], 0)
+
     """What differs for the endpoints that do not enforce json_schema; meta stays byte for byte."""
 
     def test_baseten_sends_max_tokens_and_states_the_schema_in_the_system_message(self):

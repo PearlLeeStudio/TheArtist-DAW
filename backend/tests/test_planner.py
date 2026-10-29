@@ -5,6 +5,7 @@ and the rule slots. No network, no model."""
 import json
 import logging
 import tempfile
+import threading
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -279,6 +280,25 @@ class PlannerRunTest(unittest.TestCase):
         self.get_client = patcher.start()
         self.addCleanup(patcher.stop)
         return client
+
+    def test_cancel_during_generation_stops_other_sections_and_the_paid_judge(self):
+        cancelled = threading.Event()
+        transport = Replies(completion(VALID_PLAN), completion(ACCEPT))
+        self.client(transport)
+
+        def compose_and_cancel(req):
+            result = self.composer(req)
+            cancelled.set()
+            return result
+
+        with mock.patch.object(planner, "compose_section", side_effect=compose_and_cancel):
+            trace = planner.complete_form(request(), cancelled=cancelled.is_set)
+        self.assertEqual(trace.status, "error")
+        self.assertIn("cancelled", trace.error.message)
+        self.assertEqual((len(self.composer.requests), len(transport.calls)), (1, 1))
+        self.assertEqual(trace.judge, [])
+        self.assertAlmostEqual(trace.spendUsd, CALL_COST)
+        self.assertAlmostEqual(trace.spendUsd, self.ledger.snapshot()["spent_usd"])
 
     def test_invalid_plan_is_revised_then_generated_and_judged(self):
         transport = Replies(completion(SHORT_PLAN), completion(VALID_PLAN), completion(ACCEPT))
