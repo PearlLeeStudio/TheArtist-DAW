@@ -11,12 +11,12 @@ import {
   createScoreImportDraft,
   IMPORT_TIME_SIGNATURES,
   MAX_SCORE_IMPORT_BYTES,
-  metaAssistSummary,
+  scoreImportReadyStatus,
   readScoreImportResponse,
   scoreImportRequestBody,
   validateScoreImportForEditor,
 } from '../../engine/scoreImport';
-import type { ImportSectionDraft, ScoreImportDraft, ScoreImportValidation, ScoreMime } from '../../engine/scoreImport';
+import type { ImportSectionDraft, ScoreImportDraft, ScoreImportEngine, ScoreImportValidation, ScoreMime } from '../../engine/scoreImport';
 
 interface ImportScoreDialogProps {
   onClose: () => void;
@@ -42,7 +42,7 @@ const IMPORT_MODE = 'infer_harmony';
 const SIGNATURE_BYTES = 16;
 /** Bytes per String.fromCharCode call, so the spread stays within argument limits. */
 const BASE64_CHUNK_BYTES = 0x8000;
-const ANALYSIS_TIMEOUT_MS = 100_000;
+const ANALYSIS_TIMEOUT_MS = 160_000;
 /** Mirrors the private MAX_IMPORT_SECTIONS in engine/scoreImport.ts, the most
  *  sections draft validation accepts; Add section stops there. Keep the two equal. */
 const MAX_IMPORT_SECTIONS = 64;
@@ -78,15 +78,6 @@ function distinctSourceMeters(draft: ScoreImportDraft): string[] {
 
 function isEditorMeter(meter: string): boolean {
   return (IMPORT_TIME_SIGNATURES as readonly string[]).includes(meter);
-}
-
-/** The status line after an analysis: with Meta assist, what Muse Spark interpreted. */
-function readyStatus(draft: ScoreImportDraft, assisted: boolean): string {
-  if (!assisted) return 'Ready to review.';
-  const { bars, requestIds } = metaAssistSummary(draft);
-  if (bars === 0) return 'Ready to review. The local reader resolved every bar, so Meta was not called.';
-  const ids = requestIds.length ? ` · request ${requestIds.join(', ')}` : '';
-  return `Ready to review. Muse Spark interpreted ${bars} ${bars === 1 ? 'bar' : 'bars'} the local reader left open${ids}.`;
 }
 
 /** Why the import button is disabled, or '' when it is enabled. `validation`
@@ -149,13 +140,11 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
   const [running, setRunning] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState('');
-  // Meta assist is on unless the user unchecks it or the server reports Meta off or
-  // without a key; null until /api/capabilities answers (or when it does not), and
-  // then an analysis shows the server's own answer.
-  const [metaAssist, setMetaAssist] = useState(true);
+  const [reader, setReader] = useState<ScoreImportEngine>('auto');
   const [meta, setMeta] = useState<MetaCapability | null>(null);
   const metaAvailable = meta === null || (meta.enabled && meta.configured);
-  const assisted = metaAssist && metaAvailable;
+  const readerEngine = metaAvailable ? reader : 'local';
+  const fullFileAvailable = metaAvailable && meta?.fullFileScoreImport === true;
 
   useEffect(() => {
     const controller = new AbortController();
@@ -224,12 +213,13 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
       if (!isCurrent(sequence)) return;
       const checked = checkScoreFile(file, header);
       if (!checked.ok) throw new Error(checked.message);
-      if (checked.mimeType !== 'application/pdf') throw new Error('Choose a PDF score. Image import is not available yet.');
+      if (checked.mimeType !== 'application/pdf' && readerEngine !== 'meta') throw new Error('Choose Full file (Meta) to analyze an image.');
+      if (readerEngine === 'meta' && !fullFileAvailable) throw new Error('Full-file analysis is not available on this server.');
       const selected = { file, mimeType: checked.mimeType, previewUrl: URL.createObjectURL(file) };
       sourceRef.current = selected;
       setSource(selected);
       setReading(false);
-      void recognize(selected, sequence, assisted);
+      void recognize(selected, sequence, readerEngine);
     } catch (caught) {
       if (isCurrent(sequence)) {
         setError(caught instanceof Error ? caught.message : 'The file could not be read.');
@@ -239,8 +229,8 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
     }
   };
 
-  /** `assist`: local reading first, then Muse Spark for the bars it leaves open (engine auto). */
-  const recognize = async (selected: SourceFile, sequence: number, assist: boolean) => {
+  /** Sending a whole file is a separate explicit reader choice. */
+  const recognize = async (selected: SourceFile, sequence: number, engine: ScoreImportEngine) => {
     if (!isCurrent(sequence) || closedRef.current || runningRef.current) return;
     const controller = new AbortController();
     controllerRef.current = controller;
@@ -248,7 +238,7 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
     setRunning(true);
     setDraft(null);
     setError(null);
-    setStatus(assist ? 'Analyzing score with Meta assist…' : 'Analyzing score…');
+    setStatus(engine === 'meta' ? 'Analyzing full file with Meta…' : engine === 'auto' ? 'Analyzing harmony and form with Meta…' : 'Analyzing score…');
     let timedOut = false;
     const timer = window.setTimeout(() => { timedOut = true; controller.abort(); }, ANALYSIS_TIMEOUT_MS);
     try {
@@ -258,17 +248,17 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
       const response = await fetch('/api/import/score', {
         method: 'POST',
         // A server with Meta limits admits an assisted import per browser session
-        headers: { 'Content-Type': 'application/json', ...(assist ? metaHeaders() : {}) },
-        body: JSON.stringify(scoreImportRequestBody(selected.file.name, selected.mimeType, dataBase64, IMPORT_MODE, assist)),
+        headers: { 'Content-Type': 'application/json', ...(engine !== 'local' ? metaHeaders() : {}) },
+        body: JSON.stringify(scoreImportRequestBody(selected.file.name, selected.mimeType, dataBase64, IMPORT_MODE, engine)),
         signal: controller.signal,
       });
       const body: unknown = await response.json().catch(() => null);
       if (!isCurrent(sequence)) return;
       if (!response.ok) throw new Error(recognitionErrorMessage(body, response.status));
-      const recognized = readScoreImportResponse(body, IMPORT_MODE, assist ? 'auto' : 'local');
+      const recognized = readScoreImportResponse(body, IMPORT_MODE, engine);
       const created = createScoreImportDraft(recognized, selected.file.name);
       setDraft(created);
-      setStatus(readyStatus(created, assist));
+      setStatus(scoreImportReadyStatus(created, engine));
     } catch (caught) {
       if (!isCurrent(sequence)) return;
       setStatus('');
@@ -288,15 +278,20 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
   const retryAnalysis = () => {
     const selected = sourceRef.current;
     if (!selected || runningRef.current || reading) return;
-    void recognize(selected, ++sequenceRef.current, assisted);
+    void recognize(selected, ++sequenceRef.current, readerEngine);
   };
 
-  // Switching the box analyzes a loaded score again with the new choice, replacing the review.
-  const toggleMetaAssist = (checked: boolean) => {
-    setMetaAssist(checked);
+  const selectReader = (engine: ScoreImportEngine) => {
+    setReader(engine);
     const selected = sourceRef.current;
     if (!selected || runningRef.current || reading) return;
-    void recognize(selected, ++sequenceRef.current, checked && metaAvailable);
+    if (selected.mimeType !== 'application/pdf' && engine !== 'meta') {
+      setDraft(null);
+      setStatus('');
+      setError('Choose Full file (Meta) to analyze an image.');
+      return;
+    }
+    void recognize(selected, ++sequenceRef.current, engine);
   };
 
   const editDraft = (update: DraftUpdate) => {
@@ -334,7 +329,6 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
         <header className="flex shrink-0 items-start justify-between gap-4 px-5 py-4" style={{ borderBottom: '1px solid var(--border)' }}>
           <div>
             <h2 id={`${id}-heading`} className="font-display text-2xl font-bold" style={{ color: 'var(--text-heading)' }}>Import Score</h2>
-            <p className="mt-1 text-xs" style={mutedStyle}>Printed chords stay as written; passages without chords are analyzed from the notes.</p>
           </div>
           <button type="button" className="shrink-0 px-3 py-1.5 text-xs btn-hover" style={controlStyle} onClick={() => dialogRef.current?.close()}>Close</button>
         </header>
@@ -343,18 +337,24 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div className="flex min-w-0 flex-col gap-2">
               <label className="flex min-w-0 flex-col gap-1 text-xs" style={mutedStyle}>
-                PDF score · up to 8 MiB
+                Score · PDF or image · up to 8 MiB
                 {/* Cleared after each pick, so choosing the same file again still starts an analysis. */}
-                <input ref={fileRef} type="file" accept=".pdf,application/pdf" className="max-w-full text-sm" onChange={(e) => { void chooseFile(e.target.files?.[0]); e.target.value = ''; }} />
+                <input ref={fileRef} type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,application/pdf,image/png,image/jpeg,image/webp" className="max-w-full text-sm" onChange={(e) => { void chooseFile(e.target.files?.[0]); e.target.value = ''; }} />
               </label>
-              <label className="flex items-center gap-2 text-xs" style={mutedStyle} title="At most two Meta API calls of eight bars per import; printed chords are never sent for reinterpretation">
-                <input type="checkbox" checked={assisted} disabled={!metaAvailable || running || reading} onChange={(e) => toggleMetaAssist(e.target.checked)} />
-                Meta assist: Muse Spark interprets the bars the local reader leaves open (Meta API, billed)
+              <label className="flex items-center gap-2 text-xs" style={mutedStyle}>
+                Reader
+                <select value={readerEngine} disabled={running || reading} onChange={(e) => selectReader(e.target.value as ScoreImportEngine)} className="px-2 py-1.5 text-xs" style={controlStyle}>
+                  <option value="auto" disabled={!metaAvailable}>Meta assist · harmony + form</option>
+                  <option value="meta" disabled={!fullFileAvailable}>Full file (Meta)</option>
+                  <option value="local">Local</option>
+                </select>
               </label>
+              {readerEngine === 'auto' && <p className="text-xs" style={mutedStyle}>Whole-score context · up to 16 harmony bars + form · 3 calls / $0.30 max</p>}
+              {readerEngine === 'meta' && <p className="text-xs" style={mutedStyle}>Sends the full file · PDF or image · 1 call / $1.35 max</p>}
               {meta && !metaAvailable && (
                 <p className="text-xs" style={mutedStyle}>
                   {meta.enabled ? 'No Meta key is configured on this server: local reading only.'
-                    : 'Meta is off on this server (THEARTIST_META_ENABLED=0): local reading only.'}
+                    : 'Meta is off on this server: local reading only.'}
                 </p>
               )}
             </div>
@@ -394,9 +394,7 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
   );
 }
 
-/** The chosen score next to its review, so the reading can be checked against
- *  it. Only PDFs reach it while chooseFile turns images away; an image still
- *  gets its own preview here, matching SourceFile's ScoreMime. */
+/** The chosen PDF or image beside its editable analysis. */
 function OriginalScorePreview({ source }: { source: SourceFile }) {
   return (
     <details open className="min-w-0 md:sticky md:top-0" style={{ border: '1px solid var(--border)' }}>
@@ -467,9 +465,8 @@ function ScoreReview({ idPrefix, draft, validation, onEdit }: ScoreReviewProps) 
       {validation.errors.length > 0 && <ul className="list-disc space-y-1 pl-4 text-xs" aria-label="Score fields to correct">{validation.errors.map((message) => <li key={message}>{message}</li>)}</ul>}
 
       <details style={{ border: '1px solid var(--border)' }}>
-        <summary className="cursor-pointer px-3 py-2 text-sm font-semibold">Song form · {draft.sections.length} sections</summary>
+        <summary className="cursor-pointer px-3 py-2 text-sm font-semibold">Song form · {draft.sections.length ? draft.sections.map((section) => section.label || 'Section').join(' · ') : 'No clear sections'}</summary>
         <div className="space-y-3 px-3 pb-3">
-          <p className="text-xs" style={mutedStyle}>Inferred sections are suggestions, not labels found on the score. Editing them keeps that origin visible.</p>
           {draft.sections.map((section, index) => (
             <SectionFields
               key={index}
@@ -481,7 +478,7 @@ function ScoreReview({ idPrefix, draft, validation, onEdit }: ScoreReviewProps) 
               onRemove={() => onEdit((d) => ({ ...d, sections: d.sections.filter((_, i) => i !== index) }))}
             />
           ))}
-          <button type="button" disabled={draft.sections.length >= MAX_IMPORT_SECTIONS} onClick={() => onEdit((d) => ({ ...d, sections: [...d.sections, blankSection(d.measures.length)] }))} className="px-3 py-1.5 text-xs btn-hover" style={controlStyle}>Add section</button>
+          <button type="button" disabled={draft.sections.length >= MAX_IMPORT_SECTIONS} onClick={() => onEdit((d) => ({ ...d, sections: [...d.sections, blankSection(d.measures.length)] }))} className="px-3 py-1.5 text-xs btn-hover" style={controlStyle}>Add manually</button>
         </div>
       </details>
     </div>
@@ -502,7 +499,7 @@ function SectionFields({ idPrefix, index, section, error, onChange, onRemove }: 
   return (
     <div id={sectionFieldsId(idPrefix, index)} tabIndex={-1} className="space-y-2 pt-2" style={{ borderTop: '1px solid var(--border)' }}>
       <div className="flex items-center justify-between gap-2">
-        <span className="text-xs font-semibold">{section.origin === 'inferred' ? 'Inferred — verify' : section.origin === 'explicit' ? 'Written on score' : 'Added manually'}</span>
+        <span className="text-xs font-semibold">{section.origin === 'inferred' ? 'Inferred' : section.origin === 'explicit' ? 'Written' : 'Manual'}</span>
         <button type="button" onClick={onRemove} className="px-2 py-1 text-xs btn-hover" style={controlStyle} aria-label={`Remove section ${index + 1}`}>Remove</button>
       </div>
       <div className="grid grid-cols-2 gap-2">
@@ -526,7 +523,7 @@ function SectionFields({ idPrefix, index, section, error, onChange, onRemove }: 
           <input type="text" inputMode="numeric" value={section.endBar} onChange={(e) => onChange({ endBar: e.target.value })} className="w-14 min-w-0 px-2 py-1.5 text-sm" style={controlStyle} />
         </label>
       </div>
-      {section.note && <p className="text-xs" style={mutedStyle}>{section.note}</p>}
+      {section.note && <details className="text-xs" style={mutedStyle}><summary className="cursor-pointer">Evidence</summary><p className="mt-1">{section.note}</p></details>}
       {error && <p className="text-xs" role="status">{error}</p>}
     </div>
   );

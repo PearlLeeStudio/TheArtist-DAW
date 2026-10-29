@@ -89,7 +89,7 @@ SCHEMA = {
 }
 
 SYSTEM_PROMPT = """You propose harmonic interpretations of already-read note events.
-The user selected assistance after local deterministic analysis was insufficient.
+The user selected Meta review of local chord hypotheses and unresolved passages.
 This is text reasoning, not score/image reading. The supplied note pitches, spellings,
 onsets, durations, staff IDs, meter and neighboring printed chord context are the only
 evidence. Never claim to see an original document or read missing notation. Never add,
@@ -110,6 +110,13 @@ Return an empty chords array and a clear evidence explanation if no proposal is 
 Return exactly the requested target measure indices, each once, with at most 16 concise
 chord symbols each. Do not return context-only measures. Every result requires human
 review even at high confidence. Return only the structured response.
+When scoreContext is supplied it contains the entire score in written bar order,
+its tonal key, meter, known sections and chord hypotheses. Use its wider harmonic
+flow, repetitions and cadences when interpreting target notes; the same sonority
+can have different functions in different contexts. Chords marked inferred are
+fallible hypotheses, including high-confidence local guesses, never ground truth.
+Review and correct those hypotheses from the note evidence and whole-score context.
+Printed chords and N.C. are preserved source facts and are never targets to rewrite.
 """
 
 
@@ -216,7 +223,8 @@ def _printed_context(context: list[dict] | None) -> list[dict]:
     return musical_context
 
 
-def _payload(measures: list[dict], key: str | None, context: list[dict] | None) -> dict:
+def _payload(measures: list[dict], key: str | None, context: list[dict] | None,
+             score_context: dict | None = None) -> dict:
     if not isinstance(measures, list) or not 1 <= len(measures) <= MAX_MEASURES:
         raise ValueError("harmony assistance requires 1..8 target measures")
     if key is not None and (not isinstance(key, str) or not _KEY.fullmatch(key)):
@@ -245,7 +253,14 @@ def _payload(measures: list[dict], key: str | None, context: list[dict] | None) 
         targets.append({"index": index, "timeSignature": list(meter),
                         "notes": [_note(note, staff_ids) for note in raw_notes],
                         "timingIsEstimated": estimated, "readWarnings": read_warnings})
-    return {"key": key, "measures": targets, "context": _printed_context(context)}
+    payload = {"key": key, "measures": targets, "context": _printed_context(context)}
+    if score_context is not None:
+        from app.services.score_context import validate_score_context
+        synopsis = validate_score_context(score_context)
+        if any(index >= len(synopsis["measures"]) for index in indices):
+            raise ValueError("harmony targets must be within the complete score context")
+        payload["scoreContext"] = synopsis
+    return payload
 
 
 def _invalid_answer(message: str, request_id: str | None) -> LLMResponseError:
@@ -298,8 +313,21 @@ def _standard_meta_client() -> LLMClient:
     return client
 
 
+def harmony_request(measures: list[dict], key: str | None, context: list[dict] | None,
+                    score_context: dict | None = None) -> tuple[dict, list[dict], int]:
+    """Validate and size a request without initializing a client or reserving spend."""
+    payload = _payload(measures, key, context, score_context)
+    messages = [{"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": json.dumps(payload, ensure_ascii=False, separators=(",", ":"))}]
+    serialized = json.dumps({"messages": messages, "schema": strict_schema(SCHEMA)}, ensure_ascii=False)
+    byte_count = len(serialized.encode("utf-8"))
+    if byte_count > MAX_SERIALIZED_BYTES:
+        raise ValueError("Harmony notes and complete score context exceed the 64 KiB input limit; split the score.")
+    return payload, messages, byte_count
+
+
 def propose_harmony(measures: list[dict], key: str | None, *, context: list[dict] | None = None,
-                    client: LLMClient | None = None) -> HarmonyProposal:
+                    score_context: dict | None = None, client: LLMClient | None = None) -> HarmonyProposal:
     """One bounded Standard Meta turn over whitelisted local note evidence.
 
     The caller, not this helper, selects an explicitly authorized assistance
@@ -309,13 +337,7 @@ def propose_harmony(measures: list[dict], key: str | None, *, context: list[dict
     An explicit client (evaluation, the judge role) is used as given, without
     the Meta Standard checks of the shared client.
     """
-    payload = _payload(measures, key, context)
-    messages = [{"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user", "content": json.dumps(payload, ensure_ascii=False, separators=(",", ":"))}]
-    serialized = json.dumps({"messages": messages, "schema": strict_schema(SCHEMA)}, ensure_ascii=False)
-    byte_count = len(serialized.encode("utf-8"))
-    if byte_count > MAX_SERIALIZED_BYTES:
-        raise ValueError("harmony assistance musical data and schema must fit within 64 KiB")
+    payload, messages, byte_count = harmony_request(measures, key, context, score_context)
     if client is None:
         client = _standard_meta_client()
     # Text only: every serialized UTF-8 byte is reserved as a token, plus role/

@@ -275,7 +275,7 @@ test('the Meta capability is read from the capabilities envelope', async (t) => 
     assert.equal(input, '/api/capabilities');
     return new Response(JSON.stringify({ schemaVersion: '1.0', data: { meta: { enabled: false, configured: true, provider: 'meta', model: 'muse-spark-1.3' } } }));
   });
-  assert.deepEqual(await fetchMetaCapability(), { enabled: false, configured: true });
+  assert.deepEqual(await fetchMetaCapability(), { enabled: false, configured: true, fullFileScoreImport: false });
   mock.mock.restore();
   t.mock.method(globalThis, 'fetch', async () => new Response(JSON.stringify({ schemaVersion: '1.0', data: { tools: [] } })));
   await assert.rejects(fetchMetaCapability(), /did not report its Meta capability/);

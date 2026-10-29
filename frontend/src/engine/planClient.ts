@@ -189,6 +189,8 @@ export interface MetaCapability {
   enabled: boolean;
   /** A Meta key is present on the server. */
   configured: boolean;
+  /** True only when the server permits explicitly sending an entire score file. */
+  fullFileScoreImport?: boolean;
 }
 
 /** The song's genre as the backend names it, or null when none is set.
@@ -385,8 +387,8 @@ export async function runPlan(
 export async function fetchMetaCapability(signal?: AbortSignal): Promise<MetaCapability> {
   const res = await fetch('/api/capabilities', { signal });
   if (!res.ok) throw new Error(await describeHttpError(res));
-  const body = (await res.json()) as { data?: { meta?: { enabled?: unknown; configured?: unknown } } } | null;
+  const body = (await res.json()) as { data?: { meta?: { enabled?: unknown; configured?: unknown; fullFileScoreImport?: unknown } } } | null;
   const meta = body?.data?.meta;
   if (!meta || typeof meta.enabled !== 'boolean') throw new Error('The server did not report its Meta capability');
-  return { enabled: meta.enabled, configured: meta.configured === true };
+  return { enabled: meta.enabled, configured: meta.configured === true, fullFileScoreImport: meta.fullFileScoreImport === true };
 }

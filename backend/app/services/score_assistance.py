@@ -1,4 +1,4 @@
-"""Explicit, bounded Meta reasoning for unresolved locally read note passages."""
+"""Bounded whole-context Meta review of locally inferred and unresolved harmony."""
 
 from __future__ import annotations
 
@@ -73,17 +73,23 @@ def _apply_proposal(measure: ImportedMeasure, source: ScoreMeasure, result: Meas
 
 def enrich_local_harmony(req: ScoreImportRequest, draft: ScoreImportResponse, *,
                          before_meta: Callable[[float], None] | None = None) -> ScoreImportResponse:
-    """Only engine=auto authorizes a call; confidently read printed chords stay intact.
+    """Only engine=auto authorizes a call; printed chords and N.C. stay intact.
 
     `before_meta(worst_case_usd)` runs once, right before the first Meta call (none when nothing needs one).
     """
     if req.engine != "auto":
         raise ValueError("Meta assistance requires an explicitly selected auto engine")
-    pending = [i for i, measure in enumerate(draft.measures) if not measure.chords and not measure.noChord]
+    pending = [i for i, measure in enumerate(draft.measures)
+               if not measure.noChord and measure.chordBasis != "printed"]
     if not pending:
         return draft
     from app.services.score_pdf import parse_vector_score
-    from app.services.harmony_meta import propose_harmony
+    from app.services.harmony_meta import harmony_request, propose_harmony
+    from app.services.score_context import ScoreContextError, score_context
+
+    # Freeze the complete context before any proposal changes a target. Later
+    # batches see the same source hypotheses, not earlier model guesses as facts.
+    synopsis = score_context(draft)
 
     score = parse_vector_score(base64.b64decode(req.dataBase64, validate=True))
     source = {measure.index: measure for measure in score.measures}
@@ -94,21 +100,29 @@ def enrich_local_harmony(req: ScoreImportRequest, draft: ScoreImportResponse, *,
             continue
         targets.append(_target(index, measure))
 
-    calls = 0
-    attempted = 0
-    interpreted = 0
-    while targets and calls < MAX_ASSIST_CALLS:
+    batches = []
+    while targets and len(batches) < MAX_ASSIST_CALLS:
         batch = _next_batch(targets)
         if not batch:
             break
         context = _printed_context(draft, batch)
+        try:
+            harmony_request(batch, draft.key, context, synopsis)
+        except ValueError as exc:
+            raise ScoreContextError(str(exc)) from None
+        batches.append((batch, context))
+
+    calls = 0
+    attempted = 0
+    interpreted = 0
+    for batch, context in batches:
         if calls == 0 and before_meta is not None:
             # The caller's spend admission, once, only when Meta is really about to be called
             from app.services.harmony_meta import MAX_REQUEST_USD
             before_meta(MAX_ASSIST_CALLS * MAX_REQUEST_USD)
         # Provider/config/budget failures propagate as failures. They never
         # turn into a successful-looking local result or an invented chord.
-        proposal = propose_harmony(batch, draft.key, context=context)
+        proposal = propose_harmony(batch, draft.key, context=context, score_context=synopsis)
         calls += 1
         attempted += len(batch)
         for result in proposal.measures:
@@ -119,8 +133,9 @@ def enrich_local_harmony(req: ScoreImportRequest, draft: ScoreImportResponse, *,
         draft.requestId = proposal.request_id
 
     remaining = sum(not measure.chords and not measure.noChord for measure in draft.measures)
-    summary = (f"Explicit Meta assistance attempted {attempted} unresolved measures in {calls} bounded calls; "
-               f"{interpreted} received reviewable proposals and {remaining} remain unresolved. "
-               "Locally read notes and existing chord symbols were preserved.")
+    summary = (f"Meta reviewed {attempted} of {len(pending)} eligible measures in {calls} bounded calls "
+               "with the complete score context; "
+               f"{interpreted} received reviewable proposals, {len(pending) - attempted} were not reviewed "
+               f"and {remaining} remain unresolved. Printed chords, N.C. and read notes were preserved.")
     draft.warnings = _bounded_warnings([summary, *draft.warnings])
     return draft

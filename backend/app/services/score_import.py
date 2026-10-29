@@ -2,8 +2,9 @@
 
 Every upload is checked here before any reader sees it. engine=local reads a vector
 PDF on this machine and never calls Meta; engine=meta attaches the file to one bounded
-Meta request; engine=auto reads locally first and turns to Meta, visibly, only when the
-local reader cannot read the file or, for harmony analysis, for unresolved measures.
+Meta request; engine=auto reviews inferred harmony with locally read notes and
+complete-score context, then proposes missing form sections. Unsupported local
+files never trigger a whole-file call.
 """
 
 from __future__ import annotations
@@ -24,6 +25,7 @@ from app.models.score_import import (
 )
 from app.models.sections import SECTION_TYPES
 from app.services.llm import LLMConfig, LLMConfigError, LLMResponseError, LLMResult, SPARK_PRICES, get_client
+from app.services.score_context import ScoreContextError
 
 SCORE_MODEL = "muse-spark-1.3"
 SCORE_TIMEOUT_S = 75.0
@@ -33,6 +35,7 @@ SCORE_MAX_OUTPUT_TOKENS = 8192
 SCORE_INPUT_TOKEN_BOUND = 1_048_576
 SCORE_MAX_REQUEST_USD = 1.35
 MAX_META_SCORE_MEASURES = 128
+MAX_AUTO_REQUEST_USD = .30  # Two note batches plus one whole-context form analysis.
 # _review_warnings appends at most this many warnings after the model's own.
 _SERVICE_WARNINGS = 4
 
@@ -169,8 +172,11 @@ return key null and keyBasis unreadable. Never present an inferred key as printe
 Return a known key only as '<root> major' or '<root> minor', for example 'Eb major'
 or 'A minor', never as a bare root or chord abbreviation; otherwise return key null.
 Use basis explicit for printed section headings; matching section type or null preserves
-its original label. Unlabeled structural candidates use basis inferred, section null,
-a neutral label and a note explaining uncertainty. Do not invent Verse/Chorus labels.
+its original label. Preserve those ranges and infer structure only in uncovered passages,
+using whole-score harmonic flow, cadences, repetition and contrast. Use Intro, Verse,
+Chorus or another allowed type only with supporting evidence; ambiguous functions use
+section null and a neutral label. All proposed sections use basis inferred and include
+musical evidence. Never force a standard template or claim these are printed labels.
 Sections are non-overlapping with zero-based startMeasure and positive length inside
 the measures array. Return at most 128 measures, 16 chords per measure and 64 sections.
 Set complete false if the complete written score cannot be read within those limits;
@@ -227,18 +233,31 @@ def import_score(req: ScoreImportRequest, *,
         response = analyze_local_score(req)
         if req.engine == "auto" and req.mode == "infer_harmony":
             from app.services.score_assistance import enrich_local_harmony
-            return enrich_local_harmony(req, response, before_meta=before_meta)
+            from app.services.score_context import score_context
+            from app.services.score_form import infer_score_form
+            # Preflight complete context before any paid request. Reserve the
+            # entire import once, then settle all calls together at the route.
+            score_context(response)
+            admitted = False
+
+            def admit_once(_estimate: float) -> None:
+                nonlocal admitted
+                if not admitted and before_meta is not None:
+                    before_meta(MAX_AUTO_REQUEST_USD)
+                admitted = True
+
+            response = enrich_local_harmony(req, response, before_meta=admit_once)
+            return infer_score_form(response, before_meta=admit_once)
         return response
+    except ScoreContextError as exc:
+        raise ScoreInputError(str(exc), 422) from None
     except LocalScoreUnsupported as exc:
         if req.engine == "local":
             raise ScoreInputError(f"{exc} This format is not supported by local score import. Try a supported vector PDF.", 422) from None
-        # engine=auto: Meta reads the whole file instead, and the first warning says so.
-        if before_meta is not None:
-            before_meta(SCORE_MAX_REQUEST_USD)
-        response = _import_meta_score(req, attachment)
-        response.warnings = [f"Local reading was unsupported: {str(exc)[:220]}. Meta processed this file.",
-                             *response.warnings][:MAX_SCORE_WARNINGS]
-        return response
+        raise ScoreInputError(
+            f"{exc} Meta assist requires notes from a supported vector PDF. "
+            "No Meta request was made. Try a supported vector PDF or a shorter passage.", 422
+        ) from None
 
 
 def _require_standard_meta(cfg: LLMConfig) -> None:

@@ -51,12 +51,14 @@ class ScoreAssistanceTest(unittest.TestCase):
         self.proposer = proposer.start()
         self.addCleanup(proposer.stop)
         self.calls = []
+        self.contexts = []
         self.empty_indices = set()
         self.proposal_confidence = "low"
         self.proposal_evidence = "Possible dyad harmonization; review required."
 
-    def propose(self, measures, key, *, context=None):
+    def propose(self, measures, key, *, context=None, score_context=None):
         self.calls.append((measures, key, context))
+        self.contexts.append(score_context)
         call = len(self.calls)
         return SimpleNamespace(model="muse-spark-1.3", request_id=f"req-assist-{call}", cost_usd=.002,
                                measures=[SimpleNamespace(index=measure["index"],
@@ -84,19 +86,23 @@ class ScoreAssistanceTest(unittest.TestCase):
         self.parser.assert_not_called()
         self.proposer.assert_not_called()
 
-    def test_existing_printed_and_local_inferred_chords_are_preserved_and_only_printed_context_is_sent(self):
+    def test_printed_chords_and_nc_are_preserved_but_even_confident_local_hypotheses_are_reviewed(self):
         score = draft(4)
         score.measures[0].chords = ["Am7"]
         score.measures[0].chordBasis = "inferred"
+        score.measures[0].confidence = "high"
         score.measures[0].note = "A local interpretation, not a written chord."
         score.measures[2].chords = ["G7"]
         score.measures[2].chordBasis = "printed"
         score.measures[3].noChord = True
-        kept = {index: score.measures[index].model_dump() for index in (0, 2, 3)}
+        kept = {index: score.measures[index].model_dump() for index in (2, 3)}
         original_notes = list(score.measures[1].notes)
         result = enrich_local_harmony(request(), score)
-        self.assertEqual([measure["index"] for measure in self.calls[0][0]], [1])
+        self.assertEqual([measure["index"] for measure in self.calls[0][0]], [0, 1])
         self.assertEqual(self.calls[0][2], [{"index": 2, "chords": ["G7"]}])
+        self.assertEqual(self.contexts[0]["measures"][0]["chords"], ["Am7"])
+        self.assertEqual(self.contexts[0]["measures"][0]["chordBasis"], "inferred")
+        self.assertEqual(result.measures[0].chords, ["Dm7b5"])
         for index, before in kept.items():
             self.assertEqual(result.measures[index].model_dump(), before)
         interpreted = result.measures[1]
@@ -123,8 +129,9 @@ class ScoreAssistanceTest(unittest.TestCase):
         self.assertEqual(result.measures[4].analysisSource, "meta")
         self.assertEqual(result.measures[4].model, "muse-spark-1.3")
         self.assertEqual(result.measures[4].requestId, "req-assist-1")
-        self.assertIn("attempted 2 unresolved measures in 1 bounded calls", result.warnings[0])
-        self.assertIn("1 received reviewable proposals and 4 remain unresolved", result.warnings[0])
+        self.assertIn("reviewed 2 of 5 eligible measures in 1 bounded calls", result.warnings[0])
+        self.assertIn("1 received reviewable proposals", result.warnings[0])
+        self.assertIn("4 remain unresolved", result.warnings[0])
         for index in (1, 2, 3):
             self.assertEqual(result.measures[index].analysisSource, "local")
             self.assertIsNone(result.measures[index].requestId)
@@ -141,8 +148,12 @@ class ScoreAssistanceTest(unittest.TestCase):
         self.assertTrue(all(not measure.chords and measure.analysisSource == "local" and measure.model is None
                             for measure in result.measures[16:]))
         self.assertEqual(result.requestId, "req-assist-2")
-        self.assertIn("attempted 16 unresolved measures in 2 bounded calls", result.warnings[0])
-        self.assertIn("16 received reviewable proposals and 4 remain unresolved", result.warnings[0])
+        self.assertIn("reviewed 16 of 20 eligible measures in 2 bounded calls", result.warnings[0])
+        self.assertIn("16 received reviewable proposals", result.warnings[0])
+        self.assertIn("4 were not reviewed and 4 remain unresolved", result.warnings[0])
+        self.assertEqual(self.contexts[0], self.contexts[1])
+        self.assertEqual(len(self.contexts[0]["measures"]), 20)
+        self.assertTrue(all(not bar["chords"] for bar in self.contexts[1]["measures"]))
         # The first batch's interpretations are not silently relabeled as
         # printed evidence for the second model call.
         self.assertEqual(self.calls[1][2], [])
@@ -154,8 +165,9 @@ class ScoreAssistanceTest(unittest.TestCase):
         self.assertEqual(len(self.calls), 2)
         self.assertEqual([sum(len(measure["notes"]) for measure in call[0]) for call in self.calls], [300, 512])
         self.assertTrue(all(len(call[0]) <= 8 for call in self.calls))
-        self.assertIn("attempted 3 unresolved measures", result.warnings[0])
-        self.assertIn("3 received reviewable proposals and 2 remain unresolved", result.warnings[0])
+        self.assertIn("reviewed 3 of 5 eligible measures", result.warnings[0])
+        self.assertIn("3 received reviewable proposals", result.warnings[0])
+        self.assertIn("2 remain unresolved", result.warnings[0])
 
     def test_no_supported_targets_means_no_provider_call_and_an_honest_zero_attempt_summary(self):
         self.parser.return_value.measures = [source_measure(0, 0), source_measure(1, 513)]
@@ -163,7 +175,7 @@ class ScoreAssistanceTest(unittest.TestCase):
         self.proposer.assert_not_called()
         self.assertEqual(result.analysisSource, "local")
         self.assertIsNone(result.model)
-        self.assertIn("attempted 0 unresolved measures in 0 bounded calls", result.warnings[0])
+        self.assertIn("reviewed 0 of 2 eligible measures in 0 bounded calls", result.warnings[0])
         self.assertIn("2 remain unresolved", result.warnings[0])
 
     def test_provider_and_parser_failures_propagate_instead_of_returning_a_local_success(self):

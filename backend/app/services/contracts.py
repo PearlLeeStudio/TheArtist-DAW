@@ -81,7 +81,9 @@ def _meta_status() -> dict[str, Any]:
         provider, model, configured = config.provider, config.model, bool(config.api_key)
     except Exception:  # an LLMConfigError, or a malformed URL that urlsplit rejects
         pass
-    return {"enabled": enabled, "configured": configured, "provider": provider, "model": model}
+    from app.services.limits import public_host
+    return {"enabled": enabled, "configured": configured, "provider": provider, "model": model,
+            "fullFileScoreImport": enabled and configured and provider == "meta" and model == "muse-spark-1.3" and not public_host()}
 
 
 def capabilities() -> ContractEnvelope:
@@ -101,6 +103,7 @@ def capabilities() -> ContractEnvelope:
             "jsonStateBytes": MAX_JSON_STATE_BYTES, "midiBytes": MAX_EXPORT_BYTES,
             "toolResultBytes": MAX_MCP_RESULT_BYTES, "requestBytes": MAX_MCP_REQUEST_BYTES,
             "scoreFileBytes": MAX_SCORE_BYTES, "scoreMeasures": MAX_SCORE_MEASURES, "metaScoreMeasures": 128,
+            "scoreAssistHarmonyBars": 16, "scoreAssistCalls": 3, "scoreAssistRunUsd": .30,
             "exportMeasures": MAX_EXPORT_MEASURES, "generatedBars": 64,
             "planTargetBars": list(TARGET_BARS), "planSectionBars": [MIN_PLAN_SECTION_BARS, MAX_PLAN_SECTION_BARS],
             "planLlmCalls": MAX_META_CALLS, "planRunUsd": MAX_RUN_USD, "planRunSeconds": RUN_BUDGET_S,
@@ -110,15 +113,18 @@ def capabilities() -> ContractEnvelope:
             "build_song": ["model_used", "tracks.*.source", "seed"],
             "import_score": ["analysisSource", "model", "requestId", "mode", "measures.*.chordBasis",
                              "measures.*.confidence", "measures.*.note", "measures.*.notes",
-                             "measures.*.writtenNotes", "measures.*.bassNotes", "measures.*.noChord"],
+                             "measures.*.writtenNotes", "measures.*.bassNotes", "measures.*.noChord",
+                             "sections.*.basis", "formAnalysis"],
             "plan_song": ["planner", "calls.*.provider", "calls.*.model", "calls.*.requestId",
                           "sections.*.source", "sections.*.modelUsed", "sections.*.rulesSlots"],
         },
         "limitations": ["build_song returns one arrangement; candidate fan-out is not implemented.",
                         "Score import defaults to local vector-PDF reading. Meta/auto requires explicit selection and may incur API cost "
-                        "(the editor's Import selects auto while its Meta assist box is checked, its default when meta.enabled and "
-                        "meta.configured); a public host refuses meta, the whole-file read, and keeps auto within its limits; "
-                        "with THEARTIST_META_ENABLED=0 (meta.enabled false) those engines return HTTP 503 and only the local reader runs.",
+                        "(the editor defaults to Meta assist when meta.enabled and meta.configured). Auto reviews up to 16 harmony "
+                        "bars with whole-score context and infers uncovered song-form sections, at most three calls/$0.30. "
+                        "It never switches an unsupported local file to a whole-file request. A public host refuses meta; "
+                        "meta.fullFileScoreImport controls that explicit PDF/image option. With THEARTIST_META_ENABLED=0 "
+                        "(meta.enabled false), attempted Meta calls return HTTP 503 and the local reader remains available.",
                         "Note-based harmony analysis is opt-in and returns reviewable interpretations, not verified original chords or imported melody notes.",
                         "export_daw requires a loopback request, server opt-in, and explicit per-call confirmation.",
                         "plan_song plans only: section chords come from generate_section, and the observe-then-act judgment runs "

@@ -19,6 +19,7 @@ from app.services import limits, llm, planner, score_import
 from app.services.limits import Caller, SpendLimiter
 from app.services.llm import Ledger, LLMClient, LLMConfig
 from app.services.score_import import ScoreInputError
+from app.models.score_import import ImportedMeasure, ImportedSection, ScoreImportResponse
 from tests.test_export import spec
 from tests.test_plan_api import body as plan_body
 from tests.test_planner import ACCEPT, VALID_PLAN, Replies, completion
@@ -189,6 +190,17 @@ class LockdownTest(LimitsCase):
             self.assertEqual(client.post("/mcp/", json={}).status_code, 404)
             self.assertEqual(client.get("/api/daw/targets").status_code, 403)
 
+    def test_auto_cannot_bypass_the_public_hosts_whole_file_reading_block(self):
+        # This synthetic PDF cannot be read locally. Auto must not turn it into
+        # a whole-file request, even when the caller can afford that request.
+        self.env(THEARTIST_META_SESSION_LIMIT_USD="3.00")
+        with mock.patch.object(score_import, "_import_meta_score") as meta:
+            res = CLIENT.post(IMPORT, json=score_body(engine="auto"), headers=SESSION)
+        self.assertEqual(res.status_code, 422, res.text)
+        self.assertIn("No Meta request was made", res.json()["detail"])
+        meta.assert_not_called()
+        self.assertEqual(self.limiter.admit(Caller("browser-a"), estimate_usd=3.0).estimate_usd, 3.0)
+
 
 class PlanLimitsTest(LimitsCase):
     """The planner routes behind the limiter on a public host: the session header, 429 before any call, settlement."""
@@ -245,11 +257,22 @@ class ScoreImportLimitsTest(LimitsCase):
         self.requests = []
         client = meta_client(self.ledger_path, self.transport)
         self.patch(mock.patch.object(score_import, "get_client", return_value=client))
+        self.patch(mock.patch("app.services.harmony_meta.get_client", return_value=client))
+        self.patch(mock.patch("app.services.llm.OpenAITransport", side_effect=AssertionError("No network in spend tests")))
 
     def transport(self, request):
         self.requests.append(request)
+        name = request["response_format"]["json_schema"]["name"]
+        reply = GOOD
+        if name in ("score_form", "harmony_notes"):
+            payload = json.loads(request["messages"][1]["content"])
+            reply = ({"sections": [{"section": None, "startMeasure": 0, "length": len(payload["measures"]),
+                                    "evidence": "A single harmonic phrase; its function remains uncertain."}]}
+                     if name == "score_form" else {"measures": [
+                         {"index": bar["index"], "chords": ["C"], "confidence": "low",
+                          "evidence": "C E G suggests tonic in the complete score context."} for bar in payload["measures"]]})
         return {"id": "completion-score", "model": "muse-spark-1.3",
-                "choices": [{"finish_reason": "stop", "message": {"content": json.dumps(GOOD)}}],
+                "choices": [{"finish_reason": "stop", "message": {"content": json.dumps(reply)}}],
                 "usage": SCORE_USAGE}, {"x-request-id": "req-score"}
 
     def test_meta_reading_is_metered_per_session_at_its_worst_case_and_settled_at_cost(self):
@@ -260,7 +283,7 @@ class ScoreImportLimitsTest(LimitsCase):
         self.assertIn("worst case $1.35 would pass $1.00", res.json()["detail"])
         self.assertEqual(self.requests, [])
         self.env(THEARTIST_META_SESSION_LIMIT_USD="3.00")
-        for engine in ("meta", "auto", "meta"):  # settled at $0.0034 each; at their worst case only two would fit
+        for engine in ("meta", "meta", "meta"):  # settled at $0.0034 each; at their worst case only two would fit
             res = CLIENT.post(IMPORT, json=score_body(engine=engine), headers=SESSION)
             self.assertEqual(res.status_code, 200, (engine, res.text))
             self.assertEqual(res.json()["analysisSource"], "meta")
@@ -270,14 +293,38 @@ class ScoreImportLimitsTest(LimitsCase):
         self.assertEqual(res.status_code, 422, res.text)
 
     def test_an_auto_import_the_local_reader_finishes_is_never_charged(self):
-        # A readable vector PDF costs nothing, so the $1.00 default must not refuse it at Meta's worst case
+        # Fully printed chords and a source section need no harmonic/form inference.
         body = score_body(build_vector_score_pdf(), engine="auto", mode="infer_harmony")
-        for _ in range(3):
-            res = CLIENT.post(IMPORT, json=body, headers=SESSION)
-            self.assertEqual(res.status_code, 200, res.text)
-            self.assertEqual(res.json()["analysisSource"], "local")
+        source = ScoreImportResponse(title="Printed chart", key="C major", timeSignature=[4, 4],
+                                     measures=[ImportedMeasure(chords=["C"], sourceLabel="Bar 1", needsReview=False,
+                                                               note="", analysisSource="local")],
+                                     sections=[ImportedSection(section=None, label="A", startMeasure=0, length=1,
+                                                               basis="explicit", note="")], warnings=[], model=None,
+                                     requestId=None, analysisSource="local", mode="infer_harmony")
+        with mock.patch("app.services.score_analysis.analyze_local_score", side_effect=lambda _: source.model_copy(deep=True)):
+            for _ in range(3):
+                res = CLIENT.post(IMPORT, json=body, headers=SESSION)
+                self.assertEqual(res.status_code, 200, res.text)
+                self.assertEqual(res.json()["analysisSource"], "local")
         self.assertEqual(self.requests, [])
         self.assertEqual(limits.limiter.admit(Caller("browser-a"), estimate_usd=1.0).estimate_usd, 1.0)  # pool untouched
+
+    def test_auto_reserves_harmony_and_form_together_and_settles_both_calls(self):
+        body = score_body(build_vector_score_pdf(), engine="auto", mode="infer_harmony")
+        self.env(THEARTIST_META_SESSION_LIMIT_USD="0.29")
+        refused = CLIENT.post(IMPORT, json=body, headers=SESSION)
+        self.assertEqual(refused.status_code, 429, refused.text)
+        self.assertEqual(self.requests, [])
+        self.env(THEARTIST_META_SESSION_LIMIT_USD="0.31")
+        for _ in range(2):
+            response = CLIENT.post(IMPORT, json=body, headers=SESSION)
+            self.assertEqual(response.status_code, 200, response.text)
+            self.assertIsNotNone(response.json()["formAnalysis"])
+        self.assertEqual(len(self.requests), 4)  # one harmony batch plus form for each import
+        self.assertEqual(Ledger(self.ledger_path).snapshot()["entries"], 4)
+        refused = CLIENT.post(IMPORT, json=body, headers=SESSION)
+        self.assertEqual(refused.status_code, 429, refused.text)
+        self.assertEqual(len(self.requests), 4)
 
 
 if __name__ == "__main__":

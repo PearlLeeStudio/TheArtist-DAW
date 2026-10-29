@@ -31,7 +31,7 @@ def body(engine):
 class CapabilitiesMetaTest(unittest.TestCase):
     def test_meta_block_reports_the_flag_the_key_presence_and_the_provider_without_the_key(self):
         data = discovered({"MODEL_API_KEY": KEY})
-        self.assertEqual(data["meta"], {"enabled": True, "configured": True, "provider": "meta", "model": "muse-spark-1.3"})
+        self.assertEqual(data["meta"], {"enabled": True, "configured": True, "provider": "meta", "model": "muse-spark-1.3", "fullFileScoreImport": True})
         self.assertNotIn(KEY, json.dumps(data))
         self.assertNotIn("MODEL_API_KEY", json.dumps(data["meta"]))
         self.assertEqual(data["tools"][0], "capabilities")  # the rest of the envelope is untouched
@@ -39,7 +39,7 @@ class CapabilitiesMetaTest(unittest.TestCase):
 
     def test_configured_is_false_without_a_key_and_enabled_is_false_with_the_flag_off(self):
         self.assertEqual(discovered({})["meta"], {"enabled": True, "configured": False, "provider": "meta",
-                                                  "model": "muse-spark-1.3"})
+                                                  "model": "muse-spark-1.3", "fullFileScoreImport": False})
         self.assertEqual(discovered({"MODEL_API_KEY": "   "})["meta"]["configured"], False)
         for value in ("0", "off", "False"):
             with self.subTest(value=value):
@@ -49,30 +49,38 @@ class CapabilitiesMetaTest(unittest.TestCase):
 
     def test_a_broken_or_partner_configuration_is_reported_not_raised(self):
         broken = discovered({"LLM_PROVIDER": "nope", "MODEL_API_KEY": KEY})["meta"]
-        self.assertEqual(broken, {"enabled": True, "configured": False, "provider": None, "model": None})
+        self.assertEqual(broken, {"enabled": True, "configured": False, "provider": None, "model": None, "fullFileScoreImport": False})
         no_host = discovered({"LLM_PROVIDER": "custom", "LLM_BASE_URL": "http://[::1/v1", "LLM_MODEL": "m",
                               "LLM_API_KEY": KEY})["meta"]
         self.assertEqual((no_host["configured"], no_host["provider"]), (False, None))
         baseten = discovered({"LLM_PROVIDER": "baseten", "BASETEN_API_KEY": KEY})["meta"]
         self.assertEqual(baseten, {"enabled": True, "configured": True, "provider": "baseten",
-                                   "model": "meta-models/muse-spark-open-1026"})
+                                   "model": "meta-models/muse-spark-open-1026", "fullFileScoreImport": False})
         self.assertEqual(discovered({"LLM_PROVIDER": "baseten"})["meta"]["configured"], False)
 
     def test_score_import_with_the_flag_off_is_503_for_meta_engines_and_the_local_reader_still_answers(self):
         env = {"THEARTIST_META_ENABLED": "0", "MODEL_API_KEY": KEY}
         with mock.patch.dict(os.environ, env, clear=True), mock.patch.object(llm, "_clients", {}):
-            for engine in ("meta", "auto"):
+            for engine in ("meta",):
                 with self.subTest(engine=engine):
                     response = CLIENT.post("/api/import/score", json=body(engine))
                     self.assertEqual(response.status_code, 503, response.text)
                     self.assertIn("disabled", response.json()["detail"])
                     self.assertIn("local reader", response.json()["detail"])
+            auto = CLIENT.post("/api/import/score", json=body("auto"))
+            self.assertEqual(auto.status_code, 422, auto.text)
+            self.assertIn("No Meta request was made", auto.json()["detail"])
             self.assertEqual(llm._clients, {})  # nothing was built, let alone called
             local = CLIENT.post("/api/import/score", json=body("local"))
             self.assertEqual(local.status_code, 422, local.text)  # this PDF is not a vector score: a local answer
             self.assertEqual(CLIENT.get("/api/capabilities").json()["data"]["meta"]["enabled"], False)
         with mock.patch.dict(os.environ, {"MODEL_API_KEY": KEY}, clear=True):
             self.assertEqual(CLIENT.get("/api/capabilities").json()["data"]["meta"]["enabled"], True)
+
+    def test_public_host_and_disabled_meta_disallow_full_file_selection(self):
+        for env in ({"MODEL_API_KEY": KEY, "THEARTIST_PUBLIC_HOST": "1"},
+                    {"MODEL_API_KEY": KEY, "THEARTIST_META_ENABLED": "0"}):
+            self.assertFalse(discovered(env)["meta"]["fullFileScoreImport"])
 
 
 if __name__ == "__main__":

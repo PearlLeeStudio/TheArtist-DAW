@@ -55,6 +55,7 @@ export interface ScoreImportResponse {
   warnings: string[];
   model: string | null;
   requestId: string | null;
+  formAnalysis?: { model: string; requestId: string | null; sectionsProposed: number } | null;
 }
 
 export interface ImportMeasureDraft {
@@ -100,6 +101,7 @@ export interface ScoreImportDraft {
   warnings: string[];
   model: string | null;
   requestId: string | null;
+  formAnalysis?: ScoreImportResponse['formAnalysis'];
 }
 
 const EXTENSION_MIMES: Record<string, ScoreMime> = {
@@ -163,17 +165,40 @@ const isValidMeter = (meter: unknown): boolean => meter === null || (Array.isArr
   Number.isInteger(meter[0]) && meter[0] >= 1 && meter[0] <= 32 && [1, 2, 4, 8, 16, 32].includes(meter[1]));
 
 /** Local is the default. External processing requires the caller's explicit choice. */
-export function scoreImportRequestBody(filename: string, mimeType: ScoreMime, dataBase64: string, mode: ScoreImportMode, allowMeta = false) {
-  return { filename, mimeType, dataBase64, mode, engine: (allowMeta ? 'auto' : 'local') as ScoreImportEngine };
+export function scoreImportRequestBody(filename: string, mimeType: ScoreMime, dataBase64: string, mode: ScoreImportMode, reader: ScoreImportEngine | boolean = false) {
+  return { filename, mimeType, dataBase64, mode, engine: typeof reader === 'string' ? reader : reader ? 'auto' : 'local' };
 }
 
-/** What Meta did in an assisted import: the bars it interpreted and their request ids, in bar order. */
-export function metaAssistSummary(draft: Pick<ScoreImportDraft, 'measures'>): { bars: number; requestIds: string[] } {
-  const interpreted = draft.measures.filter((measure) => measure.analysisSource === 'meta');
+/** Distinguish attempted analysis, nonempty proposals and unresolved source bars. */
+export function metaAssistSummary(draft: Pick<ScoreImportDraft, 'measures'>): {
+  bars: number; proposedBars: number; unresolvedBars: number; unreviewedBars: number; requestIds: string[];
+} {
+  const analyzed = draft.measures.filter((measure) => measure.analysisSource === 'meta');
   return {
-    bars: interpreted.length,
-    requestIds: [...new Set(interpreted.flatMap((measure) => measure.requestId ? [measure.requestId] : []))],
+    bars: analyzed.length,
+    proposedBars: analyzed.filter((measure) => measure.originalChords.length > 0).length,
+    unresolvedBars: draft.measures.filter((measure) => !measure.originalChords.length && !measure.originalNoChord).length,
+    unreviewedBars: draft.measures.filter((measure) => measure.analysisSource === 'local' && measure.chordBasis !== 'printed' && !measure.originalNoChord).length,
+    requestIds: [...new Set(analyzed.flatMap((measure) => measure.requestId ? [measure.requestId] : []))],
   };
+}
+
+/** A successful HTTP response can still contain unresolved or empty proposals. */
+export function scoreImportReadyStatus(draft: Pick<ScoreImportDraft, 'measures' | 'formAnalysis'>, reader: ScoreImportEngine | boolean): string {
+  if (!reader || reader === 'local') return 'Ready to review.';
+  if (reader === 'meta') return 'Full file analyzed. Ready to review.';
+  const { bars, proposedBars, unresolvedBars, unreviewedBars, requestIds } = metaAssistSummary(draft);
+  const form = draft.formAnalysis;
+  const remaining = unresolvedBars
+    ? ` ${unresolvedBars} ${unresolvedBars === 1 ? 'bar remains' : 'bars remain'} unresolved.` : '';
+  if (bars === 0 && !form) return unresolvedBars || unreviewedBars
+    ? `Ready to review. Meta was not called.${remaining} Check the reading warnings.`
+    : 'Ready to review. The local reader resolved every bar, so Meta was not called.';
+  const formStatus = form ? ` Form: ${form.sectionsProposed} inferred sections.` : '';
+  const coverage = unreviewedBars ? ` ${unreviewedBars} bars were not reviewed by Meta.` : '';
+  const allIds = [...new Set([...requestIds, ...(form?.requestId ? [form.requestId] : [])])];
+  const ids = allIds.length ? ` Request ${allIds.join(', ')}.` : '';
+  return `Ready to review. Muse Spark analyzed ${bars} ${bars === 1 ? 'bar' : 'bars'} and proposed chords for ${proposedBars}.${coverage}${formStatus}${remaining}${ids}`;
 }
 
 export function isNoChordText(value: string): boolean {
@@ -239,6 +264,13 @@ export function readScoreImportResponse(raw: unknown, expectedMode: ScoreImportM
   if (!isOneOf(mode, ['chord_symbols', 'infer_harmony']) || mode !== expectedMode) return invalidResponse();
   const analysisSource = raw.analysisSource ?? 'meta';
   if (!isOneOf(analysisSource, ['local', 'meta', 'mixed']) || (expectedEngine === 'local' && analysisSource !== 'local')) return invalidResponse();
+  if (expectedEngine === 'meta' && analysisSource !== 'meta') return invalidResponse();
+  if (raw.formAnalysis !== undefined && raw.formAnalysis !== null) {
+    const form = raw.formAnalysis;
+    if (!isRecord(form) || analysisSource === 'local' || !hasValidAttribution('meta', form.model, form.requestId) ||
+        !Number.isInteger(form.sectionsProposed) || (form.sectionsProposed as number) < 0 ||
+        (form.sectionsProposed as number) > MAX_IMPORT_SECTIONS) return invalidResponse();
+  }
   if (!isTextUpTo(raw.title, 120) || !(raw.key === null || isTextUpTo(raw.key, 40)) || !isValidMeter(raw.timeSignature) ||
       !hasValidAttribution(analysisSource, raw.model, raw.requestId) ||
       !isListUpTo(raw.measures, MAX_SCORE_IMPORT_MEASURES) || !isListUpTo(raw.sections, MAX_IMPORT_SECTIONS) ||
@@ -298,6 +330,7 @@ export function createScoreImportDraft(response: ScoreImportResponse, filename: 
     warnings: [...response.warnings],
     model: response.model,
     requestId: response.requestId,
+    formAnalysis: response.formAnalysis ?? null,
   };
 }
 

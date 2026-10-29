@@ -120,8 +120,15 @@ class ScoreExtraction(ScoreDraft):
     keyBasis: ChordBasis = "printed"
 
 
+class FormAnalysis(StrictModel):
+    model: str = Field(min_length=1, max_length=200)
+    requestId: str | None = Field(default=None, max_length=200)
+    sectionsProposed: int = Field(ge=0, le=MAX_SCORE_SECTIONS)
+
+
 class ScoreImportResponse(ScoreDraft):
     model: str | None
     requestId: str | None
     mode: ScoreImportMode = "chord_symbols"
     analysisSource: Literal["local", "meta", "mixed"] = "meta"
+    formAnalysis: FormAnalysis | None = None

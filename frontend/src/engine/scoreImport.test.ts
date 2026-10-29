@@ -9,6 +9,7 @@ import {
   createScoreImportDraft,
   importMeasureRomanPreview,
   metaAssistSummary,
+  scoreImportReadyStatus,
   scoreImportRequestBody,
   parseImportedChord,
   readScoreImportResponse,
@@ -311,20 +312,58 @@ test('mixed interpretation retains each passage source and request and is reject
   assert.throws(() => readScoreImportResponse({ ...raw, measures: [{ ...raw.measures[0], analysisSource: undefined }] }, 'infer_harmony'));
 });
 
-test('the Meta assist summary counts the bars Meta interpreted and their request ids once each', () => {
+test('the Meta assist summary separates proposals from empty answers and keeps every request id', () => {
   const meta = { chords: ['Dm'], sourceLabel: '', chordBasis: 'inferred' as const, confidence: 'medium' as const, needsReview: true, note: 'D F A.', notes: ['D4', 'F4', 'A4'], analysisSource: 'meta' as const };
   const raw = response({ analysisSource: 'mixed', mode: 'infer_harmony', sections: [], measures: [
     { chords: ['C'], sourceLabel: '', chordBasis: 'inferred', confidence: 'high', needsReview: true, note: 'C E G.', notes: ['C4', 'E4', 'G4'], analysisSource: 'local' },
     { ...meta, requestId: 'req-b' },
     { ...meta, requestId: 'req-a' },
-    { ...meta, requestId: 'req-b' },
+    { ...meta, chords: [], chordBasis: 'unreadable', confidence: 'low', requestId: 'req-b' },
   ] });
   const draft = createScoreImportDraft(readScoreImportResponse(raw, 'infer_harmony', 'auto'), 'mixed.pdf');
-  assert.deepEqual(metaAssistSummary(draft), { bars: 3, requestIds: ['req-b', 'req-a'] });
+  assert.deepEqual(metaAssistSummary(draft), { bars: 3, proposedBars: 2, unresolvedBars: 1, unreviewedBars: 1, requestIds: ['req-b', 'req-a'] });
+  assert.match(scoreImportReadyStatus(draft, true), /analyzed 3 bars and proposed chords for 2/);
+  assert.match(scoreImportReadyStatus(draft, true), /1 bar remains unresolved/);
+  assert.match(scoreImportReadyStatus(draft, true), /req-b, req-a/);
   const local = createScoreImportDraft(readScoreImportResponse(response({ analysisSource: 'local', model: null, requestId: null, mode: 'infer_harmony', sections: [], measures: [
-    { chords: ['C'], sourceLabel: '', chordBasis: 'inferred', confidence: 'high', needsReview: true, note: 'C E G.', notes: ['C4', 'E4', 'G4'] },
+    { chords: ['C'], sourceLabel: '', chordBasis: 'printed', confidence: 'high', needsReview: false, note: 'Printed C.', notes: ['C4', 'E4', 'G4'] },
   ] }), 'infer_harmony', 'auto'), 'local.pdf');
-  assert.deepEqual(metaAssistSummary(local), { bars: 0, requestIds: [] });
+  assert.deepEqual(metaAssistSummary(local), { bars: 0, proposedBars: 0, unresolvedBars: 0, unreviewedBars: 0, requestIds: [] });
+  assert.match(scoreImportReadyStatus(local, true), /local reader resolved every bar/);
+});
+
+test('assisted import does not claim local success for unresolved bars that could not be sent to Meta', () => {
+  const local = createScoreImportDraft(readScoreImportResponse(response({
+    analysisSource: 'local', model: null, requestId: null, mode: 'infer_harmony', sections: [], measures: [
+      { chords: [], sourceLabel: '', chordBasis: 'unreadable', confidence: 'low', needsReview: true, note: 'No supported notes to send.', notes: [] },
+      { chords: [], sourceLabel: '', chordBasis: 'printed', confidence: 'high', needsReview: false, note: 'Printed N.C.', noChord: true },
+    ],
+  }), 'infer_harmony', 'auto'), 'local.pdf');
+  assert.deepEqual(metaAssistSummary(local), { bars: 0, proposedBars: 0, unresolvedBars: 1, unreviewedBars: 1, requestIds: [] });
+  assert.match(scoreImportReadyStatus(local, true), /Meta was not called. 1 bar remains unresolved/);
+  assert.doesNotMatch(scoreImportReadyStatus(local, true), /resolved every bar/);
+  assert.equal(scoreImportReadyStatus(local, false), 'Ready to review.');
+});
+
+test('automatic form proposals reach editable sections without claiming no Meta call when printed chords needed none', () => {
+  const raw = response({
+    mode: 'infer_harmony', analysisSource: 'mixed', requestId: 'req-form',
+    formAnalysis: { model: 'muse-spark-1.3', requestId: 'req-form', sectionsProposed: 1 },
+    measures: [{ chords: ['C'], sourceLabel: '', chordBasis: 'printed', confidence: 'high', needsReview: false,
+      note: '', analysisSource: 'local' }],
+    sections: [{ section: 'intro', label: 'Intro', startMeasure: 0, length: 1, basis: 'inferred', note: 'An opening tonic phrase.' }],
+  });
+  const draft = createScoreImportDraft(readScoreImportResponse(raw, 'infer_harmony', 'auto'), 'source.pdf');
+  assert.match(scoreImportReadyStatus(draft, 'auto'), /Form: 1 inferred sections/);
+  assert.match(scoreImportReadyStatus(draft, 'auto'), /req-form/);
+  assert.doesNotMatch(scoreImportReadyStatus(draft, 'auto'), /Meta was not called/);
+  const song = buildScoreImportForEditor(draft);
+  assert.equal(song.sections[0].type, 'intro');
+  assert.equal(song.sections[0].origin, 'inferred');
+  assert.equal(song.importSource?.requestId, 'req-form');
+  assert.equal(scoreImportRequestBody('source.png', 'image/png', 'bytes', 'infer_harmony', 'meta').engine, 'meta');
+  assert.throws(() => readScoreImportResponse(raw, 'infer_harmony', 'meta'));
+  assert.throws(() => readScoreImportResponse({ ...raw, formAnalysis: { ...raw.formAnalysis, sectionsProposed: -1 } }, 'infer_harmony', 'auto'));
 });
 
 test('actual rests import as empty slots while unresolved bars require an explicit user N.C. choice', () => {

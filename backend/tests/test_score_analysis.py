@@ -11,7 +11,7 @@ from types import ModuleType, SimpleNamespace
 import unittest
 from unittest import mock
 
-from app.models.score_import import ScoreImportRequest, ScoreImportResponse
+from app.models.score_import import ScoreImportRequest
 from app.services import harmony_analysis, score_analysis, score_import
 from app.services.score_analysis import LocalScoreUnsupported, analyze_local_score
 
@@ -69,6 +69,10 @@ class ScoreAnalysisTest(unittest.TestCase):
                                side_effect=AssertionError("Local analysis must not initialize an API client"))
         self.get_client = no_client.start()
         self.addCleanup(no_client.stop)
+        no_notes_client = mock.patch("app.services.harmony_meta.get_client",
+                                     side_effect=AssertionError("This orchestration test must not initialize a real API client"))
+        no_notes_client.start()
+        self.addCleanup(no_notes_client.stop)
 
     def test_local_pdf_reaches_real_note_engine_and_returns_local_source_without_a_model(self):
         analyses = []
@@ -226,7 +230,8 @@ class ScoreAnalysisTest(unittest.TestCase):
     def test_auto_keeps_read_note_evidence_for_assistance_instead_of_repeating_image_ocr(self):
         self.parser.return_value = parsed_score([bar(read_notes=notes([60]))])
         with mock.patch("app.services.score_assistance.enrich_local_harmony",
-                        side_effect=lambda req, draft, **_: draft) as assist:  # before_meta is the route's hook
+                        side_effect=lambda req, draft, **_: draft) as assist, \
+                mock.patch("app.services.score_form.infer_score_form", side_effect=lambda draft, **_: draft):
             draft = score_import.import_score(request(engine="auto"))
         self.assertEqual(draft.measures[0].notes, ["C4"])
         assist.assert_called_once()
@@ -258,21 +263,26 @@ class ScoreAnalysisTest(unittest.TestCase):
         meta.assert_not_called()
         self.get_client.assert_not_called()
 
-    def test_explicit_auto_engine_falls_back_only_when_local_reader_is_unsupported(self):
-        meta_response = ScoreImportResponse(title="Meta draft", key="C major", timeSignature=[4, 4],
-                                           measures=[], sections=[], warnings=[], mode="infer_harmony",
-                                           model="muse-spark-1.3", requestId="mock-meta-request", analysisSource="meta")
-        self.parser.return_value = parsed_score(supported=False)
-        with mock.patch("app.services.score_import._import_meta_score", return_value=meta_response) as meta:
-            result = score_import.import_score(request(engine="auto"))
-        meta.assert_called_once()
-        self.assertEqual(result.analysisSource, "meta")
-        self.assertTrue(result.warnings[0].startswith("Local reading was unsupported"))
-        self.parser.return_value = parsed_score()
-        with mock.patch("app.services.score_import._import_meta_score") as meta:
+    def test_auto_rejects_unsupported_local_files_without_spend_admission_or_a_whole_file_call(self):
+        for parsed in (parsed_score(supported=False), parsed_score(complete=False)):
+            self.parser.return_value = parsed
+            admission = mock.Mock()
+            with mock.patch("app.services.score_import._import_meta_score") as meta:
+                with self.assertRaises(score_import.ScoreInputError) as error:
+                    score_import.import_score(request(engine="auto"), before_meta=admission)
+            self.assertEqual(error.exception.status_code, 422)
+            self.assertIn("No Meta request was made", str(error.exception))
+            admission.assert_not_called()
+            meta.assert_not_called()
+
+    def test_auto_returns_a_resolved_local_score_without_a_whole_file_call(self):
+        self.parser.return_value = parsed_score([bar(chords=["C"])])
+        with mock.patch("app.services.score_import._import_meta_score") as meta, \
+                mock.patch("app.services.score_form.infer_score_form", side_effect=lambda draft, **_: draft) as form:
             result = score_import.import_score(request(engine="auto"))
         self.assertEqual(result.analysisSource, "local")
         meta.assert_not_called()
+        form.assert_called_once()
 
     def test_explicit_meta_engine_skips_local_reading_and_bad_files_reach_neither_engine(self):
         sentinel = object()
