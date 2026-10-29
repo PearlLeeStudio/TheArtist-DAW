@@ -151,7 +151,8 @@ class LimiterTest(LimitsCase):
 
 
 class LockdownTest(LimitsCase):
-    """THEARTIST_PUBLIC_HOST: 403s for the DAW, warmup and Meta score reading; MIDI download and local reading stay."""
+    """THEARTIST_PUBLIC_HOST: 403s for the DAW, warmup and the whole-file Meta score read; MIDI download, local
+    reading and the bounded auto assist stay."""
 
     def setUp(self):
         super().setUp()
@@ -168,13 +169,14 @@ class LockdownTest(LimitsCase):
         reader = mock.patch.object(score_import_routes, "import_score",
                                    side_effect=ScoreInputError("reached the reader", 418))
         with reader as import_score:
-            for engine in ("meta", "auto"):
-                res = CLIENT.post(IMPORT, json=score_body(engine=engine))
-                self.assertEqual(res.status_code, 403, res.text)
-                self.assertIn("local", res.json()["detail"])
+            res = CLIENT.post(IMPORT, json=score_body(engine="meta"))
+            self.assertEqual(res.status_code, 403, res.text)
+            self.assertIn("auto", res.json()["detail"])
             self.assertEqual(import_score.call_count, 0)
-            res = CLIENT.post(IMPORT, json=score_body(engine="local"))  # no session header needed either
-            self.assertEqual((res.status_code, res.json()["detail"]), (418, "reached the reader"))
+            for engine in ("auto", "local"):  # auto is admitted only when it is about to call Meta
+                res = CLIENT.post(IMPORT, json=score_body(engine=engine))
+                self.assertEqual((res.status_code, res.json()["detail"]), (418, "reached the reader"))
+            self.assertEqual(import_score.call_count, 2)
         self.assertEqual(CLIENT.post("/api/export/midi", json=spec()).status_code, 200)
 
     def test_the_mcp_mount_is_skipped_when_the_app_is_built_for_a_public_host(self):

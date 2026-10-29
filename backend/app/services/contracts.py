@@ -115,7 +115,9 @@ def capabilities() -> ContractEnvelope:
                           "sections.*.source", "sections.*.modelUsed", "sections.*.rulesSlots"],
         },
         "limitations": ["build_song returns one arrangement; candidate fan-out is not implemented.",
-                        "Score import defaults to local vector-PDF reading. Meta/auto requires explicit selection and may incur API cost; "
+                        "Score import defaults to local vector-PDF reading. Meta/auto requires explicit selection and may incur API cost "
+                        "(the editor's Import selects auto while its Meta assist box is checked, its default when meta.enabled and "
+                        "meta.configured); a public host refuses meta, the whole-file read, and keeps auto within its limits; "
                         "with THEARTIST_META_ENABLED=0 (meta.enabled false) those engines return HTTP 503 and only the local reader runs.",
                         "Note-based harmony analysis is opt-in and returns reviewable interpretations, not verified original chords or imported melody notes.",
                         "export_daw requires a loopback request, server opt-in, and explicit per-call confirmation.",

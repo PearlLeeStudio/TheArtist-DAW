@@ -9,14 +9,16 @@ from app.services.llm import BudgetExceeded, LedgerError, LLMConfigError, LLMDis
 from app.services.score_import import ScoreInputError, import_score
 
 router = APIRouter()
-PUBLIC_HOST_REASON = ("Meta score reading is not available on this public server; choose local analysis "
-                      "(engine \"local\").")
+PUBLIC_HOST_REASON = ("Meta reading of the whole score file is not available on this public server; choose "
+                      "engine \"auto\" (Meta interprets only the bars local reading leaves open) or \"local\".")
 
 
 @router.post("/import/score", response_model=ScoreImportResponse)
 def import_score_route(req: ScoreImportRequest,
                        caller: Annotated[Caller | None, Depends(limits.caller)] = None) -> ScoreImportResponse:
-    if req.engine != "local" and limits.public_host():
+    # A public host keeps the editor's bounded assist (auto: at most two 8-bar calls, admitted against
+    # the limits below) and refuses the whole-file read, whose one request may reserve $1.35
+    if req.engine == "meta" and limits.public_host():
         raise HTTPException(status_code=403, detail=PUBLIC_HOST_REASON)
     charge: dict = {}
 
