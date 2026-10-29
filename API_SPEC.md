@@ -804,7 +804,7 @@ This is an explicit side effect on the **backend computer**. The browser enables
 
 ### Judge-server lockdown and Meta spend limits
 
-Off by default. `THEARTIST_PUBLIC_HOST=1`: `GET /api/daw/targets`, `POST /api/daw/open` and `POST /api/models/warmup` answer 403 with a reason, `/mcp/` is not mounted, and `POST /api/import/score` accepts only `engine: "local"` (403 otherwise). The Meta-calling routes — planner runs with `planner: "meta"`, Second-ear reviews, and a score import that is about to call Meta — are then admitted against limits (also available alone with `THEARTIST_META_LIMITS=1`):
+Off by default. `THEARTIST_PUBLIC_HOST=1`: `GET /api/daw/targets`, `POST /api/daw/open` and `POST /api/models/warmup` answer 403 with a reason, `/mcp/` is not mounted, and `POST /api/import/score` refuses `engine: "meta"`, the whole-file read (403); `"auto"` and `"local"` stay. The Meta-calling routes — planner runs with `planner: "meta"`, Second-ear reviews, and a score import that is about to call Meta — are then admitted against limits (also available alone with `THEARTIST_META_LIMITS=1`):
 
 | Header | Meaning |
 |---|---|

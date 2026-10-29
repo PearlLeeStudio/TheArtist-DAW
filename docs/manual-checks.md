@@ -29,9 +29,13 @@ unimplemented and are not part of the completed-feature checks.
   stay unassigned with the source preserved. Longer bars retain all source symbols
   for placement rather than silently selecting two. Cancel, close and replace files
   while a request is running.
-- [ ] Selecting a file starts local analysis automatically with an indeterminate
-  progress bar. There are no mode controls, Meta checkbox or separate review
-  checkbox. Printed chords stay unchanged; chordless passages receive proposals.
+- [ ] Selecting a file starts the analysis automatically with an indeterminate
+  progress bar. The **Meta assist** box is checked by default when the server has
+  Meta enabled and a key: the status names the bars Muse Spark interpreted and the
+  request ids, or says Meta was not called because local reading resolved every
+  bar. Unchecking (or checking) it with a file loaded analyzes again; with Meta off
+  on the server the box is disabled with a notice. Printed chords stay unchanged;
+  chordless passages receive proposals.
   The Review score dialog has no chord-analysis list. After import, select a bar
   to check its chords, Roman numerals and retained source against the original.
   Replace a file during analysis; an earlier result must not populate

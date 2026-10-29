@@ -32,7 +32,7 @@ passage with the author's Music Transformer, and hands the arrangement to the DA
 | Path | File | Calls per use | Switch |
 |---|---|---|---|
 | Score import, `engine: "meta"` or `"auto"` (API/MCP) | `backend/app/services/score_import.py` | 1 bounded read of the attachment | `THEARTIST_META_ENABLED` |
-| Note-text assistance for unresolved bars (`engine: "auto"`) | `backend/app/services/harmony_meta.py`, `score_assistance.py` | ≤ 2 calls of ≤ 8 bars | same |
+| Note-text assistance for unresolved bars (`engine: "auto"`, the Import screen's Meta assist box) | `backend/app/services/harmony_meta.py`, `score_assistance.py` | ≤ 2 calls of ≤ 8 bars | same; the box unchecked sends `engine: "local"` |
 | Complete the form planner (plan, validate, revise, judge) | `backend/app/services/planner.py`, `routes/plan.py` | ≤ 5 calls per run (1 plan, ≤ 2 revisions, ≤ 2 judgments) | same; judge role via `LLM_JUDGE_*` |
 | Second ear: pick one of a Generate's A/B/C on analyzer facts, each reason checked | `backend/app/services/review.py`, `routes/review.py` | 1 judge call | same; judge role via `LLM_JUDGE_*` |
 
@@ -62,8 +62,11 @@ remain on the [manual checklist](docs/manual-checks.md).
   without blocking import; their original symbols and evidence are retained.
   Correct highlighted project fields, then click
   **Import reviewed score** to confirm. The footer explains any blocker.
-  The import screen uses local reading only; the bounded Meta capability remains
-  available in the API for future work, without a screen option or automatic call.
+  A **Meta assist** box, checked by default when the server reports Meta enabled
+  and a key configured, lets Muse Spark interpret the bars the local reader leaves
+  open (at most two calls of eight bars per import, billed); the status line names
+  how many bars it interpreted and the request ids. Unchecked, or with
+  `THEARTIST_META_ENABLED=0`, import makes no Meta call.
 - **Roman-numeral analysis** follows the review key: in C major, C → I, Am → vi,
   G7 → V7. Changing the review key reanalyzes the same symbols. The editor's main Key
   control retains its existing behavior of transposing the score. Source proposals
@@ -495,7 +498,8 @@ THEARTIST_WARMUP_KEYS=ft_f1,ft_f4 uv run uvicorn app.main:app      # only these
 ```
 
 For a public judge server, `THEARTIST_PUBLIC_HOST=1` turns off DAW handoff, the warmup
-route and MCP, keeps score import local, and puts the Meta-calling routes behind
+route, MCP and the whole-file Meta score read (`engine: "meta"`), keeps the bounded
+import assist (`engine: "auto"`), and puts the Meta-calling routes behind
 per-session and daily spend limits; see `deploy/env.example`.
 
 ## AI Model
