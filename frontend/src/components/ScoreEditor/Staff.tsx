@@ -177,7 +177,8 @@ export default function Staff() {
     if (!keySig) return;
 
     // Get stave color from CSS variable
-    const staveColor = getComputedStyle(document.documentElement).getPropertyValue('--stave-color').trim() || '#000';
+    // Keep SVG paint bound to the theme even before the redraw effect runs.
+    const staveColor = 'var(--stave-color)';
     context.setStrokeStyle(staveColor);
     context.setFillStyle(staveColor);
 

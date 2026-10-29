@@ -65,7 +65,7 @@ export default function SessionStaff({ song }: SessionStaffProps) {
     const keySig = keySignatureFor(song.key);
     if (!keySig) return;
 
-    const staveColor = getComputedStyle(document.documentElement).getPropertyValue('--stave-color').trim() || '#000';
+    const staveColor = 'var(--stave-color)';
     context.setStrokeStyle(staveColor);
     context.setFillStyle(staveColor);
 
