@@ -9,6 +9,7 @@ from fastapi.routing import APIRoute
 from app.models.export import DawOpenRequest, DawOpenResponse, DawTargetsResponse, ExportSpec
 from app.services import limits
 from app.services.daw_launcher import DawError, daw_targets, open_daw
+from app.services.scripter_export import render_scripter, scripter_filename
 from app.services.smf_export import ExportError, render_midi, safe_title
 
 
@@ -45,6 +46,20 @@ def export_midi_route(spec: ExportSpec) -> Response:
     return Response(content=data, media_type="audio/midi", headers={
         # An ASCII fallback name, then the UTF-8 title for clients that read filename*.
         "Content-Disposition": f"attachment; filename=\"score.mid\"; filename*=UTF-8''{filename}",
+        "Cache-Control": "no-store",
+    })
+
+
+@router.post("/export/scripter")
+def export_scripter_route(spec: ExportSpec) -> Response:
+    """The arrangement as a Logic Pro Scripter script; no local side effect, so a public host serves it too."""
+    try:
+        script = render_scripter(spec)
+    except ExportError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=str(exc)) from None
+    filename = quote(scripter_filename(spec.title), safe="")
+    return Response(content=script, media_type="text/javascript; charset=utf-8", headers={
+        "Content-Disposition": f"attachment; filename=\"score.theartist.js\"; filename*=UTF-8''{filename}",
         "Cache-Control": "no-store",
     })
 

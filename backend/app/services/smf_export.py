@@ -259,12 +259,23 @@ def _encode(midi: mido.MidiFile) -> bytes:
     return data
 
 
-def render_midi(spec: ExportSpec) -> bytes:
-    """A meta track, then Harmony, Bass (when enabled) and Drums (when a pattern applies)."""
+@dataclass(frozen=True)
+class Arrangement:
+    """Every part's notes on the song's quarter-note time line: what the MIDI file and the
+    Logic Scripter script both play."""
+
+    grid: _Grid
+    harmony: list[Note]
+    bass: list[Note]
+    drums: list[Note]
+    has_drums: bool  # a drum pattern applies, so its track is written even without a hit
+
+
+def arrangement(spec: ExportSpec) -> Arrangement:
+    """The notes of every part, within the export's note limit."""
     numerator, denominator = spec.timeSignature
     quarters_per_beat = 4 / denominator
     song_quarters = len(spec.measures) * numerator * quarters_per_beat
-    end_tick = round(song_quarters * PPQ)
     genre = _normalize_genre(spec.genre)
     play = spec.play
     drum_id = play.drumPatternId if play.drumMode == "manual" else genre_drum_pattern_id(genre)
@@ -276,16 +287,25 @@ def render_midi(spec: ExportSpec) -> bytes:
     drum_notes = _drum_notes(len(spec.measures), drums, grid) if drums else []
     if sum(map(len, (harmony_notes, bass_notes, drum_notes))) > MAX_EXPORT_NOTES:
         raise ExportError("The arrangement exceeds the 100,000-note export limit.", 413)
+    return Arrangement(grid, harmony_notes, bass_notes, drum_notes, bool(drums))
+
+
+def render_midi(spec: ExportSpec) -> bytes:
+    """A meta track, then Harmony, Bass (when enabled) and Drums (when a pattern applies)."""
+    parts = arrangement(spec)
+    end_tick = round(parts.grid.song_quarters * PPQ)
+    genre = _normalize_genre(spec.genre)
+    play = spec.play
 
     midi = mido.MidiFile(type=1, ticks_per_beat=PPQ, charset="utf8")
-    midi.tracks.append(_meta_track(spec, quarters_per_beat, end_tick))
+    midi.tracks.append(_meta_track(spec, parts.grid.quarters_per_beat, end_tick))
     instrument = play.harmonyOverride or harmony_instrument(genre)
-    midi.tracks.append(_part_track(f"Harmony – {instrument.replace('_', ' ')}", harmony_notes, _HARMONY_CHANNEL,
+    midi.tracks.append(_part_track(f"Harmony – {instrument.replace('_', ' ')}", parts.harmony, _HARMONY_CHANNEL,
                                    GM_PROGRAM[instrument], play.masterVolume * play.harmonyVolume, end_tick))
     if play.bassEnabled:
-        midi.tracks.append(_part_track("Bass", bass_notes, _BASS_CHANNEL, GM_PROGRAM[bass_instrument(genre)],
+        midi.tracks.append(_part_track("Bass", parts.bass, _BASS_CHANNEL, GM_PROGRAM[bass_instrument(genre)],
                                        play.masterVolume * play.bassVolume, end_tick))
-    if drums:
-        midi.tracks.append(_part_track("Drums", drum_notes, _DRUM_CHANNEL, None,
+    if parts.has_drums:
+        midi.tracks.append(_part_track("Drums", parts.drums, _DRUM_CHANNEL, None,
                                        play.masterVolume * play.drumVolume, end_tick))
     return _encode(midi)
