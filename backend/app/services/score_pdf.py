@@ -913,7 +913,8 @@ def _starting_clef(staff: _Staff, previous: str | None, left: float, right: floa
     """The clef in force at a bar's left edge, and whether the staff shows any clef before the bar ends."""
     clef_events = [(g.x, _clef(g, staff), g) for g in staff.glyphs if g.text in _CLEFS and g.x < right]
     clef = "treble" if previous is None else previous
-    for x, selected, _ in sorted(clef_events):
+    # Key on x alone: a redrawn clef at the same x would otherwise make the sort compare glyph objects.
+    for x, selected, _ in sorted(clef_events, key=lambda event: event[0]):
         if x <= left:
             clef = selected
     return clef, bool(clef_events)

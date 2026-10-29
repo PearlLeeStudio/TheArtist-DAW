@@ -185,6 +185,32 @@ class VectorScoreTest(unittest.TestCase):
                 self.assertEqual(analysis.segments[0].candidates[0].symbol, chord)
                 self.assertEqual(analysis.segments[0].candidates[0].roman, "I")
 
+    def test_duplicated_clef_glyph_at_the_same_position_reads_like_a_single_clef(self):
+        import pdfplumber
+
+        cases = [("C4", "treble", "\ue050", ["C4", "E4", "G4"]), ("F2", "bass", "\ue062", ["F2", "A2", "C3"])]
+        for tonic, clef, code, names in cases:
+            with self.subTest(clef=clef):
+                data = build_vector_score_pdf(tonic=tonic, clef=clef)
+                with pdfplumber.open(io.BytesIO(data)) as pdf:
+                    source = pdf.pages[0]
+                    clefs = [char for char in source.chars if char["text"] == code]
+                    self.assertEqual(len(clefs), 1)
+                    # A layer that redraws the clef from its own font resource leaves a second
+                    # record at the same position; an identical record would compare equal.
+                    twin = dict(clefs[0], fontname=clefs[0]["fontname"] + "-Layer")
+                    page = SimpleNamespace(chars=source.chars + [twin], lines=source.lines, curves=source.curves,
+                                           rects=source.rects, width=source.width, height=source.height)
+                single = parse_vector_score(data)
+                pdf = mock.MagicMock()
+                pdf.__enter__.return_value = pdf
+                pdf.pages = [page]
+                with mock.patch("app.services.score_pdf.pdfplumber.open", return_value=pdf):
+                    duplicated = parse_vector_score(data)
+                self.assertEqual([note.spelling for note in duplicated.measures[0].notes], names)
+                self.assertEqual(duplicated.measures, single.measures)
+                self.assertEqual(duplicated, single)
+
     def test_pitch_meter_and_measure_clock_survive_scale_and_translation(self):
         for scale, dx, dy in ((1, 0, 0), (1.7, 33, 81), (.65, 12, 17)):
             with self.subTest(scale=scale):
