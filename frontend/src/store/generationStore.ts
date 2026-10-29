@@ -371,8 +371,10 @@ export const useGenerationStore = create<GenerationState>((set, get) => {
       if (selectedSlots.length === 0) return;
       const requestId = beginRequest();
       const targetSlots = selectedSlots.map((s) => ({ ...s }));
-      const comparison = captureGenerationComparison(song, targetSlots, useSongStore.getState().songEpoch);
       try {
+        // Inside the try: a song the capture cannot read ends the run like
+        // a failed request instead of leaving it loading with no error.
+        const comparison = captureGenerationComparison(song, targetSlots, useSongStore.getState().songEpoch);
         const { suggestions, source } = await generateChords(
           song,
           selectedSlots,
@@ -393,8 +395,8 @@ export const useGenerationStore = create<GenerationState>((set, get) => {
       if (selectedSlots.length === 0 || starredSessions.length === 0) return;
       const requestId = beginRequest();
       const targetSlots = selectedSlots.map((s) => ({ ...s }));
-      const comparison = captureGenerationComparison(song, targetSlots, useSongStore.getState().songEpoch);
       try {
+        const comparison = captureGenerationComparison(song, targetSlots, useSongStore.getState().songEpoch);
         const answers = await Promise.all(starredSessions.map((session) =>
           presetTopSuggestion(session, song, selectedSlots, sectionType)));
         if (!isCurrent(requestId) || !canApplyToCurrentSong(comparison)) return;
@@ -420,7 +422,6 @@ export const useGenerationStore = create<GenerationState>((set, get) => {
       const requestId = beginRequest();
       const { section, song, songEpoch, rollback } = placeSectionForRun(sectionType, chordCount / CHORDS_PER_BAR);
       const targetSlots = slotsForMeasures(section.startMeasure, section.length);
-      const comparison = captureGenerationComparison(song, targetSlots, songEpoch, 'section');
       const pending: PendingSection = { controller: new AbortController(), rollback, hiddenList };
       pendingSection = pending;
       /** The run did not land: take its section back, end the request and
@@ -433,6 +434,7 @@ export const useGenerationStore = create<GenerationState>((set, get) => {
 
       let message: string;
       try {
+        const comparison = captureGenerationComparison(song, targetSlots, songEpoch, 'section');
         const res = await generateSection(
           {
             song,
