@@ -57,7 +57,8 @@ import threading
 import time
 import uuid
 from collections.abc import Callable, Iterator, Mapping, Sequence
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, replace
+from contextvars import ContextVar
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -78,6 +79,10 @@ class LLMError(Exception):
     def __init__(self, message: str, *, request_id: str | None = None) -> None:
         super().__init__(message)
         self.request_id = request_id
+        # Only this chat_json invocation, including a rejected first attempt.
+        # Shared-ledger totals cannot identify a caller's spend under concurrency.
+        self.cost_usd = 0.0
+        self.attempts = 0
 
     def __str__(self) -> str:
         text = super().__str__()
@@ -700,6 +705,12 @@ class PreparedRequest:
 
 @dataclass(frozen=True)
 class LLMResult:
+    """The final reply; cost_usd and attempts include the whole chat_json invocation.
+
+    Usage, request ID and latency describe the final HTTP attempt. The ledger
+    retains those details separately for every attempt, including rejected ones.
+    """
+
     data: dict[str, Any]
     text: str
     provider: str
@@ -707,13 +718,39 @@ class LLMResult:
     request_id: str | None
     response_id: str | None
     usage: dict[str, int]  # prompt_tokens, cached_tokens, completion_tokens, reasoning_tokens
-    cost_usd: float
+    cost_usd: float  # total settled cost of this invocation, including a JSON retry
     latency_ms: int
     label: str
     attempts: int = 1  # 2 when an open-weight provider's first reply was not the requested JSON
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
+
+
+@dataclass
+class CallCosts:
+    cost_usd: float = 0.0
+    settled_calls: int = 0
+    reliable: bool = True
+
+
+_call_cost_scopes: ContextVar[tuple[CallCosts, ...]] = ContextVar("llm_call_cost_scopes", default=())
+
+
+@contextlib.contextmanager
+def track_call_costs() -> Iterator[CallCosts]:
+    """Collect this execution context's settlements, across multiple LLM calls.
+
+    Enter inside the synchronous request worker that makes the calls, not in
+    ASGI middleware. Independent workers never share a collector. Nested scopes
+    count toward their enclosing request too; the context is restored on exit.
+    """
+    costs = CallCosts()
+    token = _call_cost_scopes.set((*_call_cost_scopes.get(), costs))
+    try:
+        yield costs
+    finally:
+        _call_cost_scopes.reset(token)
 
 
 def _lower_headers(headers: Mapping[str, Any] | None) -> dict[str, str]:
@@ -924,24 +961,32 @@ class LLMClient:
             if not _guards_json(cfg.provider) or exc.kind not in _RETRIED_KINDS:
                 raise
             rejected = exc
-        if cancelled is not None and cancelled():
-            raise LLMCancelled("LLM request was cancelled", request_id=rejected.request_id)
-        log.warning("llm retrying provider=%s model=%s label=%s once after %s", cfg.provider, cfg.model, label,
-                    rejected.kind)
-        note = (f"Your previous reply was rejected ({rejected.kind}): {rejected.args[0]}. Reply again with a "
-                "single JSON object matching the schema; no prose, no code fences.")
-        last = messages[-1]
-        if last.get("role") == "user" and isinstance(last.get("content"), str):
-            # Chat templates that want alternating roles reject two user turns in a row
-            retry_messages = [*messages[:-1], {**last, "content": f"{last['content']}\n\n{note}"}]
-        else:
-            retry_messages = [*messages, {"role": "user", "content": note}]
-        # A caller's bound covers the first request's input; the added text counts a token per character
-        bound = None if input_token_upper_bound is None else input_token_upper_bound + len(note)
-        prepared = self.prepare(retry_messages, schema, input_token_upper_bound=bound, **options)
-        if cancelled is not None and cancelled():
-            raise LLMCancelled("LLM request was cancelled", request_id=rejected.request_id)
-        return self._attempt(transport, prepared, label, 2)
+        try:
+            if cancelled is not None and cancelled():
+                raise LLMCancelled("LLM request was cancelled", request_id=rejected.request_id)
+            log.warning("llm retrying provider=%s model=%s label=%s once after %s", cfg.provider, cfg.model, label,
+                        rejected.kind)
+            note = (f"Your previous reply was rejected ({rejected.kind}): {rejected.args[0]}. Reply again with a "
+                    "single JSON object matching the schema; no prose, no code fences.")
+            last = messages[-1]
+            if last.get("role") == "user" and isinstance(last.get("content"), str):
+                # Chat templates that want alternating roles reject two user turns in a row
+                retry_messages = [*messages[:-1], {**last, "content": f"{last['content']}\n\n{note}"}]
+            else:
+                retry_messages = [*messages, {"role": "user", "content": note}]
+            # A caller's bound covers the first request's input; the added text counts a token per character
+            bound = None if input_token_upper_bound is None else input_token_upper_bound + len(note)
+            prepared = self.prepare(retry_messages, schema, input_token_upper_bound=bound, **options)
+            if cancelled is not None and cancelled():
+                raise LLMCancelled("LLM request was cancelled", request_id=rejected.request_id)
+            result = self._attempt(transport, prepared, label, 2)
+        except LLMError as exc:
+            exc.cost_usd = _round_usd(rejected.cost_usd + exc.cost_usd)
+            exc.attempts += rejected.attempts
+            if exc.request_id is None:
+                exc.request_id = rejected.request_id
+            raise
+        return replace(result, cost_usd=_round_usd(rejected.cost_usd + result.cost_usd))
 
     def _attempt(self, transport: Transport, prepared: PreparedRequest, label: str, attempts: int) -> LLMResult:
         """Reserve, send and settle one request; every failure is settled, then raised as an LLMError."""
@@ -968,6 +1013,7 @@ class LLMClient:
             # the __context__ of what propagates: its text and the SDK's request can carry the key
             self._close(entry_id, label, settle_usd, "failed", latency_ms, request_id=error.request_id,
                         error=error)
+            error.cost_usd, error.attempts = settle_usd, 1
             raise error
 
         # Every failure from here on settles too, at the actual usage once it is known (else at the
@@ -1000,6 +1046,7 @@ class LLMClient:
                 attempts=attempts)
         self._close(entry_id, label, cost, "failed", latency_ms, request_id=request_id,
                     response_id=response_id, usage=usage, error=error)
+        error.cost_usd, error.attempts = cost, 1
         raise error
 
     def _get_transport(self) -> Transport:
@@ -1111,8 +1158,23 @@ class LLMClient:
             note = self._scrub(f"{getattr(error, 'kind', type(error).__name__)}: {error}")
         elif usage is None:
             note = "usage missing from the response; settled at the reservation"
-        spent = self.ledger.settle(entry_id, settled_usd=cost, status=status, request_id=request_id,
-                                   response_id=response_id, usage=usage, latency_ms=latency_ms, error=note)
+        try:
+            spent = self.ledger.settle(entry_id, settled_usd=cost, status=status, request_id=request_id,
+                                       response_id=response_id, usage=usage, latency_ms=latency_ms, error=note)
+        except BaseException as exc:
+            for scope in _call_cost_scopes.get():
+                scope.reliable = False
+            if isinstance(exc, LLMError):
+                # The HTTP attempt already happened. A failed ledger write must
+                # not turn its known usage (or conservative reservation) into a
+                # zero-cost failure for planner/review admission settlement.
+                exc.cost_usd, exc.attempts = cost, 1
+                if exc.request_id is None:
+                    exc.request_id = request_id
+            raise
+        for scope in _call_cost_scopes.get():
+            scope.cost_usd = _round_usd(scope.cost_usd + cost)
+            scope.settled_calls += 1
         tokens = ("in=%(prompt_tokens)d cached=%(cached_tokens)d out=%(completion_tokens)d "
                   "reasoning=%(reasoning_tokens)d" % usage) if usage else "unknown"
         log.log(logging.INFO if status == "settled" else logging.WARNING,

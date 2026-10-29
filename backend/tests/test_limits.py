@@ -3,7 +3,9 @@
 import json
 import os
 import tempfile
+import threading
 import unittest
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from unittest import mock
@@ -325,6 +327,44 @@ class ScoreImportLimitsTest(LimitsCase):
         refused = CLIENT.post(IMPORT, json=body, headers=SESSION)
         self.assertEqual(refused.status_code, 429, refused.text)
         self.assertEqual(len(self.requests), 4)
+
+    def test_overlapping_imports_settle_only_their_own_calls_on_success_and_failure(self):
+        self.env(THEARTIST_META_SESSION_LIMIT_USD="3.00")
+        client = score_import.get_client()
+        for fails in (False, True):
+            with self.subTest(fails=fails):
+                started, release = threading.Event(), threading.Event()
+
+                def transport(request):
+                    first = not started.is_set()
+                    if first:
+                        started.set()
+                        if not release.wait(timeout=3):
+                            raise AssertionError("test did not release the first import")
+                    reply, headers = self.transport(request)
+                    if first and fails:
+                        reply["choices"][0]["message"]["content"] = "not JSON"
+                    return reply, headers
+
+                client._transport = transport
+                first_session, second_session = f"first-{fails}", f"second-{fails}"
+                with ThreadPoolExecutor(max_workers=1) as executor:
+                    first = executor.submit(CLIENT.post, IMPORT, json=score_body(),
+                                            headers={limits.SESSION_HEADER: first_session})
+                    try:
+                        self.assertTrue(started.wait(timeout=3))
+                        second = CLIENT.post(IMPORT, json=score_body(),
+                                             headers={limits.SESSION_HEADER: second_session})
+                        self.assertEqual(second.status_code, 200, second.text)
+                    finally:
+                        release.set()
+                    response = first.result(timeout=5)
+                self.assertEqual(response.status_code, 502 if fails else 200, response.text)
+                # Exactly one $0.003375 call per caller, even though the second
+                # request settled while the first was still awaiting its reply.
+                for session in (first_session, second_session):
+                    admission = self.limiter.admit(Caller(session), estimate_usd=3.0 - .003375)
+                    self.assertIsNotNone(admission)
 
 
 if __name__ == "__main__":

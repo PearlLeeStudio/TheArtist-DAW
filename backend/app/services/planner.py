@@ -507,7 +507,6 @@ class _Run:
                        max_request_usd=MAX_REQUEST_USD, reasoning_effort=sent_effort)
         try:
             prepared = client.prepare(messages, schema, **options)
-            spent_before = client.ledger.snapshot()["spent_usd"]
         except LLMError as exc:
             raise PlanFailure(_kind(exc), _message(exc), exc.request_id) from None
         # What the run has settled plus this call's worst case (an open-weight provider may reserve twice,
@@ -521,20 +520,19 @@ class _Run:
         try:
             result = client.chat_json(messages, schema, label=f"plan.{step}", cancelled=self.cancelled, **options)
         except LLMError as exc:
-            cost = max(0.0, _spent(client) - spent_before)
-            if cost > 0 or not isinstance(exc, (BudgetExceeded, LLMConfigError, LedgerError, LLMSchemaError, LLMCancelled)):
+            cost = exc.cost_usd
+            if exc.attempts or not isinstance(exc, (BudgetExceeded, LLMConfigError, LedgerError, LLMSchemaError, LLMCancelled)):
                 # A retry may be refused after its first attempt already settled.
                 # Keep that spend too, as well as a timeout's full reservation.
                 latency = round((time.perf_counter() - started) * 1000)
                 self.meta_ms += latency
-                self.reserved_usd += prepared.reserve_usd
+                self.reserved_usd += prepared.reserve_usd * max(1, exc.attempts)
                 self._record(step, attempt, client, exc.request_id, cost, latency, sent_effort, ok=False)
             raise PlanFailure(_kind(exc), _message(exc), exc.request_id) from None
         latency = round((time.perf_counter() - started) * 1000)
         self.meta_ms += latency
         self.reserved_usd += prepared.reserve_usd * result.attempts
-        # The result prices only the last attempt; the ledger contains the rejected first reply too.
-        cost = result.cost_usd if result.attempts == 1 else max(result.cost_usd, _spent(client) - spent_before)
+        cost = result.cost_usd
         self._record(step, attempt, client, result.request_id, cost, latency, sent_effort)
         self.check_cancelled()
         return result
@@ -556,13 +554,6 @@ class _Run:
             calls=self.calls, spendUsd=self.spend_usd, reservedUsd=round(self.reserved_usd, 8),
             elapsedMs=self.elapsed_ms(), metaMs=self.meta_ms, generationMs=self.generation_ms, error=self.error,
         )
-
-
-def _spent(client: LLMClient) -> float:
-    try:
-        return client.ledger.snapshot()["spent_usd"]
-    except LLMError:
-        return 0.0
 
 
 def _kind(exc: LLMError) -> str:

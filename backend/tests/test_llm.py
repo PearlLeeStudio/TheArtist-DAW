@@ -567,11 +567,61 @@ class SchemaTests(unittest.TestCase):
 
 
 class OpenWeightTests(LLMTestCase):
+    def test_cost_collectors_are_isolated_between_concurrent_request_threads(self):
+        gate = threading.Barrier(2)
+        costs, failures = [], []
+
+        def transport(request):
+            gate.wait(timeout=3)
+            return response(json.dumps(GOOD)), {"x-request-id": "thread-call"}
+
+        client = self.client(transport)
+
+        def worker():
+            try:
+                with llm.track_call_costs() as cost:
+                    self.call(client)
+                costs.append(cost)
+            except BaseException as exc:
+                failures.append(exc)
+
+        workers = [threading.Thread(target=worker) for _ in range(2)]
+        for worker in workers:
+            worker.start()
+        for worker in workers:
+            worker.join(timeout=5)
+        self.assertFalse(any(worker.is_alive() for worker in workers))
+        self.assertEqual(failures, [])
+        self.assertEqual(len(costs), 2)
+        for cost in costs:
+            self.assertAlmostEqual(cost.cost_usd, USAGE_COST)
+            self.assertEqual((cost.settled_calls, cost.reliable), (1, True))
+        self.assertAlmostEqual(client.ledger.snapshot()["spent_usd"], 2 * USAGE_COST)
+
+    def test_cost_collector_restores_its_context_and_keeps_settlement_failure_visible(self):
+        client = self.client(FakeTransport(response(json.dumps(GOOD))))
+        with llm.track_call_costs() as outer:
+            self.call(client)
+            with llm.track_call_costs() as inner:
+                self.call(client)
+        self.call(client)
+        self.assertAlmostEqual(outer.cost_usd, 2 * USAGE_COST)
+        self.assertAlmostEqual(inner.cost_usd, USAGE_COST)
+        self.assertEqual((outer.settled_calls, inner.settled_calls), (2, 1))
+        with llm.track_call_costs() as failed:
+            with mock.patch.object(client.ledger, "settle", side_effect=LedgerError("disk unavailable")):
+                with self.assertRaises(LedgerError) as caught:
+                    self.call(client)
+        self.assertEqual((failed.cost_usd, failed.settled_calls, failed.reliable), (0, 0, False))
+        self.assertAlmostEqual(caught.exception.cost_usd, USAGE_COST)
+        self.assertEqual(caught.exception.attempts, 1)
+
     def test_cancel_before_a_call_sends_nothing_and_reserves_nothing(self):
         transport = FakeTransport(response(json.dumps(GOOD)))
         client = self.client(transport)
-        with self.assertRaises(llm.LLMCancelled):
+        with self.assertRaises(llm.LLMCancelled) as ctx:
             self.call(client, cancelled=lambda: True)
+        self.assertEqual((ctx.exception.cost_usd, ctx.exception.attempts), (0, 0))
         self.assertEqual(transport.calls, [])
         self.assertEqual(client.ledger.snapshot()["spent_usd"], 0)
         self.assertEqual(client.ledger.snapshot()["outstanding_usd"], 0)
@@ -586,9 +636,14 @@ class OpenWeightTests(LLMTestCase):
             return reply
 
         client = self.client(cancel_after_reply, **BASETEN)
-        with self.assertRaises(llm.LLMCancelled) as ctx:
-            self.call(client, cancelled=cancelled.is_set)
+        with llm.track_call_costs() as costs:
+            with self.assertRaises(llm.LLMCancelled) as ctx:
+                self.call(client, cancelled=cancelled.is_set)
         self.assertEqual(ctx.exception.request_id, "req_1")
+        self.assertAlmostEqual(ctx.exception.cost_usd, USAGE_COST)
+        self.assertEqual(ctx.exception.attempts, 1)
+        self.assertAlmostEqual(costs.cost_usd, USAGE_COST)
+        self.assertEqual(costs.settled_calls, 1)
         self.assertEqual(len(transport.calls), 1)
         self.assertAlmostEqual(client.ledger.snapshot()["spent_usd"], USAGE_COST)
         self.assertEqual(client.ledger.snapshot()["outstanding_usd"], 0)
@@ -677,6 +732,7 @@ class OpenWeightTests(LLMTestCase):
         with self.assertLogs("app.services.llm", "WARNING") as logs:
             result = self.call(self.client(transport, **BASETEN), input_token_upper_bound=1000)
         self.assertEqual((result.data, result.attempts, len(transport.calls)), (GOOD, 2, 2))
+        self.assertAlmostEqual(result.cost_usd, 2 * USAGE_COST)
         first, second = transport.calls
         # The same request; the rejection is appended to the last user turn, so the roles still alternate
         self.assertEqual(second["messages"][:-1], first["messages"][:-1])
@@ -702,6 +758,8 @@ class OpenWeightTests(LLMTestCase):
                 with self.assertRaises(LLMResponseError) as ctx:
                     self.call(self.client(transport, **BASETEN))
                 self.assertEqual((ctx.exception.kind, ctx.exception.request_id, len(transport.calls)), (kind, "req_2", 2))
+                self.assertAlmostEqual(ctx.exception.cost_usd, 2 * USAGE_COST)
+                self.assertEqual(ctx.exception.attempts, 2)
         for kind, reply in (("length", response('{"title": "Sun', finish_reason="length")), ("empty", response(None))):
             with self.subTest(not_retried=kind):
                 transport = Replies(reply, response(json.dumps(GOOD)))

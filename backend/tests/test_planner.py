@@ -15,7 +15,7 @@ from app.models.schemas import CADENCE_TYPES, SectionGenerateRequest, SectionGen
 from app.models.sections import SECTION_TYPES, section_title
 from app.services import planner
 from app.services.genre_tables import GENRE_DEFAULTS
-from app.services.llm import Ledger, LLMClient, LLMConfig
+from app.services.llm import Ledger, LedgerError, LLMClient, LLMConfig
 from app.services.song_form import apply_song_form, apply_song_form_with_slots, resolves_to_tonic, rule_slots
 
 KEY = "sk-planner-test-never-log-this"
@@ -365,6 +365,53 @@ class PlannerRunTest(unittest.TestCase):
         self.assertAlmostEqual(trace.spendUsd, 2 * CALL_COST)
         self.assertAlmostEqual(trace.calls[0].costUsd, 2 * CALL_COST)
         self.assertAlmostEqual(trace.spendUsd, self.ledger.snapshot()["spent_usd"])
+
+    def test_settlement_write_failure_keeps_the_paid_attempt_in_the_trace(self):
+        transport = Replies(completion(VALID_PLAN))
+        client = self.client(transport)
+        with mock.patch.object(client.ledger, "settle", side_effect=LedgerError("write failed")):
+            trace = planner.plan_song(request())
+        self.assertEqual((trace.status, trace.error.kind, len(transport.calls)), ("error", "config", 1))
+        self.assertAlmostEqual(trace.spendUsd, CALL_COST)
+        self.assertEqual([(call.ok, call.requestId) for call in trace.calls], [(False, "req_1")])
+        self.assertGreater(client.ledger.snapshot()["outstanding_usd"], 0)
+
+    def test_overlapping_call_never_enters_another_plans_cost(self):
+        # Settle another caller while this plan's transport is in flight. This
+        # deterministically reproduces the shared-ledger race without a network.
+        cases = [("meta", False, False), ("baseten", True, False), ("baseten", False, False),
+                 ("baseten", False, True)]
+        for provider, retry_succeeds, cancel in cases:
+            with self.subTest(provider=provider, retry_succeeds=retry_succeeds, cancel=cancel):
+                config = LLMConfig(provider=provider,
+                                   base_url="https://api.meta.ai/v1" if provider == "meta" else "https://inference.baseten.co/v1",
+                                   model="muse-spark-1.3" if provider == "meta" else "meta-models/muse-spark-open-1026",
+                                   api_key=KEY, key_source="MODEL_API_KEY" if provider == "meta" else "BASETEN_API_KEY")
+                other = LLMClient(config, self.ledger, Replies(completion(VALID_PLAN)))
+                replies = Replies(completion("bad first reply"), completion(VALID_PLAN if retry_succeeds else "bad again"))
+                cancelled = threading.Event()
+                before = self.ledger.snapshot()["spent_usd"]
+
+                def overlapping_transport(body):
+                    if not replies.calls:
+                        other.chat_json(planner._plan_messages(request()), planner.PLAN_SCHEMA,
+                                        name="other_plan", label="other-caller")
+                    answer = replies(body)
+                    if cancel:
+                        cancelled.set()
+                    return answer
+
+                client = LLMClient(config, self.ledger, overlapping_transport)
+                with mock.patch.object(planner, "get_client", return_value=client):
+                    trace = planner.complete_form(request(), cancelled=cancelled.is_set) if cancel else planner.plan_song(request())
+                expected_attempts = 1 if provider == "meta" or cancel else 2
+                self.assertEqual(len(replies.calls), expected_attempts)
+                self.assertAlmostEqual(trace.spendUsd, expected_attempts * CALL_COST)
+                self.assertAlmostEqual(trace.calls[0].costUsd, expected_attempts * CALL_COST)
+                self.assertEqual(trace.status, "ok" if retry_succeeds else "error")
+                self.assertAlmostEqual(self.ledger.snapshot()["spent_usd"] - before,
+                                       (expected_attempts + 1) * CALL_COST)
+                self.assertEqual(self.ledger.snapshot()["outstanding_usd"], 0)
 
     def test_a_refused_open_weight_retry_keeps_the_first_attempts_cost(self):
         transport = Replies(completion("Here is the plan."), completion(VALID_PLAN))

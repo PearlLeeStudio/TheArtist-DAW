@@ -28,7 +28,7 @@ from app.models.review import (
 )
 from app.services import inference
 from app.services.llm import LLMClient, LLMError, LLMResult, get_client
-from app.services.planner import DIATONIC_GENRES, _in_key, _key_collection, _kind, _message, _spent, _symbol
+from app.services.planner import DIATONIC_GENRES, _in_key, _key_collection, _kind, _message, _symbol
 from app.services.song_form import rule_slots
 
 REVIEW_LABEL = "review"
@@ -222,7 +222,6 @@ def _call(client: LLMClient, messages: list[dict[str, str]], schema: dict[str, A
                    max_request_usd=REVIEW_MAX_USD, reasoning_effort=effort)
     try:
         prepared = client.prepare(messages, schema, **options)
-        spent_before = client.ledger.snapshot()["spent_usd"]
     except LLMError as exc:
         raise ReviewFailure(_kind(exc), _message(exc), exc.request_id, provider=cfg.provider,
                             model=cfg.model) from None
@@ -235,15 +234,10 @@ def _call(client: LLMClient, messages: list[dict[str, str]], schema: dict[str, A
     try:
         result = client.chat_json(messages, schema, label=REVIEW_LABEL, **options)
     except LLMError as exc:
-        # What the ledger moved: nothing for a refusal before the send, the settled first attempt when
-        # the ledger refused an open-weight retry, the whole reservation after a timeout
-        cost = max(0.0, _spent(client) - spent_before)
         raise ReviewFailure(_kind(exc), _message(exc), exc.request_id, provider=cfg.provider, model=cfg.model,
-                            cost_usd=round(cost, 8), latency_ms=_elapsed_ms(started)) from None
+                            cost_usd=round(exc.cost_usd, 8), latency_ms=_elapsed_ms(started)) from None
     latency = _elapsed_ms(started)
     cost = result.cost_usd
-    if result.attempts > 1:  # the result carries only the last attempt's cost; the ledger has both
-        cost = max(cost, _spent(client) - spent_before)
     return result, round(cost, 8), latency
 
 

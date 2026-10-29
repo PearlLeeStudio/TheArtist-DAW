@@ -5,32 +5,35 @@ from fastapi import APIRouter, Depends, HTTPException
 from app.models.score_import import ScoreImportRequest, ScoreImportResponse
 from app.services import limits
 from app.services.limits import Caller
-from app.services.llm import BudgetExceeded, LedgerError, LLMConfigError, LLMDisabled, LLMError, LLMTimeout
+from app.services.llm import BudgetExceeded, LedgerError, LLMConfigError, LLMDisabled, LLMError, LLMTimeout, track_call_costs
 from app.services.score_import import ScoreInputError, import_score
 
 router = APIRouter()
 PUBLIC_HOST_REASON = ("Meta reading of the whole score file is not available on this public server; choose "
-                      "engine \"auto\" (Meta interprets only the bars local reading leaves open) or \"local\".")
+                      "engine \"auto\" (bounded harmony and form analysis with the whole score context) or \"local\".")
 
 
 @router.post("/import/score", response_model=ScoreImportResponse)
 def import_score_route(req: ScoreImportRequest,
                        caller: Annotated[Caller | None, Depends(limits.caller)] = None) -> ScoreImportResponse:
-    # A public host keeps the editor's bounded assist (auto: at most two 8-bar calls, admitted against
-    # the limits below) and refuses the whole-file read, whose one request may reserve $1.35
+    # A public host keeps bounded assist (two 8-bar harmony calls plus one form call,
+    # up to $0.30) and refuses the whole-file read, whose one request may reserve $1.35.
     if req.engine == "meta" and limits.public_host():
         raise HTTPException(status_code=403, detail=PUBLIC_HOST_REASON)
     charge: dict = {}
 
     def admit(worst_case_usd: float) -> None:
         # Admitted only when the service is about to call Meta (an auto import the local reader
-        # finishes costs nothing), then settled at what the ledger recorded for it
+        # finishes costs nothing), then settled only for this request's calls.
         admission = limits.limiter.admit(caller, estimate_usd=worst_case_usd)
         if admission is not None:
-            charge.update(admission=admission, spent_before=limits.spent_usd())
+            charge.update(admission=admission)
 
     try:
-        return import_score(req, before_meta=admit if req.engine != "local" else None)
+        # This is a synchronous FastAPI worker. Its context covers both the note
+        # batches and form call, without counting another request's settlements.
+        with track_call_costs() as costs:
+            return import_score(req, before_meta=admit if req.engine != "local" else None)
     except ScoreInputError as exc:
         raise HTTPException(status_code=exc.status_code, detail=str(exc)) from None
     except BudgetExceeded:
@@ -50,6 +53,5 @@ def import_score_route(req: ScoreImportRequest,
         raise HTTPException(status_code=502, detail="Meta could not return a valid score or harmony result. "
                             "Try a shorter passage or select local analysis." + request) from None
     finally:
-        spent_before = charge.get("spent_before")
-        if spent_before is not None and (spent_after := limits.spent_usd()) is not None:
-            limits.limiter.settle(charge["admission"], spent_after - spent_before)
+        if admission := charge.get("admission"):
+            limits.limiter.settle(admission, costs.cost_usd if costs.reliable else admission.estimate_usd)

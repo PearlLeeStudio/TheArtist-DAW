@@ -165,6 +165,51 @@ class JudgeTest(ReviewCase):
         self.assertAlmostEqual(caught.exception.cost_usd, CALL_COST)
         self.assertAlmostEqual(client.ledger.snapshot()["spent_usd"], CALL_COST)
 
+    def test_settlement_write_failure_keeps_the_paid_cost_for_the_route_limiter(self):
+        transport = self.fake_judge(completion(PICK_B))
+        client = review.get_client()
+        with mock.patch.object(client.ledger, "settle", side_effect=llm.LedgerError("write failed")), \
+                mock.patch.object(limits.limiter, "settle") as settle:
+            response = CLIENT.post(REVIEW, json=body())
+        self.assertEqual(response.status_code, 503, response.text)
+        self.assertAlmostEqual(response.json()["costUsd"], CALL_COST)
+        self.assertEqual(response.json()["error"]["requestId"], "req_1")
+        self.assertEqual(len(transport.calls), 1)
+        settle.assert_called_once_with(None, CALL_COST)
+
+    def test_review_cost_excludes_an_overlapping_call_on_its_ledger(self):
+        req = ReviewRequest(**body())
+        rows = review.candidate_facts(req)
+        messages = review._messages(req, rows)
+        schema = review.review_schema([candidate.label for candidate in req.candidates], list(rows[0].model_dump(exclude={"label"})))
+        for provider, retry_succeeds in [("meta", False), ("baseten", True), ("baseten", False)]:
+            with self.subTest(provider=provider, retry_succeeds=retry_succeeds):
+                config = LLMConfig(provider=provider,
+                                   base_url="https://api.meta.ai/v1" if provider == "meta" else "https://inference.baseten.co/v1",
+                                   model="muse-spark-1.3" if provider == "meta" else "meta-models/muse-spark-open-1026",
+                                   api_key=KEY, key_source="MODEL_API_KEY" if provider == "meta" else "BASETEN_API_KEY")
+                ledger = Ledger(self.ledger_path, 25.0)
+                other = LLMClient(config, ledger, Replies(completion(PICK_B)))
+                replies = Replies(completion("bad reply"), completion(PICK_B if retry_succeeds else "still bad"))
+                before = ledger.snapshot()["spent_usd"]
+
+                def overlapping_transport(request):
+                    if not replies.calls:
+                        other.chat_json(messages, schema, name="other_review", label="other-caller")
+                    return replies(request)
+
+                client = LLMClient(config, ledger, overlapping_transport)
+                if retry_succeeds:
+                    _, cost, _ = review._call(client, messages, schema)
+                else:
+                    with self.assertRaises(review.ReviewFailure) as caught:
+                        review._call(client, messages, schema)
+                    cost = caught.exception.cost_usd
+                own_attempts = 1 if provider == "meta" else 2
+                self.assertAlmostEqual(cost, own_attempts * CALL_COST)
+                self.assertAlmostEqual(ledger.snapshot()["spent_usd"] - before, (own_attempts + 1) * CALL_COST)
+                self.assertEqual(ledger.snapshot()["outstanding_usd"], 0)
+
     def test_a_fact_off_the_table_is_a_model_statement(self):
         reply = {"choice": "C", "reasons": [
             {"factName": "outOfKeyRatio", "value": 0.33, "claim": "Only the Bb7 leaves the key."},  # 0.333 rounded
