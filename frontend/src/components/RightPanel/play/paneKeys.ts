@@ -11,6 +11,12 @@ export const KEY_TEXT_STYLE: CSSProperties = { fontSize: 12, lineHeight: '14px',
  *  part toggles and their Auto keys. */
 export const WIDE_KEY_STYLE: CSSProperties = { height: 26, minHeight: 26, ...KEY_TEXT_STYLE };
 
+/** The picked key of a narrow grid reads heavier at the same width: bold would widen
+ *  its label and wrap it past the key's height, a hairline stroke does not. */
+export function pickedLabelStyle(picked: boolean): CSSProperties {
+  return { fontWeight: 400, WebkitTextStroke: picked ? '0.45px currentColor' : undefined };
+}
+
 /** Where an arrow, Home or End key moves from choice `index` of `count`
  *  (the arrows wrap around); null for any other key. */
 function nextChoiceIndex(key: string, index: number, count: number): number | null {

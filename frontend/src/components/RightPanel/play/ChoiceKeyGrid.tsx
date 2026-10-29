@@ -1,3 +1,5 @@
+import { pickedLabelStyle } from './paneKeys';
+
 interface Choice {
   id: string | number;
   label: string;
@@ -31,7 +33,7 @@ export default function ChoiceKeyGrid({ choices, fullWidth }: ChoiceKeyGridProps
           data-active={choice.checked ? '' : undefined} onClick={choice.onSelect} title={choice.title}
           className="te-key btn-hover h-full min-w-0"
           style={{ minHeight: 26, padding: '0 3px', fontSize: 12, lineHeight: '12px', letterSpacing: 'normal',
-            whiteSpace: 'normal', overflowWrap: 'anywhere', fontWeight: choice.checked ? 700 : 400 }}>
+            whiteSpace: 'normal', overflowWrap: 'anywhere', ...pickedLabelStyle(choice.checked) }}>
           {choice.label}
         </button>
       ))}

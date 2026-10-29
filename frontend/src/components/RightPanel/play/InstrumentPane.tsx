@@ -6,7 +6,7 @@ import { genreHarmonyInstrument } from '../../../engine/playSettings';
 import { HARMONY_INSTRUMENTS, instrumentLabel } from '../../../engine/genreTables';
 import type { InstrumentFamily } from '../../../engine/genreTables';
 import { genreTag } from './genreTag';
-import { KEY_TEXT_STYLE, moveChoiceByKey } from './paneKeys';
+import { KEY_TEXT_STYLE, moveChoiceByKey, pickedLabelStyle } from './paneKeys';
 
 interface FamilyGroup {
   id: string;
@@ -116,7 +116,7 @@ export default function InstrumentPane() {
               data-active={selected ? '' : undefined} onClick={() => setHarmonyOverride(instrument.name)}
               title={`${openGroup.label} · ${label}`} className="te-key btn-hover min-w-0 px-1 py-1 text-left"
               style={{ minHeight: 28, fontSize: 11, lineHeight: '12px', letterSpacing: 'normal',
-                whiteSpace: 'normal', overflowWrap: 'anywhere', fontWeight: selected ? 700 : 400 }}>
+                whiteSpace: 'normal', overflowWrap: 'anywhere', ...pickedLabelStyle(selected) }}>
               {label}
             </button>
           );
