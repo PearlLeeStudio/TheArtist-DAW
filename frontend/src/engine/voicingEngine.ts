@@ -53,21 +53,29 @@ export const QUALITY_INTERVALS: Record<string, number[]> = {
 /** MIDI middle C: an inverted slash chord whose bass lands at or above it drops an octave. */
 const MIDDLE_C = 60;
 
+/** A note name's pitch class, or undefined for any name that is not a key of NOTE_VALUES.
+ *  Indexing the plain object directly also finds inherited names ('constructor',
+ *  '__proto__', ...), which a hand-edited project can carry; the function or object that
+ *  comes back equals no pitch class, so the bass search below would never end. */
+function notePc(name: string): number | undefined {
+  return Object.hasOwn(NOTE_VALUES, name) ? NOTE_VALUES[name] : undefined;
+}
+
 /** Slash bass as a pitch class, or null when the chord has none (or it is the root). */
 function slashBassPc(chord: Chord): number | null {
   if (!chord.bass) return null;
-  const bass = NOTE_VALUES[chord.bass];
-  const root = NOTE_VALUES[chord.root];
+  const bass = notePc(chord.bass);
+  const root = notePc(chord.root);
   if (bass === undefined || root === undefined || bass === root) return null;
   return bass;
 }
 
 /** Root-position stack from the root in octave 3 (the voicing before slash basses were honoured). */
 export function rootPositionVoicing(chord: Chord): number[] {
-  const rootValue = NOTE_VALUES[chord.root];
+  const rootValue = notePc(chord.root);
   if (rootValue === undefined) return [];
 
-  const intervals = QUALITY_INTERVALS[chord.quality] || QUALITY_INTERVALS['maj'];
+  const intervals = Object.hasOwn(QUALITY_INTERVALS, chord.quality) ? QUALITY_INTERVALS[chord.quality] : QUALITY_INTERVALS['maj'];
   const baseMidi = 48 + rootValue;
   return intervals.map(interval => baseMidi + interval);
 }
@@ -126,10 +134,10 @@ function lowestFret(openMidi: number, wanted: (pitchClass: number) => boolean): 
 }
 
 export function generateGuitarVoicing(chord: Chord): number[] {
-  const rootValue = NOTE_VALUES[chord.root];
+  const rootValue = notePc(chord.root);
   if (rootValue === undefined) return [-1, -1, -1, -1, -1, -1];
 
-  const intervals = QUALITY_INTERVALS[chord.quality] || QUALITY_INTERVALS['maj'];
+  const intervals = Object.hasOwn(QUALITY_INTERVALS, chord.quality) ? QUALITY_INTERVALS[chord.quality] : QUALITY_INTERVALS['maj'];
   const chordNotes = new Set(intervals.map(i => (rootValue + i) % 12));
   const isChordTone = (pitchClass: number) => chordNotes.has(pitchClass);
 

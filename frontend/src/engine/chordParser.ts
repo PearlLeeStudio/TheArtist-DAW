@@ -80,7 +80,8 @@ export function parseChordName(input: string): Chord | null {
     rest = rest.replace(extMatch[0], '');
   }
 
-  const quality = QUALITY_MAP[rest] || rest || 'maj';
+  // Own keys only: "Cconstructor" must not pick up Object.prototype members as a quality.
+  const quality = Object.hasOwn(QUALITY_MAP, rest) ? QUALITY_MAP[rest] : (rest || 'maj');
 
   return { root, quality, bass, romanNumeral: '', voicing: [], extensions };
 }

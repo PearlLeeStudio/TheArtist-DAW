@@ -4,6 +4,7 @@ import type { Chord } from '../models/types';
 import {
   generateGuitarVoicing,
   generatePianoVoicing,
+  guitarVoicingNotes,
   QUALITY_INTERVALS,
   resolvePianoVoicing,
   rootPositionVoicing,
@@ -69,4 +70,57 @@ test('guitar: chords without a slash bass are unchanged', () => {
   assert.deepEqual(generateGuitarVoicing(chord('C', 'maj')), [-1, 3, 2, 0, 1, 0]);
   assert.deepEqual(generateGuitarVoicing(chord('A', 'maj')), [-1, 0, 2, 2, 2, 0]);
   assert.deepEqual(generateGuitarVoicing(chord('G', 'maj')), [3, 2, 0, 0, 0, 3]);
+});
+
+// A hand-edited or imported project can name a root or bass after an inherited
+// property of NOTE_VALUES. Such a name is not a note: the root has no voicing and
+// the bass is no slash bass, exactly as for any other unknown name. Before the
+// hasOwn guard these lookups returned a function or object and the piano bass
+// search never ended, so a regression here shows as a test run that never finishes.
+test('piano: an inherited property name as the bass is not a slash bass', () => {
+  for (const bass of ['__proto__', 'constructor']) {
+    assert.deepEqual(rootPositionVoicing(chord('C', 'maj', bass)), [48, 52, 55], bass);
+    assert.deepEqual(generatePianoVoicing(chord('C', 'maj', bass)), [48, 52, 55], bass);
+    assert.deepEqual(generatePianoVoicing(chord('A', 'm7', bass)), [57, 60, 64, 67], bass);
+    assert.deepEqual(resolvePianoVoicing(chord('C', 'maj', bass)), [48, 52, 55], bass);
+    // a stored root-position voicing is not "saved before slash basses": it stays
+    assert.deepEqual(resolvePianoVoicing(chord('C', 'maj', bass, [48, 52, 55])), [48, 52, 55], bass);
+    assert.deepEqual(resolvePianoVoicing(chord('C', 'maj', bass, [60, 64, 67])), [60, 64, 67], bass);
+  }
+});
+
+test('piano: an inherited property name as the root has no voicing', () => {
+  assert.deepEqual(rootPositionVoicing(chord('toString', 'maj')), []);
+  assert.deepEqual(generatePianoVoicing(chord('toString', 'maj')), []);
+  assert.deepEqual(generatePianoVoicing(chord('toString', 'maj', 'C')), []);
+  assert.deepEqual(generatePianoVoicing(chord('toString', 'maj', 'E')), []);
+  assert.deepEqual(resolvePianoVoicing(chord('toString', 'maj', 'C')), []);
+  assert.deepEqual(resolvePianoVoicing(chord('toString', 'maj', 'C', [60, 64, 67])), [60, 64, 67]);
+});
+
+test('guitar: an inherited property name as root or bass is not a note', () => {
+  assert.deepEqual(generateGuitarVoicing(chord('C', 'maj', '__proto__')), [-1, 3, 2, 0, 1, 0]);
+  assert.deepEqual(generateGuitarVoicing(chord('C', 'maj', 'constructor')), [-1, 3, 2, 0, 1, 0]);
+  assert.deepEqual(generateGuitarVoicing(chord('toString', 'maj')), [-1, -1, -1, -1, -1, -1]);
+  assert.deepEqual(generateGuitarVoicing(chord('toString', 'maj', 'C')), [-1, -1, -1, -1, -1, -1]);
+  assert.deepEqual(guitarVoicingNotes(chord('toString', 'maj', 'C')), []);
+  assert.deepEqual(guitarVoicingNotes(chord('C', 'maj', '__proto__')), [48, 52, 55, 60, 64]);
+});
+
+test('valid chords keep their known voicings through every exported function', () => {
+  assert.deepEqual(rootPositionVoicing(chord('F', 'maj', 'C')), [53, 57, 60]);
+  assert.deepEqual(generatePianoVoicing(chord('F', 'maj', 'C')), [48, 53, 57]);
+  assert.deepEqual(resolvePianoVoicing(chord('F', 'maj', 'C')), [48, 53, 57]);
+  assert.deepEqual(generateGuitarVoicing(chord('F', 'maj', 'C')), [-1, 3, 3, 2, 1, 1]);
+  assert.deepEqual(guitarVoicingNotes(chord('F', 'maj', 'C')), [48, 53, 57, 60, 65]);
+  assert.deepEqual(generatePianoVoicing(chord('Bb', 'maj7', 'A')), [57, 58, 62, 65]);
+  assert.deepEqual(generatePianoVoicing(chord('G', '7')), [55, 59, 62, 65]);
+  assert.deepEqual(guitarVoicingNotes(chord('G', 'maj')), [43, 47, 50, 55, 59, 67]);
+});
+
+test('an inherited property name as the quality falls back to a major triad', () => {
+  for (const quality of ['constructor', '__proto__', 'toString']) {
+    assert.deepEqual(generatePianoVoicing(chord('C', quality)), [48, 52, 55]);
+    assert.deepEqual(generateGuitarVoicing(chord('C', quality)), [-1, 3, 2, 0, 1, 0]);
+  }
 });
