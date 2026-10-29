@@ -6,6 +6,7 @@ import { reasonFact, rulesSlotCount, useReviewStore } from '../../store/reviewSt
 import { useSessionStore, selectStarredSessions } from '../../store/sessionStore';
 import GenerateProgress from './GenerateProgress';
 import { getChordDisplayParts } from '../../engine/chordDisplay';
+import { manualChordDraft, manualDraftChord, type ManualChordDraft } from '../../engine/manualChordDraft';
 import { parseSuggestionChords } from '../../engine/chordGenerator';
 import type { Suggestion, SuggestionSource } from '../../engine/chordGenerator';
 import { canApplyComparison, compareCandidate, matchesCapturedRange, slotKey } from '../../engine/generationComparison';
@@ -111,33 +112,6 @@ const ALTERATIONS = [
   { label: '#11', value: '#11' },
   { label: 'b13', value: 'b13' },
 ];
-
-function resolveQuality(base: string, ext: string, add: string, sus: string): string {
-  if (sus) return ext ? `${ext}${sus}` : sus;
-  if (add) return base === 'min' ? `m(${add})` : add;
-  if (base === '5') return ext === '7' ? '7(no3)' : '5';
-
-  if (base === 'min') {
-    if (ext === 'maj7') return 'mMaj7';
-    if (ext === '7') return 'm7';
-    if (ext === '9') return 'm9';
-    if (ext === '11') return 'm11';
-    if (ext === '13') return 'm13';
-    if (ext === '6') return 'm6';
-    if (ext === '') return 'min';
-    return `m${ext}`;
-  }
-  if (base === 'dim') {
-    if (ext === '7') return 'dim7';
-    if (ext === '') return 'dim';
-    return 'm7b5';
-  }
-  if (base === 'aug') return ext === '7' ? 'aug7' : 'aug';
-
-  if (ext === '7') return '7';
-  if (ext) return ext;
-  return 'maj';
-}
 
 const btnStyle = (active: boolean) => ({
   background: active ? 'var(--text-heading)' : 'var(--btn-bg)',
@@ -556,13 +530,22 @@ export default function ChordActions({ view = 'all' }: ChordActionsProps) {
   const [expandedState, setExpandedState] = useState({ songEpoch, open: view === 'manual' });
   const expanded = expandedState.songEpoch === songEpoch && expandedState.open;
   const setExpanded = useCallback((open: boolean) => setExpandedState({ songEpoch, open }), [songEpoch]);
-  const [root, setRoot] = useState('C');
-  const [base, setBase] = useState('maj');
-  const [ext, setExt] = useState('');
-  const [add, setAdd] = useState('');
-  const [sus, setSus] = useState('');
-  const [alts, setAlts] = useState<string[]>([]);
-  const [bass, setBass] = useState('');
+  const firstSlot = selectedSlots[0] ?? null;
+  const selectedChord = firstSlot
+    ? song.measures[firstSlot.measureIndex]?.chords[firstSlot.slotIndex] ?? null : null;
+  // Reset before committing a render, including when generation/import replaces
+  // the selected chord. Unrelated song edits must not erase a pending draft.
+  const draftSource = JSON.stringify([
+    songEpoch, firstSlot?.measureIndex, firstSlot?.slotIndex,
+    selectedChord?.root, selectedChord?.quality, selectedChord?.bass, selectedChord?.extensions,
+  ]);
+  const [manualState, setManualState] = useState(() => ({ source: draftSource, draft: manualChordDraft(selectedChord) }));
+  const draft = manualState.source === draftSource ? manualState.draft : manualChordDraft(selectedChord);
+  if (manualState.source !== draftSource) setManualState({ source: draftSource, draft });
+  const { root, base, ext, add, sus, alts, bass } = draft;
+  const updateDraft = (patch: Partial<ManualChordDraft>) => {
+    setManualState({ source: draftSource, draft: { ...draft, ...patch } });
+  };
 
   // AI suggestion state lives in generationStore, so an in-flight generate
   // keeps running and its result lands even if the user navigates away
@@ -635,7 +618,6 @@ export default function ChordActions({ view = 'all' }: ChordActionsProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const firstSlot = selectedSlots[0] ?? null;
   // Song-form section the drag-path Generate sends: the explicit pick, or
   // for 'auto' the section that contains the whole selection (else none).
   const selectedMeasures = [...new Set(selectedSlots.map((s) => s.measureIndex))];
@@ -646,22 +628,16 @@ export default function ChordActions({ view = 'all' }: ChordActionsProps) {
   const generateDisabled = loading || tooManyMeasures || !firstSlot;
   const showGenerateControls = view !== 'manual';
   const comparisonOpen = showSuggestions && suggestions.length > 0;
-  const quality = resolveQuality(base, ext, add, sus);
-  const previewParts = getChordDisplayParts({ root, quality, bass: bass || undefined, romanNumeral: '', voicing: [], extensions: alts });
+  const previewParts = getChordDisplayParts(manualDraftChord(draft));
 
-  const handleSet = useCallback(() => {
+  const handleSet = () => {
     if (!firstSlot) return;
-    const chord: Chord = {
-      root, quality,
-      bass: bass || undefined,
-      romanNumeral: '', voicing: [], extensions: alts,
-    };
-    setChord(firstSlot, chord);
+    setChord(firstSlot, manualDraftChord(draft));
     setExpanded(false);
-  }, [firstSlot, root, quality, bass, alts, setChord, setExpanded]);
+  };
 
   const toggleAlt = (alt: string) => {
-    setAlts(prev => prev.includes(alt) ? prev.filter(a => a !== alt) : [...prev, alt]);
+    updateDraft({ alts: alts.includes(alt) ? alts.filter(a => a !== alt) : [...alts, alt] });
   };
 
   // Picking a model also re-syncs song.genre, so the harmony rhythm pattern
@@ -829,7 +805,7 @@ export default function ChordActions({ view = 'all' }: ChordActionsProps) {
             <label className="text-[10px] block mb-0.5" style={{ color: 'var(--text-muted)' }}>Root</label>
             <div className="flex flex-wrap gap-0.5">
               {ROOTS.map(r => (
-                <button key={r} onClick={() => setRoot(r)} className="px-1.5 py-0.5  text-[11px] font-bold" style={btnStyle(r === root)}>{r}</button>
+                <button key={r} onClick={() => updateDraft({ root: r })} className="px-1.5 py-0.5  text-[11px] font-bold" style={btnStyle(r === root)}>{r}</button>
               ))}
             </div>
           </div>
@@ -840,7 +816,7 @@ export default function ChordActions({ view = 'all' }: ChordActionsProps) {
               <label className="text-[10px] block mb-0.5" style={{ color: 'var(--text-muted)' }}>Base</label>
               <div className="flex gap-0.5">
                 {BASE_QUALITIES.map(q => (
-                  <button key={q.value} onClick={() => { setBase(q.value); setSus(''); }} className="flex-1 px-1 py-0.5  text-[11px]" style={btnStyle(q.value === base && !sus)}>{q.label}</button>
+                  <button key={q.value} onClick={() => updateDraft({ base: q.value, sus: '', originalQuality: undefined })} className="flex-1 px-1 py-0.5  text-[11px]" style={btnStyle(q.value === base && !sus)}>{q.label}</button>
                 ))}
               </div>
             </div>
@@ -848,7 +824,7 @@ export default function ChordActions({ view = 'all' }: ChordActionsProps) {
               <label className="text-[10px] block mb-0.5" style={{ color: 'var(--text-muted)' }}>Sus</label>
               <div className="flex gap-0.5">
                 {SUS_OPTIONS.map(s => (
-                  <button key={s.value || 'n'} onClick={() => setSus(s.value)} className="flex-1 px-1 py-0.5  text-[10px]" style={btnStyle(s.value === sus)}>{s.label}</button>
+                  <button key={s.value || 'n'} onClick={() => updateDraft({ sus: s.value, originalQuality: undefined })} className="flex-1 px-1 py-0.5  text-[10px]" style={btnStyle(s.value === sus)}>{s.label}</button>
                 ))}
               </div>
             </div>
@@ -859,7 +835,7 @@ export default function ChordActions({ view = 'all' }: ChordActionsProps) {
             <label className="text-[10px] block mb-0.5" style={{ color: 'var(--text-muted)' }}>Ext</label>
             <div className="flex flex-wrap gap-0.5">
               {EXTENSIONS.map(e => (
-                <button key={e.value || 'n'} onClick={() => setExt(e.value)} className="px-1.5 py-0.5  text-[11px]" style={btnStyle(e.value === ext)}>{e.label}</button>
+                <button key={e.value || 'n'} onClick={() => updateDraft({ ext: e.value, originalQuality: undefined })} className="px-1.5 py-0.5  text-[11px]" style={btnStyle(e.value === ext)}>{e.label}</button>
               ))}
             </div>
           </div>
@@ -869,7 +845,7 @@ export default function ChordActions({ view = 'all' }: ChordActionsProps) {
             <label className="text-[10px] block mb-0.5" style={{ color: 'var(--text-muted)' }}>Add</label>
             <div className="flex gap-0.5">
               {ADD_OPTIONS.map(a => (
-                <button key={a.value || 'n'} onClick={() => setAdd(a.value)} className="px-1.5 py-0.5  text-[11px]" style={btnStyle(a.value === add)}>{a.label}</button>
+                <button key={a.value || 'n'} onClick={() => updateDraft({ add: a.value, originalQuality: undefined })} className="px-1.5 py-0.5  text-[11px]" style={btnStyle(a.value === add)}>{a.label}</button>
               ))}
             </div>
           </div>
@@ -890,9 +866,9 @@ export default function ChordActions({ view = 'all' }: ChordActionsProps) {
           <div>
             <label className="text-[10px] block mb-0.5" style={{ color: 'var(--text-muted)' }}>Bass /</label>
             <div className="flex flex-wrap gap-0.5">
-              <button onClick={() => setBass('')} className="px-1.5 py-0.5  text-[11px]" style={btnStyle(!bass)}>-</button>
+              <button onClick={() => updateDraft({ bass: '' })} className="px-1.5 py-0.5  text-[11px]" style={btnStyle(!bass)}>-</button>
               {ROOTS.map(r => (
-                <button key={r} onClick={() => setBass(r)} className="px-1.5 py-0.5  text-[11px]" style={btnStyle(r === bass)}>{r}</button>
+                <button key={r} onClick={() => updateDraft({ bass: r })} className="px-1.5 py-0.5  text-[11px]" style={btnStyle(r === bass)}>{r}</button>
               ))}
             </div>
           </div>
