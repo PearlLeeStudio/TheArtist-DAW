@@ -167,6 +167,15 @@ export function scoreImportRequestBody(filename: string, mimeType: ScoreMime, da
   return { filename, mimeType, dataBase64, mode, engine: (allowMeta ? 'auto' : 'local') as ScoreImportEngine };
 }
 
+/** What Meta did in an assisted import: the bars it interpreted and their request ids, in bar order. */
+export function metaAssistSummary(draft: Pick<ScoreImportDraft, 'measures'>): { bars: number; requestIds: string[] } {
+  const interpreted = draft.measures.filter((measure) => measure.analysisSource === 'meta');
+  return {
+    bars: interpreted.length,
+    requestIds: [...new Set(interpreted.flatMap((measure) => measure.requestId ? [measure.requestId] : []))],
+  };
+}
+
 export function isNoChordText(value: string): boolean {
   return /^N\.?C\.?$/i.test(value.trim());
 }

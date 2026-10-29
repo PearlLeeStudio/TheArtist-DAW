@@ -2,6 +2,8 @@ import { useEffect, useId, useRef, useState } from 'react';
 import type { CSSProperties, KeyboardEvent } from 'react';
 import type { Song } from '../../models/types';
 import { STANDARD_KEYS } from '../../engine/keySignatures';
+import { metaHeaders } from '../../engine/metaSession';
+import { fetchMetaCapability, type MetaCapability } from '../../engine/planClient';
 import { SECTION_GROUPS, isSectionType, sectionLabel, sectionsInGroup } from '../../engine/songForm';
 import {
   buildScoreImportForEditor,
@@ -9,6 +11,7 @@ import {
   createScoreImportDraft,
   IMPORT_TIME_SIGNATURES,
   MAX_SCORE_IMPORT_BYTES,
+  metaAssistSummary,
   readScoreImportResponse,
   scoreImportRequestBody,
   validateScoreImportForEditor,
@@ -77,6 +80,15 @@ function isEditorMeter(meter: string): boolean {
   return (IMPORT_TIME_SIGNATURES as readonly string[]).includes(meter);
 }
 
+/** The status line after an analysis: with Meta assist, what Muse Spark interpreted. */
+function readyStatus(draft: ScoreImportDraft, assisted: boolean): string {
+  if (!assisted) return 'Ready to review.';
+  const { bars, requestIds } = metaAssistSummary(draft);
+  if (bars === 0) return 'Ready to review. The local reader resolved every bar, so Meta was not called.';
+  const ids = requestIds.length ? ` · request ${requestIds.join(', ')}` : '';
+  return `Ready to review. Muse Spark interpreted ${bars} ${bars === 1 ? 'bar' : 'bars'} the local reader left open${ids}.`;
+}
+
 /** Why the import button is disabled, or '' when it is enabled. `validation`
  *  is null until a draft exists. */
 function importBlockReason(reading: boolean, running: boolean, validation: ScoreImportValidation | null): string {
@@ -137,6 +149,21 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
   const [running, setRunning] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState('');
+  // Meta assist is on unless the user unchecks it or the server reports Meta off or
+  // without a key; null until /api/capabilities answers (or when it does not), and
+  // then an analysis shows the server's own answer.
+  const [metaAssist, setMetaAssist] = useState(true);
+  const [meta, setMeta] = useState<MetaCapability | null>(null);
+  const metaAvailable = meta === null || (meta.enabled && meta.configured);
+  const assisted = metaAssist && metaAvailable;
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetchMetaCapability(controller.signal)
+      .then((capability) => setMeta(capability))
+      .catch(() => { /* unknown: the box stays as the user set it */ });
+    return () => controller.abort();
+  }, []);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -202,7 +229,7 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
       sourceRef.current = selected;
       setSource(selected);
       setReading(false);
-      void recognize(selected, sequence);
+      void recognize(selected, sequence, assisted);
     } catch (caught) {
       if (isCurrent(sequence)) {
         setError(caught instanceof Error ? caught.message : 'The file could not be read.');
@@ -212,7 +239,8 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
     }
   };
 
-  const recognize = async (selected: SourceFile, sequence: number) => {
+  /** `assist`: local reading first, then Muse Spark for the bars it leaves open (engine auto). */
+  const recognize = async (selected: SourceFile, sequence: number, assist: boolean) => {
     if (!isCurrent(sequence) || closedRef.current || runningRef.current) return;
     const controller = new AbortController();
     controllerRef.current = controller;
@@ -220,7 +248,7 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
     setRunning(true);
     setDraft(null);
     setError(null);
-    setStatus('Analyzing score…');
+    setStatus(assist ? 'Analyzing score with Meta assist…' : 'Analyzing score…');
     let timedOut = false;
     const timer = window.setTimeout(() => { timedOut = true; controller.abort(); }, ANALYSIS_TIMEOUT_MS);
     try {
@@ -229,16 +257,18 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
       if (controller.signal.aborted) throw new Error('Recognition was interrupted.');
       const response = await fetch('/api/import/score', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(scoreImportRequestBody(selected.file.name, selected.mimeType, dataBase64, IMPORT_MODE, false)),
+        // A server with Meta limits admits an assisted import per browser session
+        headers: { 'Content-Type': 'application/json', ...(assist ? metaHeaders() : {}) },
+        body: JSON.stringify(scoreImportRequestBody(selected.file.name, selected.mimeType, dataBase64, IMPORT_MODE, assist)),
         signal: controller.signal,
       });
       const body: unknown = await response.json().catch(() => null);
       if (!isCurrent(sequence)) return;
       if (!response.ok) throw new Error(recognitionErrorMessage(body, response.status));
-      const recognized = readScoreImportResponse(body, IMPORT_MODE, 'local');
-      setDraft(createScoreImportDraft(recognized, selected.file.name));
-      setStatus('Ready to review.');
+      const recognized = readScoreImportResponse(body, IMPORT_MODE, assist ? 'auto' : 'local');
+      const created = createScoreImportDraft(recognized, selected.file.name);
+      setDraft(created);
+      setStatus(readyStatus(created, assist));
     } catch (caught) {
       if (!isCurrent(sequence)) return;
       setStatus('');
@@ -258,7 +288,15 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
   const retryAnalysis = () => {
     const selected = sourceRef.current;
     if (!selected || runningRef.current || reading) return;
-    void recognize(selected, ++sequenceRef.current);
+    void recognize(selected, ++sequenceRef.current, assisted);
+  };
+
+  // Switching the box analyzes a loaded score again with the new choice, replacing the review.
+  const toggleMetaAssist = (checked: boolean) => {
+    setMetaAssist(checked);
+    const selected = sourceRef.current;
+    if (!selected || runningRef.current || reading) return;
+    void recognize(selected, ++sequenceRef.current, checked && metaAvailable);
   };
 
   const editDraft = (update: DraftUpdate) => {
@@ -303,11 +341,23 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
 
         <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-5">
           <div className="flex flex-wrap items-end justify-between gap-3">
-            <label className="flex min-w-0 flex-col gap-1 text-xs" style={mutedStyle}>
-              PDF score · up to 8 MiB
-              {/* Cleared after each pick, so choosing the same file again still starts an analysis. */}
-              <input ref={fileRef} type="file" accept=".pdf,application/pdf" className="max-w-full text-sm" onChange={(e) => { void chooseFile(e.target.files?.[0]); e.target.value = ''; }} />
-            </label>
+            <div className="flex min-w-0 flex-col gap-2">
+              <label className="flex min-w-0 flex-col gap-1 text-xs" style={mutedStyle}>
+                PDF score · up to 8 MiB
+                {/* Cleared after each pick, so choosing the same file again still starts an analysis. */}
+                <input ref={fileRef} type="file" accept=".pdf,application/pdf" className="max-w-full text-sm" onChange={(e) => { void chooseFile(e.target.files?.[0]); e.target.value = ''; }} />
+              </label>
+              <label className="flex items-center gap-2 text-xs" style={mutedStyle} title="At most two Meta API calls of eight bars per import; printed chords are never sent for reinterpretation">
+                <input type="checkbox" checked={assisted} disabled={!metaAvailable || running || reading} onChange={(e) => toggleMetaAssist(e.target.checked)} />
+                Meta assist: Muse Spark interprets the bars the local reader leaves open (Meta API, billed)
+              </label>
+              {meta && !metaAvailable && (
+                <p className="text-xs" style={mutedStyle}>
+                  {meta.enabled ? 'No Meta key is configured on this server: local reading only.'
+                    : 'Meta is off on this server (THEARTIST_META_ENABLED=0): local reading only.'}
+                </p>
+              )}
+            </div>
             <div className="flex gap-2">
               {(reading || running) && <button type="button" className="px-3 py-2 text-xs btn-hover" style={controlStyle} onClick={cancelRecognition}>Cancel</button>}
               {source && !draft && !running && !reading && <button type="button" onClick={retryAnalysis} className="px-3 py-2 text-xs btn-hover" style={controlStyle}>Try again</button>}

@@ -8,6 +8,7 @@ import {
   checkScoreFile,
   createScoreImportDraft,
   importMeasureRomanPreview,
+  metaAssistSummary,
   scoreImportRequestBody,
   parseImportedChord,
   readScoreImportResponse,
@@ -308,6 +309,22 @@ test('mixed interpretation retains each passage source and request and is reject
   assert.equal(draft.measures[1].analysisSource, 'meta');
   assert.equal(buildImportedSong(draft).importSource?.measures?.[1].requestId, 'bounded-request');
   assert.throws(() => readScoreImportResponse({ ...raw, measures: [{ ...raw.measures[0], analysisSource: undefined }] }, 'infer_harmony'));
+});
+
+test('the Meta assist summary counts the bars Meta interpreted and their request ids once each', () => {
+  const meta = { chords: ['Dm'], sourceLabel: '', chordBasis: 'inferred' as const, confidence: 'medium' as const, needsReview: true, note: 'D F A.', notes: ['D4', 'F4', 'A4'], analysisSource: 'meta' as const };
+  const raw = response({ analysisSource: 'mixed', mode: 'infer_harmony', sections: [], measures: [
+    { chords: ['C'], sourceLabel: '', chordBasis: 'inferred', confidence: 'high', needsReview: true, note: 'C E G.', notes: ['C4', 'E4', 'G4'], analysisSource: 'local' },
+    { ...meta, requestId: 'req-b' },
+    { ...meta, requestId: 'req-a' },
+    { ...meta, requestId: 'req-b' },
+  ] });
+  const draft = createScoreImportDraft(readScoreImportResponse(raw, 'infer_harmony', 'auto'), 'mixed.pdf');
+  assert.deepEqual(metaAssistSummary(draft), { bars: 3, requestIds: ['req-b', 'req-a'] });
+  const local = createScoreImportDraft(readScoreImportResponse(response({ analysisSource: 'local', model: null, requestId: null, mode: 'infer_harmony', sections: [], measures: [
+    { chords: ['C'], sourceLabel: '', chordBasis: 'inferred', confidence: 'high', needsReview: true, note: 'C E G.', notes: ['C4', 'E4', 'G4'] },
+  ] }), 'infer_harmony', 'auto'), 'local.pdf');
+  assert.deepEqual(metaAssistSummary(local), { bars: 0, requestIds: [] });
 });
 
 test('actual rests import as empty slots while unresolved bars require an explicit user N.C. choice', () => {
