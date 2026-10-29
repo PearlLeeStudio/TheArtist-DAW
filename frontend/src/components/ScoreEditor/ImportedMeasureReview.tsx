@@ -11,10 +11,6 @@ interface ImportedMeasureReviewProps {
 export default function ImportedMeasureReview({ song, selectedSlots }: ImportedMeasureReviewProps) {
   const sources = song.importSource?.measures;
   if (!sources?.length) return null;
-  const unresolved = sources.filter((source, index) => {
-    const measure = song.measures[index];
-    return !!measure && hasUnresolvedSlots(measure, source);
-  }).length;
   const index = selectedSlots[0]?.measureIndex;
   const source = index === undefined ? undefined : sources[index];
   const measure = index === undefined ? undefined : song.measures[index];
@@ -22,7 +18,6 @@ export default function ImportedMeasureReview({ song, selectedSlots }: ImportedM
 
   return (
     <div className="mb-3 space-y-1 text-xs" style={{ color: 'var(--text-muted)' }}>
-      <p>{unresolved > 0 ? `${unresolved} imported ${unresolved === 1 ? 'bar has' : 'bars have'} unresolved chord slots. ` : ''}Select a bar and use Input → Set Chord or MIDI to edit its chords.</p>
       {/* Keyed by song and bar, so the details start collapsed for every newly selected bar. */}
       {source && measure && index !== undefined && (
         <SourceDetails key={`${song.id}-${index}`} index={index} source={source} measure={measure} selectedCount={selectedCount} />
