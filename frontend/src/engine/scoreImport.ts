@@ -187,18 +187,16 @@ export function metaAssistSummary(draft: Pick<ScoreImportDraft, 'measures'>): {
 export function scoreImportReadyStatus(draft: Pick<ScoreImportDraft, 'measures' | 'formAnalysis'>, reader: ScoreImportEngine | boolean): string {
   if (!reader || reader === 'local') return 'Ready to review.';
   if (reader === 'meta') return 'Full file analyzed. Ready to review.';
-  const { bars, proposedBars, unresolvedBars, unreviewedBars, requestIds } = metaAssistSummary(draft);
+  const { bars, proposedBars, unresolvedBars, unreviewedBars } = metaAssistSummary(draft);
   const form = draft.formAnalysis;
   const remaining = unresolvedBars
     ? ` ${unresolvedBars} ${unresolvedBars === 1 ? 'bar remains' : 'bars remain'} unresolved.` : '';
   if (bars === 0 && !form) return unresolvedBars || unreviewedBars
     ? `Ready to review. Meta was not called.${remaining} Check the reading warnings.`
     : 'Ready to review. The local reader resolved every bar, so Meta was not called.';
-  const formStatus = form ? ` Form: ${form.sectionsProposed} inferred sections.` : '';
+  const formStatus = form ? ` Form: ${form.sectionsProposed} inferred ${form.sectionsProposed === 1 ? 'section' : 'sections'}.` : '';
   const coverage = unreviewedBars ? ` ${unreviewedBars} bars were not reviewed by Meta.` : '';
-  const allIds = [...new Set([...requestIds, ...(form?.requestId ? [form.requestId] : [])])];
-  const ids = allIds.length ? ` Request ${allIds.join(', ')}.` : '';
-  return `Ready to review. Muse Spark analyzed ${bars} ${bars === 1 ? 'bar' : 'bars'} and proposed chords for ${proposedBars}.${coverage}${formStatus}${remaining}${ids}`;
+  return `Ready to review. Muse Spark analyzed ${bars} ${bars === 1 ? 'bar' : 'bars'} and proposed chords for ${proposedBars}.${coverage}${formStatus}${remaining}`;
 }
 
 export function isNoChordText(value: string): boolean {

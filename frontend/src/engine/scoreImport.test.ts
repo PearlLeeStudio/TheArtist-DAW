@@ -324,7 +324,7 @@ test('the Meta assist summary separates proposals from empty answers and keeps e
   assert.deepEqual(metaAssistSummary(draft), { bars: 3, proposedBars: 2, unresolvedBars: 1, unreviewedBars: 1, requestIds: ['req-b', 'req-a'] });
   assert.match(scoreImportReadyStatus(draft, true), /analyzed 3 bars and proposed chords for 2/);
   assert.match(scoreImportReadyStatus(draft, true), /1 bar remains unresolved/);
-  assert.match(scoreImportReadyStatus(draft, true), /req-b, req-a/);
+  assert.doesNotMatch(scoreImportReadyStatus(draft, true), /req-b|req-a/);
   const local = createScoreImportDraft(readScoreImportResponse(response({ analysisSource: 'local', model: null, requestId: null, mode: 'infer_harmony', sections: [], measures: [
     { chords: ['C'], sourceLabel: '', chordBasis: 'printed', confidence: 'high', needsReview: false, note: 'Printed C.', notes: ['C4', 'E4', 'G4'] },
   ] }), 'infer_harmony', 'auto'), 'local.pdf');
@@ -354,8 +354,8 @@ test('automatic form proposals reach editable sections without claiming no Meta 
     sections: [{ section: 'intro', label: 'Intro', startMeasure: 0, length: 1, basis: 'inferred', note: 'An opening tonic phrase.' }],
   });
   const draft = createScoreImportDraft(readScoreImportResponse(raw, 'infer_harmony', 'auto'), 'source.pdf');
-  assert.match(scoreImportReadyStatus(draft, 'auto'), /Form: 1 inferred sections/);
-  assert.match(scoreImportReadyStatus(draft, 'auto'), /req-form/);
+  assert.match(scoreImportReadyStatus(draft, 'auto'), /Form: 1 inferred section\./);
+  assert.doesNotMatch(scoreImportReadyStatus(draft, 'auto'), /req-form/);
   assert.doesNotMatch(scoreImportReadyStatus(draft, 'auto'), /Meta was not called/);
   const song = buildScoreImportForEditor(draft);
   assert.equal(song.sections[0].type, 'intro');
