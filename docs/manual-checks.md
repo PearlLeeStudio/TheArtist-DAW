@@ -164,11 +164,21 @@ unimplemented and are not part of the completed-feature checks.
   a changed held voicing, fewer than three held notes, device unplug/reconnect,
   panel collapse, a modal and a new song while notes are held.
 
+## New from Song Form
+
+- [ ] The dialog's title matches its button. Key, Genre and Model at the top are
+  pickers shared with the song settings above the staff and Input → Generate: a
+  new key transposes the score, a genre switches to the model it is served by, a
+  model sets its genre, and the controls above the staff show the same values.
+- [ ] **Section**: pick a part (Intro, Verse, Chorus …) and its length in **Bars**
+  (1–64; the hint shows the chords, two per bar); "Placed at bars …" follows the
+  last bar with chords. Generate writes it there.
+
 ## Complete the form
 
-- [ ] New from Song Form → **Full form**: with an empty score pick a Genre above the
-  staff first (a fresh score has none and both run buttons stay disabled until it
-  does), choose target bars, Outro and contrast and run **Plan a new song**; with a
+- [ ] New from Song Form → **Full form**: with an empty score pick a Genre first
+  (in the dialog or above the staff; a fresh score has none and both run buttons
+  stay disabled until it does), choose target bars, Outro and contrast and run **Plan a new song**; with a
   sketch run **Complete the form**. The band above the staff shows the chips in order (plan → validate →
   revise → each section → judge), each with latency, $ and request id.
 - [ ] Nothing changes on the staff until **Apply**; **Undo** restores the exact
