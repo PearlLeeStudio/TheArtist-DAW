@@ -3,6 +3,7 @@
 The PDF text origins, not font bounding boxes, locate music glyphs. Staff lines,
 barlines and stems remain vector geometry. Unsupported notation is reported; this
 is not a raster OMR or a claim to reconstruct arbitrary engraving software.
+Geometric tolerances are multiples of a staff's spacing, the gap between its lines.
 """
 
 from __future__ import annotations
@@ -10,6 +11,7 @@ from __future__ import annotations
 import io
 import re
 from collections import Counter
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass, field
 from statistics import median
 from typing import Any
@@ -17,8 +19,11 @@ from typing import Any
 import pdfplumber
 
 MAX_PDF_BYTES = 8 * 1024 * 1024
+MAX_PDF_PAGES = 50
+MAX_PDF_MEASURES = 512
 MAX_PAGE_OBJECTS = 60_000
 MAX_TOTAL_GLYPHS = 250_000
+_LIMIT_MESSAGE = "The vector score exceeds the bounded glyph/geometry limit."
 
 
 class ScorePDFError(ValueError):
@@ -121,6 +126,40 @@ class _OctaveSpan:
     mark: _OctaveMark
 
 
+@dataclass
+class _Page:
+    """One page's glyphs and geometry, shared by every system and measure on it."""
+    number: int
+    glyphs: list[_Glyph]
+    staffs: list[_Staff]
+    verticals: list[dict]
+    shapes: list[dict]
+    rects: list[dict]
+    octave_spans: list[_OctaveSpan]
+    unresolved_octaves: list[_OctaveMark]
+    resolved_octave_ids: set[int]
+    tie_links: dict[int, int]
+    resolved_tie_shapes: set[int]
+    notes_by_glyph: dict[int, NoteEvent] = field(default_factory=dict)
+
+
+@dataclass
+class _ReadState:
+    """Notation context that carries across systems and pages, in written order."""
+    parsed: ParsedScore
+    max_measures: int
+    clefs: dict[int, str] = field(default_factory=dict)
+    keys: dict[int, int] = field(default_factory=dict)
+    meter: tuple[int, int] = (4, 4)
+    meter_known: bool = False
+    counts: Counter[str] = field(default_factory=Counter)
+    resolved_counts: Counter[str] = field(default_factory=Counter)
+
+    def mark_incomplete(self, name: str, amount: int = 1) -> None:
+        self.counts[name] += amount
+        self.parsed.complete = False
+
+
 _NOTEHEADS = {"œ": 1.0, "˙": 2.0, "w": 4.0, "\ue0a4": 1.0, "\ue0a3": 2.0, "\ue0a2": 4.0}
 _CLEFS = {"&": "treble", "?": "bass", "B": "alto", "\ue050": "treble", "\ue062": "bass", "\ue05c": "alto"}
 _ACCIDENTALS = {"b": -1, "♭": -1, "\ue260": -1, "#": 1, "♯": 1, "\ue262": 1,
@@ -132,7 +171,8 @@ _FLAGS = {"j": .5, "J": .5, "r": .25, "R": .25,
           "\ue240": .5, "\ue241": .5, "\ue242": .25, "\ue243": .25,
           "\ue244": .125, "\ue245": .125, "\ue246": .0625, "\ue247": .0625}
 _REPEATS = {"%", "÷", "𝄆", "𝄇", "\ue500", "\ue501", "\ue502"}
-_FONT = re.compile(r"Maestro|Bravura|Petaluma|Leland|Gonville|MuseJazz", re.I)
+_MUSIC_FONTS = re.compile(r"Maestro|Bravura|Petaluma|Leland|Gonville|MuseJazz", re.I)
+_MAESTRO = re.compile("Maestro", re.I)
 # SMuFL's explicit alta/bassa signs; bare 8/15 use the bracket's staff side.
 # https://smufl.formats.music/latest/tables/octaves.html
 _OCTAVE_GLYPHS = {"\ue510": (12, 0), "\ue511": (12, 1), "\ue512": (12, -1), "\ue513": (12, -1),
@@ -142,34 +182,78 @@ _OCTAVE_GLYPHS = {"\ue510": (12, 0), "\ue511": (12, 1), "\ue512": (12, -1), "\ue
                   "𝄶": (12, 1), "𝄷": (12, -1), "𝄸": (24, 1), "𝄹": (24, -1)}
 _LETTERS = "CDEFGAB"
 _PCS = (0, 2, 4, 5, 7, 9, 11)
-_CHORD = re.compile(r"^[A-G](?:#|b)?(?:(?:maj|min|dim|aug|sus|add|omit|no|alt|m|M|Δ|ø|°|[0-9#+−-]|\([^)]*\)))*(?:/[A-G](?:#|b)?)?$")
+_CHORD_SYMBOL = re.compile(r"^[A-G](?:#|b)?(?:(?:maj|min|dim|aug|sus|add|omit|no|alt|m|M|Δ|ø|°|[0-9#+−-]|\([^)]*\)))*(?:/[A-G](?:#|b)?)?$")
+_NO_CHORD = re.compile(r"\(?N\.?C\.?\)?", re.I)
+_OCTAVE_LABEL = re.compile(r"8(?:va|vb|ba)|15m[ab]|22m[ab]")
+_OCTAVE_TEXT = re.compile(r"(?:8v[ab]|8ba|15m[ab]|22m[ab]|ottava)", re.I)
+_SPELLING = re.compile(r"([A-G](?:#{1,2}|b{1,2})?)(-?\d+)")
+_NOTEHEADS_AND_CLEFS = (*_NOTEHEADS, *_CLEFS)
+# Noteheads typed in a font that is not recognized as music.
+_LEGACY_FONT_NOTEHEADS = ("œ", "˙")
+_KEY_SIGNATURE_ACCIDENTALS = ("b", "#", "n", "♭", "♯", "♮", "\ue260", "\ue261", "\ue262")
+_COMMON_TIME = ("c", "C", "𝄴", "\ue08a")
+_CUT_TIME = ("¢", "𝄵", "\ue08b")
+_METER_DENOMINATORS = (1, 2, 4, 8, 16, 32)
+_AUGMENTATION_DOTS = (".", "\ue1e7")
+_TUPLET_DIGITS = ("3", "5", "6", "7", "9")
+# Diatonic step (octave * 7 + letter index) of each clef's bottom line: E4, G2, F3 and D3.
+_CLEF_BOTTOM_STEP = {"treble": 30, "bass": 18, "alto": 24, "tenor": 22}
+_SHARP_ORDER = "FCGDAEB"
+_FLAT_ORDER = "BEADGCF"
+_ACCIDENTAL_SUFFIX = {-2: "bb", -1: "b", 0: "", 1: "#", 2: "##"}
+# SMuFL code point ranges, bounds inclusive. Composite notes stop before E1E7, the augmentation dot.
+_SMUFL = range(0xE000, 0xEFFF + 1)
+_SMUFL_CLEFS = range(0xE050, 0xE06F + 1)
+_SMUFL_TIME_DIGITS = range(0xE080, 0xE089 + 1)
+_SMUFL_NOTEHEADS = range(0xE0A0, 0xE0FF + 1)
+_SMUFL_COMPOSITE_NOTES = range(0xE1D0, 0xE1E6 + 1)
 
 
-def _music(g: _Glyph) -> bool:
-    return bool(_FONT.search(g.font)) or g.standard or g.text in _OCTAVE_GLYPHS \
-        or any(0xE000 <= ord(char) <= 0xEFFF for char in g.text)
+def _has_code_point(text: str, code_points: range) -> bool:
+    return any(ord(char) in code_points for char in text)
+
+
+def _is_music(g: _Glyph) -> bool:
+    """Music-font, standard SMuFL or octave-sign glyphs; everything else is text."""
+    return bool(_MUSIC_FONTS.search(g.font)) or g.standard or g.text in _OCTAVE_GLYPHS \
+        or _has_code_point(g.text, _SMUFL)
+
+
+def _is_skewed(a: float, b: float, c: float, d: float) -> bool:
+    """A text matrix sheared beyond 5% of its scale draws rotated or slanted glyphs."""
+    return abs(b) + abs(c) > .05 * max(abs(a), abs(d), 1)
+
+
+def _is_curved(shape: dict) -> bool:
+    """A path with a Bezier segment, as ties and slurs have and straight beams do not."""
+    return any(op[0] == "c" for op in shape.get("path", []))
 
 
 def _clef(g: _Glyph, staff: _Staff) -> str:
     selected = _CLEFS[g.text]
+    # A C clef three spaces above the bottom line marks the fourth line: a tenor clef.
     if selected == "alto" and round((g.y - staff.bottom) / staff.spacing) == 3:
         return "tenor"
     return selected
 
 
 def _glyphs(chars: list[dict]) -> list[_Glyph]:
+    """Glyphs at their text origins, skipping sheared or malformed matrices.
+
+    SMuFL time-signature digits become plain digits.
+    """
     result = []
     for char in chars:
         matrix = char.get("matrix")
         if not matrix or len(matrix) != 6:
             continue
         a, b, c, d, x, y = matrix
-        if abs(b) + abs(c) > .05 * max(abs(a), abs(d), 1):
+        if _is_skewed(a, b, c, d):
             continue
         text = char.get("text", "")
-        standard = any(0xE000 <= ord(value) <= 0xEFFF for value in text)
-        if len(text) == 1 and 0xE080 <= ord(text) <= 0xE089:
-            text = str(ord(text) - 0xE080)
+        standard = _has_code_point(text, _SMUFL)
+        if len(text) == 1 and ord(text) in _SMUFL_TIME_DIGITS:
+            text = str(ord(text) - _SMUFL_TIME_DIGITS.start)
         result.append(_Glyph(text, char.get("fontname", ""), float(x), float(y),
                              abs(float(char.get("x1", x)) - float(char.get("x0", x))),
                              max(abs(float(a)), abs(float(d)), float(char.get("size", 0))), standard))
@@ -177,6 +261,7 @@ def _glyphs(chars: list[dict]) -> list[_Glyph]:
 
 
 def _cluster(values: list[float], tolerance: float) -> list[float]:
+    """Medians of sorted values grouped while each stays within tolerance of its group's median."""
     groups: list[list[float]] = []
     for value in sorted(values):
         if groups and abs(value - median(groups[-1])) <= tolerance:
@@ -186,15 +271,54 @@ def _cluster(values: list[float], tolerance: float) -> list[float]:
     return [median(group) for group in groups]
 
 
-def _staffs(lines: list[dict], width: float) -> list[_Staff]:
+def _rows(glyphs: Iterable[_Glyph], joins: Callable[[float], bool]) -> list[list[_Glyph]]:
+    """Text rows from the top down; a glyph joins the last row when joins(distance to its median height)."""
+    rows: list[list[_Glyph]] = []
+    for g in sorted(glyphs, key=lambda g: -g.y):
+        if rows and joins(abs(g.y - median(item.y for item in rows[-1]))):
+            rows[-1].append(g)
+        else:
+            rows.append([g])
+    return rows
+
+
+def _runs(glyphs: Iterable[_Glyph], joins: Callable[[float], bool]) -> list[list[_Glyph]]:
+    """Runs from left to right; a glyph joins the last run when joins(its gap after the run's right edge)."""
+    runs: list[list[_Glyph]] = []
+    for g in sorted(glyphs, key=lambda g: g.x):
+        if runs and joins(g.x - max(item.x + item.width for item in runs[-1])):
+            runs[-1].append(g)
+        else:
+            runs.append([g])
+    return runs
+
+
+def _nearest_staff(staffs: list[_Staff], y: float) -> _Staff:
+    """The staff vertically closest to y (distance zero inside it); the first one wins a tie."""
+    return min(staffs, key=lambda staff: max(staff.bottom - y, y - staff.top, 0))
+
+
+def _staff_step(y: float, staff: _Staff) -> float:
+    """Height above the bottom line in half spacings: lines are even steps, spaces odd."""
+    return (y - staff.bottom) / (staff.spacing / 2)
+
+
+def _in_bar(x: float, left: float, right: float, spacing: float) -> bool:
+    """Bar membership shifted left, so a symbol just before a barline belongs to the next bar."""
+    return left - spacing * .2 <= x < right - spacing * .2
+
+
+def _horizontal_rows(lines: list[dict], width: float) -> list[dict]:
+    """Long horizontal rules by height, top first, each with its longest merged segment's extent."""
     horizontal = [line for line in lines if abs(line["y1"] - line["y0"]) < .3
                   and abs(line["x1"] - line["x0"]) > max(35, width * .08)]
     rows: list[dict] = []
     for line in sorted(horizontal, key=lambda item: -item["y0"]):
+        segment = (min(line["x0"], line["x1"]), max(line["x0"], line["x1"]))
         if rows and abs(rows[-1]["y"] - line["y0"]) < .35:
-            rows[-1]["segments"].append((min(line["x0"], line["x1"]), max(line["x0"], line["x1"])))
+            rows[-1]["segments"].append(segment)
         else:
-            rows.append({"y": line["y0"], "segments": [(min(line["x0"], line["x1"]), max(line["x0"], line["x1"]))]})
+            rows.append({"y": line["y0"], "segments": [segment]})
     for row in rows:
         segments = sorted(row["segments"])
         merged = [list(segments[0])]
@@ -204,6 +328,12 @@ def _staffs(lines: list[dict], width: float) -> list[_Staff]:
             else:
                 merged.append([left, right])
         row["left"], row["right"] = max(merged, key=lambda segment: segment[1] - segment[0])
+    return rows
+
+
+def _staffs(lines: list[dict], width: float) -> list[_Staff]:
+    """Five consecutive rows with even, plausible gaps and a shared wide extent form a staff."""
+    rows = _horizontal_rows(lines, width)
     result = []
     index = 0
     while index + 4 < len(rows):
@@ -221,11 +351,13 @@ def _staffs(lines: list[dict], width: float) -> list[_Staff]:
 
 
 def _verticals(lines: list[dict]) -> list[dict]:
+    """Vertical rules: barline and stem candidates."""
     return [line for line in lines if abs(line["x1"] - line["x0"]) < .3
             and abs(line["y1"] - line["y0"]) > 2]
 
 
 def _systems(staffs: list[_Staff], verticals: list[dict]) -> list[list[_Staff]]:
+    """Group staves top to bottom; close staves joined by a vertical rule share a system."""
     systems: list[list[_Staff]] = []
     for staff in staffs:
         if not systems:
@@ -244,21 +376,27 @@ def _systems(staffs: list[_Staff], verticals: list[dict]) -> list[list[_Staff]]:
 
 
 def _assign_glyphs(staffs: list[_Staff], glyphs: list[_Glyph]) -> None:
+    """Give each music glyph to its nearest staff when it lies within that staff's reach."""
     for g in glyphs:
-        if not _music(g):
+        if not _is_music(g):
             continue
-        nearest = min(staffs, key=lambda staff: max(staff.bottom - g.y, g.y - staff.top, 0))
+        nearest = _nearest_staff(staffs, g.y)
         if nearest.left - nearest.spacing * 2 <= g.x <= nearest.right + nearest.spacing * 2 \
                 and nearest.bottom - nearest.spacing * 9 <= g.y <= nearest.top + nearest.spacing * 9:
             nearest.glyphs.append(g)
 
 
 def _key_signature(staff: _Staff, start: float | None = None, end: float | None = None) -> tuple[int | None, set[int]]:
+    """Signed sharp (+) or flat (-) count of a key signature at the start of [start, end), and its glyph ids.
+
+    Accidentals count only before the first notehead and close together; mixed signs
+    or an implausible count leave the signature unread (None). Naturals alone give 0.
+    """
     start = staff.left if start is None else start
     end = staff.right if end is None else end
     heads = [g.x for g in staff.glyphs if g.text in _NOTEHEADS and start <= g.x < end]
     first = min(heads, default=staff.right)
-    candidates = sorted((g for g in staff.glyphs if g.text in ("b", "#", "n", "♭", "♯", "♮", "\ue260", "\ue261", "\ue262")
+    candidates = sorted((g for g in staff.glyphs if g.text in _KEY_SIGNATURE_ACCIDENTALS
                          and start <= g.x < min(first - staff.spacing * 1.5, start + staff.spacing * 13, end)
                          and staff.bottom - staff.spacing <= g.y <= staff.top + staff.spacing), key=lambda g: g.x)
     group = []
@@ -275,30 +413,36 @@ def _key_signature(staff: _Staff, start: float | None = None, end: float | None 
     return (next(iter(signs)) * len(altered) if signs else 0), {id(g) for g in group}
 
 
+def _has_empty_key_signature(staff: _Staff) -> bool:
+    """A clef but no accidental before the first notehead: an explicitly empty key signature."""
+    first_head = min((g.x for g in staff.glyphs if g.text in _NOTEHEADS), default=staff.right)
+    header = [g for g in staff.glyphs if g.x < first_head and staff.bottom - staff.spacing <= g.y <= staff.top + staff.spacing]
+    return any(g.text in _CLEFS for g in header) and not any(g.text in _ACCIDENTALS for g in header)
+
+
 def _meters(staff: _Staff) -> list[tuple[float, tuple[int, int]]]:
+    """Time signatures on a staff as (x, (count, unit)), left to right."""
     candidates = [g for g in staff.glyphs if staff.bottom - staff.spacing * .4 <= g.y <= staff.top + staff.spacing * .4]
-    result = [(g.x, (4, 4)) for g in candidates if g.text in ("c", "C", "𝄴", "\ue08a")]
-    result += [(g.x, (2, 2)) for g in candidates if g.text in ("¢", "𝄵", "\ue08b")]
+    result = [(g.x, (4, 4)) for g in candidates if g.text in _COMMON_TIME]
+    result += [(g.x, (2, 2)) for g in candidates if g.text in _CUT_TIME]
     digits = [g for g in candidates if g.text.isdigit()]
-    groups: list[list[_Glyph]] = []
-    for g in sorted(digits, key=lambda item: item.x):
-        if groups and g.x - max(item.x + item.width for item in groups[-1]) < staff.spacing:
-            groups[-1].append(g)
-        else:
-            groups.append([g])
     center = (staff.top + staff.bottom) / 2
-    for group in groups:
+    for group in _runs(digits, lambda gap: gap < staff.spacing):
         numerator = sorted((g for g in group if g.y > center + staff.spacing * .2), key=lambda g: g.x)
         denominator = sorted((g for g in group if g.y < center - staff.spacing * .2), key=lambda g: g.x)
         if numerator and denominator:
             top = int("".join(g.text for g in numerator))
             bottom = int("".join(g.text for g in denominator))
-            if 1 <= top <= 32 and bottom in (1, 2, 4, 8, 16, 32):
+            if 1 <= top <= 32 and bottom in _METER_DENOMINATORS:
                 result.append((min(g.x for g in group), (top, bottom)))
     return sorted(result)
 
 
 def _boundaries(system: list[_Staff], verticals: list[dict]) -> list[float]:
+    """Measure boundaries: barlines across the system, plus its open edges where notes need them.
+
+    A vertical that crosses one staff next to a notehead is a stem, not a barline.
+    """
     spacing = median(staff.spacing for staff in system)
     left, right = max(staff.left for staff in system), min(staff.right for staff in system)
     values = []
@@ -322,58 +466,67 @@ def _boundaries(system: list[_Staff], verticals: list[dict]) -> list[float]:
 
 
 def _boxed(g: _Glyph, rects: list[dict], spacing: float) -> bool:
+    """Inside a small rectangle, such as a boxed rehearsal mark."""
     return any(rect["x0"] - 1 <= g.x <= rect["x1"] + 1 and rect["y0"] <= g.y <= rect["y1"]
                and rect["x1"] - rect["x0"] < spacing * 8 and rect["y1"] - rect["y0"] < spacing * 8
                for rect in rects)
 
 
 def _chord_text(system: list[_Staff], glyphs: list[_Glyph], rects: list[dict]) -> list[tuple[float, str]]:
+    """Printed chord symbols and N.C. above a system's top staff, as (x, symbol)."""
     staff = system[0]
-    candidates = [g for g in glyphs if (not _music(g) or (g.text in _ACCIDENTALS and g.size < staff.spacing * 3.5))
+    candidates = [g for g in glyphs if (not _is_music(g) or (g.text in _ACCIDENTALS and g.size < staff.spacing * 3.5))
                   and staff.top + staff.spacing * .5 <= g.y <= staff.top + staff.spacing * 6
                   and staff.left <= g.x <= staff.right and not _boxed(g, rects, staff.spacing)]
-    rows: list[list[_Glyph]] = []
-    for g in sorted(candidates, key=lambda g: -g.y):
-        if rows and abs(g.y - median(item.y for item in rows[-1])) < staff.spacing * 1.2:
-            rows[-1].append(g)
-        else:
-            rows.append([g])
     result = []
-    for row in rows:
-        groups: list[list[_Glyph]] = []
-        for g in sorted(row, key=lambda g: g.x):
-            if groups and g.x - max(item.x + item.width for item in groups[-1]) <= staff.spacing * 1.15:
-                groups[-1].append(g)
-            else:
-                groups.append([g])
-        for group in groups:
-            text = "".join(g.text for g in group).replace(" ", "").replace("♯", "#").replace("♭", "b")
-            text = text.replace("−", "-")
-            if re.fullmatch(r"\(?N\.?C\.?\)?", text, re.I):
+    for row in _rows(candidates, lambda distance: distance < staff.spacing * 1.2):
+        for group in _runs(row, lambda gap: gap <= staff.spacing * 1.15):
+            text = "".join(g.text for g in group).replace(" ", "").replace("♯", "#").replace("♭", "b").replace("−", "-")
+            if _NO_CHORD.fullmatch(text):
                 result.append((min(g.x for g in group), "N.C."))
-            elif _CHORD.fullmatch(text):
+            elif _CHORD_SYMBOL.fullmatch(text):
                 result.append((min(g.x for g in group), text))
     return sorted(result)
 
 
 def _pitch(y: float, staff: _Staff, clef: str, signature: int, accidental: int | None) -> tuple[int, str]:
-    bottom = {"treble": 30, "bass": 18, "alto": 24, "tenor": 22}[clef]
-    diatonic = bottom + round((y - staff.bottom) / (staff.spacing / 2))
+    """MIDI pitch and spelling at a staff height; without a written accidental the key signature applies."""
+    diatonic = _CLEF_BOTTOM_STEP[clef] + round(_staff_step(y, staff))
     octave, letter = divmod(diatonic, 7)
     if accidental is None:
-        altered = "FCGDAEB"[:max(signature, 0)] if signature >= 0 else "BEADGCF"[:abs(signature)]
+        altered = _SHARP_ORDER[:signature] if signature >= 0 else _FLAT_ORDER[:abs(signature)]
         accidental = (1 if signature > 0 else -1) if _LETTERS[letter] in altered else 0
     midi = (octave + 1) * 12 + _PCS[letter] + accidental
-    return midi, _LETTERS[letter] + ({-2: "bb", -1: "b", 0: "", 1: "#", 2: "##"}[accidental]) + str(octave)
+    return midi, _LETTERS[letter] + _ACCIDENTAL_SUFFIX[accidental] + str(octave)
+
+
+def _stem(g: _Glyph, staff: _Staff, verticals: list[dict]) -> dict | None:
+    """The nearest long vertical beside a notehead that reaches its height."""
+    stems = [line for line in verticals if g.x - staff.spacing * .3 <= line["x0"] <= g.x + staff.spacing * 1.8
+             and min(line["y0"], line["y1"]) - staff.spacing * .5 <= g.y <= max(line["y0"], line["y1"]) + staff.spacing * .5
+             and abs(line["y1"] - line["y0"]) >= staff.spacing * 1.8]
+    return min(stems, key=lambda line: abs(line["x0"] - g.x), default=None)
+
+
+def _beam_count(stem: dict, staff: _Staff, shapes: list[dict]) -> int:
+    """Distinct levels of filled straight bars that cross a stem."""
+    beam_levels = []
+    for shape in shapes:
+        if not shape.get("fill") or _is_curved(shape):
+            continue
+        if shape["x1"] - shape["x0"] < staff.spacing * .65 or shape["y1"] - shape["y0"] > staff.spacing * 1.8:
+            continue
+        if shape["x0"] - staff.spacing * .1 <= stem["x0"] <= shape["x1"] + staff.spacing * .1 \
+                and min(stem["y0"], stem["y1"]) - staff.spacing * .4 <= (shape["y0"] + shape["y1"]) / 2 <= max(stem["y0"], stem["y1"]) + staff.spacing * .4:
+            beam_levels.append((shape["y0"] + shape["y1"]) / 2)
+    return len(_cluster(beam_levels, staff.spacing * .3))
 
 
 def _duration(g: _Glyph, staff: _Staff, verticals: list[dict], shapes: list[dict]) -> float | None:
+    """Beats of a notehead: flags or beams on a filled head's stem shorten it, dots lengthen it."""
     base = _NOTEHEADS[g.text]
     if base == 1:
-        stems = [line for line in verticals if g.x - staff.spacing * .3 <= line["x0"] <= g.x + staff.spacing * 1.8
-                 and min(line["y0"], line["y1"]) - staff.spacing * .5 <= g.y <= max(line["y0"], line["y1"]) + staff.spacing * .5
-                 and abs(line["y1"] - line["y0"]) >= staff.spacing * 1.8]
-        stem = min(stems, key=lambda line: abs(line["x0"] - g.x), default=None)
+        stem = _stem(g, staff, verticals)
         if stem is None:
             return None
         flags = [flag for flag in staff.glyphs if flag.text in _FLAGS and abs(flag.x - stem["x0"]) <= staff.spacing
@@ -381,26 +534,43 @@ def _duration(g: _Glyph, staff: _Staff, verticals: list[dict], shapes: list[dict
         if flags:
             base = min(_FLAGS[flag.text] for flag in flags)
         else:
-            beam_levels = []
-            for shape in shapes:
-                if not shape.get("fill") or any(op[0] == "c" for op in shape.get("path", [])):
-                    continue
-                if shape["x1"] - shape["x0"] < staff.spacing * .65 or shape["y1"] - shape["y0"] > staff.spacing * 1.8:
-                    continue
-                if shape["x0"] - staff.spacing * .1 <= stem["x0"] <= shape["x1"] + staff.spacing * .1 \
-                        and min(stem["y0"], stem["y1"]) - staff.spacing * .4 <= (shape["y0"] + shape["y1"]) / 2 <= max(stem["y0"], stem["y1"]) + staff.spacing * .4:
-                    beam_levels.append((shape["y0"] + shape["y1"]) / 2)
-            beams = len(_cluster(beam_levels, staff.spacing * .3))
-            if beams > 4:
+            beams = _beam_count(stem, staff, shapes)
+            if beams > 4:  # Shorter than a 64th note is not read.
                 return None
             base = 1 / (2 ** beams)
-    dots = [dot for dot in staff.glyphs if dot.text in (".", "\ue1e7")
+    dots = [dot for dot in staff.glyphs if dot.text in _AUGMENTATION_DOTS
             and g.x + g.width <= dot.x <= g.x + g.width + staff.spacing * 2.5
             and abs(dot.y - g.y) <= staff.spacing * .8]
-    if dots:
+    if dots:  # One dot adds half the value; two or more add three quarters.
         count = min(2, len(_cluster([dot.x for dot in dots], staff.spacing * .3)))
         base *= 1.5 if count == 1 else 1.75
     return base
+
+
+def _tie_pair(staff: _Staff, heads: list[_Glyph], shape: dict, first_y: float, last_y: float) \
+        -> tuple[_Glyph, _Glyph] | None:
+    """The best (source, target) notehead pair at a curve's ends; None when there is none or it is ambiguous."""
+    sources = [g for g in heads if 0 <= shape["x0"] - g.x <= staff.spacing * 3
+               and staff.spacing * .15 <= abs(first_y - g.y) <= staff.spacing * 1.5]
+    targets = [g for g in heads if abs(shape["x1"] - g.x) <= staff.spacing * 1.5
+               and staff.spacing * .15 <= abs(last_y - g.y) <= staff.spacing * 1.5]
+    pairs = []
+    for source in sources:
+        for target in targets:
+            if source.x >= target.x or abs(source.y - target.y) > staff.spacing * .15:
+                continue
+            if any(source.x < g.x < target.x and g.text in _CLEFS for g in staff.glyphs):
+                continue
+            if any(source.x + staff.spacing * 1.8 < head.x < target.x - staff.spacing * 1.8 for head in heads):
+                continue
+            score = abs(first_y - source.y) + abs(last_y - target.y) \
+                + abs(shape["x0"] - source.x - source.width) * .25 + abs(shape["x1"] - target.x) * .25
+            pairs.append((score, source, target))
+    pairs.sort(key=lambda item: item[0])
+    if not pairs or (len(pairs) > 1 and pairs[1][0] - pairs[0][0] < staff.spacing * .25):
+        return None
+    _, source, target = pairs[0]
+    return source, target
 
 
 def _tie_links(staff: _Staff, shapes: list[dict], page_height: float) -> tuple[dict[int, int], set[int]]:
@@ -408,42 +578,28 @@ def _tie_links(staff: _Staff, shapes: list[dict], page_height: float) -> tuple[d
 
     A slur spanning intermediate notes, different staff positions, a partial
     system-end curve, or ambiguous chord endpoints remains unsupported.
+    Returns target notehead id -> source notehead id, and the ids of resolved curves.
     """
     heads = [g for g in staff.glyphs if g.text in _NOTEHEADS]
     links: dict[int, int] = {}
     resolved: set[int] = set()
     for shape in shapes:
         path = shape.get("path", [])
-        if not any(op[0] == "c" for op in path) or shape["x1"] - shape["x0"] < staff.spacing * 2:
+        if not _is_curved(shape) or shape["x1"] - shape["x0"] < staff.spacing * 2:
             continue
         endpoints = [op[-1] for op in path if op[0] in ("m", "l", "c") and len(op) > 1]
         if not endpoints:
             continue
         first = min(endpoints, key=lambda point: point[0])
         last = max(endpoints, key=lambda point: point[0])
+        # pdfplumber gives path points top-down; flip them to the bottom-up y of glyphs and staff lines.
         first_y, last_y = page_height - first[1], page_height - last[1]
         if abs(first_y - last_y) > staff.spacing * .3:
             continue
-        sources = [g for g in heads if 0 <= shape["x0"] - g.x <= staff.spacing * 3
-                   and staff.spacing * .15 <= abs(first_y - g.y) <= staff.spacing * 1.5]
-        targets = [g for g in heads if abs(shape["x1"] - g.x) <= staff.spacing * 1.5
-                   and staff.spacing * .15 <= abs(last_y - g.y) <= staff.spacing * 1.5]
-        pairs = []
-        for source in sources:
-            for target in targets:
-                if source.x >= target.x or abs(source.y - target.y) > staff.spacing * .15:
-                    continue
-                if any(source.x < g.x < target.x and g.text in _CLEFS for g in staff.glyphs):
-                    continue
-                if any(source.x + staff.spacing * 1.8 < head.x < target.x - staff.spacing * 1.8 for head in heads):
-                    continue
-                score = abs(first_y - source.y) + abs(last_y - target.y) \
-                    + abs(shape["x0"] - source.x - source.width) * .25 + abs(shape["x1"] - target.x) * .25
-                pairs.append((score, source, target))
-        pairs.sort(key=lambda item: item[0])
-        if not pairs or (len(pairs) > 1 and pairs[1][0] - pairs[0][0] < staff.spacing * .25):
+        pair = _tie_pair(staff, heads, shape, first_y, last_y)
+        if pair is None:
             continue
-        _, source, target = pairs[0]
+        source, target = pair
         if id(target) in links and links[id(target)] != id(source):
             continue
         links[id(target)] = id(source)
@@ -452,29 +608,19 @@ def _tie_links(staff: _Staff, shapes: list[dict], page_height: float) -> tuple[d
 
 
 def _octave_marks(glyphs: list[_Glyph], spacing: float) -> list[_OctaveMark]:
+    """Octave signs from SMuFL or Maestro glyphs and text such as 8va or 15mb, merged by position."""
     marks = []
     for g in glyphs:
         if g.text in _OCTAVE_GLYPHS:
             amount, direction = _OCTAVE_GLYPHS[g.text]
             marks.append(_OctaveMark(g.x, g.y, g.width, amount, direction, {id(g)}))
-        elif g.text == "√" and re.search("Maestro", g.font, re.I):
+        elif g.text == "√" and _MAESTRO.search(g.font):
             marks.append(_OctaveMark(g.x, g.y, g.width, 12, 0, {id(g)}))
-    rows: list[list[_Glyph]] = []
-    for g in sorted((g for g in glyphs if not _music(g) and g.text.strip()), key=lambda g: -g.y):
-        if rows and abs(g.y - median(item.y for item in rows[-1])) <= spacing * .8:
-            rows[-1].append(g)
-        else:
-            rows.append([g])
-    for row in rows:
-        groups: list[list[_Glyph]] = []
-        for g in sorted(row, key=lambda item: item.x):
-            if groups and g.x - max(item.x + item.width for item in groups[-1]) <= spacing * .8:
-                groups[-1].append(g)
-            else:
-                groups.append([g])
-        for group in groups:
+    text_glyphs = (g for g in glyphs if not _is_music(g) and g.text.strip())
+    for row in _rows(text_glyphs, lambda distance: distance <= spacing * .8):
+        for group in _runs(row, lambda gap: gap <= spacing * .8):
             text = "".join(g.text for g in group).replace(" ", "").strip("()").lower()
-            if re.fullmatch(r"8(?:va|vb|ba)|15m[ab]|22m[ab]", text):
+            if _OCTAVE_LABEL.fullmatch(text):
                 amount = 12 if text.startswith("8") else (24 if text.startswith("15") else 36)
                 direction = -1 if text.endswith(("vb", "ba", "mb")) else 0
                 start = min(g.x for g in group)
@@ -488,6 +634,45 @@ def _octave_marks(glyphs: list[_Glyph], spacing: float) -> list[_OctaveMark]:
         else:
             unique[key] = mark
     return list(unique.values())
+
+
+def _bracket_owner(staffs: list[_Staff], mark: _OctaveMark, end: float, y: float) -> tuple[_Staff, int] | None:
+    """The one staff a bracket line clearly belongs to, with +1 above or -1 below it; None when unclear."""
+    owners = []
+    for staff in staffs:
+        if not staff.left - staff.spacing <= mark.x < end <= staff.right + staff.spacing:
+            continue
+        if y > staff.top + staff.spacing * .4:
+            direction, gap = 1, y - staff.top
+        elif y < staff.bottom - staff.spacing * .4:
+            direction, gap = -1, staff.bottom - y
+        else:
+            continue
+        if gap > staff.spacing * 10 or (mark.direction and mark.direction != direction):
+            continue
+        owners.append((gap / staff.spacing, staff, direction))
+    owners.sort(key=lambda item: item[0])
+    if not owners or (len(owners) > 1 and owners[1][0] - owners[0][0] <= 1):
+        return None
+    _, staff, direction = owners[0]
+    return staff, direction
+
+
+def _has_end_hook(lines: list[dict], staff: _Staff, end: float, y: float, direction: int) -> bool:
+    """A short solid vertical at the bracket's end that turns toward its staff."""
+    for hook in lines:
+        if hook.get("dash") and hook["dash"][0]:
+            continue
+        low, high = min(hook["y0"], hook["y1"]), max(hook["y0"], hook["y1"])
+        if abs(hook["x1"] - hook["x0"]) > staff.spacing * .08 \
+                or abs(hook["x0"] - end) > staff.spacing * .3 \
+                or not staff.spacing * .25 <= high - low <= staff.spacing * 3:
+            continue
+        if direction > 0 and abs(high - y) <= staff.spacing * .2 and low < y - staff.spacing * .2:
+            return True
+        if direction < 0 and abs(low - y) <= staff.spacing * .2 and high > y + staff.spacing * .2:
+            return True
+    return False
 
 
 def _octave_spans(staffs: list[_Staff], glyphs: list[_Glyph], lines: list[dict]) \
@@ -509,37 +694,11 @@ def _octave_spans(staffs: list[_Staff], glyphs: list[_Glyph], lines: list[dict])
             if start < mark.x or not -spacing <= start - mark.x - mark.width <= spacing * 6 \
                     or abs(y - mark.y) > spacing * 2:
                 continue
-            owners = []
-            for staff in staffs:
-                if not staff.left - staff.spacing <= mark.x < end <= staff.right + staff.spacing:
-                    continue
-                if y > staff.top + staff.spacing * .4:
-                    direction, gap = 1, y - staff.top
-                elif y < staff.bottom - staff.spacing * .4:
-                    direction, gap = -1, staff.bottom - y
-                else:
-                    continue
-                if gap > staff.spacing * 10 or (mark.direction and mark.direction != direction):
-                    continue
-                owners.append((gap / staff.spacing, staff, direction))
-            owners.sort(key=lambda item: item[0])
-            if not owners or (len(owners) > 1 and owners[1][0] - owners[0][0] <= 1):
+            owner = _bracket_owner(staffs, mark, end, y)
+            if owner is None:
                 continue
-            _, staff, direction = owners[0]
-            hooks = []
-            for hook in lines:
-                if hook.get("dash") and hook["dash"][0]:
-                    continue
-                low, high = min(hook["y0"], hook["y1"]), max(hook["y0"], hook["y1"])
-                if abs(hook["x1"] - hook["x0"]) > staff.spacing * .08 \
-                        or abs(hook["x0"] - end) > staff.spacing * .3 \
-                        or not staff.spacing * .25 <= high - low <= staff.spacing * 3:
-                    continue
-                if direction > 0 and abs(high - y) <= staff.spacing * .2 and low < y - staff.spacing * .2:
-                    hooks.append(hook)
-                elif direction < 0 and abs(low - y) <= staff.spacing * .2 and high > y + staff.spacing * .2:
-                    hooks.append(hook)
-            if hooks:
+            staff, direction = owner
+            if _has_end_hook(lines, staff, end, y, direction):
                 candidates.append(_OctaveSpan(staff, mark.x, end, mark.amount * direction, mark))
         unique = {(id(span.staff), round(span.start, 3), round(span.end, 3), span.shift): span for span in candidates}
         if len(unique) == 1:
@@ -557,13 +716,14 @@ def _octave_shift(g: _Glyph, staff: _Staff, spans: list[_OctaveSpan]) -> int:
 
 
 def _shift_spelling(spelling: str, shift: int) -> str:
-    match = re.fullmatch(r"([A-G](?:#{1,2}|b{1,2})?)(-?\d+)", spelling)
+    match = _SPELLING.fullmatch(spelling)
     if match is None:
         return spelling
     return match[1] + str(int(match[2]) + shift // 12)
 
 
-def _warning(measure: ScoreMeasure, staff: int, message: str) -> None:
+def _warn(measure: ScoreMeasure, staff: int, message: str) -> None:
+    """Record a staff's reading issue once; any issue makes the measure's rhythm provisional."""
     if message not in measure.warnings:
         measure.warnings.append(message)
     values = measure.staff_warnings.setdefault(staff, [])
@@ -572,248 +732,339 @@ def _warning(measure: ScoreMeasure, staff: int, message: str) -> None:
     measure.rhythm_exact = False
 
 
-def _parse_pages(pages: Any, *, max_measures: int = 512) -> ParsedScore:
-    parsed = ParsedScore()
-    clefs: dict[int, str] = {}
-    keys: dict[int, int] = {}
-    current_meter = (4, 4)
-    meter_known = False
-    total_glyphs = 0
-    counts: Counter = Counter()
-    resolved_counts: Counter = Counter()
-    for page_number, page in enumerate(pages, 1):
-        chars, lines = page.chars, page.lines
-        total_glyphs += len(chars)
-        if total_glyphs > MAX_TOTAL_GLYPHS or len(chars) + len(lines) > MAX_PAGE_OBJECTS:
-            raise ScorePDFError("The vector score exceeds the bounded glyph/geometry limit.")
-        glyphs = _glyphs(chars)
-        note_objects: dict[int, NoteEvent] = {}
-        rotated_music = []
-        for char in chars:
-            matrix = char.get("matrix")
-            if matrix and len(matrix) == 6 and (char.get("text") in (*_NOTEHEADS, *_CLEFS)):
-                a, b, c, d, _, _ = matrix
-                if abs(b) + abs(c) > .05 * max(abs(a), abs(d), 1) or a <= 0 or d <= 0:
-                    rotated_music.append(char)
-        if rotated_music:
-            counts["rotated_music_glyph"] += len(rotated_music)
-            parsed.complete = False
-        staffs = _staffs(lines, float(page.width))
-        if not staffs:
-            counts["pages_without_supported_staff_geometry"] += 1
-            parsed.complete = False
-            continue
-        if not parsed.title:
-            title_candidates = [g for g in glyphs if not _music(g) and g.y > staffs[0].top + staffs[0].spacing * 8 and g.text]
-            if title_candidates:
-                largest = max(g.size for g in title_candidates)
-                chosen = sorted((g for g in title_candidates if g.size >= largest * .8), key=lambda g: g.x)
-                parsed.title = "".join(g.text for g in chosen).strip()[:120]
-        _assign_glyphs(staffs, glyphs)
-        unknown_heads = [g for g in glyphs if not _music(g) and g.text in ("œ", "˙")
-                         and any(staff.bottom - staff.spacing * 6 < g.y < staff.top + staff.spacing * 6 for staff in staffs)]
-        unsupported_heads = [g for g in glyphs if any(0xE0A0 <= ord(c) <= 0xE0FF for c in g.text) and g.text not in _NOTEHEADS]
-        unsupported_clefs = [g for g in glyphs if any(0xE050 <= ord(c) <= 0xE06F for c in g.text) and g.text not in _CLEFS]
-        composite_notes = [g for g in glyphs if any(0xE1D0 <= ord(c) <= 0xE1E6 for c in g.text)]
-        for name, items in (("unknown_legacy_music_font", unknown_heads), ("unsupported_notehead", unsupported_heads),
-                            ("unsupported_clef", unsupported_clefs), ("unsupported_composite_note", composite_notes)):
-            if items:
-                counts[name] += len(items)
-                parsed.complete = False
-        verticals = _verticals(lines)
-        shapes = list(getattr(page, "curves", [])) + list(getattr(page, "rects", []))
-        if len(chars) + len(lines) + len(shapes) > MAX_PAGE_OBJECTS:
-            raise ScorePDFError("The vector score exceeds the bounded glyph/geometry limit.")
-        octave_spans, octave_marks, resolved_octave_ids = _octave_spans(staffs, glyphs, lines)
-        unresolved_octaves = [mark for mark in octave_marks if not mark.glyph_ids <= resolved_octave_ids]
-        resolved_counts["ottava_spans"] += len(octave_spans)
-        counts["ottava"] += len(unresolved_octaves)
-        tie_links: dict[int, int] = {}
-        resolved_tie_shapes: set[int] = set()
-        for staff in staffs:
-            links, resolved = _tie_links(staff, shapes, float(page.height))
-            tie_links.update(links)
-            resolved_tie_shapes.update(resolved)
-        for system_number, system in enumerate(_systems(staffs, verticals), 1):
-            bounds = _boundaries(system, verticals)
-            if len(bounds) < 2:
-                counts["systems_without_measure_boundaries"] += 1
-                parsed.complete = False
-                continue
-            meter_events = _meters(system[0])
-            chords = _chord_text(system, glyphs, list(getattr(page, "rects", [])))
-            signature_ids: set[int] = set()
-            for staff_index, staff in enumerate(system):
-                signature, ids = _key_signature(staff)
-                if signature is None and staff_index not in keys and _meters(staff):
-                    first_head = min((g.x for g in staff.glyphs if g.text in _NOTEHEADS), default=staff.right)
-                    header = [g for g in staff.glyphs if g.x < first_head and staff.bottom - staff.spacing <= g.y <= staff.top + staff.spacing]
-                    if any(g.text in _CLEFS for g in header) and not any(g.text in _ACCIDENTALS for g in header):
-                        signature = 0
-                signature_ids.update(ids)
-                if signature is not None:
-                    keys[staff_index] = signature
-                    if parsed.key_signature is None:
-                        parsed.key_signature = signature
-            for bar_index, (left, right) in enumerate(zip(bounds, bounds[1:])):
-                if len(parsed.measures) >= max_measures:
-                    parsed.complete = False
-                    counts["measure_limit"] += 1
-                    break
-                for x, meter in meter_events:
-                    if x < right:
-                        current_meter = meter
-                        meter_known = True
-                for staff_index, staff in enumerate(system):
-                    signature, ids = _key_signature(staff, left, right)
-                    if signature is not None:
-                        keys[staff_index] = signature
-                        signature_ids.update(ids)
-                if parsed.time_signature is None and meter_known:
-                    parsed.time_signature = current_meter
-                measure = ScoreMeasure(len(parsed.measures), page_number, system_number, len(parsed.measures) + 1,
-                                       current_meter, key_signature=keys.get(0))
-                beats = current_meter[0] * 4 / current_meter[1]
-                if not meter_known:
-                    measure.warnings.append("No readable time signature; 4/4 timing is provisional.")
-                    measure.rhythm_exact = False
-                    counts["missing_meter"] += 1
-                all_atoms: list[tuple[float, float]] = []
-                for staff_index, staff in enumerate(system):
-                    records = sorted((g for g in staff.glyphs if left - staff.spacing * .2 <= g.x < right - staff.spacing * .2), key=lambda g: g.x)
-                    initial_clef = clefs.get(staff_index)
-                    if initial_clef is None:
-                        initial_clef = "treble"
-                    clef_events = [(g.x, _clef(g, staff), g) for g in staff.glyphs if g.text in _CLEFS and g.x < right]
-                    clef = initial_clef
-                    for x, selected, _ in sorted(clef_events):
-                        if x <= left:
-                            clef = selected
-                    if staff_index not in clefs and not clef_events:
-                        _warning(measure, staff_index, "No supported clef was present; treble position is provisional.")
-                        counts["missing_clef"] += 1
-                    accidentals: dict[int, int] = {}
-                    note_records: list[tuple[_Glyph, NoteEvent]] = []
-                    rests = []
-                    for g in records:
-                        if g.text in _CLEFS:
-                            clef = _clef(g, staff)
-                        elif g.text in _ACCIDENTALS and id(g) not in signature_ids:
-                            step = round((g.y - staff.bottom) / (staff.spacing / 2))
-                            accidentals[step] = _ACCIDENTALS[g.text]
-                        elif g.text in _NOTEHEADS:
-                            step_float = (g.y - staff.bottom) / (staff.spacing / 2)
-                            if abs(step_float - round(step_float)) > .22:
-                                _warning(measure, staff_index, "A notehead does not align reliably to a staff line or space.")
-                                counts["unaligned_notehead"] += 1
-                            written_midi, written_spelling = _pitch(g.y, staff, clef, keys.get(staff_index, 0), accidentals.get(round(step_float)))
-                            shift = _octave_shift(g, staff, octave_spans)
-                            tied_source = note_objects.get(tie_links.get(id(g), -1))
-                            if tied_source is not None:
-                                source_written_midi = tied_source.written_midi if tied_source.written_midi is not None else tied_source.midi
-                                source_written_spelling = tied_source.written_spelling or tied_source.spelling
-                                if round(step_float) in accidentals and written_midi != source_written_midi:
-                                    _warning(measure, staff_index, "A possible tie conflicts with a written accidental; its pitch needs review.")
-                                    counts["tie_accidental_conflict"] += 1
-                                    tied_source = None
-                                elif source_written_midi + shift != tied_source.midi:
-                                    _warning(measure, staff_index, "A possible tie crosses an octave-span boundary; sounding-pitch continuity needs review.")
-                                    counts["tie_octave_conflict"] += 1
-                                    tied_source = None
-                                else:
-                                    written_midi, written_spelling = source_written_midi, source_written_spelling
-                            midi, spelling = written_midi + shift, _shift_spelling(written_spelling, shift)
-                            if not 0 <= midi <= 127:
-                                counts["out_of_range_pitch"] += 1
-                                parsed.complete = False
-                                continue
-                            duration = _duration(g, staff, verticals, shapes)
-                            note = NoteEvent(staff_index, midi, spelling, 0, duration, g.x, g.y)
-                            if shift:
-                                note.written_midi, note.written_spelling, note.octave_shift = written_midi, written_spelling, shift
-                                resolved_counts["octave_shifted_notes"] += 1
-                            if tied_source is not None:
-                                note.tie_continuation = True
-                                tied_source.tie_to_next = True
-                            note_objects[id(g)] = note
-                            if duration is None:
-                                _warning(measure, staff_index, "A note duration could not be resolved from its stem, beams or flags.")
-                                counts["unknown_duration"] += 1
-                            note_records.append((g, note))
-                        elif g.text in _RESTS:
-                            rests.append((g.x, _RESTS[g.text] if _RESTS[g.text] is not None else beats))
-                        elif g.text in _REPEATS:
-                            measure.repeat_markers.append(g.text)
-                            counts["unexpanded_repeat"] += 1
-                    clefs[staff_index] = clef
-                    groups: list[list[tuple[_Glyph, NoteEvent]]] = []
-                    for record in note_records:
-                        if groups and record[0].x - groups[-1][0][0].x <= staff.spacing * 1.4:
-                            groups[-1].append(record)
-                        else:
-                            groups.append([record])
-                    atoms = [(group[0][0].x, min((note.duration for _, note in group if note.duration is not None), default=None), group) for group in groups]
-                    atoms.extend((x, duration, []) for x, duration in rests)
-                    atoms.sort(key=lambda item: item[0])
-                    total = sum(duration or 0 for _, duration, _ in atoms)
-                    sequential = all(duration is not None for _, duration, _ in atoms) and abs(total - beats) <= .06
-                    if atoms and not sequential:
-                        _warning(measure, staff_index, "Rhythm/voices do not sum to the written meter; onsets use provisional horizontal alignment.")
-                        counts["rhythm_alignment"] += 1
-                    cursor = 0.0
-                    first_x = atoms[0][0] if atoms else left
-                    last_x = atoms[-1][0] if atoms else right
-                    for x, duration, group in atoms:
-                        onset = cursor if sequential else max(0, min(beats, (x - first_x) / max(last_x - first_x + staff.spacing * 4, 1) * beats))
-                        for _, note in group:
-                            note.onset = round(onset, 6)
-                            note.confidence = "high" if sequential and measure.rhythm_exact else "medium"
-                            measure.notes.append(note)
-                        all_atoms.append((x, onset))
-                        cursor += duration or 0
-                    for shape in shapes:
-                        if shape["x1"] < left or shape["x0"] > right:
-                            continue
-                        is_curve = id(shape) not in resolved_tie_shapes and any(op[0] == "c" for op in shape.get("path", []))
-                        if is_curve and shape["x1"] - shape["x0"] > staff.spacing * 2 \
-                                and 0 < shape["y1"] - shape["y0"] < staff.spacing * 4 \
-                                and staff.bottom - staff.spacing * 7 < shape["y1"] < staff.top + staff.spacing * 7:
-                            _warning(measure, staff_index, "Tie/slur geometry is present; tied duration and voice continuity require review.")
-                            counts["tie_or_slur"] += 1
-                    for g in records:
-                        if g.text in ("3", "5", "6", "7", "9") and g.y > staff.top + staff.spacing * .5:
-                            _warning(measure, staff_index, "A possible tuplet needs review; tuplet timing has not been applied.")
-                            counts["possible_tuplet"] += 1
-                for x, symbol in chords:
-                    if left - system[0].spacing * .2 <= x < right - system[0].spacing * .2:
-                        if symbol == "N.C.":
-                            measure.no_chord = True
-                        else:
-                            onset = min(all_atoms, key=lambda atom: abs(atom[0] - x))[1] if all_atoms else 0.0
-                            measure.chords.append(PrintedChord(symbol, round(onset, 6), x))
-                text = "".join(g.text for g in sorted(glyphs, key=lambda g: g.x)
-                               if not _music(g) and id(g) not in resolved_octave_ids and left <= g.x < right
-                               and system[-1].bottom - system[-1].spacing * 10 < g.y < system[0].top + system[0].spacing * 12)
-                unresolved_here = [mark for mark in unresolved_octaves if left <= mark.x < right
-                                   and min(staffs, key=lambda staff: max(staff.bottom - mark.y, mark.y - staff.top, 0)) in system]
-                if unresolved_here:
-                    measure.warnings.append("An octave indication has no unambiguous bounded bracket; its pitches remain written until the span is reviewed.")
-                    measure.rhythm_exact = False
-                elif re.search(r"(?:8v[ab]|8ba|15m[ab]|22m[ab]|ottava)", text, re.I):
-                    measure.warnings.append("Octave text is present but its bounded span is unresolved; pitches remain written.")
-                    measure.rhythm_exact = False
-                    counts["ottava"] += 1
-                if not measure.rhythm_exact:
-                    for note in measure.notes:
-                        note.confidence = "medium"
-                measure.notes.sort(key=lambda note: (note.onset, note.staff, note.midi))
-                parsed.measures.append(measure)
-            for _, meter in meter_events:
-                current_meter = meter
-        if len(parsed.measures) >= max_measures and page_number < len(pages):
-            parsed.complete = False
-            counts["measure_limit"] += 1
+def _rotated_music_count(chars: list[dict]) -> int:
+    """Noteheads and clefs drawn rotated, slanted or mirrored, which staff positions cannot place."""
+    count = 0
+    for char in chars:
+        matrix = char.get("matrix")
+        if matrix and len(matrix) == 6 and (char.get("text") in _NOTEHEADS_AND_CLEFS):
+            a, b, c, d, _, _ = matrix
+            if _is_skewed(a, b, c, d) or a <= 0 or d <= 0:
+                count += 1
+    return count
+
+
+def _title(glyphs: list[_Glyph], staff: _Staff) -> str:
+    """The largest text well above the first staff, left to right; empty when there is none."""
+    candidates = [g for g in glyphs if not _is_music(g) and g.y > staff.top + staff.spacing * 8 and g.text]
+    if not candidates:
+        return ""
+    largest = max(g.size for g in candidates)
+    chosen = sorted((g for g in candidates if g.size >= largest * .8), key=lambda g: g.x)
+    return "".join(g.text for g in chosen).strip()[:120]
+
+
+def _unsupported_glyphs(glyphs: list[_Glyph], staffs: list[_Staff]) -> tuple[tuple[str, list[_Glyph]], ...]:
+    """Notation that is recognizable but not readable here, by unsupported-count name."""
+    unknown_heads = [g for g in glyphs if not _is_music(g) and g.text in _LEGACY_FONT_NOTEHEADS
+                     and any(staff.bottom - staff.spacing * 6 < g.y < staff.top + staff.spacing * 6 for staff in staffs)]
+    unsupported_heads = [g for g in glyphs if _has_code_point(g.text, _SMUFL_NOTEHEADS) and g.text not in _NOTEHEADS]
+    unsupported_clefs = [g for g in glyphs if _has_code_point(g.text, _SMUFL_CLEFS) and g.text not in _CLEFS]
+    composite_notes = [g for g in glyphs if _has_code_point(g.text, _SMUFL_COMPOSITE_NOTES)]
+    return (("unknown_legacy_music_font", unknown_heads), ("unsupported_notehead", unsupported_heads),
+            ("unsupported_clef", unsupported_clefs), ("unsupported_composite_note", composite_notes))
+
+
+def _page_tie_links(staffs: list[_Staff], shapes: list[dict], page_height: float) -> tuple[dict[int, int], set[int]]:
+    links: dict[int, int] = {}
+    resolved: set[int] = set()
+    for staff in staffs:
+        staff_links, staff_resolved = _tie_links(staff, shapes, page_height)
+        links.update(staff_links)
+        resolved.update(staff_resolved)
+    return links, resolved
+
+
+def _prepare_page(state: _ReadState, page_number: int, page: Any, chars: list[dict], lines: list[dict]) -> _Page | None:
+    """Locate a page's staves, count what cannot be read, and resolve its octave spans and ties.
+
+    A page without supported staff geometry is counted and returns None.
+    """
+    glyphs = _glyphs(chars)
+    rotated = _rotated_music_count(chars)
+    if rotated:
+        state.mark_incomplete("rotated_music_glyph", rotated)
+    staffs = _staffs(lines, float(page.width))
+    if not staffs:
+        state.mark_incomplete("pages_without_supported_staff_geometry")
+        return None
+    if not state.parsed.title:
+        state.parsed.title = _title(glyphs, staffs[0])
+    _assign_glyphs(staffs, glyphs)
+    for name, items in _unsupported_glyphs(glyphs, staffs):
+        if items:
+            state.mark_incomplete(name, len(items))
+    verticals = _verticals(lines)
+    shapes = list(getattr(page, "curves", [])) + list(getattr(page, "rects", []))
+    if len(chars) + len(lines) + len(shapes) > MAX_PAGE_OBJECTS:
+        raise ScorePDFError(_LIMIT_MESSAGE)
+    octave_spans, octave_marks, resolved_octave_ids = _octave_spans(staffs, glyphs, lines)
+    unresolved_octaves = [mark for mark in octave_marks if not mark.glyph_ids <= resolved_octave_ids]
+    state.resolved_counts["ottava_spans"] += len(octave_spans)
+    state.counts["ottava"] += len(unresolved_octaves)
+    tie_links, resolved_tie_shapes = _page_tie_links(staffs, shapes, float(page.height))
+    return _Page(page_number, glyphs, staffs, verticals, shapes, list(getattr(page, "rects", [])), octave_spans,
+                 unresolved_octaves, resolved_octave_ids, tie_links, resolved_tie_shapes)
+
+
+def _apply_opening_key_signatures(state: _ReadState, system: list[_Staff]) -> set[int]:
+    """Apply each staff's key signature at the start of a system; return its accidental glyph ids."""
+    signature_ids: set[int] = set()
+    for staff_index, staff in enumerate(system):
+        signature, ids = _key_signature(staff)
+        # A staff's first header with a clef and meter but no accidentals states an empty signature.
+        if signature is None and staff_index not in state.keys and _meters(staff) and _has_empty_key_signature(staff):
+            signature = 0
+        signature_ids.update(ids)
+        if signature is not None:
+            state.keys[staff_index] = signature
+            if state.parsed.key_signature is None:
+                state.parsed.key_signature = signature
+    return signature_ids
+
+
+def _read_system(state: _ReadState, page: _Page, system_number: int, system: list[_Staff]) -> None:
+    """Read a system's measures left to right, carrying meter and key signature changes forward."""
+    bounds = _boundaries(system, page.verticals)
+    if len(bounds) < 2:
+        state.mark_incomplete("systems_without_measure_boundaries")
+        return
+    meter_events = _meters(system[0])
+    chords = _chord_text(system, page.glyphs, page.rects)
+    signature_ids = _apply_opening_key_signatures(state, system)
+    for left, right in zip(bounds, bounds[1:]):
+        if len(state.parsed.measures) >= state.max_measures:
+            state.mark_incomplete("measure_limit")
             break
+        for x, meter in meter_events:
+            if x < right:
+                state.meter = meter
+                state.meter_known = True
+        for staff_index, staff in enumerate(system):
+            signature, ids = _key_signature(staff, left, right)
+            if signature is not None:
+                state.keys[staff_index] = signature
+                signature_ids.update(ids)
+        if state.parsed.time_signature is None and state.meter_known:
+            state.parsed.time_signature = state.meter
+        measure = _read_measure(state, page, system_number, system, left, right, chords, signature_ids)
+        state.parsed.measures.append(measure)
+    # The system's last meter, including one after its final barline, carries into the next system.
+    for _, meter in meter_events:
+        state.meter = meter
+
+
+def _read_measure(state: _ReadState, page: _Page, system_number: int, system: list[_Staff], left: float,
+                  right: float, chords: list[tuple[float, str]], signature_ids: set[int]) -> ScoreMeasure:
+    """Read every staff of one measure, then attach its printed chords and octave warnings."""
+    measure = ScoreMeasure(len(state.parsed.measures), page.number, system_number, len(state.parsed.measures) + 1,
+                           state.meter, key_signature=state.keys.get(0))
+    beats = state.meter[0] * 4 / state.meter[1]
+    if not state.meter_known:
+        measure.warnings.append("No readable time signature; 4/4 timing is provisional.")
+        measure.rhythm_exact = False
+        state.counts["missing_meter"] += 1
+    onsets: list[tuple[float, float]] = []
+    for staff_index, staff in enumerate(system):
+        onsets += _read_staff(state, page, measure, staff_index, staff, left, right, beats, signature_ids)
+    _attach_chords(measure, chords, left, right, system[0].spacing, onsets)
+    _flag_octave_text(state, page, measure, system, left, right)
+    if not measure.rhythm_exact:
+        for note in measure.notes:
+            note.confidence = "medium"
+    measure.notes.sort(key=lambda note: (note.onset, note.staff, note.midi))
+    return measure
+
+
+def _read_staff(state: _ReadState, page: _Page, measure: ScoreMeasure, staff_index: int, staff: _Staff,
+                left: float, right: float, beats: float, signature_ids: set[int]) -> list[tuple[float, float]]:
+    """Read one staff of one measure into notes and rests; return (x, onset) for each note group and rest."""
+    records = sorted((g for g in staff.glyphs if _in_bar(g.x, left, right, staff.spacing)), key=lambda g: g.x)
+    clef, clef_shown = _starting_clef(staff, state.clefs.get(staff_index), left, right)
+    if staff_index not in state.clefs and not clef_shown:
+        _warn(measure, staff_index, "No supported clef was present; treble position is provisional.")
+        state.counts["missing_clef"] += 1
+    accidentals: dict[int, int] = {}  # Written accidentals by staff step, until the barline.
+    note_records: list[tuple[_Glyph, NoteEvent]] = []
+    rests = []
+    for g in records:
+        if g.text in _CLEFS:
+            clef = _clef(g, staff)
+        elif g.text in _ACCIDENTALS and id(g) not in signature_ids:
+            step = round(_staff_step(g.y, staff))
+            accidentals[step] = _ACCIDENTALS[g.text]
+        elif g.text in _NOTEHEADS:
+            note = _read_note(state, page, measure, staff_index, staff, g, clef, accidentals)
+            if note is not None:
+                note_records.append((g, note))
+        elif g.text in _RESTS:
+            rests.append((g.x, _RESTS[g.text] if _RESTS[g.text] is not None else beats))
+        elif g.text in _REPEATS:
+            measure.repeat_markers.append(g.text)
+            state.counts["unexpanded_repeat"] += 1
+    state.clefs[staff_index] = clef
+    placed = _place_notes(state, measure, staff_index, staff, beats, _rhythm_atoms(note_records, rests, staff.spacing))
+    _flag_unresolved_curves(state, page, measure, staff_index, staff, left, right)
+    _flag_tuplets(state, measure, staff_index, staff, records)
+    return placed
+
+
+def _starting_clef(staff: _Staff, previous: str | None, left: float, right: float) -> tuple[str, bool]:
+    """The clef in force at a bar's left edge, and whether the staff shows any clef before the bar ends."""
+    clef_events = [(g.x, _clef(g, staff), g) for g in staff.glyphs if g.text in _CLEFS and g.x < right]
+    clef = "treble" if previous is None else previous
+    for x, selected, _ in sorted(clef_events):
+        if x <= left:
+            clef = selected
+    return clef, bool(clef_events)
+
+
+def _read_note(state: _ReadState, page: _Page, measure: ScoreMeasure, staff_index: int, staff: _Staff,
+               g: _Glyph, clef: str, accidentals: dict[int, int]) -> NoteEvent | None:
+    """Pitch, octave span, tie and duration of one notehead; None when it falls outside the MIDI range."""
+    step = _staff_step(g.y, staff)
+    if abs(step - round(step)) > .22:
+        _warn(measure, staff_index, "A notehead does not align reliably to a staff line or space.")
+        state.counts["unaligned_notehead"] += 1
+    written_midi, written_spelling = _pitch(g.y, staff, clef, state.keys.get(staff_index, 0), accidentals.get(round(step)))
+    shift = _octave_shift(g, staff, page.octave_spans)
+    tied_source = page.notes_by_glyph.get(page.tie_links.get(id(g), -1))
+    if tied_source is not None:
+        # A tie carries its source's written pitch unless an accidental or an octave-span edge contradicts it.
+        source_written_midi = tied_source.written_midi if tied_source.written_midi is not None else tied_source.midi
+        source_written_spelling = tied_source.written_spelling or tied_source.spelling
+        if round(step) in accidentals and written_midi != source_written_midi:
+            _warn(measure, staff_index, "A possible tie conflicts with a written accidental; its pitch needs review.")
+            state.counts["tie_accidental_conflict"] += 1
+            tied_source = None
+        elif source_written_midi + shift != tied_source.midi:
+            _warn(measure, staff_index, "A possible tie crosses an octave-span boundary; sounding-pitch continuity needs review.")
+            state.counts["tie_octave_conflict"] += 1
+            tied_source = None
+        else:
+            written_midi, written_spelling = source_written_midi, source_written_spelling
+    midi, spelling = written_midi + shift, _shift_spelling(written_spelling, shift)
+    if not 0 <= midi <= 127:
+        state.mark_incomplete("out_of_range_pitch")
+        return None
+    duration = _duration(g, staff, page.verticals, page.shapes)
+    note = NoteEvent(staff_index, midi, spelling, 0, duration, g.x, g.y)
+    if shift:
+        note.written_midi, note.written_spelling, note.octave_shift = written_midi, written_spelling, shift
+        state.resolved_counts["octave_shifted_notes"] += 1
+    if tied_source is not None:
+        note.tie_continuation = True
+        tied_source.tie_to_next = True
+    page.notes_by_glyph[id(g)] = note
+    if duration is None:
+        _warn(measure, staff_index, "A note duration could not be resolved from its stem, beams or flags.")
+        state.counts["unknown_duration"] += 1
+    return note
+
+
+def _rhythm_atoms(note_records: list[tuple[_Glyph, NoteEvent]], rests: list[tuple[float, float]], spacing: float) \
+        -> list[tuple[float, float | None, list[tuple[_Glyph, NoteEvent]]]]:
+    """Note groups and rests left to right as (x, duration, notes).
+
+    Noteheads within 1.4 spacings of a group's first head join that group, whose
+    duration is its shortest known one.
+    """
+    groups: list[list[tuple[_Glyph, NoteEvent]]] = []
+    for record in note_records:
+        if groups and record[0].x - groups[-1][0][0].x <= spacing * 1.4:
+            groups[-1].append(record)
+        else:
+            groups.append([record])
+    atoms = [(group[0][0].x, min((note.duration for _, note in group if note.duration is not None), default=None), group)
+             for group in groups]
+    atoms.extend((x, duration, []) for x, duration in rests)
+    atoms.sort(key=lambda item: item[0])
+    return atoms
+
+
+def _place_notes(state: _ReadState, measure: ScoreMeasure, staff_index: int, staff: _Staff, beats: float,
+                 atoms: list[tuple[float, float | None, list[tuple[_Glyph, NoteEvent]]]]) -> list[tuple[float, float]]:
+    """Give each note group its onset and confidence and add its notes to the measure.
+
+    Durations that fill the meter are summed; otherwise onsets follow horizontal position
+    and the staff is warned. Returns (x, onset) for each note group and rest.
+    """
+    if not atoms:
+        return []
+    total = sum(duration or 0 for _, duration, _ in atoms)
+    sequential = all(duration is not None for _, duration, _ in atoms) and abs(total - beats) <= .06
+    if not sequential:
+        _warn(measure, staff_index, "Rhythm/voices do not sum to the written meter; onsets use provisional horizontal alignment.")
+        state.counts["rhythm_alignment"] += 1
+    placed = []
+    cursor = 0.0
+    first_x, last_x = atoms[0][0], atoms[-1][0]
+    for x, duration, group in atoms:
+        onset = cursor if sequential else max(0, min(beats, (x - first_x) / max(last_x - first_x + staff.spacing * 4, 1) * beats))
+        for _, note in group:
+            note.onset = round(onset, 6)
+            note.confidence = "high" if sequential and measure.rhythm_exact else "medium"
+            measure.notes.append(note)
+        placed.append((x, onset))
+        cursor += duration or 0
+    return placed
+
+
+def _flag_unresolved_curves(state: _ReadState, page: _Page, measure: ScoreMeasure, staff_index: int,
+                            staff: _Staff, left: float, right: float) -> None:
+    """Warn about tie or slur curves near this staff in the measure that were not resolved as ties."""
+    for shape in page.shapes:
+        if shape["x1"] < left or shape["x0"] > right:
+            continue
+        unresolved_curve = id(shape) not in page.resolved_tie_shapes and _is_curved(shape)
+        if unresolved_curve and shape["x1"] - shape["x0"] > staff.spacing * 2 \
+                and 0 < shape["y1"] - shape["y0"] < staff.spacing * 4 \
+                and staff.bottom - staff.spacing * 7 < shape["y1"] < staff.top + staff.spacing * 7:
+            _warn(measure, staff_index, "Tie/slur geometry is present; tied duration and voice continuity require review.")
+            state.counts["tie_or_slur"] += 1
+
+
+def _flag_tuplets(state: _ReadState, measure: ScoreMeasure, staff_index: int, staff: _Staff,
+                  records: list[_Glyph]) -> None:
+    for g in records:
+        if g.text in _TUPLET_DIGITS and g.y > staff.top + staff.spacing * .5:
+            _warn(measure, staff_index, "A possible tuplet needs review; tuplet timing has not been applied.")
+            state.counts["possible_tuplet"] += 1
+
+
+def _attach_chords(measure: ScoreMeasure, chords: list[tuple[float, str]], left: float, right: float,
+                   spacing: float, onsets: list[tuple[float, float]]) -> None:
+    """Attach the bar's printed chords at the onset of the horizontally nearest note group or rest."""
+    for x, symbol in chords:
+        if not _in_bar(x, left, right, spacing):
+            continue
+        if symbol == "N.C.":
+            measure.no_chord = True
+        else:
+            onset = min(onsets, key=lambda item: abs(item[0] - x))[1] if onsets else 0.0
+            measure.chords.append(PrintedChord(symbol, round(onset, 6), x))
+
+
+def _flag_octave_text(state: _ReadState, page: _Page, measure: ScoreMeasure, system: list[_Staff],
+                      left: float, right: float) -> None:
+    """Warn when an octave sign in the bar has no resolved bracket; its pitches stay as written."""
+    text = "".join(g.text for g in sorted(page.glyphs, key=lambda g: g.x)
+                   if not _is_music(g) and id(g) not in page.resolved_octave_ids and left <= g.x < right
+                   and system[-1].bottom - system[-1].spacing * 10 < g.y < system[0].top + system[0].spacing * 12)
+    unresolved_here = [mark for mark in page.unresolved_octaves if left <= mark.x < right
+                       and _nearest_staff(page.staffs, mark.y) in system]
+    if unresolved_here:
+        measure.warnings.append("An octave indication has no unambiguous bounded bracket; its pitches remain written until the span is reviewed.")
+        measure.rhythm_exact = False
+    elif _OCTAVE_TEXT.search(text):
+        measure.warnings.append("Octave text is present but its bounded span is unresolved; pitches remain written.")
+        measure.rhythm_exact = False
+        state.counts["ottava"] += 1
+
+
+def _summarize(state: _ReadState) -> ParsedScore:
+    """Finish the score: support and completeness, unresolved counts and score-level warnings."""
+    parsed, counts, resolved_counts = state.parsed, state.counts, state.resolved_counts
     parsed.supported = any(measure.notes or measure.chords or measure.no_chord for measure in parsed.measures)
     if not parsed.supported:
         parsed.complete = False
@@ -831,11 +1082,30 @@ def _parse_pages(pages: Any, *, max_measures: int = 512) -> ParsedScore:
     return parsed
 
 
-def parse_vector_score(data: bytes, *, max_pages: int = 50, max_measures: int = 512) -> ParsedScore:
+def _parse_pages(pages: Any, *, max_measures: int = MAX_PDF_MEASURES) -> ParsedScore:
+    state = _ReadState(ParsedScore(), max_measures)
+    total_glyphs = 0
+    for page_number, page in enumerate(pages, 1):
+        chars, lines = page.chars, page.lines
+        total_glyphs += len(chars)
+        if total_glyphs > MAX_TOTAL_GLYPHS or len(chars) + len(lines) > MAX_PAGE_OBJECTS:
+            raise ScorePDFError(_LIMIT_MESSAGE)
+        prepared = _prepare_page(state, page_number, page, chars, lines)
+        if prepared is None:
+            continue
+        for system_number, system in enumerate(_systems(prepared.staffs, prepared.verticals), 1):
+            _read_system(state, prepared, system_number, system)
+        if len(state.parsed.measures) >= max_measures and page_number < len(pages):
+            state.mark_incomplete("measure_limit")
+            break
+    return _summarize(state)
+
+
+def parse_vector_score(data: bytes, *, max_pages: int = MAX_PDF_PAGES, max_measures: int = MAX_PDF_MEASURES) -> ParsedScore:
     if not isinstance(data, bytes) or not data or len(data) > MAX_PDF_BYTES or not data.startswith(b"%PDF-"):
         raise ScorePDFError("Choose a nonempty PDF up to 8 MiB for local vector analysis.")
-    if not 1 <= max_pages <= 50 or not 1 <= max_measures <= 512:
-        raise ScorePDFError("Local vector analysis supports 1..50 pages and 1..512 measures.")
+    if not 1 <= max_pages <= MAX_PDF_PAGES or not 1 <= max_measures <= MAX_PDF_MEASURES:
+        raise ScorePDFError(f"Local vector analysis supports 1..{MAX_PDF_PAGES} pages and 1..{MAX_PDF_MEASURES} measures.")
     try:
         with pdfplumber.open(io.BytesIO(data)) as pdf:
             if not 1 <= len(pdf.pages) <= max_pages:

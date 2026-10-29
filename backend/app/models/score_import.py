@@ -10,13 +10,17 @@ MAX_SCORE_BYTES = 8 * 1024 * 1024
 MAX_SCORE_BASE64 = 4 * ((MAX_SCORE_BYTES + 2) // 3)
 MAX_SCORE_MEASURES = 512
 MAX_SCORE_SECTIONS = 64
+MAX_SCORE_WARNINGS = 32
 MAX_CHORDS_PER_MEASURE = 16
+MAX_PITCH_NAMES = 128
+MAX_NOTE_CHARS = 400
+MAX_TITLE_CHARS = 120
 ScoreMime = Literal["application/pdf", "image/png", "image/jpeg", "image/webp"]
 ScoreImportMode = Literal["chord_symbols", "infer_harmony"]
 ChordBasis = Literal["printed", "inferred", "unreadable"]
 Confidence = Literal["high", "medium", "low"]
 ShortText = Annotated[str, Field(max_length=80)]
-Note = Annotated[str, Field(max_length=400)]
+Note = Annotated[str, Field(max_length=MAX_NOTE_CHARS)]
 ChordSymbol = Annotated[str, Field(min_length=1, max_length=80)]
 
 
@@ -39,9 +43,9 @@ class ImportedMeasure(StrictModel):
     note: Note
     chordBasis: ChordBasis = "printed"
     confidence: Confidence = "high"
-    notes: list[ShortText] = Field(default_factory=list, max_length=128)
-    writtenNotes: list[ShortText] = Field(default_factory=list, max_length=128)
-    bassNotes: list[ShortText] = Field(default_factory=list, max_length=128)
+    notes: list[ShortText] = Field(default_factory=list, max_length=MAX_PITCH_NAMES)
+    writtenNotes: list[ShortText] = Field(default_factory=list, max_length=MAX_PITCH_NAMES)
+    bassNotes: list[ShortText] = Field(default_factory=list, max_length=MAX_PITCH_NAMES)
     noChord: bool = False
     timeSignature: list[int] | None = Field(default=None, min_length=2, max_length=2)
     analysisSource: Literal["local", "meta"] | None = None
@@ -81,12 +85,12 @@ class ImportedSection(StrictModel):
 
 
 class ScoreDraft(StrictModel):
-    title: str = Field(max_length=120)
+    title: str = Field(max_length=MAX_TITLE_CHARS)
     key: Annotated[str, Field(max_length=40)] | None
     timeSignature: list[int] | None = Field(min_length=2, max_length=2)
     measures: list[ImportedMeasure] = Field(max_length=MAX_SCORE_MEASURES)
     sections: list[ImportedSection] = Field(max_length=MAX_SCORE_SECTIONS)
-    warnings: list[Note] = Field(max_length=32)
+    warnings: list[Note] = Field(max_length=MAX_SCORE_WARNINGS)
 
     @field_validator("timeSignature")
     @classmethod

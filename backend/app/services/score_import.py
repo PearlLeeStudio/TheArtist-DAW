@@ -1,4 +1,12 @@
-"""Read printed chords, or explicitly opt into a reviewable harmony analysis."""
+"""Read printed chords, or explicitly opt into a reviewable harmony analysis.
+
+Every upload is checked here before any reader sees it. engine=local reads a vector
+PDF on this machine and never calls Meta; engine=meta attaches the file to one bounded
+Meta request; engine=auto reads locally first and turns to Meta, visibly, only when the
+local reader cannot read the file or, for harmony analysis, for unresolved measures.
+"""
+
+from __future__ import annotations
 
 import base64
 import binascii
@@ -9,11 +17,12 @@ from typing import Any
 from pydantic import ValidationError
 
 from app.models.score_import import (
-    MAX_CHORDS_PER_MEASURE, MAX_SCORE_BASE64, MAX_SCORE_BYTES, MAX_SCORE_MEASURES,
-    MAX_SCORE_SECTIONS, ScoreExtraction, ScoreImportRequest, ScoreImportResponse,
+    MAX_CHORDS_PER_MEASURE, MAX_NOTE_CHARS, MAX_SCORE_BASE64, MAX_SCORE_BYTES, MAX_SCORE_MEASURES,
+    MAX_SCORE_SECTIONS, MAX_SCORE_WARNINGS, MAX_TITLE_CHARS, ScoreExtraction, ScoreImportRequest,
+    ScoreImportResponse,
 )
 from app.models.sections import SECTION_TYPES
-from app.services.llm import LLMConfigError, LLMResponseError, SPARK_PRICES, get_client
+from app.services.llm import LLMConfig, LLMConfigError, LLMResponseError, LLMResult, SPARK_PRICES, get_client
 
 SCORE_MODEL = "muse-spark-1.3"
 SCORE_TIMEOUT_S = 75.0
@@ -23,6 +32,8 @@ SCORE_MAX_OUTPUT_TOKENS = 8192
 SCORE_INPUT_TOKEN_BOUND = 1_048_576
 SCORE_MAX_REQUEST_USD = 1.35
 MAX_META_SCORE_MEASURES = 128
+# _review_warnings appends at most this many warnings after the model's own.
+_SERVICE_WARNINGS = 4
 
 _EXTENSIONS = {
     "application/pdf": {".pdf"}, "image/png": {".png"},
@@ -61,7 +72,7 @@ def _canonical_key(value: str | None) -> str | None:
 SCORE_SCHEMA = {
     "type": "object",
     "properties": {
-        "title": _string(120), "key": _string(40, nullable=True),
+        "title": _string(MAX_TITLE_CHARS), "key": _string(40, nullable=True),
         "keyBasis": {"type": "string", "enum": ["printed", "inferred", "unreadable"]},
         "timeSignature": {"type": ["array", "null"], "minItems": 2, "maxItems": 2,
                           "items": {"type": "integer", "minimum": 1, "maximum": 32}},
@@ -69,7 +80,7 @@ SCORE_SCHEMA = {
             "type": "object", "properties": {
                 "chords": {"type": "array", "maxItems": MAX_CHORDS_PER_MEASURE,
                            "items": {"type": "string", "minLength": 1, "maxLength": 80}},
-                "sourceLabel": _string(80), "needsReview": {"type": "boolean"}, "note": _string(400),
+                "sourceLabel": _string(80), "needsReview": {"type": "boolean"}, "note": _string(MAX_NOTE_CHARS),
                 "chordBasis": {"type": "string", "enum": ["printed", "inferred", "unreadable"]},
                 "confidence": {"type": "string", "enum": ["high", "medium", "low"]},
             }}},
@@ -79,9 +90,9 @@ SCORE_SCHEMA = {
                 "label": _string(80),
                 "startMeasure": {"type": "integer", "minimum": 0, "maximum": MAX_SCORE_MEASURES - 1},
                 "length": {"type": "integer", "minimum": 1, "maximum": MAX_SCORE_MEASURES},
-                "basis": {"type": "string", "enum": ["explicit", "inferred"]}, "note": _string(400),
+                "basis": {"type": "string", "enum": ["explicit", "inferred"]}, "note": _string(MAX_NOTE_CHARS),
             }}},
-        "warnings": {"type": "array", "maxItems": 28, "items": _string(400)},
+        "warnings": {"type": "array", "maxItems": MAX_SCORE_WARNINGS - _SERVICE_WARNINGS, "items": _string(MAX_NOTE_CHARS)},
         "complete": {"type": "boolean"}, "hasRepeats": {"type": "boolean"},
     },
 }
@@ -167,7 +178,8 @@ human review, never a claim of exact original harmony. Return only structured ex
 """
 
 
-def _content(req: ScoreImportRequest) -> dict[str, Any]:
+def _attachment(req: ScoreImportRequest) -> dict[str, Any]:
+    """Check the upload's type, name, size and file signature; return it as a Meta chat content part."""
     if req.mimeType not in _EXTENSIONS:
         raise ScoreInputError("Choose a PDF, PNG, JPEG, or WebP score.", 415)
     if not req.filename.strip() or any(ord(char) < 32 for char in req.filename) \
@@ -201,54 +213,64 @@ def _content(req: ScoreImportRequest) -> dict[str, Any]:
 
 
 def import_score(req: ScoreImportRequest) -> ScoreImportResponse:
-    content = _content(req)
-    if req.engine != "meta":
-        from app.services.score_analysis import LocalScoreUnsupported, analyze_local_score
-        try:
-            response = analyze_local_score(req)
-            if req.engine == "auto" and req.mode == "infer_harmony":
-                from app.services.score_assistance import enrich_local_harmony
-                return enrich_local_harmony(req, response)
-            return response
-        except LocalScoreUnsupported as exc:
-            if req.engine == "local":
-                raise ScoreInputError(f"{exc} This format is not supported by local score import. Try a supported vector PDF.", 422) from None
-            response = _import_meta_score(req, content)
-            response.warnings = [f"Local reading was unsupported: {str(exc)[:220]}. Meta processed this file.",
-                                 *response.warnings][:32]
-            return response
-    return _import_meta_score(req, content)
+    attachment = _attachment(req)
+    if req.engine == "meta":
+        return _import_meta_score(req, attachment)
+    from app.services.score_analysis import LocalScoreUnsupported, analyze_local_score
+    try:
+        response = analyze_local_score(req)
+        if req.engine == "auto" and req.mode == "infer_harmony":
+            from app.services.score_assistance import enrich_local_harmony
+            return enrich_local_harmony(req, response)
+        return response
+    except LocalScoreUnsupported as exc:
+        if req.engine == "local":
+            raise ScoreInputError(f"{exc} This format is not supported by local score import. Try a supported vector PDF.", 422) from None
+        # engine=auto: Meta reads the whole file instead, and the first warning says so.
+        response = _import_meta_score(req, attachment)
+        response.warnings = [f"Local reading was unsupported: {str(exc)[:220]}. Meta processed this file.",
+                             *response.warnings][:MAX_SCORE_WARNINGS]
+        return response
 
 
-def _import_meta_score(req: ScoreImportRequest, content: dict[str, Any]) -> ScoreImportResponse:
-    client = get_client()
-    cfg = client.config
+def _require_standard_meta(cfg: LLMConfig) -> None:
+    """Score import runs only on the Standard Meta model at its Standard prices."""
     if cfg.provider != "meta" or cfg.model != SCORE_MODEL:
         raise LLMConfigError("Score import requires Meta Standard muse-spark-1.3 (LLM_PROVIDER=meta).")
     if (cfg.price_input_per_m, cfg.price_cached_per_m, cfg.price_output_per_m) != SPARK_PRICES:
         raise LLMConfigError("Score import requires the Standard model prices; remove LLM_PRICE_* overrides.")
-    result = client.chat_json(
-        [{"role": "system", "content": HARMONY_SYSTEM_PROMPT if req.mode == "infer_harmony" else SYSTEM_PROMPT},
-         {"role": "user", "content": [
-             {"type": "text", "text": (
-                 "Analyze the attached score's readable notes into a harmony draft for review."
-                 if req.mode == "infer_harmony" else
-                 "Transcribe the attached score's printed chord symbols for review.")},
-             content]}],
-        SCORE_SCHEMA, name="score_import", label="score.import", timeout_s=SCORE_TIMEOUT_S,
-        max_completion_tokens=SCORE_MAX_OUTPUT_TOKENS,
-        input_token_upper_bound=SCORE_INPUT_TOKEN_BOUND, max_request_usd=SCORE_MAX_REQUEST_USD,
-    )
+
+
+def _messages(mode: str, attachment: dict[str, Any]) -> list[dict[str, Any]]:
+    """The mode's system prompt, then one user turn that carries the score as an attachment."""
+    if mode == "infer_harmony":
+        system = HARMONY_SYSTEM_PROMPT
+        instruction = "Analyze the attached score's readable notes into a harmony draft for review."
+    else:
+        system = SYSTEM_PROMPT
+        instruction = "Transcribe the attached score's printed chord symbols for review."
+    return [{"role": "system", "content": system},
+            {"role": "user", "content": [{"type": "text", "text": instruction}, attachment]}]
+
+
+def _validated_draft(result: LLMResult) -> ScoreExtraction:
     try:
         # Validate structure before inspecting records or applying legacy defaults.
-        draft = ScoreExtraction.model_validate(result.data)
+        return ScoreExtraction.model_validate(result.data)
     except ValidationError as exc:
         # No document text is echoed through pydantic's input-bearing error representation.
         location = ".".join(str(part) for part in exc.errors()[0]["loc"]) or "sections"
         raise LLMResponseError(f"The score transcription is invalid at {location}; try a clearer or shorter score.",
                                kind="score_validation", request_id=result.request_id) from None
+
+
+def _check_provenance(mode: str, result: LLMResult, draft: ScoreExtraction) -> None:
+    """Harmony analysis labels every proposal; a transcription never infers chords or the key.
+
+    The labels are checked in the raw output, because validation fills in legacy defaults.
+    """
     raw_measures = result.data["measures"]
-    if req.mode == "infer_harmony":
+    if mode == "infer_harmony":
         if "keyBasis" not in result.data or any(
             "chordBasis" not in measure or "confidence" not in measure for measure in raw_measures
         ):
@@ -257,14 +279,13 @@ def _import_meta_score(req: ScoreImportRequest, content: dict[str, Any]) -> Scor
     elif any(measure.get("chordBasis") == "inferred" for measure in raw_measures):
         raise LLMResponseError("Printed-chord transcription cannot contain inferred chords; choose harmony analysis.",
                                kind="score_validation", request_id=result.request_id)
-    if req.mode == "chord_symbols" and draft.keyBasis == "inferred":
+    if mode == "chord_symbols" and draft.keyBasis == "inferred":
         raise LLMResponseError("Printed-chord transcription cannot infer the key; choose harmony analysis to do that.",
                                kind="score_validation", request_id=result.request_id)
-    original_key = draft.key
-    draft.key = _canonical_key(original_key)
-    unrecognized_key = original_key is not None and draft.key is None
-    if draft.keyBasis == "unreadable":
-        draft.key = None
+
+
+def _require_usable(mode: str, draft: ScoreExtraction) -> None:
+    """A partial, oversized or chordless draft fails instead of importing as if complete."""
     if not draft.complete:
         raise ScoreInputError("The complete written score could not be read within the import limits. "
                               "Split it into shorter files (up to 128 measures) or use a clearer image.", 422)
@@ -273,31 +294,57 @@ def _import_meta_score(req: ScoreImportRequest, content: dict[str, Any]) -> Scor
     if not any(measure.chords for measure in draft.measures):
         message = ("No supported harmony could be proposed from readable notation. "
                    "Choose a clearer score with visible notes and bass, or enter the chords manually."
-                   if req.mode == "infer_harmony" else
+                   if mode == "infer_harmony" else
                    "No readable printed chord symbols were found. "
                    "Choose Analyze notes (no chords) to infer harmony for review, "
                    "or choose a chord chart with printed symbols.")
         raise ScoreInputError(message, 422)
+
+
+def _review_warnings(req: ScoreImportRequest, draft: ScoreExtraction, unrecognized_key: bool) -> list[str]:
+    """At most _SERVICE_WARNINGS (four) warnings, which fit after the schema's cap on the model's own."""
+    warnings = []
+    if unrecognized_key:
+        warnings.append("The key label could not be recognized as a major or minor key. "
+                        "Choose and confirm the key manually before importing.")
+    if req.mode == "infer_harmony":
+        warnings.append("Harmony analysis is an interpretation, not a transcription of the original chords. "
+                        "Review every inferred chord, its note evidence, and the key before importing.")
+        if draft.key is not None and draft.keyBasis == "inferred":
+            warnings.append("The key is inferred from readable notation, not explicitly printed; confirm it before importing.")
+    if draft.hasRepeats:
+        warnings.append("Repeat signs and endings remain in written order; repeats have not been expanded.")
+    if req.mimeType == "application/pdf":
+        warnings.append("PDF reading uses at most the first 50 page images and 100 pages of text. "
+                        "Split longer scores and check the complete written order.")
+    return warnings
+
+
+def _import_meta_score(req: ScoreImportRequest, attachment: dict[str, Any]) -> ScoreImportResponse:
+    client = get_client()
+    _require_standard_meta(client.config)
+    result = client.chat_json(
+        _messages(req.mode, attachment),
+        SCORE_SCHEMA, name="score_import", label="score.import", timeout_s=SCORE_TIMEOUT_S,
+        max_completion_tokens=SCORE_MAX_OUTPUT_TOKENS,
+        input_token_upper_bound=SCORE_INPUT_TOKEN_BOUND, max_request_usd=SCORE_MAX_REQUEST_USD,
+    )
+    draft = _validated_draft(result)
+    _check_provenance(req.mode, result, draft)
+    original_key = draft.key
+    draft.key = _canonical_key(original_key)
+    unrecognized_key = original_key is not None and draft.key is None
+    if draft.keyBasis == "unreadable":
+        draft.key = None
+    _require_usable(req.mode, draft)
     for measure in draft.measures:
         measure.analysisSource = "meta"
         measure.requestId = result.request_id
         measure.model = result.model
-        if len(measure.chords) not in (1, 2):
+        if len(measure.chords) not in (1, 2):  # The editor holds two chords per measure.
             measure.needsReview = True
             if not measure.note:
                 measure.note = "Confirm this measure's chord count before choosing the two chord slots."
-    if unrecognized_key:
-        draft.warnings.append("The key label could not be recognized as a major or minor key. "
-                              "Choose and confirm the key manually before importing.")
-    if req.mode == "infer_harmony":
-        draft.warnings.append("Harmony analysis is an interpretation, not a transcription of the original chords. "
-                              "Review every inferred chord, its note evidence, and the key before importing.")
-        if draft.key is not None and draft.keyBasis == "inferred":
-            draft.warnings.append("The key is inferred from readable notation, not explicitly printed; confirm it before importing.")
-    if draft.hasRepeats:
-        draft.warnings.append("Repeat signs and endings remain in written order; repeats have not been expanded.")
-    if req.mimeType == "application/pdf":
-        draft.warnings.append("PDF reading uses at most the first 50 page images and 100 pages of text. "
-                              "Split longer scores and check the complete written order.")
+    draft.warnings.extend(_review_warnings(req, draft, unrecognized_key))
     return ScoreImportResponse(**draft.model_dump(exclude={"complete", "hasRepeats", "keyBasis"}),
                                model=result.model, requestId=result.request_id, mode=req.mode)
