@@ -486,7 +486,7 @@ export default function Staff() {
       </svg>
 
       {/* VexFlow renders here */}
-      <div ref={containerRef} className="w-full" />
+      <div ref={containerRef} className="w-full vf-staff" />
     </div>
     </>
   );

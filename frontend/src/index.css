@@ -392,6 +392,12 @@ code, pre {
   max-height: clamp(64px, calc(8dvh - 8px), 124px);
 }
 
+/* VexFlow draws the clef, key and time signatures as SVG text that only inherits a fill;
+   pin them to the theme's stave colour, so they match the stave lines in both themes. */
+.vf-staff text {
+  fill: var(--stave-color);
+}
+
 /* On a full-height desktop, distribute the available height instead of
    scrolling the hardware enclosure. Smaller windows retain a safe scroll fallback. */
 @media (min-height: 900px) {

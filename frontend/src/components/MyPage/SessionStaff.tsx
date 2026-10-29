@@ -212,7 +212,7 @@ export default function SessionStaff({ song }: SessionStaffProps) {
           });
         })}
       </svg>
-      <div ref={containerRef} className="w-full" />
+      <div ref={containerRef} className="w-full vf-staff" />
     </div>
   );
 }
