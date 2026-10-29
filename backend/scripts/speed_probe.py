@@ -27,8 +27,10 @@ import platform
 import statistics
 import sys
 import time
+from collections.abc import Callable
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Any
 
 import torch
 
@@ -139,11 +141,11 @@ def _request(args: argparse.Namespace, genre: str, bars: int) -> GenerateRequest
     loop = CONTEXT_LOOP[mode.lower()]
     context = []
     for measure in range(args.context_bars):
-        half = 2 * (measure % 2)
+        first = 2 * (measure % 2)  # even bars take the loop's first two chords, odd bars the last two
         context.append(ContextMeasure(
             measure=measure,
             chords=[SPELLING[(PITCH_CLASS[root] + step) % 12] + quality
-                    for step, quality in loop[half:half + 2]],
+                    for step, quality in loop[first:first + 2]],
         ))
     selected = list(range(args.context_bars, args.context_bars + bars))
     context += [ContextMeasure(measure=m, chords=[None, None]) for m in selected]
@@ -167,7 +169,7 @@ def _service_kwargs(req: GenerateRequest, takes_section: bool) -> dict:
     return kwargs
 
 
-def _count_model_bars(sink: list[int]):
+def _count_model_bars(sink: list[int]) -> Callable[..., Any] | None:
     """Wrap inference.generate_with_model to record how many bars each sampling pass
     returns before the service pads them to the request. Returns the original for
     restoring, or None when the service has no such function (model_bars stays null)."""
@@ -185,15 +187,21 @@ def _count_model_bars(sink: list[int]):
     return original
 
 
-def _load(registry, model_key: str) -> dict:
+def _load_model(registry: inference.ModelRegistry, model_key: str) -> dict:
+    """Load one model, outside the timed runs, and log how that went."""
     start = time.perf_counter()
     loaded = registry.load_model(model_key)
-    return {
+    model = {
         "label": inference.MODEL_LABELS.get(model_key, model_key),
         "loaded": loaded is not None,
         "device": str(loaded.device) if loaded is not None else None,
         "load_ms": _ms(time.perf_counter() - start),
     }
+    if model["loaded"]:
+        _log(f"{model_key} loaded on {model['device']} in {model['load_ms']:.0f} ms")
+    else:
+        _log(f"{model_key} unavailable; its runs will return None")
+    return model
 
 
 def _timed_call(kwargs: dict, produced: list[int]) -> dict:
@@ -213,8 +221,10 @@ def _timed_call(kwargs: dict, produced: list[int]) -> dict:
     phase_s = {"setup": setup}
     stage_s = {"setup": setup}
     events = []
-    for i, (stage, step, at) in enumerate(marks):
-        gap = (marks[i + 1][2] if i + 1 < len(marks) else end) - at
+    # Each mark's stage lasts until the next mark, the last one until the return
+    stage_ends = [at for _, _, at in marks[1:]] + [end]
+    for (stage, step, at), stage_end in zip(marks, stage_ends):
+        gap = stage_end - at
         name = stage if step is None else f"{stage}_{step}"
         phase_s[name] = phase_s.get(name, 0.0) + gap
         stage_s[stage] = stage_s.get(stage, 0.0) + gap
@@ -228,6 +238,14 @@ def _timed_call(kwargs: dict, produced: list[int]) -> dict:
         "phase_ms": {name: _ms(s) for name, s in phase_s.items()},
         "stage_ms": {name: _ms(s) for name, s in stage_s.items()},
     }
+
+
+def _recorded_runs(args: argparse.Namespace, kwargs: dict, produced: list[int]) -> list[dict]:
+    """Reseed torch, make the unrecorded warm-up calls, then time the recorded ones."""
+    torch.manual_seed(args.seed)
+    for _ in range(args.warmup):
+        _timed_call(kwargs, produced)
+    return [_timed_call(kwargs, produced) for _ in range(args.runs)]
 
 
 def _medians(rows: list[dict[str, float]]) -> dict[str, float]:
@@ -269,6 +287,24 @@ def _summary(runs: list[dict]) -> dict:
             {"min": min(produced), "median": statistics.median(produced), "max": max(produced)}
             if produced else None
         ),
+    }
+
+
+def _settings(args: argparse.Namespace, takes_section: bool) -> dict:
+    """The probe's own settings, plus the request defaults it leaves to GenerateRequest."""
+    return {
+        "bars": args.bars,
+        "genres": args.genres,
+        "runs": args.runs,
+        "warmup": args.warmup,
+        "context_bars": args.context_bars,
+        "key": args.key,
+        "threads": args.threads,
+        "seed": args.seed,
+        "section_type": args.section_type,
+        "service_takes_section_type": takes_section,
+        "time_signature": list(GenerateRequest.model_fields["timeSignature"].default),
+        "bpm": GenerateRequest.model_fields["bpm"].default,
     }
 
 
@@ -381,17 +417,10 @@ def main(argv: list[str] | None = None) -> None:
             # Same resolution as the service with modelKey None; loads only this genre's model.
             model_key = inference.dispatch_model_for_genre(genre)
             if model_key not in models:
-                model = models[model_key] = _load(registry, model_key)
-                if model["loaded"]:
-                    _log(f"{model_key} loaded on {model['device']} in {model['load_ms']:.0f} ms")
-                else:
-                    _log(f"{model_key} unavailable; its runs will return None")
+                models[model_key] = _load_model(registry, model_key)
             for bars in args.bars:
                 kwargs = _service_kwargs(_request(args, genre, bars), takes_section)
-                torch.manual_seed(args.seed)
-                for _ in range(args.warmup):
-                    _timed_call(kwargs, produced)
-                runs = [_timed_call(kwargs, produced) for _ in range(args.runs)]
+                runs = _recorded_runs(args, kwargs, produced)
                 cell = {
                     "genre": genre,
                     "bars": bars,
@@ -410,20 +439,7 @@ def main(argv: list[str] | None = None) -> None:
 
     report = {
         "created_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-        "settings": {
-            "bars": args.bars,
-            "genres": args.genres,
-            "runs": args.runs,
-            "warmup": args.warmup,
-            "context_bars": args.context_bars,
-            "key": args.key,
-            "threads": args.threads,
-            "seed": args.seed,
-            "section_type": args.section_type,
-            "service_takes_section_type": takes_section,
-            "time_signature": list(GenerateRequest.model_fields["timeSignature"].default),
-            "bpm": GenerateRequest.model_fields["bpm"].default,
-        },
+        "settings": _settings(args, takes_section),
         "environment": _environment(models),
         "models": models,
         "cells": cells,

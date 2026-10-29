@@ -143,8 +143,18 @@ PROVIDERS: dict[str, _Provider] = {
 }
 
 
+def _round_usd(amount: float) -> float:
+    """Every USD amount (costs, reservations and ledger totals) is kept to 8 decimal places."""
+    return round(amount, 8)
+
+
+def _env_str(env: Mapping[str, str], name: str) -> str:
+    """The variable's value without surrounding whitespace; empty when unset."""
+    return (env.get(name) or "").strip()
+
+
 def _env_float(env: Mapping[str, str], name: str) -> float | None:
-    raw = (env.get(name) or "").strip()
+    raw = _env_str(env, name)
     if not raw:
         return None
     try:
@@ -164,8 +174,8 @@ def _is_loopback(host: str) -> bool:
         return False
 
 
-# The hosted endpoints, each reached only under its own provider name
-_HOSTED = {_host(spec.base_url): name for name, spec in PROVIDERS.items() if spec.key_env}
+# The hosted endpoints by host, each reached only under its own provider name
+_PROVIDER_BY_HOST = {_host(spec.base_url): name for name, spec in PROVIDERS.items() if spec.key_env}
 
 
 def _check_endpoint(provider: str, base_url: str) -> None:
@@ -177,23 +187,73 @@ def _check_endpoint(provider: str, base_url: str) -> None:
     """
     host, scheme = _host(base_url), urlsplit(base_url).scheme
     shown = f"{scheme}://{host}" if host else "a URL with no host"  # never a path or credentials
-    owner = _HOSTED.get(host)
-    if provider in _HOSTED.values():
+    owner = _PROVIDER_BY_HOST.get(host)
+    if provider in _PROVIDER_BY_HOST.values():  # a hosted provider: its own host, over https only
         if owner == provider and scheme == "https":
             return
         if owner is None:
-            other = ", or use LLM_PROVIDER=custom with LLM_API_KEY for another endpoint"
+            hint = ", or use LLM_PROVIDER=custom with LLM_API_KEY for another endpoint"
         elif owner != provider:
-            other = f", or set LLM_PROVIDER={owner}"
+            hint = f", or set LLM_PROVIDER={owner}"
         else:
-            other = ""  # its own host, but over plain http
+            hint = ""  # its own host, but over plain http
         raise LLMConfigError(f"LLM_BASE_URL is {shown}, not the {provider} endpoint "
                              f"{PROVIDERS[provider].base_url}: clear LLM_BASE_URL and LLM_MODEL to use the "
-                             f"{provider} defaults{other}")
-    if owner is not None:
-        local = ", or clear LLM_BASE_URL and LLM_MODEL for the local defaults" if provider == "ollama" else ""
+                             f"{provider} defaults{hint}")
+    if owner is not None:  # any other provider: any host but the hosted ones
+        hint = ", or clear LLM_BASE_URL and LLM_MODEL for the local defaults" if provider == "ollama" else ""
         raise LLMConfigError(f"LLM_BASE_URL {shown} is the {owner} endpoint, reached only with "
-                             f"LLM_PROVIDER={owner}{local}")
+                             f"LLM_PROVIDER={owner}{hint}")
+
+
+def _provider_key(env: Mapping[str, str], provider: str, key_override: str) -> tuple[str, str]:
+    """The API key of a listed provider, and where it came from (safe to show).
+
+    For meta, LLM_API_KEY is ignored (a warning is logged when it is set): the Meta key is
+    read only from MODEL_API_KEY.
+    """
+    if provider == "meta":
+        if key_override:
+            log.warning("LLM_API_KEY is ignored for provider meta: the Meta key is read "
+                        "only from MODEL_API_KEY")
+        return _env_str(env, "MODEL_API_KEY"), "MODEL_API_KEY"
+    if key_override:
+        return key_override, "LLM_API_KEY"
+    key_env = PROVIDERS[provider].key_env
+    if key_env:
+        return _env_str(env, key_env), key_env
+    return OLLAMA_KEY, "placeholder"
+
+
+def _token_prices(env: Mapping[str, str], provider: str, base_url: str,
+                  model: str) -> tuple[tuple[float, ...], str]:
+    """USD per 1M (input, cached input, output) tokens, and where those prices came from.
+
+    Each LLM_PRICE_*_PER_M variable that is set replaces its own price.
+    """
+    if provider == "ollama" and _is_loopback(_host(base_url)):
+        prices, price_source = (0.0, 0.0, 0.0), "ollama (local)"
+    elif _SPARK_STANDARD.fullmatch(model):
+        prices, price_source = SPARK_PRICES, "muse-spark-1.x Standard"
+    else:
+        prices, price_source = SPARK_PRICES, "unknown model price, Spark Standard assumed"
+    overrides = [_env_float(env, name) for name in PRICE_ENV]
+    if any(value is not None for value in overrides):
+        prices = tuple(o if o is not None else p for o, p in zip(overrides, prices))
+        price_source = "LLM_PRICE_*_PER_M"
+    return prices, price_source
+
+
+def _reasoning_effort(provider: str, raw: str) -> str | None:
+    """The reasoning_effort to send for LLM_REASONING_EFFORT=raw; None leaves it out of the request."""
+    effort = raw.lower()
+    if not effort:
+        # Unset or empty: the provider default. A local model may have no reasoning mode and a
+        # custom endpoint may reject the parameter, so those two get it only when it is set
+        return None if provider in ("ollama", "custom") else DEFAULT_REASONING_EFFORT
+    if effort == "none":
+        return None
+    return effort  # LLMConfig checks it against REASONING_EFFORTS
 
 
 @dataclass(frozen=True)
@@ -233,17 +293,14 @@ class LLMConfig:
         total = ((prompt_tokens - cached_tokens) * self.price_input_per_m
                  + cached_tokens * self.price_cached_per_m
                  + completion_tokens * self.price_output_per_m)
-        return round(total / 1_000_000, 8)
+        return _round_usd(total / 1_000_000)
 
     @classmethod
     def from_env(cls, env: Mapping[str, str] | None = None) -> LLMConfig:
         env = os.environ if env is None else env
-
-        def get(name: str) -> str:
-            return (env.get(name) or "").strip()
-
-        provider = get("LLM_PROVIDER").lower() or "meta"
-        base_url, model, key_override = get("LLM_BASE_URL"), get("LLM_MODEL"), get("LLM_API_KEY")
+        provider = _env_str(env, "LLM_PROVIDER").lower() or "meta"
+        base_url, model = _env_str(env, "LLM_BASE_URL"), _env_str(env, "LLM_MODEL")
+        key_override = _env_str(env, "LLM_API_KEY")
         if provider == "custom":
             missing = [name for name, value in (("LLM_BASE_URL", base_url), ("LLM_MODEL", model),
                                                 ("LLM_API_KEY", key_override)) if not value]
@@ -252,42 +309,16 @@ class LLMConfig:
             api_key, key_source = key_override, "LLM_API_KEY"
         elif provider in PROVIDERS:
             spec = PROVIDERS[provider]
-            if provider == "meta":
-                if key_override:
-                    log.warning("LLM_API_KEY is ignored for provider meta: the Meta key is read "
-                                "only from MODEL_API_KEY")
-                api_key, key_source = get("MODEL_API_KEY"), "MODEL_API_KEY"
-            elif key_override:
-                api_key, key_source = key_override, "LLM_API_KEY"
-            elif spec.key_env:
-                api_key, key_source = get(spec.key_env), spec.key_env
-            else:
-                api_key, key_source = OLLAMA_KEY, "placeholder"
+            api_key, key_source = _provider_key(env, provider, key_override)
             # __post_init__ then checks the host, whichever variable the key came from
             base_url, model = base_url or spec.base_url, model or spec.model
         else:
             raise LLMConfigError(f"unknown LLM_PROVIDER {provider!r}; expected one of "
                                  f"{', '.join([*PROVIDERS, 'custom'])}")
 
-        if provider == "ollama" and _is_loopback(_host(base_url)):
-            prices, price_source = (0.0, 0.0, 0.0), "ollama (local)"
-        elif _SPARK_STANDARD.fullmatch(model):
-            prices, price_source = SPARK_PRICES, "muse-spark-1.x Standard"
-        else:
-            prices, price_source = SPARK_PRICES, "unknown model price, Spark Standard assumed"
-        overrides = [_env_float(env, name) for name in PRICE_ENV]
-        if any(value is not None for value in overrides):
-            prices = tuple(o if o is not None else p for o, p in zip(overrides, prices))
-            price_source = "LLM_PRICE_*_PER_M"
-
+        prices, price_source = _token_prices(env, provider, base_url, model)
         timeout = _env_float(env, "LLM_TIMEOUT_S")
-        effort: str | None = get("LLM_REASONING_EFFORT").lower()
-        if not effort:
-            # Unset or empty: the provider default. A local model may have no reasoning mode and a
-            # custom endpoint may reject the parameter, so those two get it only when it is set
-            effort = None if provider in ("ollama", "custom") else DEFAULT_REASONING_EFFORT
-        elif effort == "none":
-            effort = None
+        effort = _reasoning_effort(provider, _env_str(env, "LLM_REASONING_EFFORT"))
         return cls(
             provider=provider, base_url=base_url, model=model, api_key=api_key,
             key_source=key_source,
@@ -357,9 +388,15 @@ _JSON_TYPES: dict[str, Callable[[Any], bool]] = {
 }
 
 
+def _is_json_type(value: Any, name: str) -> bool:
+    """Whether `value` has the JSON Schema type `name`; a type name it does not know never matches."""
+    check = _JSON_TYPES.get(name)
+    return check is not None and check(value)
+
+
 def _json_type(value: Any) -> str:
     for name in ("null", "boolean", "integer", "number", "string", "array", "object"):
-        if _JSON_TYPES[name](value):
+        if _is_json_type(value, name):
             return name
     return type(value).__name__
 
@@ -373,7 +410,7 @@ def schema_errors(value: Any, schema: Mapping[str, Any], path: str = "$") -> lis
     types = schema.get("type")
     if types is not None:
         allowed = [types] if isinstance(types, str) else list(types)
-        if not any(_JSON_TYPES.get(t, lambda v: False)(value) for t in allowed):
+        if not any(_is_json_type(value, t) for t in allowed):
             return [f"{path}: expected {' or '.join(allowed)}, got {_json_type(value)}"]
     errors: list[str] = []
     if "enum" in schema and value not in schema["enum"]:
@@ -396,7 +433,7 @@ def schema_errors(value: Any, schema: Mapping[str, Any], path: str = "$") -> lis
         if isinstance(schema.get("items"), dict):
             for index, item in enumerate(value):
                 errors += schema_errors(item, schema["items"], f"{path}[{index}]")
-    if _JSON_TYPES["number"](value):
+    if _is_json_type(value, "number"):
         if "minimum" in schema and value < schema["minimum"]:
             errors.append(f"{path}: {value} is below the minimum {schema['minimum']}")
         if "maximum" in schema and value > schema["maximum"]:
@@ -409,6 +446,7 @@ def schema_errors(value: Any, schema: Mapping[str, Any], path: str = "$") -> lis
 DEFAULT_BUDGET_USD = 25.0
 DEFAULT_LEDGER_PATH = Path(__file__).resolve().parents[2] / ".ledger" / "meta_ledger.json"
 WARN_FRACTION = 0.8
+_CAP_TOLERANCE_USD = 1e-9  # float slack, so a reservation that exactly fills the cap still fits
 _warned_ledgers: set[str] = set()  # ledgers that already logged the 80 % warning in this process
 _warned_lock = threading.Lock()
 
@@ -418,8 +456,8 @@ def _utc_now() -> str:
 
 
 def _outstanding(state: Mapping[str, Any]) -> float:
-    return round(sum(e.get("reserved_usd") or 0.0 for e in state["entries"]
-                     if e.get("status") == "reserved"), 8)
+    return _round_usd(sum(e.get("reserved_usd") or 0.0 for e in state["entries"]
+                          if e.get("status") == "reserved"))
 
 
 class Ledger:
@@ -442,7 +480,7 @@ class Ledger:
     @classmethod
     def from_env(cls, env: Mapping[str, str] | None = None) -> Ledger:
         env = os.environ if env is None else env
-        path = (env.get("THEARTIST_META_LEDGER") or "").strip() or None
+        path = _env_str(env, "THEARTIST_META_LEDGER") or None
         return cls(path, _env_float(env, "THEARTIST_META_BUDGET_USD"))
 
     def snapshot(self) -> dict[str, Any]:
@@ -453,10 +491,10 @@ class Ledger:
 
     def reserve(self, *, label: str, provider: str, model: str, reserved_usd: float) -> str:
         """Record a worst-case reservation and return its id, or raise BudgetExceeded."""
-        reserved_usd = round(reserved_usd, 8)
+        reserved_usd = _round_usd(reserved_usd)
         with self._transaction() as state:
             spent, outstanding = state["spent_usd"], _outstanding(state)
-            if spent + outstanding + reserved_usd > self.cap_usd + 1e-9:
+            if spent + outstanding + reserved_usd > self.cap_usd + _CAP_TOLERANCE_USD:
                 raise BudgetExceeded(
                     f"LLM budget cap reached: spent ${spent:.4f} + outstanding ${outstanding:.4f} "
                     f"+ this request ${reserved_usd:.4f} > cap ${self.cap_usd:.2f} (ledger {self.path})",
@@ -476,7 +514,7 @@ class Ledger:
         """Close a reservation at its settled cost; returns the new spent total."""
         if status not in ("settled", "failed"):
             raise ValueError(f"unknown settlement status {status!r}")
-        settled_usd = round(settled_usd, 8)
+        settled_usd = _round_usd(settled_usd)
         with self._transaction() as state:
             entry = next((e for e in reversed(state["entries"]) if e.get("id") == entry_id), None)
             if entry is None or entry.get("status") != "reserved":
@@ -484,7 +522,7 @@ class Ledger:
             entry.update(settled_usd=settled_usd, status=status, request_id=request_id,
                          response_id=response_id, usage=dict(usage) if usage else None,
                          latency_ms=latency_ms, error=error)
-            state["spent_usd"] = spent = round(state["spent_usd"] + settled_usd, 8)
+            state["spent_usd"] = spent = _round_usd(state["spent_usd"] + settled_usd)
         self._warn_if_high(spent)
         return spent
 
@@ -530,7 +568,7 @@ class Ledger:
         if not isinstance(state, dict) or not isinstance(state.get("entries"), list):
             raise LedgerError(f"the ledger {self.path} has no entries list")
         if not isinstance(state.get("spent_usd"), (int, float)):
-            state["spent_usd"] = round(sum(e.get("settled_usd") or 0.0 for e in state["entries"]), 8)
+            state["spent_usd"] = _round_usd(sum(e.get("settled_usd") or 0.0 for e in state["entries"]))
         return state
 
     def _write(self, state: dict[str, Any]) -> None:
@@ -560,6 +598,7 @@ class Ledger:
 Transport = Callable[[dict[str, Any]], tuple[dict[str, Any], Mapping[str, str]]]
 CHARS_PER_TOKEN = 3  # conservative; English chat text averages nearer 4 characters per token
 _SCHEMA_NAME = re.compile(r"[A-Za-z0-9_-]{1,64}")
+_SCHEMA_ERRORS_SHOWN = 5  # a schema_mismatch message lists at most this many problems
 
 
 @dataclass(frozen=True)
@@ -618,12 +657,33 @@ class OpenAITransport:
         return completion, dict(raw.headers)
 
 
-def _count(mapping: Any, key: str) -> int | None:
+def _is_positive_int(value: Any) -> bool:
+    """An int of at least 1; a bool is not a count."""
+    return isinstance(value, int) and not isinstance(value, bool) and value >= 1
+
+
+def _has_media(messages: Sequence[Mapping[str, Any]]) -> bool:
+    """Whether a message's content is a list of parts with a part that is not text (an image, a file)."""
+    return any(
+        isinstance(message.get("content"), list)
+        and any(not isinstance(part, dict) or part.get("type") != "text" for part in message["content"])
+        for message in messages)
+
+
+def _estimated_text_tokens(messages: list[dict[str, Any]], schema: dict[str, Any]) -> int:
+    """Input tokens of a text-only request, estimated from the characters of its messages and schema."""
+    chars = len(json.dumps(messages, ensure_ascii=False)) + len(json.dumps(schema, ensure_ascii=False))
+    return math.ceil(chars / CHARS_PER_TOKEN)
+
+
+def _token_count(mapping: Any, key: str) -> int | None:
+    """mapping[key] as an int when it is a non-negative number (not a bool), else None."""
     value = mapping.get(key) if isinstance(mapping, dict) else None
     return int(value) if isinstance(value, (int, float)) and not isinstance(value, bool) and value >= 0 else None
 
 
 def _api_message(exc: openai.APIStatusError) -> str:
+    """The provider's error message from the response body, else the SDK's own message."""
     body = exc.body
     if isinstance(body, dict):
         inner = body.get("error", body)
@@ -652,15 +712,14 @@ class LLMClient:
                 max_request_usd: float | None = None) -> PreparedRequest:
         """Build the request and reservation without sending anything.
 
-        Text keeps the existing character estimate. Media requires a caller-supplied
+        Text-only input is estimated from its character count. Media requires a caller-supplied
         bound for ALL input tokens, including extracted text, images, and schema;
         base64 character length cannot bound a document's tokenized representation.
         A model's full context window is a conservative bound for accepted requests.
         """
         if not _SCHEMA_NAME.fullmatch(name):
             raise LLMSchemaError(f"schema name {name!r} must be 1-64 letters, digits, _ or -")
-        if isinstance(max_completion_tokens, bool) or not isinstance(max_completion_tokens, int) \
-                or max_completion_tokens < 1:
+        if not _is_positive_int(max_completion_tokens):
             raise ValueError(f"max_completion_tokens must be a positive integer, got {max_completion_tokens!r}")
         if not messages:
             raise ValueError("messages must not be empty")
@@ -678,23 +737,19 @@ class LLMClient:
         }
         if self.config.reasoning_effort:
             body["reasoning_effort"] = self.config.reasoning_effort
-        has_media = any(isinstance(m.get("content"), list) and any(
-            not isinstance(part, dict) or part.get("type") != "text" for part in m["content"])
-            for m in msgs)
+        has_media = _has_media(msgs)
         if input_token_upper_bound is not None:
-            if isinstance(input_token_upper_bound, bool) or not isinstance(input_token_upper_bound, int) \
-                    or input_token_upper_bound < 1:
+            if not _is_positive_int(input_token_upper_bound):
                 raise ValueError("input_token_upper_bound must be a positive integer")
             input_tokens = input_token_upper_bound
         elif has_media:
             raise ValueError("media input requires an explicit input_token_upper_bound")
         else:
-            chars = len(json.dumps(msgs, ensure_ascii=False)) + len(json.dumps(strict, ensure_ascii=False))
-            input_tokens = math.ceil(chars / CHARS_PER_TOKEN)
+            input_tokens = _estimated_text_tokens(msgs, strict)
         # Worst case: every input token uncached, and the whole completion budget spent
         # (reasoning tokens bill as output and count toward max_completion_tokens)
-        reserve = round((input_tokens * self.config.price_input_per_m
-                         + max_completion_tokens * self.config.price_output_per_m) / 1_000_000, 8)
+        reserve = _round_usd((input_tokens * self.config.price_input_per_m
+                              + max_completion_tokens * self.config.price_output_per_m) / 1_000_000)
         if max_request_usd is not None:
             if isinstance(max_request_usd, bool) or not math.isfinite(max_request_usd) or max_request_usd <= 0:
                 raise ValueError("max_request_usd must be a positive finite number")
@@ -780,11 +835,11 @@ class LLMClient:
 
     def _usage_and_cost(self, response: Any, prepared: PreparedRequest) -> tuple[dict[str, int] | None, float]:
         usage = response.get("usage") if isinstance(response, dict) else None
-        prompt, completion = _count(usage, "prompt_tokens"), _count(usage, "completion_tokens")
+        prompt, completion = _token_count(usage, "prompt_tokens"), _token_count(usage, "completion_tokens")
         if prompt is None or completion is None:
             return None, prepared.reserve_usd  # usage unknown: keep the safe over-count
-        cached = min(_count(usage.get("prompt_tokens_details"), "cached_tokens") or 0, prompt)
-        reasoning = _count(usage.get("completion_tokens_details"), "reasoning_tokens") or 0
+        cached = min(_token_count(usage.get("prompt_tokens_details"), "cached_tokens") or 0, prompt)
+        reasoning = _token_count(usage.get("completion_tokens_details"), "reasoning_tokens") or 0
         # Reasoning tokens bill as output and are normally part of completion_tokens; a
         # provider reporting more reasoning than completion tokens counts them separately.
         billed_output = completion + reasoning if reasoning > completion else completion
@@ -828,8 +883,9 @@ class LLMClient:
             raise fail("invalid_json", f"the message content {problem}")
         errors = schema_errors(data, prepared.schema)
         if errors:
-            more = f" (+{len(errors) - 5} more)" if len(errors) > 5 else ""
-            raise fail("schema_mismatch", "the reply does not match the schema: " + "; ".join(errors[:5]) + more)
+            shown, hidden = errors[:_SCHEMA_ERRORS_SHOWN], len(errors) - _SCHEMA_ERRORS_SHOWN
+            more = f" (+{hidden} more)" if hidden > 0 else ""
+            raise fail("schema_mismatch", "the reply does not match the schema: " + "; ".join(shown) + more)
         model = response.get("model")
         return data, text, model if isinstance(model, str) and model else self.config.model
 
@@ -841,8 +897,8 @@ class LLMClient:
             return LLMTimeout(f"{where} did not answer within {prepared.timeout_s:g}s"), full
         if isinstance(exc, openai.APIStatusError):
             status = exc.status_code
-            # A 4xx rejects the request before generation, so nothing is billed; a 5xx may
-            # have generated tokens first, so it keeps the safe over-count.
+            # A 5xx, or a 408 request timeout, may have generated tokens first, so it keeps the safe
+            # over-count; any other 4xx rejects the request before generation, so nothing is billed.
             billed = full if status >= 500 or status == 408 else 0.0
             return LLMResponseError(f"HTTP {status} from {where}: {self._scrub(_api_message(exc))}",
                                     kind="http", request_id=exc.request_id, status_code=status), billed
