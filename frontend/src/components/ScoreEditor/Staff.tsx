@@ -5,7 +5,7 @@ import { useSongStore, isSlotInList } from '../../store/songStore';
 import { getChordDisplayParts } from '../../engine/chordDisplay';
 import { sectionColor, sectionDisplayLabel } from '../../engine/songForm';
 import type { Measure, SlotAddress, SongSection } from '../../models/types';
-import { scoreMeasureLayout } from '../../engine/scoreLayout';
+import { scoreStaveLayout } from '../../engine/scoreStaveLayout';
 import { selectAllScore } from '../../engine/scoreShortcuts';
 import { keySignatureFor } from '../../engine/keySignatures';
 import ImportedMeasureReview from './ImportedMeasureReview';
@@ -26,15 +26,6 @@ const SECTION_LABEL_DY = 16;
 const SECTION_LABEL_MAX_CHARS = 22;
 /** Baseline of an imported bar's Review/Unresolved marker, below the Roman numerals. */
 const IMPORT_MARKER_DY = 127;
-
-interface StaveLayout {
-  x: number;
-  y: number;
-  width: number;
-  isFirstInRow: boolean;
-  contentX: number;
-  midLineY: number; // actual Y of the 3rd (middle) stave line — set after VexFlow render
-}
 
 /** Keyboard activation (Enter or Space) for SVG text that acts as a button. */
 function onEnterOrSpace(action: () => void) {
@@ -144,10 +135,8 @@ export default function Staff() {
     return () => ro.disconnect();
   }, []);
 
-  const [staveLayouts, setStaveLayouts] = useState<StaveLayout[]>([]);
-
-  const baseLayouts = useMemo((): Omit<StaveLayout, 'midLineY'>[] => {
-    return Array.from({ length: song.measures.length }, (_, i) => scoreMeasureLayout(i, containerWidth));
+  const staveLayouts = useMemo(() => {
+    return Array.from({ length: song.measures.length }, (_, i) => scoreStaveLayout(i, containerWidth));
   }, [song.measures.length, containerWidth]);
 
   const rows = Math.ceil(song.measures.length / MEASURES_PER_ROW);
@@ -192,9 +181,8 @@ export default function Staff() {
     context.setStrokeStyle(staveColor);
     context.setFillStyle(staveColor);
 
-    const measured: StaveLayout[] = [];
     for (let i = 0; i < song.measures.length; i++) {
-      const bl = baseLayouts[i];
+      const bl = staveLayouts[i];
       const stave = new Stave(bl.x, bl.y, bl.width);
 
       if (bl.isFirstInRow) {
@@ -206,14 +194,8 @@ export default function Staff() {
       }
 
       stave.setContext(context).draw();
-
-      // Get the actual Y of the middle (3rd) stave line
-      const midY = stave.getYForLine(2);
-      measured.push({ ...bl, midLineY: midY });
     }
-    const frame = requestAnimationFrame(() => setStaveLayouts(measured));
-    return () => cancelAnimationFrame(frame);
-  }, [song.measures.length, song.key, song.timeSignature, baseLayouts, totalWidth, totalHeight, theme]);
+  }, [song.measures.length, song.key, song.timeSignature, staveLayouts, totalWidth, totalHeight, theme]);
 
   // Position for add button
   const lastRow = rows - 1;
@@ -466,7 +448,7 @@ export default function Staff() {
               onClick={selectSection}
               onKeyDown={onEnterOrSpace(selectSection)}
             >
-              <title>{label} · {sectionOriginHint(section.origin)}</title>
+              <title>{`${label} · ${sectionOriginHint(section.origin)}`}</title>
               {label.slice(0, SECTION_LABEL_MAX_CHARS).toUpperCase()}{section.origin === 'inferred' ? ' ?' : ''}
             </text>
           );

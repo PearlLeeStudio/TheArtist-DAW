@@ -1,21 +1,13 @@
 import { useEffect, useRef, useMemo, useState } from 'react';
 import { Renderer, Stave } from 'vexflow';
 import { getChordDisplayParts } from '../../engine/chordDisplay';
-import { scoreMeasureLayout, SCORE_MEASURES_PER_ROW, SCORE_ROW_HEIGHT, SCORE_TOP } from '../../engine/scoreLayout';
+import { SCORE_MEASURES_PER_ROW, SCORE_ROW_HEIGHT, SCORE_TOP } from '../../engine/scoreLayout';
+import { scoreStaveLayout } from '../../engine/scoreStaveLayout';
 import type { Song } from '../../models/types';
 import { keySignatureFor } from '../../engine/keySignatures';
 
 /** Space below the last row; SCORE_TOP holds the space above the first. */
 const BOTTOM_PADDING = 10;
-
-interface StaveLayout {
-  x: number;
-  y: number;
-  width: number;
-  isFirstInRow: boolean;
-  contentX: number;
-  midLineY: number;
-}
 
 interface SessionStaffProps {
   song: Song;
@@ -26,7 +18,6 @@ export default function SessionStaff({ song }: SessionStaffProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(960);
   const [theme, setTheme] = useState(document.documentElement.className);
-  const [staveLayouts, setStaveLayouts] = useState<StaveLayout[]>([]);
   // Project cards always show only the first staff row; exports keep the complete song.
   const visibleMeasures = song.measures.slice(0, SCORE_MEASURES_PER_ROW);
   const visibleCount = visibleMeasures.length;
@@ -52,12 +43,12 @@ export default function SessionStaff({ song }: SessionStaffProps) {
     return () => ro.disconnect();
   }, []);
 
-  const baseLayouts = useMemo((): Omit<StaveLayout, 'midLineY'>[] => {
-    return Array.from({ length: visibleCount }, (_, i) => scoreMeasureLayout(i, containerWidth));
+  const staveLayouts = useMemo(() => {
+    return Array.from({ length: visibleCount }, (_, i) => scoreStaveLayout(i, containerWidth));
   }, [visibleCount, containerWidth]);
 
   const rows = visibleCount ? 1 : 0;
-  const lastLayout = baseLayouts.at(-1);
+  const lastLayout = staveLayouts.at(-1);
   // The shared layout keeps bars readable on narrow screens; make that full
   // width scrollable instead of clipping its rightmost bars inside the SVG.
   const totalWidth = Math.max(containerWidth, lastLayout ? lastLayout.x + lastLayout.width + 10 : 0);
@@ -78,9 +69,8 @@ export default function SessionStaff({ song }: SessionStaffProps) {
     context.setStrokeStyle(staveColor);
     context.setFillStyle(staveColor);
 
-    const measured: StaveLayout[] = [];
     for (let i = 0; i < visibleCount; i++) {
-      const bl = baseLayouts[i];
+      const bl = staveLayouts[i];
       const stave = new Stave(bl.x, bl.y, bl.width);
 
       if (bl.isFirstInRow) {
@@ -92,13 +82,8 @@ export default function SessionStaff({ song }: SessionStaffProps) {
       }
 
       stave.setContext(context).draw();
-
-      const midY = stave.getYForLine(2);
-      measured.push({ ...bl, midLineY: midY });
     }
-    const frame = requestAnimationFrame(() => setStaveLayouts(measured));
-    return () => cancelAnimationFrame(frame);
-  }, [visibleCount, song.key, song.timeSignature, baseLayouts, totalWidth, totalHeight, theme]);
+  }, [visibleCount, song.key, song.timeSignature, staveLayouts, totalWidth, totalHeight, theme]);
 
   if (!keySignatureFor(song.key)) {
     return (
