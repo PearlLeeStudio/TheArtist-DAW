@@ -1,5 +1,6 @@
 """Async MCP adapter usable by a companion app or a future plugin host."""
 
+import asyncio
 import base64
 import binascii
 import json
@@ -53,9 +54,18 @@ class ArtistClient:
                 read_timeout_seconds=timedelta(seconds=self.timeout)))
             await self._session.initialize()
             return self
-        except BaseException:
-            await stack.aclose()
-            self._stack = self._session = None
+        except BaseException as error:
+            try:
+                await stack.aclose()
+            except Exception:
+                # The transport's task group can fail while unwinding. The connection error stays on top
+                # of that, unless it is the cancellation anyio used to unwind that group (already retracted,
+                # so the task is not cancelling): then the group holds the real error, e.g. a refused endpoint
+                if isinstance(error, asyncio.CancelledError) and not asyncio.current_task().cancelling():
+                    raise
+                raise error
+            finally:
+                self._stack = self._session = None
             raise
 
     async def __aexit__(self, *exc) -> None:

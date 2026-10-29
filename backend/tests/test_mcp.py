@@ -1,5 +1,9 @@
-"""Real MCP initialize/list/call protocol over in-process ASGI; providers and DAWs are mocked."""
+"""Real MCP initialize/list/call protocol over in-process ASGI; providers and DAWs are mocked.
 
+The client's failed-connect tests fake the transport and session instead, to make their unwinding fail on cue.
+"""
+
+import asyncio
 import base64
 import io
 import os
@@ -18,6 +22,7 @@ from app import mcp_server
 from app.models.export import DawOpenResponse
 from app.services import contracts
 from theartist_client import ArtistClient, ArtistClientError
+from theartist_client import client as artist_client
 from tests.test_export import spec
 
 
@@ -166,6 +171,105 @@ class MCPResultLimitsTest(unittest.TestCase):
         for midi in ("invalid!", base64.b64encode(b"not midi").decode()):
             with self.subTest(midi=midi), self.assertRaises(ValueError):
                 contracts.contract_result({"midi_b64": midi})
+
+
+class FakeTransport:
+    """Stands in for streamable_http_client; a failing exit is the task-group error a dead endpoint leaves behind."""
+
+    def __init__(self, exit_error=None):
+        self.exit_error = exit_error
+        self.exits = 0
+
+    def __call__(self, url, *, http_client=None):
+        return self
+
+    async def __aenter__(self):
+        return object(), object(), lambda: None
+
+    async def __aexit__(self, *exc):
+        self.exits += 1
+        if self.exit_error is not None:
+            raise self.exit_error
+
+
+def fake_session(connect_error=None, *, started=None):
+    """Stands in for ClientSession; a refused endpoint surfaces in initialize(), after the transport is entered."""
+
+    class FakeSession:
+        def __init__(self, read, write, *, read_timeout_seconds=None):
+            self.read_timeout_seconds = read_timeout_seconds
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *exc):
+            return None
+
+        async def initialize(self):
+            if started is not None:
+                started.set()
+                await asyncio.Event().wait()  # a connect that only a cancellation ends
+            if connect_error is not None:
+                raise connect_error
+
+    return FakeSession
+
+
+class ArtistClientConnectTest(unittest.IsolatedAsyncioTestCase):
+    async def test_failed_connect_stays_reconnectable_when_cleanup_also_fails(self):
+        connect_error = httpx.ConnectError("All connection attempts failed")
+        cleanup_error = ExceptionGroup("unhandled errors in a TaskGroup", [RuntimeError("post writer died")])
+        broken, working = FakeTransport(exit_error=cleanup_error), FakeTransport()
+        artist = ArtistClient(timeout=5)
+        with mock.patch.object(artist_client, "streamable_http_client", broken), \
+                mock.patch.object(artist_client, "ClientSession", fake_session(connect_error)):
+            with self.assertRaises(httpx.ConnectError) as raised:
+                async with artist:
+                    self.fail("a refused endpoint must not connect")
+        self.assertIs(raised.exception, connect_error)
+        self.assertIs(connect_error.__context__, cleanup_error)  # kept visible, but behind the real error
+        self.assertEqual(broken.exits, 1)
+        self.assertIsNone(artist._stack)
+        self.assertIsNone(artist._session)
+        with mock.patch.object(artist_client, "streamable_http_client", working), \
+                mock.patch.object(artist_client, "ClientSession", fake_session()):
+            async with artist as connected:
+                self.assertIs(connected, artist)
+                self.assertEqual(artist._session.read_timeout_seconds.total_seconds(), 5)
+        self.assertEqual(working.exits, 1)
+        self.assertIsNone(artist._stack)
+        self.assertIsNone(artist._session)
+
+    async def test_cancellation_used_to_unwind_the_transport_does_not_hide_its_error(self):
+        # A refused endpoint fails inside the transport's task group, which cancels the connect to unwind
+        cleanup_error = ExceptionGroup("unhandled errors in a TaskGroup", [httpx.ConnectError("refused")])
+        broken = FakeTransport(exit_error=cleanup_error)
+        artist = ArtistClient()
+        with mock.patch.object(artist_client, "streamable_http_client", broken), \
+                mock.patch.object(artist_client, "ClientSession", fake_session(asyncio.CancelledError("Cancelled via cancel scope"))):
+            with self.assertRaises(ExceptionGroup) as raised:
+                async with artist:
+                    self.fail("a refused endpoint must not connect")
+        self.assertIs(raised.exception, cleanup_error)
+        self.assertEqual(asyncio.current_task().cancelling(), 0)
+        self.assertIsNone(artist._stack)
+        self.assertIsNone(artist._session)
+
+    async def test_real_cancellation_wins_over_a_failing_cleanup(self):
+        broken = FakeTransport(exit_error=ExceptionGroup("unhandled errors in a TaskGroup", [RuntimeError("post writer died")]))
+        started = asyncio.Event()
+        artist = ArtistClient()
+        with mock.patch.object(artist_client, "streamable_http_client", broken), \
+                mock.patch.object(artist_client, "ClientSession", fake_session(started=started)):
+            connect = asyncio.create_task(artist.__aenter__())
+            await started.wait()
+            connect.cancel()
+            with self.assertRaises(asyncio.CancelledError):
+                await connect
+        self.assertTrue(connect.cancelled())
+        self.assertEqual(broken.exits, 1)
+        self.assertIsNone(artist._stack)
+        self.assertIsNone(artist._session)
 
 
 if __name__ == "__main__":
