@@ -311,7 +311,7 @@ class PlannerRunTest(unittest.TestCase):
         self.assertEqual(len(trace.judge[0].report), 3)
         self.assertAlmostEqual(trace.spendUsd, 3 * CALL_COST, places=8)
         self.assertAlmostEqual(trace.spendUsd, self.ledger.snapshot()["spent_usd"], places=8)
-        self.assertLessEqual(trace.reservedUsd, planner.MAX_RUN_USD)
+        self.assertLessEqual(trace.spendUsd, planner.MAX_RUN_USD)
         self.assertEqual(events, ["plan", "validate", "revise", "validate", "generate_section", "generate_section",
                                   "generate_section", "judge"])
         self.assertEqual(self.get_client.call_args_list, [mock.call("default"), mock.call("judge")])
@@ -354,7 +354,7 @@ class PlannerRunTest(unittest.TestCase):
         with mock.patch.object(planner, "MAX_RUN_USD", 0.001):
             trace = planner.complete_form(request())
         self.assertEqual((trace.status, trace.error.kind), ("error", "budget"))
-        self.assertIn("run's reservations", trace.error.message)
+        self.assertIn("could take the run past its", trace.error.message)
         self.assertEqual((trace.calls, trace.spendUsd, transport.calls), ([], 0.0, []))
         with mock.patch.object(planner, "MAX_REQUEST_USD", 0.0001):
             trace = planner.complete_form(request())
@@ -364,6 +364,16 @@ class PlannerRunTest(unittest.TestCase):
         self.assertEqual((trace.status, trace.error.kind, trace.calls, transport.calls), ("error", "budget", [], []))
         self.assertIn("cap $0.00", trace.error.message)
         self.assertNotIn(str(self.ledger.path), trace.error.message)
+
+    def test_the_run_cap_counts_settled_spend_not_unspent_reservations(self):
+        # Four calls each reserving most of the per-call cap would pass $0.10 as reservations,
+        # but each settles at a fraction of a cent, so the run completes under the cap
+        first = {"decision": "regenerate", "targets": [{"section": 1, "reason": "repeats the chorus"}]}
+        self.client(Replies(completion(SHORT_PLAN), completion(VALID_PLAN), completion(first), completion(ACCEPT)))
+        trace = planner.complete_form(request())
+        self.assertEqual((trace.status, [c.step for c in trace.calls]), ("ok", ["plan_song", "plan_song", "judge", "judge"]))
+        self.assertGreater(trace.reservedUsd, planner.MAX_RUN_USD)
+        self.assertLessEqual(trace.spendUsd, planner.MAX_RUN_USD)
 
     def test_an_unexpected_transport_failure_is_still_a_recorded_call(self):
         # The ledger settled the reservation, so the trace must show the call and the spend

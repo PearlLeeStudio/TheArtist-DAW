@@ -79,7 +79,7 @@ MAX_JUDGMENTS = 2
 MAX_TARGETS = 2               # sections one judgment may send back
 CALL_TIMEOUT_S = 45.0
 MAX_REQUEST_USD = 0.05        # worst-case reservation of one call
-MAX_RUN_USD = 0.10            # sum of the run's reservations
+MAX_RUN_USD = 0.10            # the run's settled spend plus the next call's worst case never passes it
 RUN_BUDGET_S = 120.0
 META_BUDGET_S = 75.0          # wall clock inside LLM calls
 OWN_MODEL_BUDGET_S = 45.0     # wall clock inside the chord model
@@ -87,8 +87,9 @@ MIN_CALL_S = 2.0              # below this much Meta time left, a call is not ev
 PLAN_EFFORT = "medium"
 REVISE_EFFORT = "low"
 JUDGE_EFFORT = "low"
-PLAN_MAX_TOKENS = 4096        # reasoning tokens count toward it
-JUDGE_MAX_TOKENS = 1024
+# Reasoning tokens count toward these. Real runs (10/29) hit 1024 in judgments and 4096 in 64-bar plans
+PLAN_MAX_TOKENS = 8192
+JUDGE_MAX_TOKENS = 4096
 OUTRO_BARS = 4                # the rules planner's outro
 
 # Event callback of the streaming route: (event name, payload)
@@ -502,11 +503,13 @@ class _Run:
             spent_before = client.ledger.snapshot()["spent_usd"]
         except LLMError as exc:
             raise PlanFailure(_kind(exc), _message(exc), exc.request_id) from None
-        # An open-weight provider may reserve twice (its one JSON-guard retry)
+        # What the run has settled plus this call's worst case (an open-weight provider may reserve twice,
+        # for its one JSON-guard retry); each call settles at or below its reservation, so the run's
+        # spend never passes the cap, while unspent reservations no longer crowd out later calls
         worst_case = prepared.reserve_usd * (1 if client.config.provider == "meta" else 2)
-        if self.reserved_usd + worst_case > MAX_RUN_USD + 1e-9:
-            raise PlanFailure("budget", f"reserving ${worst_case:.4f} for {step} would take the run's "
-                                        f"reservations (${self.reserved_usd:.4f}) past its ${MAX_RUN_USD:.2f} cap")
+        if self.spend_usd + worst_case > MAX_RUN_USD + 1e-9:
+            raise PlanFailure("budget", f"reserving ${worst_case:.4f} for {step} could take the run past its "
+                                        f"${MAX_RUN_USD:.2f} cap (${self.spend_usd:.4f} spent so far)")
         started = time.perf_counter()
         try:
             result = client.chat_json(messages, schema, label=f"plan.{step}", **options)
