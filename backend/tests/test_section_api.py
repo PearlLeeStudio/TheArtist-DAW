@@ -40,7 +40,8 @@ def sse_events(text: str) -> list[tuple[str, dict]]:
 class SectionValidationTest(unittest.TestCase):
     def test_body_violations_are_422_on_both_routes(self):
         for route in (SECTION, SECTION_STREAM):
-            for bad in ({"sectionType": "coda"}, {"chordCount": 1}, {"chordCount": 129}, {"bpm": 10}):
+            for bad in ({"sectionType": "coda"}, {"chordCount": 1}, {"chordCount": 129}, {"bpm": 10},
+                        {"seed": -1}, {"seed": True}, {"seed": 2**32}, {"seed": "7"}):
                 with self.subTest(route=route, bad=bad):
                     self.assertEqual(CLIENT.post(route, json=body(**bad)).status_code, 422)
             with self.subTest(route=route, missing="sectionType"):
@@ -61,6 +62,15 @@ class SectionValidationTest(unittest.TestCase):
 
 
 class SectionShapeTest(unittest.TestCase):
+    @unittest.skipUnless(AI_READY, "requires the chord-model checkpoint")
+    def test_seeded_neural_section_is_reproducible_without_global_reseeding(self):
+        first = CLIENT.post(SECTION, json=body(seed=1379, modelKey="ft_f1")).json()
+        # Interleave another seed: the first request owns its random stream.
+        CLIENT.post(SECTION, json=body(seed=1380, modelKey="ft_f1"))
+        repeated = CLIENT.post(SECTION, json=body(seed=1379, modelKey="ft_f1")).json()
+        self.assertEqual(first["source"], "ai")
+        self.assertEqual(first, repeated)
+
     def assert_section_shape(self, data: dict, *, start: int, bars: int, title: str) -> None:
         self.assertEqual(data["sectionType"], "chorus")
         self.assertEqual(data["title"], title)

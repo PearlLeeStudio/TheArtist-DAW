@@ -664,6 +664,7 @@ def _generate_section(run: _Run, index: int, regenerated: bool = False) -> PlanS
         timeSignature=request.timeSignature or (4, 4), sectionType=planned.type,
         chordCount=planned.bars * CHORDS_PER_BAR, context=_context(run, index), modelKey=request.modelKey,
         cadence=planned.cadence,
+        seed=None if request.seed is None else (request.seed + index * 1009 + int(regenerated) * 1000003) & 0xFFFFFFFF,
     )
     started = time.perf_counter()
     try:

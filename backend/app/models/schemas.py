@@ -12,6 +12,8 @@ class ContextMeasure(BaseModel):
 
 
 VALID_SECTIONS = set(SECTION_TYPES)
+# Sampling seeds are unsigned 32-bit integers in every generation endpoint.
+MAX_SEED = 0xFFFFFFFF
 
 
 class GenerateRequest(BaseModel):
@@ -96,6 +98,8 @@ class SectionGenerateRequest(BaseModel):
         default=None,
         description="Same checkpoint keys as GenerateRequest.modelKey; null = genre dispatch",
     )
+    seed: int | None = Field(default=None, ge=0, le=MAX_SEED, strict=True,
+                             description="Optional request-local seed for chord candidates; null stays stochastic")
     cadence: CadenceType | None = Field(
         default=None,
         description="Ending the song-form rules write instead of the section's own (the planner's "
@@ -177,9 +181,6 @@ class Track(BaseModel):
     instrument: str
     source: str = "rule"   # "rule" | "learned"
 
-
-# Sampling seeds are unsigned 32-bit integers, here and in the services that take one.
-MAX_SEED = 0xFFFFFFFF
 
 _RHYTHM_IDS = tuple(p["id"] for p in HARMONY_RHYTHM_PRESETS)
 _RHYTHM_ID_LIST = ", ".join(_RHYTHM_IDS)

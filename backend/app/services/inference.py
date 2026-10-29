@@ -931,6 +931,7 @@ def _compose_candidates(
     n_bars: int,
     selected_measures: list[int],
     on_phase,
+    seed: int | None = None,
 ) -> list[Suggestion]:
     """Stage 2 — run the model at the three configured temperatures.
     Emits `composing` once per temperature with step / total / creativity
@@ -949,7 +950,8 @@ def _compose_candidates(
             "creativity": creativity,
         })
         try:
-            bars = generate_with_model(loaded, tokenizer, prompt_ids, n_bars, temperature=temp)
+            seed_options = {} if seed is None else {"seed": (seed + step - 1) & MAX_SEED}
+            bars = generate_with_model(loaded, tokenizer, prompt_ids, n_bars, temperature=temp, **seed_options)
             if not bars:
                 log.warning(f"Model ended before any chord: temp={temp}")
                 continue
@@ -1066,6 +1068,7 @@ def generate_ai_result(
     on_phase=None,  # type: ignore[assignment]
     section_type: str | None = None,
     cadence: str | None = None,
+    seed: int | None = None,
 ) -> AIResult | None:
     """Generate 3 suggestions, then re-rank by sensory consonance + theory.
 
@@ -1100,7 +1103,7 @@ def generate_ai_result(
     n_bars = len(selected_measures)
 
     suggestions = _compose_candidates(
-        loaded, model_label, prompt_ids, n_bars, selected_measures, notify,
+        loaded, model_label, prompt_ids, n_bars, selected_measures, notify, seed=seed,
     )
     if not suggestions:
         return None

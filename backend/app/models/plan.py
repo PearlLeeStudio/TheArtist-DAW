@@ -12,7 +12,7 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-from app.models.schemas import CadenceType, SectionGenerateResponse
+from app.models.schemas import MAX_SEED, CadenceType, SectionGenerateResponse
 from app.models.sections import CHORDS_PER_BAR, MAX_SECTION_BARS, SectionType
 from app.services.genre_tables import GENRE_DEFAULTS
 
@@ -76,6 +76,8 @@ class PlanRequest(BaseModel):
         default="meta", description="meta = Muse Spark plans the form; rules = the genre-default form, no Meta call",
     )
     modelKey: str | None = Field(default=None, description="Checkpoint for every section, as SectionGenerateRequest.modelKey")
+    seed: int | None = Field(default=None, ge=0, le=MAX_SEED, strict=True,
+                             description="Optional chord-sampling seed, split by section and regeneration; does not seed Meta")
 
     @field_validator("genre")
     @classmethod

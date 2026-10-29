@@ -336,6 +336,14 @@ class PlannerRunTest(unittest.TestCase):
                                   "generate_section", "judge"])
         self.assertEqual(self.get_client.call_args_list, [mock.call("default"), mock.call("judge")])
 
+    def test_sampling_seed_is_split_by_section_and_regeneration(self):
+        again = {"decision": "regenerate", "targets": [{"section": 1, "reason": "contrast"}]}
+        self.client(Replies(completion(VALID_PLAN), completion(again), completion(ACCEPT)))
+        trace = planner.complete_form(request(seed=1379))
+        self.assertEqual(trace.status, "ok")
+        self.assertEqual([req.seed for req in self.composer.requests],
+                         [1379, 1379 + 1009, 1379 + 2018, 1379 + 1009 + 1000003])
+
     def test_revisions_exhausted_is_an_error_with_the_spend(self):
         self.client(Replies(completion(SHORT_PLAN)))
         trace = planner.complete_form(request())

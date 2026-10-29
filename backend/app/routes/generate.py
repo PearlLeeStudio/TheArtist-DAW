@@ -106,6 +106,7 @@ def _rule_suggestions(
     key_root: str,
     is_minor: bool,
     cadence: str | None = None,
+    seed: int | None = None,
 ) -> list[Suggestion]:
     """Rule-based fallback, followed by the same song-form rules the AI path applies."""
     suggestions = generate_suggestions(
@@ -115,6 +116,7 @@ def _rule_suggestions(
         selected_measures=selected_measures,
         time_signature=time_signature,
         position_ratio=position_ratio,
+        seed=seed,
     )
     apply_song_form_to_suggestions(suggestions, section, key_root, is_minor, cadence)
     return suggestions
@@ -311,6 +313,7 @@ def _section_ai(
         on_phase=on_phase,
         section_type=req.sectionType,
         cadence=req.cadence,
+        seed=req.seed,
     )
 
 
@@ -334,6 +337,7 @@ def _section_response(
             key_root=key_root,
             is_minor=is_minor,
             cadence=req.cadence,
+            seed=req.seed,
         )
         source, model_used = "rules", None
     bars = len(selected)
