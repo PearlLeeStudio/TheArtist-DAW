@@ -27,16 +27,7 @@ from app.models.review import (
     ReviewResponse,
 )
 from app.services import inference
-from app.services.llm import (
-    BudgetExceeded,
-    LedgerError,
-    LLMClient,
-    LLMConfigError,
-    LLMError,
-    LLMResult,
-    LLMSchemaError,
-    get_client,
-)
+from app.services.llm import LLMClient, LLMError, LLMResult, get_client
 from app.services.planner import DIATONIC_GENRES, _in_key, _key_collection, _kind, _message, _spent, _symbol
 from app.services.song_form import rule_slots
 
@@ -244,9 +235,9 @@ def _call(client: LLMClient, messages: list[dict[str, str]], schema: dict[str, A
     try:
         result = client.chat_json(messages, schema, label=REVIEW_LABEL, **options)
     except LLMError as exc:
-        # Anything but a refusal before the send was sent and settled (a timeout at the full reservation)
-        sent = not isinstance(exc, (BudgetExceeded, LLMConfigError, LedgerError, LLMSchemaError))
-        cost = max(0.0, _spent(client) - spent_before) if sent else 0.0
+        # What the ledger moved: nothing for a refusal before the send, the settled first attempt when
+        # the ledger refused an open-weight retry, the whole reservation after a timeout
+        cost = max(0.0, _spent(client) - spent_before)
         raise ReviewFailure(_kind(exc), _message(exc), exc.request_id, provider=cfg.provider, model=cfg.model,
                             cost_usd=round(cost, 8), latency_ms=_elapsed_ms(started)) from None
     latency = _elapsed_ms(started)
@@ -278,9 +269,10 @@ def verify_reason(reason: dict[str, Any], row: CandidateFacts) -> ReviewReason:
                         analyzerValue=actual)
 
 
-def review_candidates(request: ReviewRequest) -> ReviewResponse:
-    """The facts, one judge call and the verified reasons; raises ReviewFailure on any LLM failure."""
-    client = _client()
+def review_candidates(request: ReviewRequest, client: LLMClient | None = None) -> ReviewResponse:
+    """The facts, one judge call and the verified reasons; raises ReviewFailure on any LLM failure.
+    An explicit client (evaluation scripts) is used as given instead of the judge role's shared one."""
+    client = client if client is not None else _client()
     facts = candidate_facts(request)
     citable = [name for name in FACT_NAMES if any(getattr(row, name) is not None for row in facts)]
     schema = review_schema([row.label for row in facts], citable)

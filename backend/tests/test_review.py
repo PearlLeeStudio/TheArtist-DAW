@@ -144,6 +144,27 @@ class JudgeTest(ReviewCase):
         self.assertEqual(payload["previousSection"], PREVIOUS)
         self.assertEqual(json.loads(self.ledger_path.read_text())["entries"][0]["label"], "review")
 
+    def test_an_open_weight_retry_refused_by_the_ledger_keeps_the_first_attempts_cost(self):
+        transport = Replies(completion("Here is my choice."), completion(PICK_B))  # prose, then the JSON
+        config = LLMConfig(provider="baseten", base_url="https://inference.baseten.co/v1",
+                           model="meta-models/muse-spark-open-1026", api_key=KEY, key_source="BASETEN_API_KEY")
+        request = ReviewRequest(**body())
+        rows = review.candidate_facts(request)
+        citable = [name for name in review.FACT_NAMES if any(getattr(row, name) is not None for row in rows)]
+        schema = review.review_schema([row.label for row in rows], citable)  # as review_candidates builds it
+        probe = LLMClient(config, Ledger(self.ledger_path.with_name("probe.json"), 25.0), transport)
+        reserve = probe.prepare(review._messages(request, rows), schema, name=review.REVIEW_SCHEMA_NAME,
+                                max_completion_tokens=review.REVIEW_MAX_TOKENS, timeout_s=review.REVIEW_TIMEOUT_S,
+                                max_request_usd=review.REVIEW_MAX_USD, reasoning_effort="low").reserve_usd
+        # Room for the first reservation only: once it settles at CALL_COST, the retry's does not fit
+        client = LLMClient(config, Ledger(self.ledger_path, reserve + CALL_COST / 2), transport)
+        with self.assertRaises(review.ReviewFailure) as caught:
+            review.review_candidates(request, client=client)
+        self.assertEqual(caught.exception.kind, "budget")
+        self.assertEqual(len(transport.calls), 1)
+        self.assertAlmostEqual(caught.exception.cost_usd, CALL_COST)
+        self.assertAlmostEqual(client.ledger.snapshot()["spent_usd"], CALL_COST)
+
     def test_a_fact_off_the_table_is_a_model_statement(self):
         reply = {"choice": "C", "reasons": [
             {"factName": "outOfKeyRatio", "value": 0.33, "claim": "Only the Bb7 leaves the key."},  # 0.333 rounded
