@@ -1,28 +1,57 @@
 # Browser, audio and DAW checks
 
-These checks are pending. Automated validation does not establish visual quality,
-MIDI-device behavior, audible balance, PDF appearance or DAW compatibility.
+Checked items below were observed in the named application. Unchecked items remain
+manual coverage to complete; automated tests do not establish audible balance or
+hardware compatibility.
 
 Refresh the frontend, then check `/api/health` and `/api/capabilities`. Version
-`1.0` with nine tools confirms the running backend includes import/export/MCP;
+`1.0` with eleven tools confirms the running backend includes import/export/MCP;
 restart it only if unreachable or missing those routes, or after further backend
 changes. Safari can exercise the score and audio workflow; use Chrome for Web MIDI.
 An HTTP response establishes availability, not successful generation, audio or
-DAW execution. Logic detection may succeed even while Ableton is not installed.
+DAW execution. Check `meta.fullFileScoreImport` before expecting full-file import.
+Logic detection may succeed even while Ableton is not installed.
 
 Follow the sections below in order: import and compare the source, revise a
 passage, audition the original and alternatives, adjust the controller, save and
-reopen, then inspect PDF/MIDI and the actual DAW result. Full-form planning,
-Meta candidate validation/explanations and open-corpus source cards remain
-unimplemented and are not part of the completed-feature checks.
+reopen, then inspect PDF/MIDI and the actual DAW result. Full-form planning and
+candidate review are implemented. Open-corpus source cards remain outside this build.
+
+## Observed workflow
+
+- [x] Safari: Muse Spark Full form produced a 16-bar song with five sections,
+  applied it and closed the dialog. No execution log appeared above the staff.
+- [x] Safari: section selection and real F1 passage generation returned Original
+  and three alternatives. Cmd+A selected all 32 chord slots; title-field Cmd+A
+  retained text selection. Section labels and chords survived a reload/remount.
+- [x] Safari: saved project displayed only four bars and offered the complete
+  Export menu at the right. Its Light PDF contained all 16 bars on one page,
+  with title, Roman numerals, slash chords and five section labels, inspected in Preview.
+- [x] Safari: light/dark Play, piano/guitar drawing and Rhythm/controller views
+  rendered. First Play changed to Pause and advanced the playhead; the Harmony
+  fader changed to 50 and double-click restored 100. This is visual/control evidence,
+  not a listening or keyboard-fader pass.
+- [x] Safari: the self-authored 20-bar C–F–C fixture imported with three inferred
+  sections (8/8/4), preserved note evidence and whole-score Meta explanations.
+- [x] Logic: Open in Logic produced three editable MIDI regions from bars 1–17,
+  80 BPM, 4/4, C major and Intro/Verse/Pre-Chorus/Chorus/Outro markers. This does
+  not establish DAW sound equivalence, controller interpretation or Scripter execution.
+- [x] Safari: Enable MIDI explicitly reported unsupported Web MIDI.
+  Chrome with an actual MIDI device remains untested.
+
+Screenshots: [Projects export](../screenshot/08-projects-export.png),
+[Logic handoff](../screenshot/09-logic-handoff.png),
+[PDF](../screenshot/10-pdf-export.png),
+[Import](../screenshot/11-import-context.png). Actual model evaluation and its
+failures are recorded in [evaluation.md](evaluation.md).
 
 ## Import and revise
 
 - [ ] Import Score is immediately left of New from Song Form. Load a chord-symbol
   PDF and compare each measure with the source preview before confirming.
   The original `backend/tests/fixtures/vector-score-c.pdf` and `vector-score-f.pdf`
-  are small notes-only starter cases. The file chooser offers PDFs; image import
-  remains an API capability rather than a screen option.
+  are small notes-only starter cases. Local and Meta assist accept PDFs;
+  the explicit Full file (Meta) reader also accepts PNG/JPEG when available.
 - [ ] Verify one-chord expansion, unknown key/meter, unsupported chord names and
   zero or three-plus symbols in a bar. Unknown key/meter still requires correction;
   unfinished chord reading can open in the score view. Missing/unsupported slots
@@ -30,20 +59,20 @@ unimplemented and are not part of the completed-feature checks.
   for placement rather than silently selecting two. Cancel, close and replace files
   while a request is running.
 - [ ] Selecting a file starts the analysis automatically with an indeterminate
-  progress bar. The **Meta assist** box is checked by default when the server has
-  Meta enabled and a key: the status names the bars Muse Spark interpreted and the
-  request ids, or says Meta was not called because local reading resolved every
-  bar. Unchecking (or checking) it with a file loaded analyzes again; with Meta off
-  on the server the box is disabled with a notice. Printed chords stay unchanged;
-  chordless passages receive proposals.
+  progress bar. The default **Meta assist · harmony + form** reader sends complete
+  score context to at most two eight-bar harmony calls and one form call. Confident
+  local inferences are eligible; printed chords stay unchanged. The status reports
+  reviewed coverage, while request IDs remain in provenance. Switching readers
+  with a file loaded analyzes again. Local makes no Meta call; Full file (Meta)
+  is explicit and unavailable on the public host. Failures stay visible.
   The Review score dialog has no chord-analysis list. After import, select a bar
   to check its chords, Roman numerals and retained source against the original.
   Replace a file during analysis; an earlier result must not populate
   the replacement. Cancel and retry without choosing the file again.
 - [ ] Import the original vector-score C/F
   fixtures without a model key: verify read pitches, bass, local source and Roman I.
-  An unsupported scan reports that local reading cannot handle it, without
-  suggesting a missing screen control or making an external model request.
+  An unsupported scan reports that local reading cannot handle it without making
+  an implicit external model request; Full file (Meta) is a separate choice.
 - [ ] The footer always shows why Import reviewed score
   is disabled. Correct missing key/meter or highlighted project fields using the footer
   links, then click Import reviewed score to confirm. Valid project metadata enables the
@@ -71,6 +100,11 @@ unimplemented and are not part of the completed-feature checks.
   retry; the old error clears and real suggestions appear.
 
 ## Projects
+
+- [ ] Each card shows only its first staff row, without a Preview score toggle.
+  Export at the right of Delete offers MIDI, PDF, Logic, Ableton and Scripter like
+  the score editor. With another song open, verify the file contains the selected
+  saved project's entire score, title, instruments, mutes and mixer settings.
 
 - [ ] Importing a score or editing another project preserves current work in
   Projects. Save, refresh and choose the card's Edit action to return to the
@@ -178,14 +212,20 @@ unimplemented and are not part of the completed-feature checks.
 
 - [ ] New from Song Form → **Full form**: with an empty score pick a Genre first
   (in the dialog or above the staff; a fresh score has none and both run buttons
-  stay disabled until it does), choose target bars, Outro and contrast and run **Plan a new song**; with a
-  sketch run **Complete the form**. The band above the staff shows the chips in order (plan → validate →
-  revise → each section → judge), each with latency, $ and request id.
-- [ ] Nothing changes on the staff until **Apply**; **Undo** restores the exact
-  score; **Export trace** downloads JSON without keys.
-- [ ] Force a failure (stop the backend, or `THEARTIST_META_ENABLED=0`): a red chip,
-  the spend so far, the staff untouched, and the **Genre default form (own model
-  only)** button still works and is labelled as rules.
+  stay disabled until it does), choose target bars, Outro and contrast and run
+  **Muse Spark**. The dialog stays open while generating and applies a successful
+  result before closing. The staff shows section labels without the execution band.
+- [ ] Reopen Full form → **Run details** for trace and Undo. Undo restores the exact
+  score; Export trace downloads JSON without keys. A changed sketch or settings
+  prevent an obsolete plan from being applied.
+- [ ] Ctrl+A / ⌘A selects every editor bar. In a title input or dialog it retains
+  native text selection. Projects does not intercept the shortcut.
+- [ ] Force a failure using an isolated test server or browser request blocking:
+  the dialog
+  shows the error and keeps the staff untouched. With the backend available,
+  **Genre template** still works without a Meta call.
+- [ ] Cancel an in-progress plan. The current bounded request may finish, but no
+  subsequent section or Meta request starts; already incurred cost stays recorded.
 - [ ] Sections rewritten by the song-form rules (first chord, final cadence) carry
   the "cadence: rules" note, never an AI label.
 
@@ -210,22 +250,26 @@ unimplemented and are not part of the completed-feature checks.
 
 ## Automated evidence
 
-Frontend: 140 tests passed; TypeScript/Vite build and ESLint passed. The build still
-reports the existing large-chunk warning. Backend: 282 tests passed and app import
-passed. These include MIDI parsing, API errors, score-import mocks, real SDK MCP
-round trips and CPU seed isolation. Frontend transport tests cover network/HTTP
-failures, SSE errors, interrupted or malformed streams and real server results.
-TheVoyager adapter has five mock contract tests;
-its live service/complete rendering loop is not verified by those tests.
+Three review passes covered implementation, independent failure-path inspection
+and verification after the fixes:
 
-The real printed-score [review record](../experiments/meta/printed_import_review_smoke.json)
-matched all eight symbols; that exact response also passes frontend review conversion
-with key-relative Roman numerals. It covers one synthetic PNG, not a PDF or a
-representative score collection. The direct-vision notes-only [first](../experiments/meta/note_harmony_first_attempt.json),
-[second](../experiments/meta/note_harmony_second_attempt.json) and
-[detail-view](../experiments/meta/note_harmony_smoke.json) trials all contain chord/pitch
-errors. The ineffective detail-view runtime was removed. Those trials do not
-establish direct-vision accuracy. The newer local path has independent original
-vector-PDF and deterministic note-event tests; its supported encoding and unresolved
-notation are described in [score analysis](score-analysis.md). Actual browser confirmation,
-user-score comparison, MIDI hardware and Logic/Ableton checks remain unchecked.
+1. The first full pass completed 476 backend and 212 frontend tests, frontend
+   build and lint.
+2. Independent review found an unstarted SSE worker retaining a plan reservation
+   and the Set Chord field retaining the previous selection. The fixes are
+   [`fd2b5d8`](https://github.com/PearlLeeStudio/TheArtist-DAW/commit/fd2b5d8) and
+   [`bc0f817`](https://github.com/PearlLeeStudio/TheArtist-DAW/commit/bc0f817),
+   with focused regressions for both.
+3. The final full pass completed **479 backend tests** and the app import check,
+   plus **215 frontend tests**, lint and build. The build retains the existing
+   large-chunk warning. Safari reproduced the corrected Set Chord flow by
+   selecting C in bar 1, F in bar 9 and applying F to the selected bar.
+   Documentation contracts, local links, image references and public-file contents
+   were also inspected; this does not establish untested audio or hardware behavior.
+
+The [observed workflow](#observed-workflow) records what Safari, Preview and Logic
+actually displayed. Remaining unchecked scenarios above retain their narrower
+scope: listening, MIDI hardware, GM/controller behavior, Scripter execution,
+additional layouts and edge cases. The
+[evaluation](evaluation.md) separately records real Meta request results,
+including failed PNG reading and the planner's unresolved judge decisions.
