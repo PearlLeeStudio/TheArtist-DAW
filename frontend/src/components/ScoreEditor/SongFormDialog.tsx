@@ -1,7 +1,11 @@
 /**
- * SongFormDialog — "New from Song Form", two tabs:
+ * SongFormDialog — "New from Song Form". The song's key and genre and the
+ * chord model sit at the top for both tabs: they are the same settings as
+ * the key and genre above the staff and the model in Input → Generate, so
+ * changing one here changes it there (a new key transposes the score; a
+ * genre picks the model it is served by; a model sets its genre). Two tabs:
  *
- *   Section    pick a song-form section and how many chords it gets, then
+ *   Section    pick a song-form section and how many bars it gets, then
  *              generate it after the last used measure.
  *   Full form  "Complete the form": Muse Spark plans the rest of the form
  *              after the sketch and the author's model writes every
@@ -21,11 +25,13 @@ import { useSongStore } from '../../store/songStore';
 import { useGenerationStore } from '../../store/generationStore';
 import { usePlanStore } from '../../store/planStore';
 import GenerateProgress from '../RightPanel/GenerateProgress';
+import { GENRE_OPTIONS, genreForModel, genreOptionValue } from '../../engine/genres';
+import { STANDARD_KEYS } from '../../engine/keySignatures';
 import {
   SECTION_GROUPS,
-  SECTION_INFO,
-  checkChordCount,
-  chordCountSummary,
+  barCountSummary,
+  checkBarCount,
+  defaultSectionBars,
   isSectionType,
   sectionLabel,
   sectionPlacement,
@@ -37,7 +43,6 @@ import {
   availableTargetBars,
   fetchMetaCapability,
   planBlocker,
-  planGenre,
   sketchBars,
   type MetaCapability,
   type PlanContrast,
@@ -72,9 +77,18 @@ const valueStyle: React.CSSProperties = {
 
 function barRange(startMeasure: number, bars: number): string {
   return bars === 1
-    ? `Bar ${startMeasure + 1}`
-    : `Bars ${startMeasure + 1}–${startMeasure + bars}`;
+    ? `bar ${startMeasure + 1}`
+    : `bars ${startMeasure + 1}–${startMeasure + bars}`;
 }
+
+/** A checkpoint as GET /api/models/list reports it. */
+interface ModelOption {
+  key: string;
+  label: string;
+  available: boolean;
+}
+
+const fieldLabelClass = 'text-[10px] uppercase tracking-wide font-semibold';
 
 interface ChoiceRowProps<T extends string | number | boolean> {
   label: string;
@@ -126,11 +140,17 @@ export default function SongFormDialog({ onClose, onGenerated }: SongFormDialogP
   const id = useId();
   const headingId = `${id}-heading`;
   const sectionId = `${id}-section`;
-  const chordsId = `${id}-chords`;
+  const barsId = `${id}-bars`;
   const hintId = `${id}-hint`;
+  const keyId = `${id}-key`;
+  const genreId = `${id}-genre`;
+  const modelId = `${id}-model`;
 
   const song = useSongStore((s) => s.song);
+  const setKey = useSongStore((s) => s.setKey);
+  const setGenre = useSongStore((s) => s.setGenre);
   const modelKey = useGenerationStore((s) => s.modelKey);
+  const setModelKey = useGenerationStore((s) => s.setModelKey);
   const phase = useGenerationStore((s) => s.phase);
   const runSectionGenerate = useGenerationStore((s) => s.runSectionGenerate);
   const cancelSectionGenerate = useGenerationStore((s) => s.cancelSectionGenerate);
@@ -138,13 +158,16 @@ export default function SongFormDialog({ onClose, onGenerated }: SongFormDialogP
 
   const [tab, setTab] = useState<FormTab>('section');
   const [sectionType, setSectionType] = useState<SectionType>(DEFAULT_SECTION);
-  const [chordText, setChordText] = useState(String(SECTION_INFO[DEFAULT_SECTION].defaultChords));
-  // Once the user types a count, picking another section keeps it.
-  const [chordTyped, setChordTyped] = useState(false);
+  const [barsText, setBarsText] = useState(String(defaultSectionBars(DEFAULT_SECTION)));
+  // Once the user types a length, picking another section keeps it.
+  const [barsTyped, setBarsTyped] = useState(false);
   const [running, setRunning] = useState(false);
   const [runStart, setRunStart] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [modelLabel, setModelLabel] = useState<string | null>(null);
+  // The models this install has, and the model each genre is served by (GET /api/genres/list)
+  const [models, setModels] = useState<ModelOption[]>([]);
+  const [genreModels, setGenreModels] = useState<Record<string, string>>({});
+  const modelLabel = models.find((m) => m.key === modelKey)?.label ?? null;
 
   // Full form: the sketch is the song up to its last used measure.
   const sketch = sketchBars(song);
@@ -163,19 +186,24 @@ export default function SongFormDialog({ onClose, onGenerated }: SongFormDialogP
     sectionRef.current?.focus();
   }, []);
 
-  // Friendly model name for the summary; the key shows until (or unless)
-  // the model list answers.
+  // The model picker lists the checkpoints this install has (as Input → Generate does);
+  // until the lists answer, it shows the current model's key alone.
   useEffect(() => {
     let alive = true;
     fetch('/api/models/list')
       .then((r) => (r.ok ? r.json() : null))
-      .then((data: { models?: Array<{ key: string; label: string }> } | null) => {
-        const match = data?.models?.find((m) => m.key === modelKey);
-        if (alive && match) setModelLabel(match.label);
+      .then((data: { models?: ModelOption[] } | null) => {
+        if (alive && data?.models) setModels(data.models.filter((m) => m.available));
       })
-      .catch(() => { /* keep showing the key */ });
+      .catch(() => { /* the current model stays the only choice */ });
+    fetch('/api/genres/list')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: { genres?: Array<{ key: string; served_by: string }> } | null) => {
+        if (alive && data?.genres) setGenreModels(Object.fromEntries(data.genres.map((g) => [g.key, g.served_by])));
+      })
+      .catch(() => { /* a genre pick then keeps the current model */ });
     return () => { alive = false; };
-  }, [modelKey]);
+  }, []);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -185,7 +213,7 @@ export default function SongFormDialog({ onClose, onGenerated }: SongFormDialogP
     return () => controller.abort();
   }, []);
 
-  const check = checkChordCount(chordText);
+  const check = checkBarCount(barsText);
   // While generating, the song already holds the new section, so a live
   // placement would point past it; show where this run put it instead.
   const startMeasure = running
@@ -201,12 +229,28 @@ export default function SongFormDialog({ onClose, onGenerated }: SongFormDialogP
   const handleSectionChange = (value: string) => {
     if (!isSectionType(value)) return;
     setSectionType(value);
-    if (!chordTyped) setChordText(String(SECTION_INFO[value].defaultChords));
+    if (!barsTyped) setBarsText(String(defaultSectionBars(value)));
   };
 
-  const handleChordInput = (value: string) => {
-    setChordText(value);
-    setChordTyped(value.trim() !== '');
+  const handleBarsInput = (value: string) => {
+    setBarsText(value);
+    setBarsTyped(value.trim() !== '');
+  };
+
+  // A genre is served by its own model when this install has it, as the backend
+  // dispatches; 'none' keeps the model
+  const pickGenre = (value: string) => {
+    const genre = value === 'none' ? null : value;
+    setGenre(genre);
+    const served = genre ? genreModels[genre] : undefined;
+    if (served && models.some((m) => m.key === served)) setModelKey(served);
+  };
+
+  // A model sets the genre it implies, as a pick in Input → Generate does
+  const pickModel = (key: string) => {
+    setModelKey(key);
+    const genre = genreForModel(key);
+    if (genre) setGenre(genre);
   };
 
   const handleGenerate = async () => {
@@ -272,12 +316,12 @@ export default function SongFormDialog({ onClose, onGenerated }: SongFormDialogP
             className="font-display text-2xl leading-tight"
             style={{ color: 'var(--text-heading)', fontWeight: 700 }}
           >
-            Build from Song Form
+            New from Song Form
           </h2>
           <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
             {tab === 'section'
-              ? 'The section starts after the last measure that has chords.'
-              : 'The rest of the form is planned after the sketch and written section by section; nothing lands until Apply.'}
+              ? 'Pick a part of the song form and how many bars it gets; it is written after the last bar that has chords.'
+              : 'Muse Spark plans the rest of the form after the sketch and the author’s model writes it section by section; nothing lands until Apply.'}
           </p>
         </div>
 
@@ -307,10 +351,64 @@ export default function SongFormDialog({ onClose, onGenerated }: SongFormDialogP
           })}
         </div>
 
+        {/* The song's key and genre and the chord model, shared with the controls
+            above the staff and Input → Generate. Locked while a section generates. */}
+        <div className="grid grid-cols-[auto_1fr] items-center gap-x-3 gap-y-2.5">
+          <label htmlFor={keyId} className={fieldLabelClass} style={labelStyle}>Key</label>
+          <select
+            id={keyId}
+            value={song.key}
+            onChange={(e) => setKey(e.target.value)}
+            disabled={running}
+            className="w-full px-2 py-1.5 text-sm"
+            style={fieldStyle}
+            title="The song's key, as the Key above the staff sets it: a new key transposes the score"
+          >
+            {/* An unsupported song key stays listed (disabled), so the select shows the song's own key */}
+            {!STANDARD_KEYS.includes(song.key) && (
+              <option value={song.key} disabled>{song.key} — choose a supported key</option>
+            )}
+            {STANDARD_KEYS.map((k) => (
+              <option key={k} value={k}>{k}</option>
+            ))}
+          </select>
+
+          <label htmlFor={genreId} className={fieldLabelClass} style={labelStyle}>Genre</label>
+          <select
+            id={genreId}
+            value={genreOptionValue(song.genre)}
+            onChange={(e) => pickGenre(e.target.value)}
+            disabled={running}
+            className="w-full px-2 py-1.5 text-sm"
+            style={fieldStyle}
+            title="The song's genre: it picks the model it is served by, and Full form follows it"
+          >
+            {GENRE_OPTIONS.map((g) => (
+              <option key={g.value} value={g.value}>{g.label}</option>
+            ))}
+          </select>
+
+          <label htmlFor={modelId} className={fieldLabelClass} style={labelStyle}>Model</label>
+          <select
+            id={modelId}
+            value={modelKey}
+            onChange={(e) => pickModel(e.target.value)}
+            disabled={running}
+            className="w-full px-2 py-1.5 text-sm"
+            style={fieldStyle}
+            title="The author's model that writes the chords, as picked in Input → Generate; a model sets its genre"
+          >
+            {!models.some((m) => m.key === modelKey) && <option value={modelKey}>{modelLabel ?? modelKey}</option>}
+            {models.map((m) => (
+              <option key={m.key} value={m.key}>{m.label}</option>
+            ))}
+          </select>
+        </div>
+
         {tab === 'section' && (
           <>
         <div className="grid grid-cols-[auto_1fr] items-center gap-x-3 gap-y-2.5">
-          <label htmlFor={sectionId} className="text-[10px] uppercase tracking-wide font-semibold" style={labelStyle}>
+          <label htmlFor={sectionId} className={fieldLabelClass} style={labelStyle}>
             Section
           </label>
           <select
@@ -331,17 +429,17 @@ export default function SongFormDialog({ onClose, onGenerated }: SongFormDialogP
             ))}
           </select>
 
-          <label htmlFor={chordsId} className="text-[10px] uppercase tracking-wide font-semibold" style={labelStyle}>
-            Chords
+          <label htmlFor={barsId} className={fieldLabelClass} style={labelStyle}>
+            Bars
           </label>
           <div className="flex items-center gap-2 min-w-0">
             <input
-              id={chordsId}
+              id={barsId}
               type="text"
               inputMode="numeric"
               autoComplete="off"
-              value={chordText}
-              onChange={(e) => handleChordInput(e.target.value)}
+              value={barsText}
+              onChange={(e) => handleBarsInput(e.target.value)}
               disabled={running}
               aria-invalid={!check.ok}
               aria-describedby={hintId}
@@ -354,28 +452,16 @@ export default function SongFormDialog({ onClose, onGenerated }: SongFormDialogP
               className="text-xs"
               style={{ color: check.ok ? 'var(--text-soft)' : 'var(--text-heading)' }}
             >
-              {check.ok ? chordCountSummary(check.count) : check.message}
+              {check.ok ? barCountSummary(check.bars) : check.message}
             </span>
           </div>
         </div>
 
-        {/* Read-only: these follow the song settings above the staff and
-            the model picked in Input → Generate. */}
-        <dl
-          className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 text-xs px-3 py-2"
-          style={{ background: 'var(--btn-bg)', border: '1px solid var(--border)' }}
-        >
-          <dt style={labelStyle}>Key</dt>
-          <dd style={valueStyle}>{song.key}</dd>
-          <dt style={labelStyle}>Genre</dt>
-          <dd style={valueStyle}>{song.genre ? song.genre.replace(/_/g, ' ') : 'none'}</dd>
-          <dt style={labelStyle}>Model</dt>
-          <dd style={valueStyle}>{modelLabel ?? modelKey}</dd>
-          <dt style={labelStyle}>Placed at</dt>
-          <dd style={valueStyle}>
-            {startMeasure !== null && check.ok ? barRange(startMeasure, check.bars) : '—'}
-          </dd>
-        </dl>
+        <p className="text-xs" style={labelStyle}>
+          {startMeasure !== null && check.ok
+            ? <>Placed at <span style={valueStyle}>{barRange(startMeasure, check.bars)}</span></>
+            : 'Placed after the last bar that has chords'}
+        </p>
 
         {running && (
           <>
@@ -449,24 +535,14 @@ export default function SongFormDialog({ onClose, onGenerated }: SongFormDialogP
               />
             </div>
 
-            {/* Read-only: the sketch as the planner sees it, and the model
-                picked in Input → Generate. */}
-            <dl
-              className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 text-xs px-3 py-2"
-              style={{ background: 'var(--btn-bg)', border: '1px solid var(--border)' }}
-            >
-              <dt style={labelStyle}>Sketch</dt>
-              <dd style={valueStyle}>
+            {/* The sketch as the planner sees it: the song up to its last used bar. */}
+            <p className="text-xs" style={labelStyle}>
+              Sketch{' '}
+              <span style={valueStyle}>
                 {sketch === 0 ? 'empty score' : `${sketch} ${sketch === 1 ? 'bar' : 'bars'}${sectionCount ? `, ${sectionCount} ${sectionCount === 1 ? 'section' : 'sections'}` : ''}`}
                 {` → ${targetBars} bars`}
-              </dd>
-              <dt style={labelStyle}>Key</dt>
-              <dd style={valueStyle}>{song.key}</dd>
-              <dt style={labelStyle}>Genre</dt>
-              <dd style={valueStyle}>{planGenre(song)?.replace(/_/g, ' ') ?? 'none'}</dd>
-              <dt style={labelStyle}>Model</dt>
-              <dd style={valueStyle}>{modelLabel ?? modelKey}</dd>
-            </dl>
+              </span>
+            </p>
 
             <p className="text-xs" style={{ color: 'var(--text-soft)' }}>
               Muse Spark plans the form; the author&apos;s model ({modelLabel ?? modelKey}) writes every chord.

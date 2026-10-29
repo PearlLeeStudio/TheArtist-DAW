@@ -1,29 +1,10 @@
 import { useState } from 'react';
 import { useSongStore } from '../../store/songStore';
 import { STANDARD_KEYS } from '../../engine/keySignatures';
+import { GENRE_OPTIONS, genreOptionValue } from '../../engine/genres';
 
 const TIME_SIGNATURES: [number, number][] = [
   [4, 4], [3, 4], [6, 8], [2, 4], [5, 4], [7, 8],
-];
-
-/** Full 13-genre vocabulary (R4 LoRA expansion). `value` is the canonical
- *  key shared by the backend dispatch (`GENRE_MODEL_DISPATCH`) and the
- *  frontend arrangement/instrument/drum tables; `label` is display-only. */
-const GENRE_OPTIONS: { value: string; label: string }[] = [
-  { value: 'none',       label: 'none' },
-  { value: 'jazz',       label: 'jazz' },
-  { value: 'pop',        label: 'pop' },
-  { value: 'rock',       label: 'rock' },
-  { value: 'blues',      label: 'blues' },
-  { value: 'bossa',      label: 'bossa nova' },
-  { value: 'classical',  label: 'classical' },
-  { value: 'country',    label: 'country' },
-  { value: 'rnb_soul',   label: 'R&B / soul' },
-  { value: 'hip_hop',    label: 'hip-hop' },
-  { value: 'electronic', label: 'electronic' },
-  { value: 'funk',       label: 'funk' },
-  { value: 'folk',       label: 'folk' },
-  { value: 'gospel',     label: 'gospel' },
 ];
 
 // Use --btn-bg (not transparent) so the dropdown options surface stays
@@ -122,7 +103,7 @@ export default function SongSettings() {
         <span className="text-[10px] uppercase tracking-wide font-semibold" style={labelStyle}>Genre</span>
         <select
           // legacy persisted value 'bossa nova' maps onto the canonical key
-          value={(song.genre === 'bossa nova' ? 'bossa' : song.genre) || 'none'}
+          value={genreOptionValue(song.genre)}
           onChange={(e) => setGenre(e.target.value === 'none' ? null : e.target.value)}
           className=" px-1.5 py-0.5 text-sm"
           style={fieldStyle}

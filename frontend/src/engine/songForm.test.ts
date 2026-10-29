@@ -8,9 +8,10 @@ import {
   MAX_SECTION_BARS,
   autoTitle,
   barsForChords,
-  checkChordCount,
+  barCountSummary,
+  checkBarCount,
   checkSectionRanges,
-  chordCountSummary,
+  defaultSectionBars,
   sectionAt,
   sectionContaining,
   sectionPlacement,
@@ -236,16 +237,18 @@ test('withSongFormDefaults: a section still pending when saved goes, with the me
   assert.equal(asSaved.title, '');
 });
 
-test('checkChordCount: even whole numbers from 2 to 128', () => {
-  assert.deepEqual(checkChordCount('16'), { ok: true, count: 16, bars: 8 });
-  assert.deepEqual(checkChordCount(' 2 '), { ok: true, count: 2, bars: 1 });
-  assert.deepEqual(checkChordCount('128'), { ok: true, count: 128, bars: 64 });
-  for (const bad of ['', 'abc', '15', '0', '130', '1.5', '-4', '4 4']) {
-    assert.equal(checkChordCount(bad).ok, false, `expected '${bad}' to be rejected`);
+test('checkBarCount: whole numbers of bars from 1 to 64, two chords each', () => {
+  assert.deepEqual(checkBarCount('8'), { ok: true, bars: 8, count: 16 });
+  assert.deepEqual(checkBarCount(' 1 '), { ok: true, bars: 1, count: 2 });
+  assert.deepEqual(checkBarCount('64'), { ok: true, bars: 64, count: 128 });
+  for (const bad of ['', 'abc', '0', '65', '1.5', '-4', '4 4']) {
+    assert.equal(checkBarCount(bad).ok, false, `expected '${bad}' to be rejected`);
   }
 });
 
-test('chordCountSummary', () => {
-  assert.equal(chordCountSummary(16), '16 chords = 8 bars');
-  assert.equal(chordCountSummary(2), '2 chords = 1 bar');
+test('barCountSummary and the default bars of a section', () => {
+  assert.equal(barCountSummary(8), '16 chords, two per bar');
+  assert.equal(defaultSectionBars('verse'), 8);
+  assert.equal(defaultSectionBars('vamp'), 2);
+  assert.equal(defaultSectionBars('head'), 32);
 });

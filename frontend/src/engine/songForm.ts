@@ -243,30 +243,30 @@ export function withSongFormDefaults(song: Song): Song {
   return withoutPendingSections({ ...song, sections, autoTitle: auto });
 }
 
-export type ChordCountCheck =
-  | { ok: true; count: number; bars: number }
+/** `count` is the chords the section API takes, two per bar. */
+export type BarCountCheck =
+  | { ok: true; bars: number; count: number }
   | { ok: false; message: string };
 
-/** Validate the dialog's chord-count text: an even whole number, 2..128. */
-export function checkChordCount(text: string): ChordCountCheck {
-  const trimmed = text.trim();
-  if (!/^\d+$/.test(trimmed)) {
-    return { ok: false, message: `Enter an even number from ${CHORDS_PER_BAR} to ${MAX_SECTION_CHORDS}` };
-  }
-  const count = Number(trimmed);
-  if (count < CHORDS_PER_BAR || count > MAX_SECTION_CHORDS) {
-    return {
-      ok: false,
-      message: `Use ${CHORDS_PER_BAR} to ${MAX_SECTION_CHORDS} chords (up to ${MAX_SECTION_BARS} bars)`,
-    };
-  }
-  if (count % CHORDS_PER_BAR !== 0) {
-    return { ok: false, message: `Use an even number (${CHORDS_PER_BAR} chords per bar)` };
-  }
-  return { ok: true, count, bars: count / CHORDS_PER_BAR };
+/** Bars a section type starts with in the dialog: its default chord count, two per bar. */
+export function defaultSectionBars(type: SectionType): number {
+  return barsForChords(SECTION_INFO[type].defaultChords);
 }
 
-/** Live hint for a chord count, e.g. '16 chords = 8 bars'. */
-export function chordCountSummary(count: number): string {
-  return `${count} chords = ${barsLabel(barsForChords(count))}`;
+/** Validate the dialog's bar-count text: a whole number of bars, 1..64. */
+export function checkBarCount(text: string): BarCountCheck {
+  const trimmed = text.trim();
+  if (!/^\d+$/.test(trimmed)) {
+    return { ok: false, message: `Enter a number of bars from 1 to ${MAX_SECTION_BARS}` };
+  }
+  const bars = Number(trimmed);
+  if (bars < 1 || bars > MAX_SECTION_BARS) {
+    return { ok: false, message: `Use 1 to ${MAX_SECTION_BARS} bars` };
+  }
+  return { ok: true, bars, count: bars * CHORDS_PER_BAR };
+}
+
+/** Live hint for a bar count, e.g. '16 chords, two per bar'. */
+export function barCountSummary(bars: number): string {
+  return `${bars * CHORDS_PER_BAR} chords, two per bar`;
 }

@@ -10,6 +10,7 @@ import { parseSuggestionChords } from '../../engine/chordGenerator';
 import type { Suggestion, SuggestionSource } from '../../engine/chordGenerator';
 import { canApplyComparison, compareCandidate, matchesCapturedRange, slotKey } from '../../engine/generationComparison';
 import type { GenerationComparison } from '../../engine/generationComparison';
+import { genreForModel } from '../../engine/genres';
 import { fetchMetaCapability, type MetaCapability } from '../../engine/planClient';
 import {
   MAX_SECTION_BARS,
@@ -36,30 +37,11 @@ interface ModelListResponse {
   models?: ModelOption[];
 }
 
-/**
- * Infer the song's genre from the picked model. Model pick always syncs
- * song.genre — Pearl 2026-05-10 found "first-time-only" sync confusing
- * (e.g. switching from blues LoRA to F4 left genre=blues, not jazz).
- * If the user wants a different genre than what the model implies, they
- * can override via SongSettings after picking the model.
- *
- * Mapping:
- *   ft_f1_lora_X        → X (LoRA carries genre tag in its key)
- *   ft_f1 / phase0      → pop  (F1/Phase0 are pop-leaning)
- *   any other ft_f* key → jazz (ft_f2..ft_f5, ft_f1_v2: jazz fine-tunes)
- */
-function inferGenreForModelPick(modelKey: string): string | null {
-  const lora = modelKey.match(/^ft_f1_lora_(.+)$/);
-  if (lora) return lora[1];
-  if (modelKey === 'ft_f1' || modelKey === 'phase0') return 'pop';
-  if (modelKey.startsWith('ft_f')) return 'jazz';
-  return null;
-}
-
-/** Point song.genre at the genre the model implies; a model that implies
- *  none leaves the genre as it is. */
+/** Point song.genre at the genre the model implies (engine/genres.ts); a model
+ *  that implies none leaves the genre as it is. If the user wants a different
+ *  genre than the model implies, they can override it after picking the model. */
 function syncGenreToModel(modelKey: string, setGenre: (genre: string) => void): void {
-  const inferred = inferGenreForModelPick(modelKey);
+  const inferred = genreForModel(modelKey);
   if (inferred) setGenre(inferred);
 }
 

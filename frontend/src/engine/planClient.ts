@@ -209,7 +209,7 @@ export function availableTargetBars(bars: number): TargetBars[] {
   return TARGET_BARS.filter((target) => bars + MIN_PLAN_SECTION_BARS <= target);
 }
 
-const NO_GENRE = 'Pick a genre above the staff first: the form follows the genre.';
+const NO_GENRE = 'Pick a genre first: the form follows the genre.';
 
 /** Why the song cannot be planned yet, or null. */
 export function planBlocker(song: Pick<Song, 'genre' | 'measures' | 'sections'>): string | null {
