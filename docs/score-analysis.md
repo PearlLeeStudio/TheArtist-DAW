@@ -1,13 +1,22 @@
-# Local score analysis
+# Score import, harmony and form
 
-Selecting a file in Import Score automatically starts local code analysis, with
-an indeterminate progress indicator until the response arrives. Printed chord
-symbols take priority; note-based harmony is proposed only where symbols are
-absent. Valid project metadata enables Import reviewed score without a separate
-checkbox; clicking it opens the editable score, including unresolved chord bars.
-The dialog contains no chord-analysis list. Reading a supported vector PDF and analyzing
-its notes requires no model key, API call, file upload or network connection.
+Selecting a file in Import Source starts the selected reader. The editor defaults
+to **Meta assist · harmony + form** when discovery reports Meta enabled and
+configured; otherwise it uses **Local**. **Full file (Meta)** is a separate option
+for PDF, PNG, JPEG and WebP, enabled only by `meta.fullFileScoreImport`.
+The REST/MCP request default remains `engine: "local"`; the editor explicitly
+sends `mode: "infer_harmony"` and its selected engine.
+
+Printed chords and N.C. are preserved. Meta assist reviews local inferred harmony
+and automatically proposes form in uncovered passages. Valid project metadata
+enables Import reviewed score without a separate checkbox. The button opens an
+editable score, including unresolved bars; source details remain available there.
 There is no song-name lookup or stored answer for a particular score.
+
+The file is sent to the configured TheArtist backend. Local vector-PDF analysis
+needs no model key or external provider call. Meta assist sends bounded musical
+text to Meta; Full file sends the chosen attachment. Uploaded file bytes are not
+stored in the project.
 
 ## Reading notation
 
@@ -57,27 +66,58 @@ Roman numerals describe the chord root and quality relative to the selected key
 secondary-dominant functions such as V7/vi, tritone-substitution functions or
 local modulations; those need a separate analysis of the surrounding progression.
 
-## Optional Meta assistance
+## Meta assist: whole context, bounded review
 
-The import screen always sends `engine: "local"`; it has no Meta option and never
-automatically calls an external model. The API retains the bounded Meta capability
-for future work. For API callers, `engine: "local"` is the default. Selecting `auto` explicitly permits Meta when
-the format is unsupported or local harmony is unresolved. Locally read note
-events can be sent as musical text for interpretation; filenames, lyrics and
-document images are excluded from that assistance path. It uses at most two
-calls per import, eight measures and 512 notes per call, 64 KiB of serialized
-musical context, 45 seconds, 4096 completion tokens and a $0.10 reservation cap
-per call. The shared spend ledger records actual request IDs and usage.
+`engine: "auto", mode: "infer_harmony"` first reads a supported vector PDF.
+Each harmony batch receives the complete ordered score synopsis: key and meter,
+every bar's printed or inferred chords, confidence, source, N.C. and pitch-class
+evidence, plus known section ranges. Detailed notes and neighboring harmony
+accompany the target bars. Filenames, lyrics, free-form source annotations and
+document images are excluded.
 
-An unsupported local image/PDF can instead use the existing bounded Meta document
-reader after explicit selection. That path sends the chosen attachment, has a
-75-second timeout, a $1.35 reservation cap and a 128-bar result limit. A provider,
-configuration or budget failure stays an error. There is no successful-looking
-random fallback. All Meta harmonic interpretations require review.
+All inferred bars are eligible, including confident local proposals. Printed
+chords and N.C. are excluded from replacement. At most two batches of eight bars
+are reviewed, with at most 512 notes per batch. The remaining bars retain their
+local result and are counted as unreviewed. Whole-score context does not mean
+every bar was reviewed by Meta. Coverage and nonempty proposals are reported
+separately; an empty model proposal does not count as resolved harmony.
 
-Responses distinguish `local`, `meta` and `mixed`. Per-bar source, note/bass
-evidence and request identifiers preserve the boundary between local reading
-and model interpretation.
+The initial complete synopsis must fit 512 bars and 40 KiB; it is rejected before spending
+if it cannot fit, rather than truncated. Each serialized harmony/form request is
+bounded to 64 KiB, 45 seconds, 4096 completion tokens and $0.10. The combined
+assist path permits at most three calls and admits a $0.30 worst case.
+
+After harmony review, one form request uses the complete updated synopsis if any
+bar is outside an existing section. Existing ranges, including headings with
+`section: null`, are preserved; inferred ranges fill only uncovered passages.
+The model may propose up to 32 ranges, each with musical evidence and
+`basis: "inferred"`. Plausible boundaries with uncertain function use a neutral
+Section label and null type. No defensible structure means an empty proposal
+and a visible warning, not invented Intro/Verse labels. The editor presents
+automatic results first, with editing and manual additions available.
+
+`formAnalysis: {model, requestId, sectionsProposed}` records this separate form
+attempt even when it proposes zero sections. It is null when that step did not
+run. Responses distinguish `local`, `meta` and `mixed`; per-bar model/request IDs
+keep harmony provenance separate from the form call. Section `basis` becomes
+the saved section's origin, so inferred labels remain identifiable.
+
+## Full-file reading and failures
+
+An unsupported local image/PDF never silently switches `auto` to a paid whole-file
+request. Choose **Full file (Meta)** explicitly to use that reader. It sends one
+attachment request, bounded to 75 seconds, 8192 completion tokens, $1.35 and 128
+result bars. Harmony and form are returned together, without a second form call.
+`THEARTIST_PUBLIC_HOST=1` forbids this path with 403; local and bounded assist remain
+available. Missing or false `meta.fullFileScoreImport` keeps it disabled in the UI.
+
+Configuration, budget, provider and validation failures stay errors. There is no
+successful-looking local fallback after an attempted Meta analysis. Disabling
+Meta leaves Local usable; an `auto` request that needs Meta fails with 503.
+The ledger records each request ID and usage. Import admission settles only this
+request's actual calls, including failures, without counting another caller's
+concurrent spending. If settlement cannot be established, the admitted estimate
+is retained.
 
 ## Review and editor limits
 
@@ -104,3 +144,10 @@ accidentals, ties, key changes, transposed harmonies, ornaments, rests, uncertai
 timing, source persistence and explicit API boundaries. Passing tests do not
 establish universal optical music recognition or guarantee a single correct
 harmonization for an ambiguous passage.
+
+The [real import evaluation](../experiments/import_eval/README.md) includes exact
+requests, responses and costs for self-authored fixtures. Its 20-bar case retained
+four local bars after 16 Meta reviews and inferred three neutral form ranges.
+The PNG case read only one of four chords correctly despite high confidence.
+Chord reading and uncertain musical form are assessed separately; a completed
+API request is not evidence of optical accuracy.

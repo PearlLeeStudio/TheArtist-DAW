@@ -54,8 +54,8 @@ form, loop, section choice and section loop, transpose, 6/8, pass-through and th
 committed example:
 
 ```
-bash scripts/dev.sh frontend-test plugin/logic-scripter/test/theartist_chords.test.mjs
+node --test /absolute/path/TheArtist-DAW/plugin/logic-scripter/test/theartist_chords.test.mjs
 ```
 
-(`node --test` on that file from a checkout.) The mock is not Logic; the real
+Replace `/absolute/path/TheArtist-DAW` with your checkout path. The mock is not Logic; the real
 check is step 3 above.
