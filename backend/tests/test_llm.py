@@ -652,9 +652,12 @@ class OpenWeightTests(LLMTestCase):
             result = self.call(self.client(transport, **BASETEN), input_token_upper_bound=1000)
         self.assertEqual((result.data, result.attempts, len(transport.calls)), (GOOD, 2, 2))
         first, second = transport.calls
-        self.assertEqual(second["messages"][:-1], first["messages"])  # the same request, plus the rejection
+        # The same request; the rejection is appended to the last user turn, so the roles still alternate
+        self.assertEqual(second["messages"][:-1], first["messages"][:-1])
+        self.assertEqual(len(second["messages"]), len(first["messages"]))
         feedback = second["messages"][-1]
         self.assertEqual(feedback["role"], "user")
+        self.assertTrue(feedback["content"].startswith(first["messages"][-1]["content"]))
         self.assertIn("rejected (schema_mismatch)", feedback["content"])
         self.assertIn("$.sections[0].type: 'drop' is not one of the allowed values", feedback["content"])
         self.assertNotIn("req_1", feedback["content"])  # the error text, not the request id

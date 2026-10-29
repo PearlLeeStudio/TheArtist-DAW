@@ -268,7 +268,11 @@ def _provider_key(env: Mapping[str, str], provider: str, key_override: str,
     key_var = _var(role, "API_KEY")
     if provider == "meta":
         if key_override:
-            log.warning("%s is ignored for provider meta: the Meta key is read only from MODEL_API_KEY", key_var)
+            with _warned_lock:
+                first_time = key_var not in _warned_ignored_keys
+                _warned_ignored_keys.add(key_var)
+            if first_time:  # capabilities discovery rebuilds the config on every call
+                log.warning("%s is ignored for provider meta: the Meta key is read only from MODEL_API_KEY", key_var)
         return _env_str(env, "MODEL_API_KEY"), "MODEL_API_KEY"
     if key_override:
         return key_override, key_var
@@ -519,6 +523,7 @@ _LEDGER_ENV = {
 WARN_FRACTION = 0.8
 _CAP_TOLERANCE_USD = 1e-9  # float slack, so a reservation that exactly fills the cap still fits
 _warned_ledgers: set[str] = set()  # ledgers that already logged the 80 % warning in this process
+_warned_ignored_keys: set[str] = set()  # key variables already reported as ignored for meta
 _warned_lock = threading.Lock()
 
 
@@ -723,13 +728,14 @@ def _strip_fences(text: str) -> str:
     return match[1] if match else text
 
 
-def _with_schema_guard(messages: list[dict[str, Any]], schema: dict[str, Any]) -> list[dict[str, Any]]:
-    """The messages with the schema stated in the system message, for endpoints that do not enforce it."""
+def _with_schema_guard(messages: list[dict[str, Any]], schema: dict[str, Any]) -> tuple[list[dict[str, Any]], int]:
+    """The messages with the schema stated in the system message, for endpoints that do not enforce it,
+    and how many characters that added (a caller's token bound has to grow by them)."""
     guard = f"{_JSON_GUARD}\n{json.dumps(schema, ensure_ascii=False)}"
     first = messages[0]
     if first.get("role") == "system" and isinstance(first.get("content"), str):
-        return [{**first, "content": f"{first['content'].rstrip()}\n\n{guard}"}, *messages[1:]]
-    return [{"role": "system", "content": guard}, *messages]
+        return [{**first, "content": f"{first['content'].rstrip()}\n\n{guard}"}, *messages[1:]], len(guard) + 2
+    return [{"role": "system", "content": guard}, *messages], len(guard)
 
 
 class OpenAITransport:
@@ -836,8 +842,9 @@ class LLMClient:
         effort = self._effort(reasoning_effort)
         strict = strict_schema(schema)
         msgs = [dict(m) for m in messages]
+        guard_chars = 0
         if _guards_json(self.config.provider):
-            msgs = _with_schema_guard(msgs, strict)
+            msgs, guard_chars = _with_schema_guard(msgs, strict)
         body: dict[str, Any] = {
             "model": self.config.model,
             "messages": msgs,
@@ -851,7 +858,8 @@ class LLMClient:
         if input_token_upper_bound is not None:
             if not _is_positive_int(input_token_upper_bound):
                 raise ValueError("input_token_upper_bound must be a positive integer")
-            input_tokens = input_token_upper_bound
+            # The caller bounded its own messages; the schema guard is text this client added
+            input_tokens = input_token_upper_bound + math.ceil(guard_chars / CHARS_PER_TOKEN)
         elif has_media:
             raise ValueError("media input requires an explicit input_token_upper_bound")
         else:
@@ -873,6 +881,8 @@ class LLMClient:
         """The reasoning_effort to send: the configured one, or the caller's ("none": not sent)."""
         if override is None:
             return self.config.reasoning_effort
+        if not isinstance(override, str):
+            raise ValueError(f"reasoning_effort must be a string or None, got {override!r}")
         effort = override.lower()
         if effort == "none":
             return None
@@ -906,12 +916,17 @@ class LLMClient:
             rejected = exc
         log.warning("llm retrying provider=%s model=%s label=%s once after %s", cfg.provider, cfg.model, label,
                     rejected.kind)
-        feedback = {"role": "user", "content": f"Your previous reply was rejected ({rejected.kind}): "
-                                               f"{rejected.args[0]}. Reply again with a single JSON object matching "
-                                               "the schema; no prose, no code fences."}
-        # A caller's bound covers the first request's input; the added turn counts a token per character
-        bound = None if input_token_upper_bound is None else input_token_upper_bound + len(feedback["content"])
-        prepared = self.prepare([*messages, feedback], schema, input_token_upper_bound=bound, **options)
+        note = (f"Your previous reply was rejected ({rejected.kind}): {rejected.args[0]}. Reply again with a "
+                "single JSON object matching the schema; no prose, no code fences.")
+        last = messages[-1]
+        if last.get("role") == "user" and isinstance(last.get("content"), str):
+            # Chat templates that want alternating roles reject two user turns in a row
+            retry_messages = [*messages[:-1], {**last, "content": f"{last['content']}\n\n{note}"}]
+        else:
+            retry_messages = [*messages, {"role": "user", "content": note}]
+        # A caller's bound covers the first request's input; the added text counts a token per character
+        bound = None if input_token_upper_bound is None else input_token_upper_bound + len(note)
+        prepared = self.prepare(retry_messages, schema, input_token_upper_bound=bound, **options)
         return self._attempt(transport, prepared, label, 2)
 
     def _attempt(self, transport: Transport, prepared: PreparedRequest, label: str, attempts: int) -> LLMResult:
