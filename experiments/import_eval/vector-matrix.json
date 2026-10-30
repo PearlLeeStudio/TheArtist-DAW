@@ -1,0 +1,793 @@
+{
+  "method": "Original vector glyphs; two triads, two meters, three transforms; five cold/warm pairs per case",
+  "timingScope": "In-process HTTP handler including validation, parsing, analysis and serialization; excludes network/browser",
+  "cases": [
+    {
+      "tonic": "C4",
+      "clef": "treble",
+      "meter": [
+        4,
+        4
+      ],
+      "scale": 0.65,
+      "offset": [
+        14,
+        23
+      ],
+      "fixtureSha256": "bac2a013cc271a2ac44af44759b7a6886476ef50a5e1060b5248e0f965c82386",
+      "exact": true,
+      "expected": {
+        "chords": [
+          [
+            "C"
+          ]
+        ],
+        "key": "C major",
+        "meter": [
+          4,
+          4
+        ]
+      },
+      "actual": {
+        "chords": [
+          [
+            "C"
+          ]
+        ],
+        "key": "C major",
+        "meter": [
+          4,
+          4
+        ]
+      },
+      "durationMs": {
+        "cold": [
+          14.672,
+          4.576,
+          5.543,
+          3.099,
+          2.77
+        ],
+        "warm": [
+          2.677,
+          3.518,
+          1.433,
+          1.41,
+          1.187
+        ]
+      },
+      "summary": {
+        "cold": {
+          "p50Ms": 4.576,
+          "p95Ms": 14.672
+        },
+        "warm": {
+          "p50Ms": 1.433,
+          "p95Ms": 3.518
+        }
+      }
+    },
+    {
+      "tonic": "C4",
+      "clef": "treble",
+      "meter": [
+        4,
+        4
+      ],
+      "scale": 1,
+      "offset": [
+        0,
+        0
+      ],
+      "fixtureSha256": "202c7ec14875360c867417a4df8e4b16233fea8be40c2ecd8ffa2b1e04d47f0a",
+      "exact": true,
+      "expected": {
+        "chords": [
+          [
+            "C"
+          ]
+        ],
+        "key": "C major",
+        "meter": [
+          4,
+          4
+        ]
+      },
+      "actual": {
+        "chords": [
+          [
+            "C"
+          ]
+        ],
+        "key": "C major",
+        "meter": [
+          4,
+          4
+        ]
+      },
+      "durationMs": {
+        "cold": [
+          2.732,
+          2.793,
+          2.644,
+          3.092,
+          3.182
+        ],
+        "warm": [
+          1.128,
+          1.101,
+          1.362,
+          1.717,
+          1.227
+        ]
+      },
+      "summary": {
+        "cold": {
+          "p50Ms": 2.793,
+          "p95Ms": 3.182
+        },
+        "warm": {
+          "p50Ms": 1.227,
+          "p95Ms": 1.717
+        }
+      }
+    },
+    {
+      "tonic": "C4",
+      "clef": "treble",
+      "meter": [
+        4,
+        4
+      ],
+      "scale": 1.7,
+      "offset": [
+        33,
+        61
+      ],
+      "fixtureSha256": "72ea9f537892b2f0c15ff16f8431c48b1b2f7d89af7f4f142aac8d8d03225d06",
+      "exact": true,
+      "expected": {
+        "chords": [
+          [
+            "C"
+          ]
+        ],
+        "key": "C major",
+        "meter": [
+          4,
+          4
+        ]
+      },
+      "actual": {
+        "chords": [
+          [
+            "C"
+          ]
+        ],
+        "key": "C major",
+        "meter": [
+          4,
+          4
+        ]
+      },
+      "durationMs": {
+        "cold": [
+          3.554,
+          3.254,
+          2.69,
+          2.598,
+          2.583
+        ],
+        "warm": [
+          1.299,
+          1.269,
+          1.065,
+          1.171,
+          1.165
+        ]
+      },
+      "summary": {
+        "cold": {
+          "p50Ms": 2.69,
+          "p95Ms": 3.554
+        },
+        "warm": {
+          "p50Ms": 1.171,
+          "p95Ms": 1.299
+        }
+      }
+    },
+    {
+      "tonic": "C4",
+      "clef": "treble",
+      "meter": [
+        2,
+        4
+      ],
+      "scale": 0.65,
+      "offset": [
+        14,
+        23
+      ],
+      "fixtureSha256": "81b8f03461938d248fd9891da543f6660c23441ce19e516bb5bda88ef8571add",
+      "exact": true,
+      "expected": {
+        "chords": [
+          [
+            "C"
+          ]
+        ],
+        "key": "C major",
+        "meter": [
+          2,
+          4
+        ]
+      },
+      "actual": {
+        "chords": [
+          [
+            "C"
+          ]
+        ],
+        "key": "C major",
+        "meter": [
+          2,
+          4
+        ]
+      },
+      "durationMs": {
+        "cold": [
+          2.727,
+          2.78,
+          2.837,
+          2.571,
+          2.832
+        ],
+        "warm": [
+          1.305,
+          1.315,
+          1.117,
+          1.135,
+          1.497
+        ]
+      },
+      "summary": {
+        "cold": {
+          "p50Ms": 2.78,
+          "p95Ms": 2.837
+        },
+        "warm": {
+          "p50Ms": 1.305,
+          "p95Ms": 1.497
+        }
+      }
+    },
+    {
+      "tonic": "C4",
+      "clef": "treble",
+      "meter": [
+        2,
+        4
+      ],
+      "scale": 1,
+      "offset": [
+        0,
+        0
+      ],
+      "fixtureSha256": "109fc42f8c2a0162f62c3259ed5e04ec6ba723783dd9071b60a4350a98f2ecbb",
+      "exact": true,
+      "expected": {
+        "chords": [
+          [
+            "C"
+          ]
+        ],
+        "key": "C major",
+        "meter": [
+          2,
+          4
+        ]
+      },
+      "actual": {
+        "chords": [
+          [
+            "C"
+          ]
+        ],
+        "key": "C major",
+        "meter": [
+          2,
+          4
+        ]
+      },
+      "durationMs": {
+        "cold": [
+          2.828,
+          2.643,
+          3.65,
+          2.776,
+          2.771
+        ],
+        "warm": [
+          1.129,
+          1.044,
+          1.255,
+          1.289,
+          1.376
+        ]
+      },
+      "summary": {
+        "cold": {
+          "p50Ms": 2.776,
+          "p95Ms": 3.65
+        },
+        "warm": {
+          "p50Ms": 1.255,
+          "p95Ms": 1.376
+        }
+      }
+    },
+    {
+      "tonic": "C4",
+      "clef": "treble",
+      "meter": [
+        2,
+        4
+      ],
+      "scale": 1.7,
+      "offset": [
+        33,
+        61
+      ],
+      "fixtureSha256": "c1be4f0ddf238e07656c5d9271b5041cd011d3e46ee36ce5c7c9834ea0062d1a",
+      "exact": true,
+      "expected": {
+        "chords": [
+          [
+            "C"
+          ]
+        ],
+        "key": "C major",
+        "meter": [
+          2,
+          4
+        ]
+      },
+      "actual": {
+        "chords": [
+          [
+            "C"
+          ]
+        ],
+        "key": "C major",
+        "meter": [
+          2,
+          4
+        ]
+      },
+      "durationMs": {
+        "cold": [
+          3.675,
+          6.043,
+          4.199,
+          2.866,
+          2.709
+        ],
+        "warm": [
+          1.348,
+          2.887,
+          1.216,
+          1.194,
+          1.098
+        ]
+      },
+      "summary": {
+        "cold": {
+          "p50Ms": 3.675,
+          "p95Ms": 6.043
+        },
+        "warm": {
+          "p50Ms": 1.216,
+          "p95Ms": 2.887
+        }
+      }
+    },
+    {
+      "tonic": "F2",
+      "clef": "bass",
+      "meter": [
+        4,
+        4
+      ],
+      "scale": 0.65,
+      "offset": [
+        14,
+        23
+      ],
+      "fixtureSha256": "aec91d66a72635f4784b6ecb3411aafc1061a0e9e7f573406b13f98f8d844080",
+      "exact": true,
+      "expected": {
+        "chords": [
+          [
+            "F"
+          ]
+        ],
+        "key": "F major",
+        "meter": [
+          4,
+          4
+        ]
+      },
+      "actual": {
+        "chords": [
+          [
+            "F"
+          ]
+        ],
+        "key": "F major",
+        "meter": [
+          4,
+          4
+        ]
+      },
+      "durationMs": {
+        "cold": [
+          2.896,
+          2.815,
+          2.729,
+          2.656,
+          4.403
+        ],
+        "warm": [
+          1.18,
+          1.305,
+          1.159,
+          1.104,
+          1.166
+        ]
+      },
+      "summary": {
+        "cold": {
+          "p50Ms": 2.815,
+          "p95Ms": 4.403
+        },
+        "warm": {
+          "p50Ms": 1.166,
+          "p95Ms": 1.305
+        }
+      }
+    },
+    {
+      "tonic": "F2",
+      "clef": "bass",
+      "meter": [
+        4,
+        4
+      ],
+      "scale": 1,
+      "offset": [
+        0,
+        0
+      ],
+      "fixtureSha256": "0ac5296b92bd1ed45d85aea825bef59437ca38483205152a6d517016d9c2d98f",
+      "exact": true,
+      "expected": {
+        "chords": [
+          [
+            "F"
+          ]
+        ],
+        "key": "F major",
+        "meter": [
+          4,
+          4
+        ]
+      },
+      "actual": {
+        "chords": [
+          [
+            "F"
+          ]
+        ],
+        "key": "F major",
+        "meter": [
+          4,
+          4
+        ]
+      },
+      "durationMs": {
+        "cold": [
+          2.672,
+          2.65,
+          2.585,
+          2.895,
+          2.885
+        ],
+        "warm": [
+          1.14,
+          1.076,
+          1.128,
+          1.145,
+          1.176
+        ]
+      },
+      "summary": {
+        "cold": {
+          "p50Ms": 2.672,
+          "p95Ms": 2.895
+        },
+        "warm": {
+          "p50Ms": 1.14,
+          "p95Ms": 1.176
+        }
+      }
+    },
+    {
+      "tonic": "F2",
+      "clef": "bass",
+      "meter": [
+        4,
+        4
+      ],
+      "scale": 1.7,
+      "offset": [
+        33,
+        61
+      ],
+      "fixtureSha256": "1dab75a809d941f9835012012c99f7d2f5b72f3a9a2d4ee432e511a47aefa930",
+      "exact": true,
+      "expected": {
+        "chords": [
+          [
+            "F"
+          ]
+        ],
+        "key": "F major",
+        "meter": [
+          4,
+          4
+        ]
+      },
+      "actual": {
+        "chords": [
+          [
+            "F"
+          ]
+        ],
+        "key": "F major",
+        "meter": [
+          4,
+          4
+        ]
+      },
+      "durationMs": {
+        "cold": [
+          2.659,
+          2.59,
+          3.038,
+          2.682,
+          2.69
+        ],
+        "warm": [
+          1.061,
+          1.101,
+          1.147,
+          1.116,
+          1.148
+        ]
+      },
+      "summary": {
+        "cold": {
+          "p50Ms": 2.682,
+          "p95Ms": 3.038
+        },
+        "warm": {
+          "p50Ms": 1.116,
+          "p95Ms": 1.148
+        }
+      }
+    },
+    {
+      "tonic": "F2",
+      "clef": "bass",
+      "meter": [
+        2,
+        4
+      ],
+      "scale": 0.65,
+      "offset": [
+        14,
+        23
+      ],
+      "fixtureSha256": "dc4941b1c330ab3930802c20bdf13c7e3ce2074052c47d93a79ef2eb46aa2cad",
+      "exact": true,
+      "expected": {
+        "chords": [
+          [
+            "F"
+          ]
+        ],
+        "key": "F major",
+        "meter": [
+          2,
+          4
+        ]
+      },
+      "actual": {
+        "chords": [
+          [
+            "F"
+          ]
+        ],
+        "key": "F major",
+        "meter": [
+          2,
+          4
+        ]
+      },
+      "durationMs": {
+        "cold": [
+          3.103,
+          3.449,
+          2.61,
+          2.78,
+          2.676
+        ],
+        "warm": [
+          1.209,
+          1.129,
+          1.141,
+          1.191,
+          1.148
+        ]
+      },
+      "summary": {
+        "cold": {
+          "p50Ms": 2.78,
+          "p95Ms": 3.449
+        },
+        "warm": {
+          "p50Ms": 1.148,
+          "p95Ms": 1.209
+        }
+      }
+    },
+    {
+      "tonic": "F2",
+      "clef": "bass",
+      "meter": [
+        2,
+        4
+      ],
+      "scale": 1,
+      "offset": [
+        0,
+        0
+      ],
+      "fixtureSha256": "7d5099da47e77cc84b48d265b536dfb15ca92790137fde614666f3c241e73796",
+      "exact": true,
+      "expected": {
+        "chords": [
+          [
+            "F"
+          ]
+        ],
+        "key": "F major",
+        "meter": [
+          2,
+          4
+        ]
+      },
+      "actual": {
+        "chords": [
+          [
+            "F"
+          ]
+        ],
+        "key": "F major",
+        "meter": [
+          2,
+          4
+        ]
+      },
+      "durationMs": {
+        "cold": [
+          2.78,
+          3.377,
+          6.318,
+          3.647,
+          2.765
+        ],
+        "warm": [
+          1.22,
+          1.273,
+          1.675,
+          1.21,
+          1.106
+        ]
+      },
+      "summary": {
+        "cold": {
+          "p50Ms": 3.377,
+          "p95Ms": 6.318
+        },
+        "warm": {
+          "p50Ms": 1.22,
+          "p95Ms": 1.675
+        }
+      }
+    },
+    {
+      "tonic": "F2",
+      "clef": "bass",
+      "meter": [
+        2,
+        4
+      ],
+      "scale": 1.7,
+      "offset": [
+        33,
+        61
+      ],
+      "fixtureSha256": "feb3f23bf10a154e49b17f24d7cf072545d818e2c8a0397f768a9b1e20d4cbf5",
+      "exact": true,
+      "expected": {
+        "chords": [
+          [
+            "F"
+          ]
+        ],
+        "key": "F major",
+        "meter": [
+          2,
+          4
+        ]
+      },
+      "actual": {
+        "chords": [
+          [
+            "F"
+          ]
+        ],
+        "key": "F major",
+        "meter": [
+          2,
+          4
+        ]
+      },
+      "durationMs": {
+        "cold": [
+          2.666,
+          2.598,
+          2.829,
+          3.294,
+          2.614
+        ],
+        "warm": [
+          1.103,
+          1.109,
+          1.241,
+          1.17,
+          1.119
+        ]
+      },
+      "summary": {
+        "cold": {
+          "p50Ms": 2.666,
+          "p95Ms": 3.294
+        },
+        "warm": {
+          "p50Ms": 1.119,
+          "p95Ms": 1.241
+        }
+      }
+    }
+  ],
+  "exactCases": 12,
+  "totalCases": 12,
+  "limits": [
+    "Synthetic layout coverage, not real-world score accuracy",
+    "No PNG or Meta re-evaluation",
+    "No human correction-time measurement"
+  ]
+}

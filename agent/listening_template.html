@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TheArtist · Listening comparison</title>
+<style>
+body{font:16px system-ui,sans-serif;background:#101211;color:#edf1ec;max-width:760px;margin:40px auto;padding:0 20px;line-height:1.6}
+h1{font-size:30px;line-height:1.2}p{color:#b8c1b9}section{border:1px solid #3c443e;padding:22px;margin:22px 0;border-radius:12px}
+button,select,input{font:inherit;padding:9px 14px;border-radius:7px;border:1px solid #626c63;background:#202720;color:#edf1ec}
+button{cursor:pointer}button:hover{border-color:#d9e292}button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid #d9e292;outline-offset:2px}
+.plays{display:flex;gap:10px;flex-wrap:wrap}label{display:block;margin:13px 0}select{margin-left:12px}textarea{width:100%;box-sizing:border-box;background:#202720;color:inherit;font:inherit;min-height:65px}
+#status{min-height:26px;color:#d9e292}small{color:#b8c1b9}.primary{background:#d9e292;color:#172015;font-weight:700}
+</style>
+<h1>Which version would you keep?</h1>
+<p>Listen to both versions with the same headphones and volume. A/B order is randomized. Judge the musical flow, returning sections and ending; neither label identifies the system.</p>
+<p><small>Harmony and bass use identical simple synthesized voices; drums are omitted. This compares the progressions, not the app's sound library. No response is sent anywhere. Download your answers when finished.</small></p>
+<label>Anonymous participant code <input id="participant" maxlength="40" autocomplete="off"></label>
+<p id="status" role="status" aria-live="polite">Ready to listen</p>
+<main id="pairs"></main>
+<button id="stop" type="button">Stop audio</button> <button id="download" class="primary" type="button">Download answers</button>
+<script>
+const data = __LISTENING_DATA__;
+const choose = () => crypto.getRandomValues(new Uint32Array(1))[0] % 2;
+const order = data.map(pair => choose() ? [...pair.variants].reverse() : [...pair.variants]);
+const ratings = ['Flow', 'Returning sections', 'Ending', 'Would use this'];
+let context, timer, run = 0;
+const voices = new Set(), heard = new Set();
+const status = document.getElementById('status');
+document.getElementById('participant').value = Array.from(crypto.getRandomValues(new Uint8Array(4)), n => n.toString(16).padStart(2,'0')).join('');
+function stop() {
+  run++; clearInterval(timer);
+  for (const voice of voices) { try { voice.stop(); } catch {} }
+  voices.clear(); status.textContent = 'Stopped';
+}
+async function play(pair, arm) {
+  stop(); const current = run;
+  context ??= new AudioContext();
+  await context.resume(); if (current !== run) return;
+  const clip = order[pair][arm], start = context.currentTime + .08;
+  let next = 0;
+  const schedule = () => {
+    if (current !== run) return;
+    const elapsed = context.currentTime - start;
+    status.textContent = `${data[pair].label} · ${arm ? 'B' : 'A'} · ${Math.max(0, Math.floor(elapsed))} / ${Math.ceil(clip.duration)} s`;
+    while (next < clip.events.length && clip.events[next][0] < elapsed + .4) {
+      const [when, duration, note, velocity, channel] = clip.events[next++];
+      const onset = Math.max(context.currentTime + .005, start + when);
+      const oscillator = context.createOscillator(), gain = context.createGain();
+      oscillator.type = channel === 1 ? 'sine' : 'triangle';
+      oscillator.frequency.value = 440 * 2 ** ((note - 69) / 12);
+      const volume = Math.max(.0001, velocity * (channel === 1 ? .14 : .045));
+      gain.gain.setValueAtTime(.0001, onset);
+      gain.gain.exponentialRampToValueAtTime(volume, onset + .012);
+      gain.gain.exponentialRampToValueAtTime(Math.max(.0001, volume * .45), onset + Math.max(.02, duration));
+      gain.gain.exponentialRampToValueAtTime(.0001, onset + Math.max(.03, duration) + .08);
+      oscillator.connect(gain).connect(context.destination);
+      oscillator.start(onset); oscillator.stop(onset + Math.max(.03, duration) + .1);
+      voices.add(oscillator);
+      oscillator.onended = () => { voices.delete(oscillator); oscillator.disconnect(); gain.disconnect(); };
+    }
+    if (elapsed >= clip.duration) { heard.add(`${pair}-${arm}`); stop(); status.textContent = `${data[pair].label} · ${arm ? 'B' : 'A'} finished`; }
+  };
+  timer = setInterval(schedule, 50); schedule();
+}
+const main = document.getElementById('pairs');
+data.forEach((pair, i) => {
+  const section = document.createElement('section'), title = document.createElement('h2');
+  title.textContent = `${i + 1}. ${pair.label}`; section.append(title);
+  const buttons = document.createElement('div'); buttons.className = 'plays';
+  ['A','B'].forEach((arm, j) => {
+    const button = document.createElement('button'); button.textContent = `Play ${arm}`; button.type = 'button';
+    button.onclick = () => play(i,j).catch(() => { stop(); status.textContent = 'Audio could not start. Try another browser.'; });
+    buttons.append(button);
+  }); section.append(buttons);
+  ['A','B'].forEach((arm, j) => ratings.forEach((rating, k) => {
+    const label = document.createElement('label'); label.textContent = `${arm} · ${rating}`;
+    const select = document.createElement('select'); select.id = `rating-${i}-${j}-${k}`;
+    for (const [value,text] of [['','Choose'],['1','1 · weak'],['2','2'],['3','3'],['4','4'],['5','5 · strong']]) {
+      const option = document.createElement('option'); option.value = value; option.textContent = text; select.append(option);
+    } label.append(select); section.append(label);
+  }));
+  const preference = document.createElement('label'); preference.textContent = 'Overall preference';
+  const select = document.createElement('select'); select.id = `preference-${i}`;
+  for (const value of ['', 'A', 'B', 'Tie', 'Neither']) { const option = document.createElement('option'); option.value = value; option.textContent = value || 'Choose'; select.append(option); }
+  preference.append(select); section.append(preference);
+  const label = document.createElement('label'); label.textContent = 'What would you change?';
+  const comment = document.createElement('textarea'); comment.id = `comment-${i}`; comment.maxLength = 1000; label.append(comment); section.append(label);
+  main.append(section);
+});
+document.getElementById('stop').onclick = stop;
+document.getElementById('download').onclick = () => {
+  const responses = data.map((pair, i) => ({ pair: pair.id, preference: document.getElementById(`preference-${i}`).value,
+    variants: order[i].map((clip, j) => ({ label: j ? 'B' : 'A', id: clip.id, listenedToEnd: heard.has(`${i}-${j}`),
+      ratings: Object.fromEntries(ratings.map((rating,k) => [rating, Number(document.getElementById(`rating-${i}-${j}-${k}`).value) || null])) })),
+    comment: document.getElementById(`comment-${i}`).value }));
+  if (responses.some(r => !r.preference || r.variants.some(v => Object.values(v.ratings).some(n => n === null)))) {
+    status.textContent = 'Complete all ratings and preferences before downloading.'; return;
+  }
+  const blob = new Blob([JSON.stringify({ version: 1, participant: document.getElementById('participant').value.trim(), responses }, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob), link = document.createElement('a'); link.href = url; link.download = 'listening-answers.json'; link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000); status.textContent = 'Answers downloaded; nothing was uploaded.';
+};
+window.addEventListener('pagehide', stop);
+</script></html>

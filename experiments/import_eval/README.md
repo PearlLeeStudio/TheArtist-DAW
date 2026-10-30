@@ -35,6 +35,16 @@ No additional retry was made to select a better result.
 
 ## Artifacts
 
+The additional [vector matrix](vector-matrix.json) exercises twelve **synthetic
+engravings**, not twelve independent pieces: C/F triads, treble/bass clefs, 4/4
+and 2/4, three scale/offset combinations. All twelve returned the exact expected
+chord, key and meter in five cold/warm pairs each. The
+[runner](../../backend/scripts/import_matrix.py) includes in-process HTTP
+validation, parsing, analysis and serialization in its timings; network/browser
+and Meta are excluded. This broadens layout regression coverage, not real-world
+accuracy. The notes-only PNG failure above remains unresolved, and no human
+correction-time result is available.
+
 - `results.json`: normalized responses, exact text requests, request IDs, token usage,
   costs, separate chord comparisons and form suggestions. Attachment bytes are omitted
   from the request log; fixture hashes identify the inputs.

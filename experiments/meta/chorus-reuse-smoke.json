@@ -1,0 +1,4451 @@
+{
+  "method": "Three functional live plans; no paired quality or latency inference",
+  "maxUsd": 0.3,
+  "runs": [
+    {
+      "request": {
+        "genre": "pop",
+        "key": "C major",
+        "timeSignature": [
+          4,
+          4
+        ],
+        "bpm": 110,
+        "measures": [],
+        "sections": [],
+        "targetBars": 64,
+        "wantOutro": true,
+        "contrast": "medium",
+        "chorusMode": "reuse",
+        "planner": "meta",
+        "modelKey": "ft_f1",
+        "seed": 17
+      },
+      "trace": {
+        "status": "ok",
+        "planner": "meta",
+        "genre": "pop",
+        "key": "C major",
+        "bpm": 110,
+        "timeSignature": [
+          4,
+          4
+        ],
+        "plan": {
+          "sections": [
+            {
+              "type": "intro",
+              "bars": 4,
+              "cadence": "none",
+              "reason": "Empty sketch: open with 4-bar intro on I to set key and groove.",
+              "cites": []
+            },
+            {
+              "type": "verse",
+              "bars": 8,
+              "cadence": "authentic",
+              "reason": "Empty sketch: add 8-bar verse to establish narrative foundation.",
+              "cites": []
+            },
+            {
+              "type": "pre_chorus",
+              "bars": 4,
+              "cadence": "half",
+              "reason": "Empty sketch: add 4-bar pre_chorus lift hanging on V.",
+              "cites": []
+            },
+            {
+              "type": "chorus",
+              "bars": 8,
+              "cadence": "authentic",
+              "reason": "Empty sketch: deliver 8-bar chorus hook with V-I close.",
+              "cites": []
+            },
+            {
+              "type": "verse",
+              "bars": 8,
+              "cadence": "authentic",
+              "reason": "Empty sketch: repeat verse shape for second narrative stanza.",
+              "cites": []
+            },
+            {
+              "type": "pre_chorus",
+              "bars": 4,
+              "cadence": "half",
+              "reason": "Empty sketch: rebuild energy with pre_chorus before chorus.",
+              "cites": []
+            },
+            {
+              "type": "chorus",
+              "bars": 8,
+              "cadence": "authentic",
+              "reason": "Empty sketch: return 8-bar chorus to reinforce hook.",
+              "cites": []
+            },
+            {
+              "type": "bridge",
+              "bars": 8,
+              "cadence": "half_iv_v",
+              "reason": "Empty sketch: contrast with 8-bar bridge from IV to IV-V.",
+              "cites": []
+            },
+            {
+              "type": "chorus",
+              "bars": 8,
+              "cadence": "authentic",
+              "reason": "Empty sketch: final 8-bar chorus payoff keeping same length.",
+              "cites": []
+            },
+            {
+              "type": "outro",
+              "bars": 4,
+              "cadence": "plagal",
+              "reason": "Empty sketch: close with 4-bar outro landing IV-I.",
+              "cites": []
+            }
+          ]
+        },
+        "validation": [
+          {
+            "attempt": 1,
+            "ok": true,
+            "errors": []
+          }
+        ],
+        "sections": [
+          {
+            "sectionType": "intro",
+            "title": "Intro \u2014 4 bars",
+            "startMeasure": 0,
+            "bars": 4,
+            "chordCount": 8,
+            "suggestions": [
+              {
+                "label": "Option A \u2014 F1 \u2014 10K pop mix (balanced)",
+                "chords": {
+                  "0": [
+                    "Cmaj7",
+                    "Dm"
+                  ],
+                  "1": [
+                    "Cmaj",
+                    "Emaj/B"
+                  ],
+                  "2": [
+                    "Am",
+                    "Gmaj"
+                  ],
+                  "3": [
+                    "Fmaj",
+                    "Am/E"
+                  ]
+                },
+                "explanations": null
+              },
+              {
+                "label": "Option B \u2014 F1 \u2014 10K pop mix (creative)",
+                "chords": {
+                  "0": [
+                    "Cmaj",
+                    "Am/C"
+                  ],
+                  "1": [
+                    "Fmaj/C",
+                    "Gmaj/B"
+                  ],
+                  "2": [
+                    "Cmaj",
+                    "Gmaj/B"
+                  ],
+                  "3": [
+                    "Am",
+                    "Fmaj/A"
+                  ]
+                },
+                "explanations": null
+              },
+              {
+                "label": "Option C \u2014 F1 \u2014 10K pop mix (conservative)",
+                "chords": {
+                  "0": [
+                    "Cmaj",
+                    "Gmaj/B"
+                  ],
+                  "1": [
+                    "Cmaj",
+                    "Fmaj/C"
+                  ],
+                  "2": [
+                    "Cmaj",
+                    "G7/B"
+                  ],
+                  "3": [
+                    "Cmaj",
+                    "C7"
+                  ]
+                },
+                "explanations": null
+              }
+            ],
+            "source": "ai",
+            "modelUsed": "ft_f1",
+            "cadence": "none",
+            "rulesSlots": [
+              0
+            ],
+            "reason": "Empty sketch: open with 4-bar intro on I to set key and groove.",
+            "cites": [],
+            "regenerated": false,
+            "reuse": null
+          },
+          {
+            "sectionType": "verse",
+            "title": "Verse \u2014 8 bars",
+            "startMeasure": 4,
+            "bars": 8,
+            "chordCount": 16,
+            "suggestions": [
+              {
+                "label": "Option A \u2014 F1 \u2014 10K pop mix (creative)",
+                "chords": {
+                  "4": [
+                    "Dm",
+                    "Am/C"
+                  ],
+                  "5": [
+                    "Gmaj/B",
+                    "Am"
+                  ],
+                  "6": [
+                    "Fmaj/A",
+                    "Dm/A"
+                  ],
+                  "7": [
+                    "Gmaj",
+                    "Fmaj"
+                  ],
+                  "8": [
+                    "Dm/F",
+                    "Emaj"
+                  ],
+                  "9": [
+                    "Amaj/E",
+                    "Dm"
+                  ],
+                  "10": [
+                    "Fmaj",
+                    "Emaj"
+                  ],
+                  "11": [
+                    "G7",
+                    "Cmaj"
+                  ]
+                },
+                "explanations": null
+              },
+              {
+                "label": "Option B \u2014 F1 \u2014 10K pop mix (balanced)",
+                "chords": {
+                  "4": [
+                    "Gmaj",
+                    "Fmaj"
+                  ],
+                  "5": [
+                    "Cmaj7/E",
+                    "Emaj"
+                  ],
+                  "6": [
+                    "Am7/E",
+                    "Dmaj"
+                  ],
+                  "7": [
+                    "Cmaj",
+                    "Cmaj"
+                  ],
+                  "8": [
+                    "Fmaj/C",
+                    "Gmaj/B"
+                  ],
+                  "9": [
+                    "Cmaj7",
+                    "Cmaj"
+                  ],
+                  "10": [
+                    "Am7/C",
+                    "Dm"
+                  ],
+                  "11": [
+                    "G7/D",
+                    "Cmaj"
+                  ]
+                },
+                "explanations": null
+              },
+              {
+                "label": "Option C \u2014 F1 \u2014 10K pop mix (conservative)",
+                "chords": {
+                  "4": [
+                    "Gmaj",
+                    "Fmaj"
+                  ],
+                  "5": [
+                    "Am/E",
+                    "Cmaj7/E"
+                  ],
+                  "6": [
+                    "Dm",
+                    "Cmaj"
+                  ],
+                  "7": [
+                    "Emaj/B",
+                    "Am"
+                  ],
+                  "8": [
+                    "Cmaj7",
+                    "Emaj/B"
+                  ],
+                  "9": [
+                    "Fmaj/C",
+                    "Cmaj"
+                  ],
+                  "10": [
+                    "Dm",
+                    "Gmaj/D"
+                  ],
+                  "11": [
+                    "G7/D",
+                    "Cmaj"
+                  ]
+                },
+                "explanations": null
+              }
+            ],
+            "source": "ai",
+            "modelUsed": "ft_f1",
+            "cadence": "authentic",
+            "rulesSlots": [
+              14,
+              15
+            ],
+            "reason": "Empty sketch: add 8-bar verse to establish narrative foundation.",
+            "cites": [],
+            "regenerated": false,
+            "reuse": null
+          },
+          {
+            "sectionType": "pre_chorus",
+            "title": "Pre-Chorus \u2014 4 bars",
+            "startMeasure": 12,
+            "bars": 4,
+            "chordCount": 8,
+            "suggestions": [
+              {
+                "label": "Option A \u2014 F1 \u2014 10K pop mix (conservative)",
+                "chords": {
+                  "12": [
+                    "Dm",
+                    "Gmaj/D"
+                  ],
+                  "13": [
+                    "Cmaj",
+                    "Dm"
+                  ],
+                  "14": [
+                    "Emaj",
+                    "Amaj/E"
+                  ],
+                  "15": [
+                    "Dm",
+                    "G7/D"
+                  ]
+                },
+                "explanations": null
+              },
+              {
+                "label": "Option B \u2014 F1 \u2014 10K pop mix (creative)",
+                "chords": {
+                  "12": [
+                    "Emaj",
+                    "Am/E"
+                  ],
+                  "13": [
+                    "G7",
+                    "Fmaj"
+                  ],
+                  "14": [
+                    "Am/E",
+                    "Dm"
+                  ],
+                  "15": [
+                    "Em",
+                    "G7"
+                  ]
+                },
+                "explanations": null
+              },
+              {
+                "label": "Option C \u2014 F1 \u2014 10K pop mix (balanced)",
+                "chords": {
+                  "12": [
+                    "Fmaj",
+                    "G7"
+                  ],
+                  "13": [
+                    "Emaj",
+                    "Am/E"
+                  ],
+                  "14": [
+                    "Am/E",
+                    "Fmaj7"
+                  ],
+                  "15": [
+                    "G7",
+                    "G7"
+                  ]
+                },
+                "explanations": null
+              }
+            ],
+            "source": "ai",
+            "modelUsed": "ft_f1",
+            "cadence": "half",
+            "rulesSlots": [
+              7
+            ],
+            "reason": "Empty sketch: add 4-bar pre_chorus lift hanging on V.",
+            "cites": [],
+            "regenerated": false,
+            "reuse": null
+          },
+          {
+            "sectionType": "chorus",
+            "title": "Chorus \u2014 8 bars",
+            "startMeasure": 16,
+            "bars": 8,
+            "chordCount": 16,
+            "suggestions": [
+              {
+                "label": "Option A \u2014 F1 \u2014 10K pop mix (creative)",
+                "chords": {
+                  "16": [
+                    "Em",
+                    "Amaj/E"
+                  ],
+                  "17": [
+                    "A7/E",
+                    "Dm"
+                  ],
+                  "18": [
+                    "Fm",
+                    "Gmaj"
+                  ],
+                  "19": [
+                    "Em/G",
+                    "Am"
+                  ],
+                  "20": [
+                    "Fm/Ab",
+                    "Dmaj/A"
+                  ],
+                  "21": [
+                    "Am",
+                    "Em/G"
+                  ],
+                  "22": [
+                    "Fm",
+                    "Em"
+                  ],
+                  "23": [
+                    "G7",
+                    "Cmaj"
+                  ]
+                },
+                "explanations": null
+              },
+              {
+                "label": "Option B \u2014 F1 \u2014 10K pop mix (conservative)",
+                "chords": {
+                  "16": [
+                    "Cmaj",
+                    "A7"
+                  ],
+                  "17": [
+                    "Dm/A",
+                    "Cmaj"
+                  ],
+                  "18": [
+                    "Bm",
+                    "E7/B"
+                  ],
+                  "19": [
+                    "Am",
+                    "Dm/A"
+                  ],
+                  "20": [
+                    "Am",
+                    "Emaj/Ab"
+                  ],
+                  "21": [
+                    "Dm/A",
+                    "Fmaj/A"
+                  ],
+                  "22": [
+                    "Am",
+                    "Fmaj/A"
+                  ],
+                  "23": [
+                    "G7",
+                    "Cmaj"
+                  ]
+                },
+                "explanations": null
+              },
+              {
+                "label": "Option C \u2014 F1 \u2014 10K pop mix (balanced)",
+                "chords": {
+                  "16": [
+                    "Em",
+                    "Fmaj"
+                  ],
+                  "17": [
+                    "Em",
+                    "A7/E"
+                  ],
+                  "18": [
+                    "Dm",
+                    "Fmaj"
+                  ],
+                  "19": [
+                    "Emaj",
+                    "Dm"
+                  ],
+                  "20": [
+                    "G7/D",
+                    "Em"
+                  ],
+                  "21": [
+                    "Fmaj",
+                    "Em"
+                  ],
+                  "22": [
+                    "A7/E",
+                    "Dm"
+                  ],
+                  "23": [
+                    "G7/D",
+                    "Cmaj"
+                  ]
+                },
+                "explanations": null
+              }
+            ],
+            "source": "ai",
+            "modelUsed": "ft_f1",
+            "cadence": "authentic",
+            "rulesSlots": [
+              14,
+              15
+            ],
+            "reason": "Empty sketch: deliver 8-bar chorus hook with V-I close.",
+            "cites": [],
+            "regenerated": true,
+            "reuse": null
+          },
+          {
+            "sectionType": "verse",
+            "title": "Verse \u2014 8 bars",
+            "startMeasure": 24,
+            "bars": 8,
+            "chordCount": 16,
+            "suggestions": [
+              {
+                "label": "Option A \u2014 F1 \u2014 10K pop mix (balanced)",
+                "chords": {
+                  "24": [
+                    "Emaj",
+                    "Am/E"
+                  ],
+                  "25": [
+                    "Em",
+                    "Fmaj"
+                  ],
+                  "26": [
+                    "Gmaj",
+                    "Amaj"
+                  ],
+                  "27": [
+                    "Emaj/Ab",
+                    "Fm/Ab"
+                  ],
+                  "28": [
+                    "Gmaj",
+                    "Cmaj/G"
+                  ],
+                  "29": [
+                    "Bmaj/F#",
+                    "Cmaj/G"
+                  ],
+                  "30": [
+                    "Amaj",
+                    "A7"
+                  ],
+                  "31": [
+                    "G7",
+                    "Cmaj"
+                  ]
+                },
+                "explanations": null
+              },
+              {
+                "label": "Option B \u2014 F1 \u2014 10K pop mix (conservative)",
+                "chords": {
+                  "24": [
+                    "Fmaj",
+                    "Cmaj/E"
+                  ],
+                  "25": [
+                    "Gmaj",
+                    "Cmaj/G"
+                  ],
+                  "26": [
+                    "Emaj",
+                    "Am/E"
+                  ],
+                  "27": [
+                    "Gm",
+                    "Fmaj"
+                  ],
+                  "28": [
+                    "Em",
+                    "Dm"
+                  ],
+                  "29": [
+                    "G7/D",
+                    "Fmaj"
+                  ],
+                  "30": [
+                    "Cmaj/E",
+                    "Fmaj"
+                  ],
+                  "31": [
+                    "G7",
+                    "Cmaj"
+                  ]
+                },
+                "explanations": null
+              },
+              {
+                "label": "Option C \u2014 F1 \u2014 10K pop mix (creative)",
+                "chords": {
+                  "24": [
+                    "Am",
+                    "Amaj"
+                  ],
+                  "25": [
+                    "Dm7/A",
+                    "G7"
+                  ],
+                  "26": [
+                    "Fmaj",
+                    "Em7"
+                  ],
+                  "27": [
+                    "Am/E",
+                    "Dm"
+                  ],
+                  "28": [
+                    "Am/C",
+                    "Am7/C"
+                  ],
+                  "29": [
+                    "Fmaj7/C",
+                    "Em/B"
+                  ],
+                  "30": [
+                    "Dm",
+                    "E7"
+                  ],
+                  "31": [
+                    "G7",
+                    "Cmaj"
+                  ]
+                },
+                "explanations": null
+              }
+            ],
+            "source": "ai",
+            "modelUsed": "ft_f1",
+            "cadence": "authentic",
+            "rulesSlots": [
+              14,
+              15
+            ],
+            "reason": "Empty sketch: repeat verse shape for second narrative stanza.",
+            "cites": [],
+            "regenerated": true,
+            "reuse": null
+          },
+          {
+            "sectionType": "pre_chorus",
+            "title": "Pre-Chorus \u2014 4 bars",
+            "startMeasure": 32,
+            "bars": 4,
+            "chordCount": 8,
+            "suggestions": [
+              {
+                "label": "Option A \u2014 F1 \u2014 10K pop mix (conservative)",
+                "chords": {
+                  "32": [
+                    "Bm",
+                    "Cmaj"
+                  ],
+                  "33": [
+                    "Gmaj/B",
+                    "Cmaj"
+                  ],
+                  "34": [
+                    "Amaj",
+                    "Em/G"
+                  ],
+                  "35": [
+                    "Cmaj/G",
+                    "G7"
+                  ]
+                },
+                "explanations": null
+              },
+              {
+                "label": "Option B \u2014 F1 \u2014 10K pop mix (balanced)",
+                "chords": {
+                  "32": [
+                    "G7",
+                    "Em/G"
+                  ],
+                  "33": [
+                    "A7",
+                    "Dmaj/A"
+                  ],
+                  "34": [
+                    "Amaj",
+                    "Bm"
+                  ],
+                  "35": [
+                    "F#maj/Bb",
+                    "G7"
+                  ]
+                },
+                "explanations": null
+              },
+              {
+                "label": "Option C \u2014 F1 \u2014 10K pop mix (creative)",
+                "chords": {
+                  "32": [
+                    "C7",
+                    "Fmaj/C"
+                  ],
+                  "33": [
+                    "D7",
+                    "Cmaj"
+                  ],
+                  "34": [
+                    "D7",
+                    "Emaj"
+                  ],
+                  "35": [
+                    "Em",
+                    "G7"
+                  ]
+                },
+                "explanations": null
+              }
+            ],
+            "source": "ai",
+            "modelUsed": "ft_f1",
+            "cadence": "half",
+            "rulesSlots": [
+              7
+            ],
+            "reason": "Empty sketch: rebuild energy with pre_chorus before chorus.",
+            "cites": [],
+            "regenerated": false,
+            "reuse": null
+          },
+          {
+            "sectionType": "chorus",
+            "title": "Chorus \u2014 8 bars",
+            "startMeasure": 36,
+            "bars": 8,
+            "chordCount": 16,
+            "suggestions": [
+              {
+                "label": "Chorus reprise",
+                "chords": {
+                  "36": [
+                    "Em",
+                    "Amaj/E"
+                  ],
+                  "37": [
+                    "A7/E",
+                    "Dm"
+                  ],
+                  "38": [
+                    "Fm",
+                    "Gmaj"
+                  ],
+                  "39": [
+                    "Em/G",
+                    "Am"
+                  ],
+                  "40": [
+                    "Fm/Ab",
+                    "Dmaj/A"
+                  ],
+                  "41": [
+                    "Am",
+                    "Em/G"
+                  ],
+                  "42": [
+                    "Fm",
+                    "Em"
+                  ],
+                  "43": [
+                    "G7",
+                    "Cmaj"
+                  ]
+                },
+                "explanations": null
+              }
+            ],
+            "source": "reuse",
+            "modelUsed": null,
+            "cadence": "authentic",
+            "rulesSlots": [
+              14,
+              15
+            ],
+            "reason": "Empty sketch: return 8-bar chorus to reinforce hook.",
+            "cites": [],
+            "regenerated": false,
+            "reuse": {
+              "origin": "section",
+              "sectionIndex": 3,
+              "startMeasure": 16,
+              "source": "ai",
+              "modelUsed": "ft_f1",
+              "retainedSlots": [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7,
+                8,
+                9,
+                10,
+                11,
+                12,
+                13,
+                14,
+                15
+              ],
+              "changedSlots": []
+            }
+          },
+          {
+            "sectionType": "bridge",
+            "title": "Bridge \u2014 8 bars",
+            "startMeasure": 44,
+            "bars": 8,
+            "chordCount": 16,
+            "suggestions": [
+              {
+                "label": "Option A \u2014 F1 \u2014 10K pop mix (creative)",
+                "chords": {
+                  "44": [
+                    "Fmaj7",
+                    "G7"
+                  ],
+                  "45": [
+                    "Em/G",
+                    "Fmaj"
+                  ],
+                  "46": [
+                    "Em",
+                    "G7"
+                  ],
+                  "47": [
+                    "Emaj",
+                    "Dmaj"
+                  ],
+                  "48": [
+                    "Gmaj/D",
+                    "G7/D"
+                  ],
+                  "49": [
+                    "G7/D",
+                    "E7"
+                  ],
+                  "50": [
+                    "Gmaj",
+                    "Dm/F"
+                  ],
+                  "51": [
+                    "Fmaj7",
+                    "G7"
+                  ]
+                },
+                "explanations": null
+              },
+              {
+                "label": "Option B \u2014 F1 \u2014 10K pop mix (conservative)",
+                "chords": {
+                  "44": [
+                    "Fmaj7",
+                    "G7"
+                  ],
+                  "45": [
+                    "Fmaj",
+                    "Cmaj/E"
+                  ],
+                  "46": [
+                    "Dm7",
+                    "Cmaj"
+                  ],
+                  "47": [
+                    "Em/B",
+                    "Am"
+                  ],
+                  "48": [
+                    "Am7",
+                    "Dm7/A"
+                  ],
+                  "49": [
+                    "Gmaj",
+                    "G7"
+                  ],
+                  "50": [
+                    "Gmaj",
+                    "Cmaj7/G"
+                  ],
+                  "51": [
+                    "Fmaj7",
+                    "G7"
+                  ]
+                },
+                "explanations": null
+              },
+              {
+                "label": "Option C \u2014 F1 \u2014 10K pop mix (balanced)",
+                "chords": {
+                  "44": [
+                    "Fmaj7",
+                    "Am/E"
+                  ],
+                  "45": [
+                    "C7/E",
+                    "Fmaj"
+                  ],
+                  "46": [
+                    "Fm",
+                    "Cmaj/E"
+                  ],
+                  "47": [
+                    "C7/E",
+                    "A7/E"
+                  ],
+                  "48": [
+                    "D7",
+                    "G7/D"
+                  ],
+                  "49": [
+                    "Cmaj7",
+                    "Cmaj"
+                  ],
+                  "50": [
+                    "G7/B",
+                    "Gmaj/B"
+                  ],
+                  "51": [
+                    "Fmaj7/C",
+                    "G7/B"
+                  ]
+                },
+                "explanations": null
+              }
+            ],
+            "source": "ai",
+            "modelUsed": "ft_f1",
+            "cadence": "half_iv_v",
+            "rulesSlots": [
+              0,
+              14,
+              15
+            ],
+            "reason": "Empty sketch: contrast with 8-bar bridge from IV to IV-V.",
+            "cites": [],
+            "regenerated": false,
+            "reuse": null
+          },
+          {
+            "sectionType": "chorus",
+            "title": "Chorus \u2014 8 bars",
+            "startMeasure": 52,
+            "bars": 8,
+            "chordCount": 16,
+            "suggestions": [
+              {
+                "label": "Chorus reprise",
+                "chords": {
+                  "52": [
+                    "Em",
+                    "Amaj/E"
+                  ],
+                  "53": [
+                    "A7/E",
+                    "Dm"
+                  ],
+                  "54": [
+                    "Fm",
+                    "Gmaj"
+                  ],
+                  "55": [
+                    "Em/G",
+                    "Am"
+                  ],
+                  "56": [
+                    "Fm/Ab",
+                    "Dmaj/A"
+                  ],
+                  "57": [
+                    "Am",
+                    "Em/G"
+                  ],
+                  "58": [
+                    "Fm",
+                    "Em"
+                  ],
+                  "59": [
+                    "G7",
+                    "Cmaj"
+                  ]
+                },
+                "explanations": null
+              }
+            ],
+            "source": "reuse",
+            "modelUsed": null,
+            "cadence": "authentic",
+            "rulesSlots": [
+              14,
+              15
+            ],
+            "reason": "Empty sketch: final 8-bar chorus payoff keeping same length.",
+            "cites": [],
+            "regenerated": false,
+            "reuse": {
+              "origin": "section",
+              "sectionIndex": 3,
+              "startMeasure": 16,
+              "source": "ai",
+              "modelUsed": "ft_f1",
+              "retainedSlots": [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7,
+                8,
+                9,
+                10,
+                11,
+                12,
+                13,
+                14,
+                15
+              ],
+              "changedSlots": []
+            }
+          },
+          {
+            "sectionType": "outro",
+            "title": "Outro \u2014 4 bars",
+            "startMeasure": 60,
+            "bars": 4,
+            "chordCount": 8,
+            "suggestions": [
+              {
+                "label": "Option A \u2014 F1 \u2014 10K pop mix (balanced)",
+                "chords": {
+                  "60": [
+                    "Am",
+                    "Cmaj"
+                  ],
+                  "61": [
+                    "G7/B",
+                    "Fmaj7/C"
+                  ],
+                  "62": [
+                    "Am/C",
+                    "Fmaj7/C"
+                  ],
+                  "63": [
+                    "Fmaj7/C",
+                    "Cmaj"
+                  ]
+                },
+                "explanations": null
+              },
+              {
+                "label": "Option B \u2014 F1 \u2014 10K pop mix (creative)",
+                "chords": {
+                  "60": [
+                    "G7",
+                    "Am"
+                  ],
+                  "61": [
+                    "D7/A",
+                    "Dmaj/A"
+                  ],
+                  "62": [
+                    "Fmaj/A",
+                    "Cmaj"
+                  ],
+                  "63": [
+                    "Fmaj7/C",
+                    "Cmaj"
+                  ]
+                },
+                "explanations": null
+              },
+              {
+                "label": "Option C \u2014 F1 \u2014 10K pop mix (conservative)",
+                "chords": {
+                  "60": [
+                    "Cmaj7",
+                    "G7/B"
+                  ],
+                  "61": [
+                    "Cmaj7",
+                    "Fmaj/C"
+                  ],
+                  "62": [
+                    "G7/B",
+                    "Cmaj7"
+                  ],
+                  "63": [
+                    "Fmaj7/C",
+                    "Cmaj"
+                  ]
+                },
+                "explanations": null
+              }
+            ],
+            "source": "ai",
+            "modelUsed": "ft_f1",
+            "cadence": "plagal",
+            "rulesSlots": [
+              6,
+              7
+            ],
+            "reason": "Empty sketch: close with 4-bar outro landing IV-I.",
+            "cites": [],
+            "regenerated": false,
+            "reuse": null
+          }
+        ],
+        "judge": [
+          {
+            "decision": "regenerate",
+            "targets": [
+              {
+                "section": 3,
+                "reason": "42.9% chords outside key, too chromatic for pop chorus"
+              },
+              {
+                "section": 4,
+                "reason": "57.1% chords outside key, too chromatic for pop verse"
+              }
+            ],
+            "report": [
+              {
+                "section": 0,
+                "type": "intro",
+                "bars": 4,
+                "modelSlots": 7,
+                "outsideKey": 0.143,
+                "repeatRate": null,
+                "distinctChords": 6,
+                "emptySlots": 0,
+                "reused": false,
+                "sourceSection": null
+              },
+              {
+                "section": 1,
+                "type": "verse",
+                "bars": 8,
+                "modelSlots": 14,
+                "outsideKey": 0.214,
+                "repeatRate": 0.0,
+                "distinctChords": 6,
+                "emptySlots": 0,
+                "reused": false,
+                "sourceSection": null
+              },
+              {
+                "section": 2,
+                "type": "pre_chorus",
+                "bars": 4,
+                "modelSlots": 7,
+                "outsideKey": 0.286,
+                "repeatRate": 0.143,
+                "distinctChords": 5,
+                "emptySlots": 0,
+                "reused": false,
+                "sourceSection": null
+              },
+              {
+                "section": 3,
+                "type": "chorus",
+                "bars": 8,
+                "modelSlots": 14,
+                "outsideKey": 0.429,
+                "repeatRate": 0.25,
+                "distinctChords": 9,
+                "emptySlots": 0,
+                "reused": false,
+                "sourceSection": null
+              },
+              {
+                "section": 4,
+                "type": "verse",
+                "bars": 8,
+                "modelSlots": 14,
+                "outsideKey": 0.571,
+                "repeatRate": 0.0,
+                "distinctChords": 9,
+                "emptySlots": 0,
+                "reused": false,
+                "sourceSection": null
+              },
+              {
+                "section": 5,
+                "type": "pre_chorus",
+                "bars": 4,
+                "modelSlots": 7,
+                "outsideKey": 0.286,
+                "repeatRate": 0.0,
+                "distinctChords": 5,
+                "emptySlots": 0,
+                "reused": false,
+                "sourceSection": null
+              },
+              {
+                "section": 6,
+                "type": "chorus",
+                "bars": 8,
+                "modelSlots": 0,
+                "outsideKey": 0.0,
+                "repeatRate": null,
+                "distinctChords": 0,
+                "emptySlots": 0,
+                "reused": true,
+                "sourceSection": 3
+              },
+              {
+                "section": 7,
+                "type": "bridge",
+                "bars": 8,
+                "modelSlots": 13,
+                "outsideKey": 0.231,
+                "repeatRate": 0.0,
+                "distinctChords": 8,
+                "emptySlots": 0,
+                "reused": false,
+                "sourceSection": null
+              },
+              {
+                "section": 8,
+                "type": "chorus",
+                "bars": 8,
+                "modelSlots": 0,
+                "outsideKey": 0.0,
+                "repeatRate": null,
+                "distinctChords": 0,
+                "emptySlots": 0,
+                "reused": true,
+                "sourceSection": 3
+              },
+              {
+                "section": 9,
+                "type": "outro",
+                "bars": 4,
+                "modelSlots": 6,
+                "outsideKey": 0.0,
+                "repeatRate": 0.0,
+                "distinctChords": 4,
+                "emptySlots": 0,
+                "reused": false,
+                "sourceSection": null
+              }
+            ],
+            "provider": "meta",
+            "model": "muse-spark-1.3",
+            "requestId": "a1611397-0693-49cc-b8d1-f4fba54986eb",
+            "costUsd": 0.004698,
+            "latencyMs": 4306
+          },
+          {
+            "decision": "regenerate",
+            "targets": [
+              {
+                "section": 3,
+                "reason": "43% chords outside key in pop chorus"
+              },
+              {
+                "section": 4,
+                "reason": "50% chords outside key in pop verse"
+              }
+            ],
+            "report": [
+              {
+                "section": 0,
+                "type": "intro",
+                "bars": 4,
+                "modelSlots": 7,
+                "outsideKey": 0.143,
+                "repeatRate": null,
+                "distinctChords": 6,
+                "emptySlots": 0,
+                "reused": false,
+                "sourceSection": null
+              },
+              {
+                "section": 1,
+                "type": "verse",
+                "bars": 8,
+                "modelSlots": 14,
+                "outsideKey": 0.214,
+                "repeatRate": 0.0,
+                "distinctChords": 6,
+                "emptySlots": 0,
+                "reused": false,
+                "sourceSection": null
+              },
+              {
+                "section": 2,
+                "type": "pre_chorus",
+                "bars": 4,
+                "modelSlots": 7,
+                "outsideKey": 0.286,
+                "repeatRate": 0.143,
+                "distinctChords": 5,
+                "emptySlots": 0,
+                "reused": false,
+                "sourceSection": null
+              },
+              {
+                "section": 3,
+                "type": "chorus",
+                "bars": 8,
+                "modelSlots": 14,
+                "outsideKey": 0.429,
+                "repeatRate": 0.125,
+                "distinctChords": 8,
+                "emptySlots": 0,
+                "reused": false,
+                "sourceSection": null
+              },
+              {
+                "section": 4,
+                "type": "verse",
+                "bars": 8,
+                "modelSlots": 14,
+                "outsideKey": 0.5,
+                "repeatRate": 0.0,
+                "distinctChords": 10,
+                "emptySlots": 0,
+                "reused": false,
+                "sourceSection": null
+              },
+              {
+                "section": 5,
+                "type": "pre_chorus",
+                "bars": 4,
+                "modelSlots": 7,
+                "outsideKey": 0.286,
+                "repeatRate": 0.0,
+                "distinctChords": 5,
+                "emptySlots": 0,
+                "reused": false,
+                "sourceSection": null
+              },
+              {
+                "section": 6,
+                "type": "chorus",
+                "bars": 8,
+                "modelSlots": 0,
+                "outsideKey": 0.0,
+                "repeatRate": null,
+                "distinctChords": 0,
+                "emptySlots": 0,
+                "reused": true,
+                "sourceSection": 3
+              },
+              {
+                "section": 7,
+                "type": "bridge",
+                "bars": 8,
+                "modelSlots": 13,
+                "outsideKey": 0.231,
+                "repeatRate": 0.0,
+                "distinctChords": 8,
+                "emptySlots": 0,
+                "reused": false,
+                "sourceSection": null
+              },
+              {
+                "section": 8,
+                "type": "chorus",
+                "bars": 8,
+                "modelSlots": 0,
+                "outsideKey": 0.0,
+                "repeatRate": null,
+                "distinctChords": 0,
+                "emptySlots": 0,
+                "reused": true,
+                "sourceSection": 3
+              },
+              {
+                "section": 9,
+                "type": "outro",
+                "bars": 4,
+                "modelSlots": 6,
+                "outsideKey": 0.0,
+                "repeatRate": 0.0,
+                "distinctChords": 4,
+                "emptySlots": 0,
+                "reused": false,
+                "sourceSection": null
+              }
+            ],
+            "provider": "meta",
+            "model": "muse-spark-1.3",
+            "requestId": "0951ec78-c437-475e-be82-611961ad3505",
+            "costUsd": 0.00474475,
+            "latencyMs": 4144
+          }
+        ],
+        "calls": [
+          {
+            "step": "plan_song",
+            "attempt": 1,
+            "provider": "meta",
+            "model": "muse-spark-1.3",
+            "requestId": "401faaab-eec5-4d92-b9b9-69a0ebef83da",
+            "costUsd": 0.00908225,
+            "latencyMs": 8011,
+            "effort": "medium",
+            "ok": true
+          },
+          {
+            "step": "judge",
+            "attempt": 1,
+            "provider": "meta",
+            "model": "muse-spark-1.3",
+            "requestId": "a1611397-0693-49cc-b8d1-f4fba54986eb",
+            "costUsd": 0.004698,
+            "latencyMs": 4306,
+            "effort": "low",
+            "ok": true
+          },
+          {
+            "step": "judge",
+            "attempt": 2,
+            "provider": "meta",
+            "model": "muse-spark-1.3",
+            "requestId": "0951ec78-c437-475e-be82-611961ad3505",
+            "costUsd": 0.00474475,
+            "latencyMs": 4144,
+            "effort": "low",
+            "ok": true
+          }
+        ],
+        "spendUsd": 0.018525,
+        "reservedUsd": 0.07515825,
+        "elapsedMs": 18778,
+        "metaMs": 16461,
+        "generationMs": 2314,
+        "error": null
+      },
+      "apiUsage": [
+        {
+          "label": "plan.plan_song",
+          "provider": "meta",
+          "model": "muse-spark-1.3",
+          "request_id": "401faaab-eec5-4d92-b9b9-69a0ebef83da",
+          "usage": {
+            "prompt_tokens": 986,
+            "cached_tokens": 0,
+            "completion_tokens": 1847,
+            "reasoning_tokens": 1403
+          },
+          "status": "settled",
+          "settled_usd": 0.00908225,
+          "latency_ms": 7992
+        },
+        {
+          "label": "plan.judge",
+          "provider": "meta",
+          "model": "muse-spark-1.3",
+          "request_id": "a1611397-0693-49cc-b8d1-f4fba54986eb",
+          "usage": {
+            "prompt_tokens": 1154,
+            "cached_tokens": 0,
+            "completion_tokens": 766,
+            "reasoning_tokens": 709
+          },
+          "status": "settled",
+          "settled_usd": 0.004698,
+          "latency_ms": 4294
+        },
+        {
+          "label": "plan.judge",
+          "provider": "meta",
+          "model": "muse-spark-1.3",
+          "request_id": "0951ec78-c437-475e-be82-611961ad3505",
+          "usage": {
+            "prompt_tokens": 1154,
+            "cached_tokens": 0,
+            "completion_tokens": 777,
+            "reasoning_tokens": 730
+          },
+          "status": "settled",
+          "settled_usd": 0.00474475,
+          "latency_ms": 4133
+        }
+      ]
+    },
+    {
+      "request": {
+        "genre": "pop",
+        "key": "A minor",
+        "timeSignature": [
+          4,
+          4
+        ],
+        "bpm": 110,
+        "measures": [],
+        "sections": [],
+        "targetBars": 64,
+        "wantOutro": true,
+        "contrast": "medium",
+        "chorusMode": "reuse",
+        "planner": "meta",
+        "modelKey": "ft_f1",
+        "seed": 17
+      },
+      "trace": {
+        "status": "ok",
+        "planner": "meta",
+        "genre": "pop",
+        "key": "A minor",
+        "bpm": 110,
+        "timeSignature": [
+          4,
+          4
+        ],
+        "plan": {
+          "sections": [
+            {
+              "type": "intro",
+              "bars": 4,
+              "cadence": "none",
+              "reason": "Empty song: short I-start intro to set groove for pop form",
+              "cites": []
+            },
+            {
+              "type": "verse",
+              "bars": 8,
+              "cadence": "authentic",
+              "reason": "Empty song: opening verse lays narrative foundation",
+              "cites": []
+            },
+            {
+              "type": "pre_chorus",
+              "bars": 4,
+              "cadence": "half",
+              "reason": "Empty song: build lift into hook with V hang",
+              "cites": []
+            },
+            {
+              "type": "chorus",
+              "bars": 8,
+              "cadence": "authentic",
+              "reason": "Empty song: central hook with V-I landing",
+              "cites": []
+            },
+            {
+              "type": "verse",
+              "bars": 8,
+              "cadence": "authentic",
+              "reason": "Empty song: second verse continues story",
+              "cites": []
+            },
+            {
+              "type": "pre_chorus",
+              "bars": 4,
+              "cadence": "half",
+              "reason": "Empty song: rebuild tension before return hook",
+              "cites": []
+            },
+            {
+              "type": "chorus",
+              "bars": 8,
+              "cadence": "authentic",
+              "reason": "Empty song: repeat hook same length for reuse",
+              "cites": []
+            },
+            {
+              "type": "bridge",
+              "bars": 8,
+              "cadence": "half_iv_v",
+              "reason": "Empty song: contrasting bridge for variety",
+              "cites": []
+            },
+            {
+              "type": "chorus",
+              "bars": 8,
+              "cadence": "authentic",
+              "reason": "Empty song: final hook restatement before ending",
+              "cites": []
+            },
+            {
+              "type": "outro",
+              "bars": 4,
+              "cadence": "plagal",
+              "reason": "Empty song: IV-I outro to close and land song",
+              "cites": []
+            }
+          ]
+        },
+        "validation": [
+          {
+            "attempt": 1,
+            "ok": true,
+            "errors": []
+          }
+        ],
+        "sections": [
+          {
+            "sectionType": "intro",
+            "title": "Intro \u2014 4 bars",
+            "startMeasure": 0,
+            "bars": 4,
+            "chordCount": 8,
+            "suggestions": [
+              {
+                "label": "Option A \u2014 F1 \u2014 10K pop mix (balanced)",
+                "chords": {
+                  "0": [
+                    "Am7",
+                    "Fmaj/A"
+                  ],
+                  "1": [
+                    "Gmaj",
+                    "Am"
+                  ],
+                  "2": [
+                    "Cmaj",
+                    "Am/C"
+                  ],
+                  "3": [
+                    "Fmaj/C",
+                    "Gmaj/B"
+                  ]
+                },
+                "explanations": null
+              },
+              {
+                "label": "Option B \u2014 F1 \u2014 10K pop mix (creative)",
+                "chords": {
+                  "0": [
+                    "Am7",
+                    "Fmaj/A"
+                  ],
+                  "1": [
+                    "Gmaj",
+                    "Dm/F"
+                  ],
+                  "2": [
+                    "Em",
+                    "Am/E"
+                  ],
+                  "3": [
+                    "Em",
+                    "Fmaj"
+                  ]
+                },
+                "explanations": null
+              },
+              {
+                "label": "Option C \u2014 F1 \u2014 10K pop mix (conservative)",
+                "chords": {
+                  "0": [
+                    "Am7",
+                    "Fmaj/A"
+                  ],
+                  "1": [
+                    "Gmaj",
+                    "Am"
+                  ],
+                  "2": [
+                    "Gmaj",
+                    "Cmaj/G"
+                  ],
+                  "3": [
+                    "Fmaj",
+                    "Cmaj/E"
+                  ]
+                },
+                "explanations": null
+              }
+            ],
+            "source": "ai",
+            "modelUsed": "ft_f1",
+            "cadence": "none",
+            "rulesSlots": [
+              0
+            ],
+            "reason": "Empty song: short I-start intro to set groove for pop form",
+            "cites": [],
+            "regenerated": true,
+            "reuse": null
+          },
+          {
+            "sectionType": "verse",
+            "title": "Verse \u2014 8 bars",
+            "startMeasure": 4,
+            "bars": 8,
+            "chordCount": 16,
+            "suggestions": [
+              {
+                "label": "Option A \u2014 F1 \u2014 10K pop mix (balanced)",
+                "chords": {
+                  "4": [
+                    "Cmaj",
+                    "Dm"
+                  ],
+                  "5": [
+                    "Bbmaj/D",
+                    "Cmaj"
+                  ],
+                  "6": [
+                    "Dm",
+                    "Cmaj"
+                  ],
+                  "7": [
+                    "Bbmaj",
+                    "Gm/Bb"
+                  ],
+                  "8": [
+                    "Dm/A",
+                    "Bbmaj"
+                  ],
+                  "9": [
+                    "Fmaj/A",
+                    "Bbmaj"
+                  ],
+                  "10": [
+                    "Cmaj",
+                    "Bbmaj"
+                  ],
+                  "11": [
+                    "E7/B",
+                    "Amin"
+                  ]
+                },
+                "explanations": null
+              },
+              {
+                "label": "Option B \u2014 F1 \u2014 10K pop mix (conservative)",
+                "chords": {
+                  "4": [
+                    "Cmaj",
+                    "Dm"
+                  ],
+                  "5": [
+                    "Amaj/Db",
+                    "Fmaj/C"
+                  ],
+                  "6": [
+                    "Amaj",
+                    "Gm"
+                  ],
+                  "7": [
+                    "Amaj",
+                    "Cmaj"
+                  ],
+                  "8": [
+                    "Gm/D",
+                    "Dm"
+                  ],
+                  "9": [
+                    "Bbmaj/D",
+                    "Cmaj"
+                  ],
+                  "10": [
+                    "Dm",
+                    "Bbmaj/D"
+                  ],
+                  "11": [
+                    "E7",
+                    "Amin"
+                  ]
+                },
+                "explanations": null
+              },
+              {
+                "label": "Option C \u2014 F1 \u2014 10K pop mix (creative)",
+                "chords": {
+                  "4": [
+                    "Am",
+                    "Gm"
+                  ],
+                  "5": [
+                    "Am",
+                    "Dm/A"
+                  ],
+                  "6": [
+                    "Gm",
+                    "Amaj"
+                  ],
+                  "7": [
+                    "Dmaj/A",
+                    "Amaj"
+                  ],
+                  "8": [
+                    "Dm/A",
+                    "Gm"
+                  ],
+                  "9": [
+                    "Dmaj/F#",
+                    "Bbmaj/F"
+                  ],
+                  "10": [
+                    "A7/E",
+                    "Gmaj"
+                  ],
+                  "11": [
+                    "E7",
+                    "Amin"
+                  ]
+                },
+                "explanations": null
+              }
+            ],
+            "source": "ai",
+            "modelUsed": "ft_f1",
+            "cadence": "authentic",
+            "rulesSlots": [
+              14,
+              15
+            ],
+            "reason": "Empty song: opening verse lays narrative foundation",
+            "cites": [],
+            "regenerated": true,
+            "reuse": null
+          },
+          {
+            "sectionType": "pre_chorus",
+            "title": "Pre-Chorus \u2014 4 bars",
+            "startMeasure": 12,
+            "bars": 4,
+            "chordCount": 8,
+            "suggestions": [
+              {
+                "label": "Option A \u2014 F1 \u2014 10K pop mix (creative)",
+                "chords": {
+                  "12": [
+                    "Bbmaj",
+                    "Fmaj/A"
+                  ],
+                  "13": [
+                    "Dm/A",
+                    "Emaj/Ab"
+                  ],
+                  "14": [
+                    "Am",
+                    "Bbmaj"
+                  ],
+                  "15": [
+                    "Em/B",
+                    "E7/B"
+                  ]
+                },
+                "explanations": null
+              },
+              {
+                "label": "Option B \u2014 F1 \u2014 10K pop mix (conservative)",
+                "chords": {
+                  "12": [
+                    "Dm",
+                    "Gmaj/D"
+                  ],
+                  "13": [
+                    "Cmaj",
+                    "Am/C"
+                  ],
+                  "14": [
+                    "Bbmaj",
+                    "Amaj"
+                  ],
+                  "15": [
+                    "Fmaj/A",
+                    "E7/Ab"
+                  ]
+                },
+                "explanations": null
+              },
+              {
+                "label": "Option C \u2014 F1 \u2014 10K pop mix (balanced)",
+                "chords": {
+                  "12": [
+                    "Fmaj",
+                    "Gm"
+                  ],
+                  "13": [
+                    "Dm/F",
+                    "Am/E"
+                  ],
+                  "14": [
+                    "E7",
+                    "Gmaj"
+                  ],
+                  "15": [
+                    "Am",
+                    "E7/Ab"
+                  ]
+                },
+                "explanations": null
+              }
+            ],
+            "source": "ai",
+            "modelUsed": "ft_f1",
+            "cadence": "half",
+            "rulesSlots": [
+              7
+            ],
+            "reason": "Empty song: build lift into hook with V hang",
+            "cites": [],
+            "regenerated": false,
+            "reuse": null
+          },
+          {
+            "sectionType": "chorus",
+            "title": "Chorus \u2014 8 bars",
+            "startMeasure": 16,
+            "bars": 8,
+            "chordCount": 16,
+            "suggestions": [
+              {
+                "label": "Option A \u2014 F1 \u2014 10K pop mix (conservative)",
+                "chords": {
+                  "16": [
+                    "Amaj",
+                    "Am"
+                  ],
+                  "17": [
+                    "Fmaj/A",
+                    "Gmaj"
+                  ],
+                  "18": [
+                    "Emaj",
+                    "Amaj/E"
+                  ],
+                  "19": [
+                    "Am/E",
+                    "Fmaj"
+                  ],
+                  "20": [
+                    "Gmaj",
+                    "Emaj"
+                  ],
+                  "21": [
+                    "Amaj/E",
+                    "Fmaj"
+                  ],
+                  "22": [
+                    "Cmaj/E",
+                    "Dm"
+                  ],
+                  "23": [
+                    "E7",
+                    "Amin"
+                  ]
+                },
+                "explanations": null
+              },
+              {
+                "label": "Option B \u2014 F1 \u2014 10K pop mix (balanced)",
+                "chords": {
+                  "16": [
+                    "Cmaj",
+                    "Gmaj/B"
+                  ],
+                  "17": [
+                    "Am",
+                    "Emaj/Ab"
+                  ],
+                  "18": [
+                    "Amaj",
+                    "Bmaj"
+                  ],
+                  "19": [
+                    "Dbm",
+                    "Amaj/Db"
+                  ],
+                  "20": [
+                    "Dmaj",
+                    "Emaj"
+                  ],
+                  "21": [
+                    "Cmaj/E",
+                    "Bmaj/Eb"
+                  ],
+                  "22": [
+                    "Em",
+                    "Am/E"
+                  ],
+                  "23": [
+                    "E7",
+                    "Amin"
+                  ]
+                },
+                "explanations": null
+              },
+              {
+                "label": "Option C \u2014 F1 \u2014 10K pop mix (creative)",
+                "chords": {
+                  "16": [
+                    "Amaj",
+                    "Emaj/Ab"
+                  ],
+                  "17": [
+                    "Fmaj",
+                    "E7"
+                  ],
+                  "18": [
+                    "Am/E",
+                    "Amaj/E"
+                  ],
+                  "19": [
+                    "E7",
+                    "Amaj/E"
+                  ],
+                  "20": [
+                    "Fmaj",
+                    "Emaj"
+                  ],
+                  "21": [
+                    "Amaj/E",
+                    "E7"
+                  ],
+                  "22": [
+                    "Dm",
+                    "Cmaj"
+                  ],
+                  "23": [
+                    "E7/B",
+                    "Amin"
+                  ]
+                },
+                "explanations": null
+              }
+            ],
+            "source": "ai",
+            "modelUsed": "ft_f1",
+            "cadence": "authentic",
+            "rulesSlots": [
+              14,
+              15
+            ],
+            "reason": "Empty song: central hook with V-I landing",
+            "cites": [],
+            "regenerated": false,
+            "reuse": null
+          },
+          {
+            "sectionType": "verse",
+            "title": "Verse \u2014 8 bars",
+            "startMeasure": 24,
+            "bars": 8,
+            "chordCount": 16,
+            "suggestions": [
+              {
+                "label": "Option A \u2014 F1 \u2014 10K pop mix (balanced)",
+                "chords": {
+                  "24": [
+                    "Emaj",
+                    "Am/E"
+                  ],
+                  "25": [
+                    "Em",
+                    "Am/E"
+                  ],
+                  "26": [
+                    "Gmaj",
+                    "Amaj"
+                  ],
+                  "27": [
+                    "Emaj/Ab",
+                    "Dm/A"
+                  ],
+                  "28": [
+                    "Amaj",
+                    "Emaj/Ab"
+                  ],
+                  "29": [
+                    "Dm/A",
+                    "Cmaj"
+                  ],
+                  "30": [
+                    "Am/C",
+                    "Gmaj/B"
+                  ],
+                  "31": [
+                    "E7/B",
+                    "Amin"
+                  ]
+                },
+                "explanations": null
+              },
+              {
+                "label": "Option B \u2014 F1 \u2014 10K pop mix (creative)",
+                "chords": {
+                  "24": [
+                    "Amaj",
+                    "Amaj"
+                  ],
+                  "25": [
+                    "Amaj",
+                    "Dmaj/A"
+                  ],
+                  "26": [
+                    "Fmaj/A",
+                    "Emaj/Ab"
+                  ],
+                  "27": [
+                    "Fmaj",
+                    "Am/E"
+                  ],
+                  "28": [
+                    "Dm",
+                    "Amaj/Db"
+                  ],
+                  "29": [
+                    "E7",
+                    "Dmaj"
+                  ],
+                  "30": [
+                    "Dm",
+                    "E7"
+                  ],
+                  "31": [
+                    "E7",
+                    "Amin"
+                  ]
+                },
+                "explanations": null
+              },
+              {
+                "label": "Option C \u2014 F1 \u2014 10K pop mix (conservative)",
+                "chords": {
+                  "24": [
+                    "Cmaj",
+                    "Fmaj/C"
+                  ],
+                  "25": [
+                    "E7/B",
+                    "Amaj"
+                  ],
+                  "26": [
+                    "Emaj/Ab",
+                    "Fmaj"
+                  ],
+                  "27": [
+                    "Emaj",
+                    "Am/E"
+                  ],
+                  "28": [
+                    "Em",
+                    "Fmaj"
+                  ],
+                  "29": [
+                    "Em",
+                    "Emaj"
+                  ],
+                  "30": [
+                    "Cmaj/E",
+                    "Am/E"
+                  ],
+                  "31": [
+                    "E7",
+                    "Amin"
+                  ]
+                },
+                "explanations": null
+              }
+            ],
+            "source": "ai",
+            "modelUsed": "ft_f1",
+            "cadence": "authentic",
+            "rulesSlots": [
+              14,
+              15
+            ],
+            "reason": "Empty song: second verse continues story",
+            "cites": [],
+            "regenerated": true,
+            "reuse": null
+          },
+          {
+            "sectionType": "pre_chorus",
+            "title": "Pre-Chorus \u2014 4 bars",
+            "startMeasure": 32,
+            "bars": 4,
+            "chordCount": 8,
+            "suggestions": [
+              {
+                "label": "Option A \u2014 F1 \u2014 10K pop mix (creative)",
+                "chords": {
+                  "32": [
+                    "Dm",
+                    "E7"
+                  ],
+                  "33": [
+                    "Am/E",
+                    "Bmaj/Eb"
+                  ],
+                  "34": [
+                    "Am/E",
+                    "Emaj"
+                  ],
+                  "35": [
+                    "Gm",
+                    "E7"
+                  ]
+                },
+                "explanations": null
+              },
+              {
+                "label": "Option B \u2014 F1 \u2014 10K pop mix (balanced)",
+                "chords": {
+                  "32": [
+                    "Emaj",
+                    "Fmaj"
+                  ],
+                  "33": [
+                    "Emaj",
+                    "E7"
+                  ],
+                  "34": [
+                    "Fmaj",
+                    "Bbmaj/F"
+                  ],
+                  "35": [
+                    "Bmaj/F#",
+                    "E7"
+                  ]
+                },
+                "explanations": null
+              },
+              {
+                "label": "Option C \u2014 F1 \u2014 10K pop mix (conservative)",
+                "chords": {
+                  "32": [
+                    "Emaj",
+                    "Cmaj/E"
+                  ],
+                  "33": [
+                    "Dm",
+                    "Am/C"
+                  ],
+                  "34": [
+                    "Dm",
+                    "E7"
+                  ],
+                  "35": [
+                    "Am/E",
+                    "E7"
+                  ]
+                },
+                "explanations": null
+              }
+            ],
+            "source": "ai",
+            "modelUsed": "ft_f1",
+            "cadence": "half",
+            "rulesSlots": [
+              7
+            ],
+            "reason": "Empty song: rebuild tension before return hook",
+            "cites": [],
+            "regenerated": false,
+            "reuse": null
+          },
+          {
+            "sectionType": "chorus",
+            "title": "Chorus \u2014 8 bars",
+            "startMeasure": 36,
+            "bars": 8,
+            "chordCount": 16,
+            "suggestions": [
+              {
+                "label": "Chorus reprise",
+                "chords": {
+                  "36": [
+                    "Amaj",
+                    "Am"
+                  ],
+                  "37": [
+                    "Fmaj/A",
+                    "Gmaj"
+                  ],
+                  "38": [
+                    "Emaj",
+                    "Amaj/E"
+                  ],
+                  "39": [
+                    "Am/E",
+                    "Fmaj"
+                  ],
+                  "40": [
+                    "Gmaj",
+                    "Emaj"
+                  ],
+                  "41": [
+                    "Amaj/E",
+                    "Fmaj"
+                  ],
+                  "42": [
+                    "Cmaj/E",
+                    "Dm"
+                  ],
+                  "43": [
+                    "E7",
+                    "Amin"
+                  ]
+                },
+                "explanations": null
+              }
+            ],
+            "source": "reuse",
+            "modelUsed": null,
+            "cadence": "authentic",
+            "rulesSlots": [
+              14,
+              15
+            ],
+            "reason": "Empty song: repeat hook same length for reuse",
+            "cites": [],
+            "regenerated": false,
+            "reuse": {
+              "origin": "section",
+              "sectionIndex": 3,
+              "startMeasure": 16,
+              "source": "ai",
+              "modelUsed": "ft_f1",
+              "retainedSlots": [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7,
+                8,
+                9,
+                10,
+                11,
+                12,
+                13,
+                14,
+                15
+              ],
+              "changedSlots": []
+            }
+          },
+          {
+            "sectionType": "bridge",
+            "title": "Bridge \u2014 8 bars",
+            "startMeasure": 44,
+            "bars": 8,
+            "chordCount": 16,
+            "suggestions": [
+              {
+                "label": "Option A \u2014 F1 \u2014 10K pop mix (balanced)",
+                "chords": {
+                  "44": [
+                    "Dm7",
+                    "Dm"
+                  ],
+                  "45": [
+                    "Fmaj",
+                    "Am/E"
+                  ],
+                  "46": [
+                    "Bmaj/Eb",
+                    "Bbmaj/D"
+                  ],
+                  "47": [
+                    "Gmaj/D",
+                    "Am/C"
+                  ],
+                  "48": [
+                    "Em/B",
+                    "Am"
+                  ],
+                  "49": [
+                    "Dmaj/A",
+                    "Cmaj"
+                  ],
+                  "50": [
+                    "Emaj/B",
+                    "Gmaj/B"
+                  ],
+                  "51": [
+                    "Dm7",
+                    "E7"
+                  ]
+                },
+                "explanations": null
+              },
+              {
+                "label": "Option B \u2014 F1 \u2014 10K pop mix (creative)",
+                "chords": {
+                  "44": [
+                    "Dm7",
+                    "Emaj"
+                  ],
+                  "45": [
+                    "F#maj",
+                    "Bm/F#"
+                  ],
+                  "46": [
+                    "Amaj",
+                    "Dmaj/A"
+                  ],
+                  "47": [
+                    "Emaj/Ab",
+                    "Bmaj"
+                  ],
+                  "48": [
+                    "Gmaj/B",
+                    "Dmaj"
+                  ],
+                  "49": [
+                    "Em",
+                    "F#7"
+                  ],
+                  "50": [
+                    "Bm/F#",
+                    "Emaj"
+                  ],
+                  "51": [
+                    "Dm7",
+                    "E7"
+                  ]
+                },
+                "explanations": null
+              },
+              {
+                "label": "Option C \u2014 F1 \u2014 10K pop mix (conservative)",
+                "chords": {
+                  "44": [
+                    "Dm7",
+                    "Fmaj"
+                  ],
+                  "45": [
+                    "Em",
+                    "Dm"
+                  ],
+                  "46": [
+                    "Am/C",
+                    "Dm"
+                  ],
+                  "47": [
+                    "Em",
+                    "Am/E"
+                  ],
+                  "48": [
+                    "Em",
+                    "Fmaj"
+                  ],
+                  "49": [
+                    "E7",
+                    "Fmaj"
+                  ],
+                  "50": [
+                    "Am/E",
+                    "E7"
+                  ],
+                  "51": [
+                    "Dm7",
+                    "E7"
+                  ]
+                },
+                "explanations": null
+              }
+            ],
+            "source": "ai",
+            "modelUsed": "ft_f1",
+            "cadence": "half_iv_v",
+            "rulesSlots": [
+              0,
+              14,
+              15
+            ],
+            "reason": "Empty song: contrasting bridge for variety",
+            "cites": [],
+            "regenerated": false,
+            "reuse": null
+          },
+          {
+            "sectionType": "chorus",
+            "title": "Chorus \u2014 8 bars",
+            "startMeasure": 52,
+            "bars": 8,
+            "chordCount": 16,
+            "suggestions": [
+              {
+                "label": "Chorus reprise",
+                "chords": {
+                  "52": [
+                    "Amaj",
+                    "Am"
+                  ],
+                  "53": [
+                    "Fmaj/A",
+                    "Gmaj"
+                  ],
+                  "54": [
+                    "Emaj",
+                    "Amaj/E"
+                  ],
+                  "55": [
+                    "Am/E",
+                    "Fmaj"
+                  ],
+                  "56": [
+                    "Gmaj",
+                    "Emaj"
+                  ],
+                  "57": [
+                    "Amaj/E",
+                    "Fmaj"
+                  ],
+                  "58": [
+                    "Cmaj/E",
+                    "Dm"
+                  ],
+                  "59": [
+                    "E7",
+                    "Amin"
+                  ]
+                },
+                "explanations": null
+              }
+            ],
+            "source": "reuse",
+            "modelUsed": null,
+            "cadence": "authentic",
+            "rulesSlots": [
+              14,
+              15
+            ],
+            "reason": "Empty song: final hook restatement before ending",
+            "cites": [],
+            "regenerated": false,
+            "reuse": {
+              "origin": "section",
+              "sectionIndex": 3,
+              "startMeasure": 16,
+              "source": "ai",
+              "modelUsed": "ft_f1",
+              "retainedSlots": [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7,
+                8,
+                9,
+                10,
+                11,
+                12,
+                13,
+                14,
+                15
+              ],
+              "changedSlots": []
+            }
+          },
+          {
+            "sectionType": "outro",
+            "title": "Outro \u2014 4 bars",
+            "startMeasure": 60,
+            "bars": 4,
+            "chordCount": 8,
+            "suggestions": [
+              {
+                "label": "Option A \u2014 F1 \u2014 10K pop mix (conservative)",
+                "chords": {
+                  "60": [
+                    "Cmaj",
+                    "Emaj/B"
+                  ],
+                  "61": [
+                    "Dm",
+                    "Fmaj"
+                  ],
+                  "62": [
+                    "Am/E",
+                    "Gmaj"
+                  ],
+                  "63": [
+                    "Dm7/F",
+                    "Amin"
+                  ]
+                },
+                "explanations": null
+              },
+              {
+                "label": "Option B \u2014 F1 \u2014 10K pop mix (balanced)",
+                "chords": {
+                  "60": [
+                    "Cmaj",
+                    "E7/B"
+                  ],
+                  "61": [
+                    "Emaj/B",
+                    "Dmaj"
+                  ],
+                  "62": [
+                    "Am/C",
+                    "Em/B"
+                  ],
+                  "63": [
+                    "Dm7",
+                    "Amin"
+                  ]
+                },
+                "explanations": null
+              },
+              {
+                "label": "Option C \u2014 F1 \u2014 10K pop mix (creative)",
+                "chords": {
+                  "60": [
+                    "E7",
+                    "Fmaj"
+                  ],
+                  "61": [
+                    "E7",
+                    "Dmaj"
+                  ],
+                  "62": [
+                    "Fmaj",
+                    "Emaj"
+                  ],
+                  "63": [
+                    "Dm7",
+                    "Amin"
+                  ]
+                },
+                "explanations": null
+              }
+            ],
+            "source": "ai",
+            "modelUsed": "ft_f1",
+            "cadence": "plagal",
+            "rulesSlots": [
+              6,
+              7
+            ],
+            "reason": "Empty song: IV-I outro to close and land song",
+            "cites": [],
+            "regenerated": false,
+            "reuse": null
+          }
+        ],
+        "judge": [
+          {
+            "decision": "regenerate",
+            "targets": [
+              {
+                "section": 4,
+                "reason": "50% chords outside key, pop stays diatonic"
+              },
+              {
+                "section": 1,
+                "reason": "43% chords outside key, pop stays diatonic"
+              }
+            ],
+            "report": [
+              {
+                "section": 0,
+                "type": "intro",
+                "bars": 4,
+                "modelSlots": 7,
+                "outsideKey": 0.429,
+                "repeatRate": null,
+                "distinctChords": 6,
+                "emptySlots": 0,
+                "reused": false,
+                "sourceSection": null
+              },
+              {
+                "section": 1,
+                "type": "verse",
+                "bars": 8,
+                "modelSlots": 14,
+                "outsideKey": 0.429,
+                "repeatRate": 0.125,
+                "distinctChords": 6,
+                "emptySlots": 0,
+                "reused": false,
+                "sourceSection": null
+              },
+              {
+                "section": 2,
+                "type": "pre_chorus",
+                "bars": 4,
+                "modelSlots": 7,
+                "outsideKey": 0.286,
+                "repeatRate": 0.0,
+                "distinctChords": 6,
+                "emptySlots": 0,
+                "reused": false,
+                "sourceSection": null
+              },
+              {
+                "section": 3,
+                "type": "chorus",
+                "bars": 8,
+                "modelSlots": 14,
+                "outsideKey": 0.214,
+                "repeatRate": 0.0,
+                "distinctChords": 7,
+                "emptySlots": 0,
+                "reused": false,
+                "sourceSection": null
+              },
+              {
+                "section": 4,
+                "type": "verse",
+                "bars": 8,
+                "modelSlots": 14,
+                "outsideKey": 0.5,
+                "repeatRate": 0.214,
+                "distinctChords": 8,
+                "emptySlots": 0,
+                "reused": false,
+                "sourceSection": null
+              },
+              {
+                "section": 5,
+                "type": "pre_chorus",
+                "bars": 4,
+                "modelSlots": 7,
+                "outsideKey": 0.286,
+                "repeatRate": 0.0,
+                "distinctChords": 6,
+                "emptySlots": 0,
+                "reused": false,
+                "sourceSection": null
+              },
+              {
+                "section": 6,
+                "type": "chorus",
+                "bars": 8,
+                "modelSlots": 0,
+                "outsideKey": 0.0,
+                "repeatRate": null,
+                "distinctChords": 0,
+                "emptySlots": 0,
+                "reused": true,
+                "sourceSection": 3
+              },
+              {
+                "section": 7,
+                "type": "bridge",
+                "bars": 8,
+                "modelSlots": 13,
+                "outsideKey": 0.154,
+                "repeatRate": 0.077,
+                "distinctChords": 10,
+                "emptySlots": 0,
+                "reused": false,
+                "sourceSection": null
+              },
+              {
+                "section": 8,
+                "type": "chorus",
+                "bars": 8,
+                "modelSlots": 0,
+                "outsideKey": 0.0,
+                "repeatRate": null,
+                "distinctChords": 0,
+                "emptySlots": 0,
+                "reused": true,
+                "sourceSection": 3
+              },
+              {
+                "section": 9,
+                "type": "outro",
+                "bars": 4,
+                "modelSlots": 6,
+                "outsideKey": 0.0,
+                "repeatRate": 0.0,
+                "distinctChords": 6,
+                "emptySlots": 0,
+                "reused": false,
+                "sourceSection": null
+              }
+            ],
+            "provider": "meta",
+            "model": "muse-spark-1.3",
+            "requestId": "b834fd0b-ceed-4aed-8d53-0819b7695b67",
+            "costUsd": 0.00576475,
+            "latencyMs": 5208
+          },
+          {
+            "decision": "regenerate",
+            "targets": [
+              {
+                "section": 0,
+                "reason": "42.9% chords outside key in pop genre that stays in key"
+              },
+              {
+                "section": 1,
+                "reason": "42.9% chords outside key in pop genre that stays in key"
+              }
+            ],
+            "report": [
+              {
+                "section": 0,
+                "type": "intro",
+                "bars": 4,
+                "modelSlots": 7,
+                "outsideKey": 0.429,
+                "repeatRate": null,
+                "distinctChords": 6,
+                "emptySlots": 0,
+                "reused": false,
+                "sourceSection": null
+              },
+              {
+                "section": 1,
+                "type": "verse",
+                "bars": 8,
+                "modelSlots": 14,
+                "outsideKey": 0.429,
+                "repeatRate": 0.125,
+                "distinctChords": 5,
+                "emptySlots": 0,
+                "reused": false,
+                "sourceSection": null
+              },
+              {
+                "section": 2,
+                "type": "pre_chorus",
+                "bars": 4,
+                "modelSlots": 7,
+                "outsideKey": 0.286,
+                "repeatRate": 0.0,
+                "distinctChords": 6,
+                "emptySlots": 0,
+                "reused": false,
+                "sourceSection": null
+              },
+              {
+                "section": 3,
+                "type": "chorus",
+                "bars": 8,
+                "modelSlots": 14,
+                "outsideKey": 0.214,
+                "repeatRate": 0.0,
+                "distinctChords": 7,
+                "emptySlots": 0,
+                "reused": false,
+                "sourceSection": null
+              },
+              {
+                "section": 4,
+                "type": "verse",
+                "bars": 8,
+                "modelSlots": 14,
+                "outsideKey": 0.143,
+                "repeatRate": 0.214,
+                "distinctChords": 7,
+                "emptySlots": 0,
+                "reused": false,
+                "sourceSection": null
+              },
+              {
+                "section": 5,
+                "type": "pre_chorus",
+                "bars": 4,
+                "modelSlots": 7,
+                "outsideKey": 0.286,
+                "repeatRate": 0.0,
+                "distinctChords": 6,
+                "emptySlots": 0,
+                "reused": false,
+                "sourceSection": null
+              },
+              {
+                "section": 6,
+                "type": "chorus",
+                "bars": 8,
+                "modelSlots": 0,
+                "outsideKey": 0.0,
+                "repeatRate": null,
+                "distinctChords": 0,
+                "emptySlots": 0,
+                "reused": true,
+                "sourceSection": 3
+              },
+              {
+                "section": 7,
+                "type": "bridge",
+                "bars": 8,
+                "modelSlots": 13,
+                "outsideKey": 0.154,
+                "repeatRate": 0.077,
+                "distinctChords": 10,
+                "emptySlots": 0,
+                "reused": false,
+                "sourceSection": null
+              },
+              {
+                "section": 8,
+                "type": "chorus",
+                "bars": 8,
+                "modelSlots": 0,
+                "outsideKey": 0.0,
+                "repeatRate": null,
+                "distinctChords": 0,
+                "emptySlots": 0,
+                "reused": true,
+                "sourceSection": 3
+              },
+              {
+                "section": 9,
+                "type": "outro",
+                "bars": 4,
+                "modelSlots": 6,
+                "outsideKey": 0.0,
+                "repeatRate": 0.0,
+                "distinctChords": 6,
+                "emptySlots": 0,
+                "reused": false,
+                "sourceSection": null
+              }
+            ],
+            "provider": "meta",
+            "model": "muse-spark-1.3",
+            "requestId": "3145d3e1-c7f5-4eaa-ac7e-222ba78ad390",
+            "costUsd": 0.00463,
+            "latencyMs": 2766
+          }
+        ],
+        "calls": [
+          {
+            "step": "plan_song",
+            "attempt": 1,
+            "provider": "meta",
+            "model": "muse-spark-1.3",
+            "requestId": "ccbfabac-8970-4350-bb1f-9bc184fc3b11",
+            "costUsd": 0.0095285,
+            "latencyMs": 8821,
+            "effort": "medium",
+            "ok": true
+          },
+          {
+            "step": "judge",
+            "attempt": 1,
+            "provider": "meta",
+            "model": "muse-spark-1.3",
+            "requestId": "b834fd0b-ceed-4aed-8d53-0819b7695b67",
+            "costUsd": 0.00576475,
+            "latencyMs": 5208,
+            "effort": "low",
+            "ok": true
+          },
+          {
+            "step": "judge",
+            "attempt": 2,
+            "provider": "meta",
+            "model": "muse-spark-1.3",
+            "requestId": "3145d3e1-c7f5-4eaa-ac7e-222ba78ad390",
+            "costUsd": 0.00463,
+            "latencyMs": 2766,
+            "effort": "low",
+            "ok": true
+          }
+        ],
+        "spendUsd": 0.01992325,
+        "reservedUsd": 0.07516075,
+        "elapsedMs": 19206,
+        "metaMs": 16795,
+        "generationMs": 2407,
+        "error": null
+      },
+      "apiUsage": [
+        {
+          "label": "plan.plan_song",
+          "provider": "meta",
+          "model": "muse-spark-1.3",
+          "request_id": "ccbfabac-8970-4350-bb1f-9bc184fc3b11",
+          "usage": {
+            "prompt_tokens": 986,
+            "cached_tokens": 0,
+            "completion_tokens": 1952,
+            "reasoning_tokens": 1542
+          },
+          "status": "settled",
+          "settled_usd": 0.0095285,
+          "latency_ms": 8809
+        },
+        {
+          "label": "plan.judge",
+          "provider": "meta",
+          "model": "muse-spark-1.3",
+          "request_id": "b834fd0b-ceed-4aed-8d53-0819b7695b67",
+          "usage": {
+            "prompt_tokens": 1154,
+            "cached_tokens": 0,
+            "completion_tokens": 1017,
+            "reasoning_tokens": 964
+          },
+          "status": "settled",
+          "settled_usd": 0.00576475,
+          "latency_ms": 5196
+        },
+        {
+          "label": "plan.judge",
+          "provider": "meta",
+          "model": "muse-spark-1.3",
+          "request_id": "3145d3e1-c7f5-4eaa-ac7e-222ba78ad390",
+          "usage": {
+            "prompt_tokens": 1154,
+            "cached_tokens": 0,
+            "completion_tokens": 750,
+            "reasoning_tokens": 691
+          },
+          "status": "settled",
+          "settled_usd": 0.00463,
+          "latency_ms": 2754
+        }
+      ]
+    },
+    {
+      "request": {
+        "genre": "rock",
+        "key": "E major",
+        "timeSignature": [
+          4,
+          4
+        ],
+        "bpm": 120,
+        "measures": [],
+        "sections": [],
+        "targetBars": 64,
+        "wantOutro": true,
+        "contrast": "medium",
+        "chorusMode": "reuse",
+        "planner": "meta",
+        "modelKey": "ft_f1",
+        "seed": 17
+      },
+      "trace": {
+        "status": "ok",
+        "planner": "meta",
+        "genre": "rock",
+        "key": "E major",
+        "bpm": 120,
+        "timeSignature": [
+          4,
+          4
+        ],
+        "plan": {
+          "sections": [
+            {
+              "type": "intro",
+              "bars": 8,
+              "cadence": "half",
+              "reason": "Opens empty song establishing E major rock groove for upcoming verses",
+              "cites": []
+            },
+            {
+              "type": "verse",
+              "bars": 8,
+              "cadence": "authentic",
+              "reason": "First narrative verse builds rock momentum toward hook",
+              "cites": []
+            },
+            {
+              "type": "chorus",
+              "bars": 8,
+              "cadence": "authentic",
+              "reason": "First hook delivers central chorus impact after verse build",
+              "cites": []
+            },
+            {
+              "type": "verse",
+              "bars": 8,
+              "cadence": "authentic",
+              "reason": "Second verse continues narrative returning to verse groove",
+              "cites": []
+            },
+            {
+              "type": "chorus",
+              "bars": 8,
+              "cadence": "authentic",
+              "reason": "Repeats hook maintaining consistent 8-bar chorus length",
+              "cites": []
+            },
+            {
+              "type": "bridge",
+              "bars": 8,
+              "cadence": "half_iv_v",
+              "reason": "Contrasting bridge on IV adds tension before final chorus",
+              "cites": []
+            },
+            {
+              "type": "chorus",
+              "bars": 8,
+              "cadence": "authentic",
+              "reason": "Final chorus restates hook keeping same length for reuse",
+              "cites": []
+            },
+            {
+              "type": "outro",
+              "bars": 8,
+              "cadence": "plagal",
+              "reason": "Closing outro lands IV-I to end 64-bar rock form",
+              "cites": []
+            }
+          ]
+        },
+        "validation": [
+          {
+            "attempt": 1,
+            "ok": true,
+            "errors": []
+          }
+        ],
+        "sections": [
+          {
+            "sectionType": "intro",
+            "title": "Intro \u2014 8 bars",
+            "startMeasure": 0,
+            "bars": 8,
+            "chordCount": 16,
+            "suggestions": [
+              {
+                "label": "Option A \u2014 F1 \u2014 10K pop mix (conservative)",
+                "chords": {
+                  "0": [
+                    "Emaj7",
+                    "Emaj"
+                  ],
+                  "1": [
+                    "Amaj/E",
+                    "Dbm/E"
+                  ],
+                  "2": [
+                    "Bmaj/Eb",
+                    "Amaj/E"
+                  ],
+                  "3": [
+                    "Emaj",
+                    "Amaj/E"
+                  ],
+                  "4": [
+                    "Dbm/E",
+                    "Bmaj/Eb"
+                  ],
+                  "5": [
+                    "Emaj",
+                    "Bmaj/Eb"
+                  ],
+                  "6": [
+                    "Amaj/E",
+                    "Bmaj/Eb"
+                  ],
+                  "7": [
+                    "Dbm",
+                    "B7"
+                  ]
+                },
+                "explanations": null
+              },
+              {
+                "label": "Option B \u2014 F1 \u2014 10K pop mix (balanced)",
+                "chords": {
+                  "0": [
+                    "Emaj",
+                    "Amaj/E"
+                  ],
+                  "1": [
+                    "Emaj",
+                    "C#m/E"
+                  ],
+                  "2": [
+                    "Emaj",
+                    "F#m"
+                  ],
+                  "3": [
+                    "Emaj",
+                    "Bmaj/Eb"
+                  ],
+                  "4": [
+                    "Amaj/E",
+                    "F#m"
+                  ],
+                  "5": [
+                    "Bmaj/F#",
+                    "F#m"
+                  ],
+                  "6": [
+                    "G#m",
+                    "Amaj"
+                  ],
+                  "7": [
+                    "F#m/A",
+                    "B7"
+                  ]
+                },
+                "explanations": null
+              },
+              {
+                "label": "Option C \u2014 F1 \u2014 10K pop mix (creative)",
+                "chords": {
+                  "0": [
+                    "Emaj",
+                    "Bmaj/Eb"
+                  ],
+                  "1": [
+                    "Aadd9/E",
+                    "Emaj"
+                  ],
+                  "2": [
+                    "Bmaj/Eb",
+                    "Amaj/E"
+                  ],
+                  "3": [
+                    "Emaj",
+                    "C#m/E"
+                  ],
+                  "4": [
+                    "G#m/Eb",
+                    "Bmaj/Eb"
+                  ],
+                  "5": [
+                    "Emaj",
+                    "F#m"
+                  ],
+                  "6": [
+                    "C#m/E",
+                    "Bmaj/Eb"
+                  ],
+                  "7": [
+                    "Bmaj/Eb",
+                    "B7/Eb"
+                  ]
+                },
+                "explanations": null
+              }
+            ],
+            "source": "ai",
+            "modelUsed": "ft_f1",
+            "cadence": "half",
+            "rulesSlots": [
+              0,
+              15
+            ],
+            "reason": "Opens empty song establishing E major rock groove for upcoming verses",
+            "cites": [],
+            "regenerated": false,
+            "reuse": null
+          },
+          {
+            "sectionType": "verse",
+            "title": "Verse \u2014 8 bars",
+            "startMeasure": 8,
+            "bars": 8,
+            "chordCount": 16,
+            "suggestions": [
+              {
+                "label": "Option A \u2014 F1 \u2014 10K pop mix (conservative)",
+                "chords": {
+                  "8": [
+                    "Emaj",
+                    "B7/Eb"
+                  ],
+                  "9": [
+                    "Amaj/E",
+                    "Am/E"
+                  ],
+                  "10": [
+                    "Emaj",
+                    "Emaj7"
+                  ],
+                  "11": [
+                    "Emaj",
+                    "Emaj"
+                  ],
+                  "12": [
+                    "Dbm/E",
+                    "Emaj"
+                  ],
+                  "13": [
+                    "Emaj",
+                    "Dbm/E"
+                  ],
+                  "14": [
+                    "Emaj",
+                    "Abm/Eb"
+                  ],
+                  "15": [
+                    "B7/Eb",
+                    "Emaj"
+                  ]
+                },
+                "explanations": null
+              },
+              {
+                "label": "Option B \u2014 F1 \u2014 10K pop mix (creative)",
+                "chords": {
+                  "8": [
+                    "F#m",
+                    "Am"
+                  ],
+                  "9": [
+                    "Emaj/Ab",
+                    "Emaj7/Ab"
+                  ],
+                  "10": [
+                    "Amaj",
+                    "Emaj/Ab"
+                  ],
+                  "11": [
+                    "Bmaj",
+                    "Dbm"
+                  ],
+                  "12": [
+                    "Amaj/Db",
+                    "Abm/Eb"
+                  ],
+                  "13": [
+                    "Amaj/E",
+                    "F#m"
+                  ],
+                  "14": [
+                    "B7/F#",
+                    "Emaj"
+                  ],
+                  "15": [
+                    "B7/Eb",
+                    "Emaj"
+                  ]
+                },
+                "explanations": null
+              },
+              {
+                "label": "Option C \u2014 F1 \u2014 10K pop mix (balanced)",
+                "chords": {
+                  "8": [
+                    "Bmaj",
+                    "Dbm"
+                  ],
+                  "9": [
+                    "F#m/Db",
+                    "Bmaj"
+                  ],
+                  "10": [
+                    "B7",
+                    "Emaj/B"
+                  ],
+                  "11": [
+                    "Bmaj",
+                    "F#m7/Db"
+                  ],
+                  "12": [
+                    "Emaj",
+                    "Emaj7"
+                  ],
+                  "13": [
+                    "Emaj",
+                    "F#m7"
+                  ],
+                  "14": [
+                    "Bmaj/F#",
+                    "Emaj"
+                  ],
+                  "15": [
+                    "B7/Eb",
+                    "Emaj"
+                  ]
+                },
+                "explanations": null
+              }
+            ],
+            "source": "ai",
+            "modelUsed": "ft_f1",
+            "cadence": "authentic",
+            "rulesSlots": [
+              14,
+              15
+            ],
+            "reason": "First narrative verse builds rock momentum toward hook",
+            "cites": [],
+            "regenerated": false,
+            "reuse": null
+          },
+          {
+            "sectionType": "chorus",
+            "title": "Chorus \u2014 8 bars",
+            "startMeasure": 16,
+            "bars": 8,
+            "chordCount": 16,
+            "suggestions": [
+              {
+                "label": "Option A \u2014 F1 \u2014 10K pop mix (conservative)",
+                "chords": {
+                  "16": [
+                    "Abm",
+                    "B7"
+                  ],
+                  "17": [
+                    "Dbm",
+                    "Abm/Eb"
+                  ],
+                  "18": [
+                    "Amaj/E",
+                    "F#m"
+                  ],
+                  "19": [
+                    "Dbm/E",
+                    "Amaj/E"
+                  ],
+                  "20": [
+                    "Bmaj/Eb",
+                    "Emaj"
+                  ],
+                  "21": [
+                    "B7/Eb",
+                    "Amaj/E"
+                  ],
+                  "22": [
+                    "Am/E",
+                    "Emaj"
+                  ],
+                  "23": [
+                    "B7/Eb",
+                    "Emaj"
+                  ]
+                },
+                "explanations": null
+              },
+              {
+                "label": "Option B \u2014 F1 \u2014 10K pop mix (balanced)",
+                "chords": {
+                  "16": [
+                    "B7",
+                    "Amaj"
+                  ],
+                  "17": [
+                    "Bmaj",
+                    "Dbm"
+                  ],
+                  "18": [
+                    "B7",
+                    "Dbm"
+                  ],
+                  "19": [
+                    "Amaj/Db",
+                    "Emaj7"
+                  ],
+                  "20": [
+                    "Abm/Eb",
+                    "Amaj/E"
+                  ],
+                  "21": [
+                    "Am/E",
+                    "Emaj"
+                  ],
+                  "22": [
+                    "Emaj7",
+                    "Dbm/E"
+                  ],
+                  "23": [
+                    "B7/Eb",
+                    "Emaj"
+                  ]
+                },
+                "explanations": null
+              },
+              {
+                "label": "Option C \u2014 F1 \u2014 10K pop mix (creative)",
+                "chords": {
+                  "16": [
+                    "Abm",
+                    "Emaj7/Ab"
+                  ],
+                  "17": [
+                    "F#m",
+                    "Dbm/E"
+                  ],
+                  "18": [
+                    "Amaj/E",
+                    "F#m7"
+                  ],
+                  "19": [
+                    "Dbm/E",
+                    "Amaj/E"
+                  ],
+                  "20": [
+                    "Amaj7/E",
+                    "B7/Eb"
+                  ],
+                  "21": [
+                    "Dbm",
+                    "Emaj7"
+                  ],
+                  "22": [
+                    "Dbm/E",
+                    "E7"
+                  ],
+                  "23": [
+                    "B7/Eb",
+                    "Emaj"
+                  ]
+                },
+                "explanations": null
+              }
+            ],
+            "source": "ai",
+            "modelUsed": "ft_f1",
+            "cadence": "authentic",
+            "rulesSlots": [
+              14,
+              15
+            ],
+            "reason": "First hook delivers central chorus impact after verse build",
+            "cites": [],
+            "regenerated": false,
+            "reuse": null
+          },
+          {
+            "sectionType": "verse",
+            "title": "Verse \u2014 8 bars",
+            "startMeasure": 24,
+            "bars": 8,
+            "chordCount": 16,
+            "suggestions": [
+              {
+                "label": "Option A \u2014 F1 \u2014 10K pop mix (conservative)",
+                "chords": {
+                  "24": [
+                    "Emaj7",
+                    "Amaj/E"
+                  ],
+                  "25": [
+                    "F#m",
+                    "Emaj"
+                  ],
+                  "26": [
+                    "Bmaj/Eb",
+                    "B7/Eb"
+                  ],
+                  "27": [
+                    "Emaj7",
+                    "Abm/Eb"
+                  ],
+                  "28": [
+                    "Emaj",
+                    "F#m"
+                  ],
+                  "29": [
+                    "Emaj",
+                    "F#maj"
+                  ],
+                  "30": [
+                    "Amaj",
+                    "Emaj/Ab"
+                  ],
+                  "31": [
+                    "B7",
+                    "Emaj"
+                  ]
+                },
+                "explanations": null
+              },
+              {
+                "label": "Option B \u2014 F1 \u2014 10K pop mix (balanced)",
+                "chords": {
+                  "24": [
+                    "Emaj7",
+                    "Abm/Eb"
+                  ],
+                  "25": [
+                    "Dbm",
+                    "F#m/Db"
+                  ],
+                  "26": [
+                    "Amaj/Db",
+                    "Emaj"
+                  ],
+                  "27": [
+                    "F#m",
+                    "Amaj"
+                  ],
+                  "28": [
+                    "Dmaj/A",
+                    "B7"
+                  ],
+                  "29": [
+                    "Cmaj",
+                    "Bmaj"
+                  ],
+                  "30": [
+                    "Cmaj",
+                    "Dbm"
+                  ],
+                  "31": [
+                    "B7",
+                    "Emaj"
+                  ]
+                },
+                "explanations": null
+              },
+              {
+                "label": "Option C \u2014 F1 \u2014 10K pop mix (creative)",
+                "chords": {
+                  "24": [
+                    "Emaj7",
+                    "Dbm/E"
+                  ],
+                  "25": [
+                    "Dbm/E",
+                    "Amaj7/E"
+                  ],
+                  "26": [
+                    "Bmaj/Eb",
+                    "Dbm"
+                  ],
+                  "27": [
+                    "Emaj7",
+                    "Amaj/E"
+                  ],
+                  "28": [
+                    "Amaj7/E",
+                    "Emaj"
+                  ],
+                  "29": [
+                    "F#7",
+                    "F#m7"
+                  ],
+                  "30": [
+                    "Bmaj/F#",
+                    "B7/F#"
+                  ],
+                  "31": [
+                    "B7/F#",
+                    "Emaj"
+                  ]
+                },
+                "explanations": null
+              }
+            ],
+            "source": "ai",
+            "modelUsed": "ft_f1",
+            "cadence": "authentic",
+            "rulesSlots": [
+              14,
+              15
+            ],
+            "reason": "Second verse continues narrative returning to verse groove",
+            "cites": [],
+            "regenerated": false,
+            "reuse": null
+          },
+          {
+            "sectionType": "chorus",
+            "title": "Chorus \u2014 8 bars",
+            "startMeasure": 32,
+            "bars": 8,
+            "chordCount": 16,
+            "suggestions": [
+              {
+                "label": "Chorus reprise",
+                "chords": {
+                  "32": [
+                    "Abm",
+                    "B7"
+                  ],
+                  "33": [
+                    "Dbm",
+                    "Abm/Eb"
+                  ],
+                  "34": [
+                    "Amaj/E",
+                    "F#m"
+                  ],
+                  "35": [
+                    "Dbm/E",
+                    "Amaj/E"
+                  ],
+                  "36": [
+                    "Bmaj/Eb",
+                    "Emaj"
+                  ],
+                  "37": [
+                    "B7/Eb",
+                    "Amaj/E"
+                  ],
+                  "38": [
+                    "Am/E",
+                    "Emaj"
+                  ],
+                  "39": [
+                    "B7",
+                    "Emaj"
+                  ]
+                },
+                "explanations": null
+              }
+            ],
+            "source": "reuse",
+            "modelUsed": null,
+            "cadence": "authentic",
+            "rulesSlots": [
+              14,
+              15
+            ],
+            "reason": "Repeats hook maintaining consistent 8-bar chorus length",
+            "cites": [],
+            "regenerated": false,
+            "reuse": {
+              "origin": "section",
+              "sectionIndex": 2,
+              "startMeasure": 16,
+              "source": "ai",
+              "modelUsed": "ft_f1",
+              "retainedSlots": [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7,
+                8,
+                9,
+                10,
+                11,
+                12,
+                13,
+                15
+              ],
+              "changedSlots": [
+                14
+              ]
+            }
+          },
+          {
+            "sectionType": "bridge",
+            "title": "Bridge \u2014 8 bars",
+            "startMeasure": 40,
+            "bars": 8,
+            "chordCount": 16,
+            "suggestions": [
+              {
+                "label": "Option A \u2014 F1 \u2014 10K pop mix (conservative)",
+                "chords": {
+                  "40": [
+                    "Am",
+                    "Emaj7/Ab"
+                  ],
+                  "41": [
+                    "Am",
+                    "Dbm/Ab"
+                  ],
+                  "42": [
+                    "Amaj",
+                    "B7"
+                  ],
+                  "43": [
+                    "Bmaj",
+                    "Emaj7/B"
+                  ],
+                  "44": [
+                    "Abm/B",
+                    "Emaj/B"
+                  ],
+                  "45": [
+                    "F#m/Db",
+                    "Abm/Eb"
+                  ],
+                  "46": [
+                    "F#maj",
+                    "Bmaj/F#"
+                  ],
+                  "47": [
+                    "Amaj7",
+                    "B7"
+                  ]
+                },
+                "explanations": null
+              },
+              {
+                "label": "Option B \u2014 F1 \u2014 10K pop mix (creative)",
+                "chords": {
+                  "40": [
+                    "Amaj7",
+                    "Bmaj"
+                  ],
+                  "41": [
+                    "Abmaj",
+                    "Amaj7"
+                  ],
+                  "42": [
+                    "Abm",
+                    "Emaj/Ab"
+                  ],
+                  "43": [
+                    "F#maj",
+                    "F#m"
+                  ],
+                  "44": [
+                    "B7/F#",
+                    "Emaj7"
+                  ],
+                  "45": [
+                    "Amaj/E",
+                    "Emaj7"
+                  ],
+                  "46": [
+                    "B7/Eb",
+                    "Dbm"
+                  ],
+                  "47": [
+                    "Amaj7/Db",
+                    "B7"
+                  ]
+                },
+                "explanations": null
+              },
+              {
+                "label": "Option C \u2014 F1 \u2014 10K pop mix (balanced)",
+                "chords": {
+                  "40": [
+                    "Amaj7",
+                    "Amaj"
+                  ],
+                  "41": [
+                    "B7",
+                    "Abm7/B"
+                  ],
+                  "42": [
+                    "Dbm7",
+                    "F#m7/Db"
+                  ],
+                  "43": [
+                    "Bmaj",
+                    "Dbm"
+                  ],
+                  "44": [
+                    "Amaj/Db",
+                    "B7"
+                  ],
+                  "45": [
+                    "Abm7/B",
+                    "Dbm7"
+                  ],
+                  "46": [
+                    "F#m7/Db",
+                    "Am/C"
+                  ],
+                  "47": [
+                    "Amaj7",
+                    "B7"
+                  ]
+                },
+                "explanations": null
+              }
+            ],
+            "source": "ai",
+            "modelUsed": "ft_f1",
+            "cadence": "half_iv_v",
+            "rulesSlots": [
+              0,
+              14,
+              15
+            ],
+            "reason": "Contrasting bridge on IV adds tension before final chorus",
+            "cites": [],
+            "regenerated": false,
+            "reuse": null
+          },
+          {
+            "sectionType": "chorus",
+            "title": "Chorus \u2014 8 bars",
+            "startMeasure": 48,
+            "bars": 8,
+            "chordCount": 16,
+            "suggestions": [
+              {
+                "label": "Chorus reprise",
+                "chords": {
+                  "48": [
+                    "Abm",
+                    "B7"
+                  ],
+                  "49": [
+                    "Dbm",
+                    "Abm/Eb"
+                  ],
+                  "50": [
+                    "Amaj/E",
+                    "F#m"
+                  ],
+                  "51": [
+                    "Dbm/E",
+                    "Amaj/E"
+                  ],
+                  "52": [
+                    "Bmaj/Eb",
+                    "Emaj"
+                  ],
+                  "53": [
+                    "B7/Eb",
+                    "Amaj/E"
+                  ],
+                  "54": [
+                    "Am/E",
+                    "Emaj"
+                  ],
+                  "55": [
+                    "B7",
+                    "Emaj"
+                  ]
+                },
+                "explanations": null
+              }
+            ],
+            "source": "reuse",
+            "modelUsed": null,
+            "cadence": "authentic",
+            "rulesSlots": [
+              14,
+              15
+            ],
+            "reason": "Final chorus restates hook keeping same length for reuse",
+            "cites": [],
+            "regenerated": false,
+            "reuse": {
+              "origin": "section",
+              "sectionIndex": 2,
+              "startMeasure": 16,
+              "source": "ai",
+              "modelUsed": "ft_f1",
+              "retainedSlots": [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7,
+                8,
+                9,
+                10,
+                11,
+                12,
+                13,
+                15
+              ],
+              "changedSlots": [
+                14
+              ]
+            }
+          },
+          {
+            "sectionType": "outro",
+            "title": "Outro \u2014 8 bars",
+            "startMeasure": 56,
+            "bars": 8,
+            "chordCount": 16,
+            "suggestions": [
+              {
+                "label": "Option A \u2014 F1 \u2014 10K pop mix (balanced)",
+                "chords": {
+                  "56": [
+                    "Em",
+                    "Emaj"
+                  ],
+                  "57": [
+                    "Fmaj",
+                    "Emaj"
+                  ],
+                  "58": [
+                    "Fmaj7",
+                    "Fmaj"
+                  ],
+                  "59": [
+                    "Bbmaj/F",
+                    "Dm/F"
+                  ],
+                  "60": [
+                    "Cmaj/E",
+                    "Bbmaj/F"
+                  ],
+                  "61": [
+                    "Fmaj",
+                    "Bbmaj/F"
+                  ],
+                  "62": [
+                    "Dm/F",
+                    "Cmaj/E"
+                  ],
+                  "63": [
+                    "Amaj7/E",
+                    "Emaj"
+                  ]
+                },
+                "explanations": null
+              },
+              {
+                "label": "Option B \u2014 F1 \u2014 10K pop mix (creative)",
+                "chords": {
+                  "56": [
+                    "Fmaj",
+                    "Bbmaj/F"
+                  ],
+                  "57": [
+                    "Dm/F",
+                    "Cmaj/E"
+                  ],
+                  "58": [
+                    "Bbmaj/F",
+                    "Fmaj"
+                  ],
+                  "59": [
+                    "Bbmaj/F",
+                    "Dm/F"
+                  ],
+                  "60": [
+                    "Cmaj/E",
+                    "Bbmaj/F"
+                  ],
+                  "61": [
+                    "Fmaj",
+                    "Cmaj/E"
+                  ],
+                  "62": [
+                    "Dm",
+                    "C7"
+                  ],
+                  "63": [
+                    "Amaj7",
+                    "Emaj"
+                  ]
+                },
+                "explanations": null
+              },
+              {
+                "label": "Option C \u2014 F1 \u2014 10K pop mix (conservative)",
+                "chords": {
+                  "56": [
+                    "Amaj7",
+                    "Amaj"
+                  ],
+                  "57": [
+                    "Amaj7",
+                    "Emaj7/Ab"
+                  ],
+                  "58": [
+                    "Bmaj",
+                    "Dbm"
+                  ],
+                  "59": [
+                    "Abm/Eb",
+                    "Amaj/E"
+                  ],
+                  "60": [
+                    "F#m7",
+                    "Dbm/E"
+                  ],
+                  "61": [
+                    "B7/Eb",
+                    "Bmaj/Eb"
+                  ],
+                  "62": [
+                    "Emaj7",
+                    "Bmaj/Eb"
+                  ],
+                  "63": [
+                    "Amaj7/E",
+                    "Emaj"
+                  ]
+                },
+                "explanations": null
+              }
+            ],
+            "source": "ai",
+            "modelUsed": "ft_f1",
+            "cadence": "plagal",
+            "rulesSlots": [
+              14,
+              15
+            ],
+            "reason": "Closing outro lands IV-I to end 64-bar rock form",
+            "cites": [],
+            "regenerated": true,
+            "reuse": null
+          }
+        ],
+        "judge": [
+          {
+            "decision": "regenerate",
+            "targets": [
+              {
+                "section": 7,
+                "reason": "85.7% chords outside key in rock which stays in key"
+              }
+            ],
+            "report": [
+              {
+                "section": 0,
+                "type": "intro",
+                "bars": 8,
+                "modelSlots": 14,
+                "outsideKey": 0.0,
+                "repeatRate": null,
+                "distinctChords": 4,
+                "emptySlots": 0,
+                "reused": false,
+                "sourceSection": null
+              },
+              {
+                "section": 1,
+                "type": "verse",
+                "bars": 8,
+                "modelSlots": 14,
+                "outsideKey": 0.071,
+                "repeatRate": 0.286,
+                "distinctChords": 7,
+                "emptySlots": 0,
+                "reused": false,
+                "sourceSection": null
+              },
+              {
+                "section": 2,
+                "type": "chorus",
+                "bars": 8,
+                "modelSlots": 14,
+                "outsideKey": 0.071,
+                "repeatRate": 0.143,
+                "distinctChords": 8,
+                "emptySlots": 0,
+                "reused": false,
+                "sourceSection": null
+              },
+              {
+                "section": 3,
+                "type": "verse",
+                "bars": 8,
+                "modelSlots": 14,
+                "outsideKey": 0.071,
+                "repeatRate": 0.071,
+                "distinctChords": 8,
+                "emptySlots": 0,
+                "reused": false,
+                "sourceSection": null
+              },
+              {
+                "section": 4,
+                "type": "chorus",
+                "bars": 8,
+                "modelSlots": 0,
+                "outsideKey": 0.0,
+                "repeatRate": null,
+                "distinctChords": 0,
+                "emptySlots": 0,
+                "reused": true,
+                "sourceSection": 2
+              },
+              {
+                "section": 5,
+                "type": "bridge",
+                "bars": 8,
+                "modelSlots": 13,
+                "outsideKey": 0.154,
+                "repeatRate": 0.154,
+                "distinctChords": 10,
+                "emptySlots": 0,
+                "reused": false,
+                "sourceSection": null
+              },
+              {
+                "section": 6,
+                "type": "chorus",
+                "bars": 8,
+                "modelSlots": 0,
+                "outsideKey": 0.0,
+                "repeatRate": null,
+                "distinctChords": 0,
+                "emptySlots": 0,
+                "reused": true,
+                "sourceSection": 2
+              },
+              {
+                "section": 7,
+                "type": "outro",
+                "bars": 8,
+                "modelSlots": 14,
+                "outsideKey": 0.857,
+                "repeatRate": 0.0,
+                "distinctChords": 8,
+                "emptySlots": 0,
+                "reused": false,
+                "sourceSection": null
+              }
+            ],
+            "provider": "meta",
+            "model": "muse-spark-1.3",
+            "requestId": "fff55c23-bbee-4562-a9fd-1994caac74f4",
+            "costUsd": 0.0042881,
+            "latencyMs": 2559
+          },
+          {
+            "decision": "regenerate",
+            "targets": [
+              {
+                "section": 7,
+                "reason": "85% chords outside key in rock which stays in key"
+              }
+            ],
+            "report": [
+              {
+                "section": 0,
+                "type": "intro",
+                "bars": 8,
+                "modelSlots": 14,
+                "outsideKey": 0.0,
+                "repeatRate": null,
+                "distinctChords": 4,
+                "emptySlots": 0,
+                "reused": false,
+                "sourceSection": null
+              },
+              {
+                "section": 1,
+                "type": "verse",
+                "bars": 8,
+                "modelSlots": 14,
+                "outsideKey": 0.071,
+                "repeatRate": 0.286,
+                "distinctChords": 7,
+                "emptySlots": 0,
+                "reused": false,
+                "sourceSection": null
+              },
+              {
+                "section": 2,
+                "type": "chorus",
+                "bars": 8,
+                "modelSlots": 14,
+                "outsideKey": 0.071,
+                "repeatRate": 0.143,
+                "distinctChords": 8,
+                "emptySlots": 0,
+                "reused": false,
+                "sourceSection": null
+              },
+              {
+                "section": 3,
+                "type": "verse",
+                "bars": 8,
+                "modelSlots": 14,
+                "outsideKey": 0.071,
+                "repeatRate": 0.071,
+                "distinctChords": 8,
+                "emptySlots": 0,
+                "reused": false,
+                "sourceSection": null
+              },
+              {
+                "section": 4,
+                "type": "chorus",
+                "bars": 8,
+                "modelSlots": 0,
+                "outsideKey": 0.0,
+                "repeatRate": null,
+                "distinctChords": 0,
+                "emptySlots": 0,
+                "reused": true,
+                "sourceSection": 2
+              },
+              {
+                "section": 5,
+                "type": "bridge",
+                "bars": 8,
+                "modelSlots": 13,
+                "outsideKey": 0.154,
+                "repeatRate": 0.154,
+                "distinctChords": 10,
+                "emptySlots": 0,
+                "reused": false,
+                "sourceSection": null
+              },
+              {
+                "section": 6,
+                "type": "chorus",
+                "bars": 8,
+                "modelSlots": 0,
+                "outsideKey": 0.0,
+                "repeatRate": null,
+                "distinctChords": 0,
+                "emptySlots": 0,
+                "reused": true,
+                "sourceSection": 2
+              },
+              {
+                "section": 7,
+                "type": "outro",
+                "bars": 8,
+                "modelSlots": 14,
+                "outsideKey": 0.857,
+                "repeatRate": 0.0,
+                "distinctChords": 7,
+                "emptySlots": 0,
+                "reused": false,
+                "sourceSection": null
+              }
+            ],
+            "provider": "meta",
+            "model": "muse-spark-1.3",
+            "requestId": "18251fe6-6b32-40d0-a570-f8c1cf9c97b8",
+            "costUsd": 0.00442625,
+            "latencyMs": 2793
+          }
+        ],
+        "calls": [
+          {
+            "step": "plan_song",
+            "attempt": 1,
+            "provider": "meta",
+            "model": "muse-spark-1.3",
+            "requestId": "c390240d-9fe1-4800-bf91-bffc3e3286d3",
+            "costUsd": 0.0110585,
+            "latencyMs": 8687,
+            "effort": "medium",
+            "ok": true
+          },
+          {
+            "step": "judge",
+            "attempt": 1,
+            "provider": "meta",
+            "model": "muse-spark-1.3",
+            "requestId": "fff55c23-bbee-4562-a9fd-1994caac74f4",
+            "costUsd": 0.0042881,
+            "latencyMs": 2559,
+            "effort": "low",
+            "ok": true
+          },
+          {
+            "step": "judge",
+            "attempt": 2,
+            "provider": "meta",
+            "model": "muse-spark-1.3",
+            "requestId": "18251fe6-6b32-40d0-a570-f8c1cf9c97b8",
+            "costUsd": 0.00442625,
+            "latencyMs": 2793,
+            "effort": "low",
+            "ok": true
+          }
+        ],
+        "spendUsd": 0.01977285,
+        "reservedUsd": 0.07473575,
+        "elapsedMs": 16068,
+        "metaMs": 14039,
+        "generationMs": 2026,
+        "error": null
+      },
+      "apiUsage": [
+        {
+          "label": "plan.plan_song",
+          "provider": "meta",
+          "model": "muse-spark-1.3",
+          "request_id": "c390240d-9fe1-4800-bf91-bffc3e3286d3",
+          "usage": {
+            "prompt_tokens": 986,
+            "cached_tokens": 0,
+            "completion_tokens": 2312,
+            "reasoning_tokens": 1977
+          },
+          "status": "settled",
+          "settled_usd": 0.0110585,
+          "latency_ms": 8676
+        },
+        {
+          "label": "plan.judge",
+          "provider": "meta",
+          "model": "muse-spark-1.3",
+          "request_id": "fff55c23-bbee-4562-a9fd-1994caac74f4",
+          "usage": {
+            "prompt_tokens": 1008,
+            "cached_tokens": 369,
+            "completion_tokens": 808,
+            "reasoning_tokens": 771
+          },
+          "status": "settled",
+          "settled_usd": 0.0042881,
+          "latency_ms": 2547
+        },
+        {
+          "label": "plan.judge",
+          "provider": "meta",
+          "model": "muse-spark-1.3",
+          "request_id": "18251fe6-6b32-40d0-a570-f8c1cf9c97b8",
+          "usage": {
+            "prompt_tokens": 1008,
+            "cached_tokens": 0,
+            "completion_tokens": 745,
+            "reasoning_tokens": 710
+          },
+          "status": "settled",
+          "settled_usd": 0.00442625,
+          "latency_ms": 2790
+        }
+      ]
+    }
+  ],
+  "spendUsd": 0.0582211,
+  "outstandingUsd": 0
+}
