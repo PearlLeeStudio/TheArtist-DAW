@@ -341,14 +341,29 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
                 {/* Cleared after each pick, so choosing the same file again still starts an analysis. */}
                 <input ref={fileRef} type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,application/pdf,image/png,image/jpeg,image/webp" className="max-w-full text-sm" onChange={(e) => { void chooseFile(e.target.files?.[0]); e.target.value = ''; }} />
               </label>
-              <label className="flex items-center gap-2 text-xs" style={mutedStyle}>
-                Reader
-                <select value={readerEngine} disabled={running || reading} onChange={(e) => selectReader(e.target.value as ScoreImportEngine)} className="px-2 py-1.5 text-xs" style={controlStyle}>
-                  <option value="auto" disabled={!metaAvailable}>Meta assist · harmony + form</option>
-                  <option value="meta" disabled={!fullFileAvailable}>Full file (Meta)</option>
-                  <option value="local">Local</option>
-                </select>
-              </label>
+              <fieldset disabled={running || reading} className="min-w-0 text-xs">
+                <legend className="mb-2" style={mutedStyle}>Reader</legend>
+                <div className="flex flex-wrap gap-x-5 gap-y-2">
+                  {([
+                    { value: 'auto', label: 'Meta assist · harmony + form', disabled: !metaAvailable },
+                    { value: 'meta', label: 'Full file (Meta)', disabled: !fullFileAvailable },
+                    { value: 'local', label: 'Local', disabled: false },
+                  ] as const).map((option) => (
+                    <label key={option.value} className="flex items-center gap-2 has-[:disabled]:opacity-50">
+                      <input
+                        type="radio"
+                        name={`${id}-reader`}
+                        value={option.value}
+                        checked={readerEngine === option.value}
+                        disabled={option.disabled}
+                        onChange={() => selectReader(option.value)}
+                        style={{ accentColor: 'var(--brand-yellow)' }}
+                      />
+                      {option.label}
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
               {readerEngine === 'auto' && <p className="text-xs" style={mutedStyle}>Whole-score context · up to 16 harmony bars + form · 3 calls / $0.30 max</p>}
               {readerEngine === 'meta' && <p className="text-xs" style={mutedStyle}>Sends the full file · PDF or image · 1 call / $1.35 max</p>}
               {meta && !metaAvailable && (
