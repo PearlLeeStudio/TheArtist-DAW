@@ -323,7 +323,7 @@ Chords a rule writes are spelled for the key. The five original sections (intro,
 
 ### POST `/api/plan/song` and `/api/plan/song/stream` — Complete the form
 
-Muse Spark plans the rest of a song form from the user's sketch; code validates the plan and sends errors back for at most two revisions; the author's Music Transformer writes every section (the same service as `/api/generate/section`, with the planned `cadence`); one observe-then-act judgment may send up to two sections back for one regeneration each. The API is stateless: nothing is applied server-side, the client applies the returned sections.
+Muse Spark plans the rest of a song form from the user's sketch; code validates the plan and sends errors back for at most two revisions; the author's Music Transformer generates sections (the same service as `/api/generate/section`, with the planned `cadence`). Optional chorus reuse retains an existing same-length progression. Bounded observe-then-act judgments can request regeneration. The API is stateless: nothing is applied server-side, the client applies the returned sections.
 
 Request (`PlanRequest`, strict):
 
@@ -338,12 +338,25 @@ Request (`PlanRequest`, strict):
 | `planner` | `meta` (default, Muse Spark) or `rules` (the genre-default form, no Meta call; labelled `rules`) |
 | `modelKey` | Checkpoint for every section, as `SectionGenerateRequest.modelKey` |
 | `seed` | Optional strict integer `0..4294967295`, default null. Controls chord sampling, not Meta planning or judgment |
+| `chorusMode` | `new` (API default) or `reuse`. The form UI defaults to **Keep the theme** (`reuse`) and also offers **New progression** |
 
 Plan output (strict JSON from the model): `{sections: [{type, bars, cadence, reason, cites: [{bar, roman}]}]}` with `cadence` in `authentic`, `plagal`, `half`, `half_iv_v`, `turnaround`, `none`. `validate_plan` rules: section vocabulary; 2–32 bars per section; sketch bars plus planned bars equal `targetBars`; intro only first (empty sketch) and outro only last; the last cadence authentic or plagal; `wantOutro` honoured; every cite's bar exists in the sketch with that Roman numeral; `reason` ≤ 120 characters.
 
 Response (`PlanTrace`): `status`, `plan`, `validation: [{attempt, ok, errors: [{code, section, message}]}]`, `sections` (each a `SectionGenerateResponse` plus `cadence`, `rulesSlots` — section-relative chord slots the song-form rules decided, never counted as the model's —, `reason`, `cites`, `regenerated`), `judge: [{decision, targets, report, provider, model, requestId, costUsd, latencyMs}]`, `calls: [{step, attempt, provider, model, requestId, costUsd, latencyMs, effort, ok}]`, `spendUsd`, `elapsedMs`, and on failure `error: {kind, message, requestId}`. Limits per run: 5 Meta calls (1 plan, ≤ 2 revisions, ≤ 2 judgments), 45 s per call, $0.05 reserved per call, and a run never spends more than $0.10 (its settled spend plus the next call's worst case is checked before every call), 120 s wall clock (75 s Meta, 45 s own model). Output budgets, reasoning included: 8192 tokens for a plan or revision, 4096 for a judgment. Effort: plan `medium`, revisions and judgments `low`.
 
-The stream variant sends SSE events `plan`, `validate`, `revise`, `generate_section`, `judge` with `t_ms`, then one `complete` or `error` frame carrying the whole trace while the client remains connected. Statuses: 503 `THEARTIST_META_ENABLED=0` ("disabled") or missing configuration; 429 budget; 504 Meta timeout; 502 invalid Meta reply; 500 generation failure. The failed trace still carries request ids and the spend so far. The MCP tools `plan_song` (plan + validate + revise, no generation) and `validate_plan` share this service.
+With `chorusMode: reuse`, the first complete same-length chorus in the locked sketch
+is preferred, otherwise the first generated chorus. Incomplete/unsupported chords
+and different lengths are not reused. Only the planned cadence can change slots.
+Such a `PlanSectionResult` extends the section response with `source: reuse`,
+`modelUsed: null`, and `reuse: {origin: sketch|section, sectionIndex: number|null,
+startMeasure, source: sketch|ai|rules, modelUsed: string|null, retainedSlots,
+changedSlots}`. Slot lists are relative to the reused section. Normal sections
+have `reuse: null`. Judge reports add `reused` and `sourceSection`; reused sections
+count zero new `modelSlots`. A regenerated original refreshes its dependent
+choruses. A judge request aimed only at reused sections is preserved but cannot
+override the reuse choice or locked sketch; it is not relabelled as acceptance.
+
+The stream variant sends SSE events `plan`, `validate`, `revise`, `generate_section`, `judge` with `t_ms`, then one `complete` or `error` frame carrying the whole trace while the client remains connected. A dependent chorus refresh emits another `generate_section` for that index. Statuses: 503 `THEARTIST_META_ENABLED=0` ("disabled") or missing configuration; 429 budget; 504 Meta timeout; 502 invalid Meta reply; 500 generation failure. The failed trace still carries request ids and the spend so far. The MCP tools `plan_song` (plan + validate + revise, no generation) and `validate_plan` share this service.
 
 On a stream disconnect, the worker cooperatively stops before another model call
 or section begins. An in-flight bounded call finishes and records its charge;

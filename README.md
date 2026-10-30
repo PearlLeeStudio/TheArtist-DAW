@@ -190,6 +190,7 @@ Current Safari interface: section labels, chord staff, Play controls and the alw
 | **Dark + light theme** | Classical staff with an editorial dark/light palette; a tactile Play panel with compact text keys, flat status cells and slim vertical faders. |
 | **Resizable right panel** | Drag the boundary 300–640 px wide; collapse with a short tab-aligned toggle. |
 | **Generation provenance** | Backend fallback results are explicitly labeled `rules`; transport failures stay errors. Model results retain `source: ai`, `modelUsed`, and the slots changed by song-form rules. |
+| **Returning choruses** | Full form offers **Keep the theme** or **New progression**. A same-length chorus can reuse the first complete progression with cadence-only changes; the trace identifies the source and exact changed slots. [OMT-on local timing and limits](experiments/speed/chorus-memory.md). |
 
 ## Walkthrough
 
@@ -542,6 +543,10 @@ npm --prefix /absolute/path/TheArtist-DAW/frontend run dev
 ```
 
 Vite proxies `/api` requests to the backend automatically. Open `http://localhost:5173` in your browser.
+
+For one process serving the built UI and API, see the [single-origin server](deploy/README.md).
+The [submission extraction tools](scripts/submission_README.md) reconstruct the app
+from a pinned external core plus verified event changes. Neither setup configures a domain.
 
 To preload AI models on startup:
 
