@@ -732,6 +732,13 @@ class CallCosts:
     cost_usd: float = 0.0
     settled_calls: int = 0
     reliable: bool = True
+    _lock: threading.Lock = field(default_factory=threading.Lock, repr=False, compare=False)
+
+    def record(self, cost: float) -> None:
+        # A copied context can share this collector with bounded child workers.
+        with self._lock:
+            self.cost_usd = _round_usd(self.cost_usd + cost)
+            self.settled_calls += 1
 
 
 _call_cost_scopes: ContextVar[tuple[CallCosts, ...]] = ContextVar("llm_call_cost_scopes", default=())
@@ -742,8 +749,10 @@ def track_call_costs() -> Iterator[CallCosts]:
     """Collect this execution context's settlements, across multiple LLM calls.
 
     Enter inside the synchronous request worker that makes the calls, not in
-    ASGI middleware. Independent workers never share a collector. Nested scopes
-    count toward their enclosing request too; the context is restored on exit.
+    ASGI middleware. Independent requests never share a collector. Explicitly
+    copied contexts share its thread-safe totals with child workers; join those
+    workers before reading the totals. Nested scopes count toward their enclosing
+    request too; the context is restored on exit.
     """
     costs = CallCosts()
     token = _call_cost_scopes.set((*_call_cost_scopes.get(), costs))
@@ -1173,8 +1182,7 @@ class LLMClient:
                     exc.request_id = request_id
             raise
         for scope in _call_cost_scopes.get():
-            scope.cost_usd = _round_usd(scope.cost_usd + cost)
-            scope.settled_calls += 1
+            scope.record(cost)
         tokens = ("in=%(prompt_tokens)d cached=%(cached_tokens)d out=%(completion_tokens)d "
                   "reasoning=%(reasoning_tokens)d" % usage) if usage else "unknown"
         log.log(logging.INFO if status == "settled" else logging.WARNING,

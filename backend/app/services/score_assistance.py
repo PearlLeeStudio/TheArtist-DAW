@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import base64
 from collections.abc import Callable
+from concurrent.futures import ThreadPoolExecutor
+from contextvars import copy_context
 from typing import TYPE_CHECKING
 
 from app.models.score_import import MAX_NOTE_CHARS, ImportedMeasure, ScoreImportRequest, ScoreImportResponse
@@ -112,18 +114,31 @@ def enrich_local_harmony(req: ScoreImportRequest, draft: ScoreImportResponse, *,
             raise ScoreContextError(str(exc)) from None
         batches.append((batch, context))
 
-    calls = 0
+    if batches and before_meta is not None:
+        # Admit on the request thread before either independent call starts.
+        from app.services.harmony_meta import MAX_REQUEST_USD
+        before_meta(MAX_ASSIST_CALLS * MAX_REQUEST_USD)
+
+    def propose(batch_and_context):
+        batch, context = batch_and_context
+        return propose_harmony(batch, draft.key, context=context, score_context=synopsis)
+
+    if len(batches) > 1:
+        # Each call reads the same frozen source synopsis. Copy the request's
+        # cost context separately into each worker; wait for all settlements
+        # even if one fails, before the route settles its admission.
+        with ThreadPoolExecutor(max_workers=MAX_ASSIST_CALLS) as executor:
+            futures = [executor.submit(copy_context().run, propose, item) for item in batches]
+            proposals = [future.result() for future in futures]
+    else:
+        proposals = [propose(item) for item in batches]
+
+    calls = len(proposals)
     attempted = 0
     interpreted = 0
-    for batch, context in batches:
-        if calls == 0 and before_meta is not None:
-            # The caller's spend admission, once, only when Meta is really about to be called
-            from app.services.harmony_meta import MAX_REQUEST_USD
-            before_meta(MAX_ASSIST_CALLS * MAX_REQUEST_USD)
-        # Provider/config/budget failures propagate as failures. They never
-        # turn into a successful-looking local result or an invented chord.
-        proposal = propose_harmony(batch, draft.key, context=context, score_context=synopsis)
-        calls += 1
+    # Apply in source order, independently of completion order. Failures above
+    # propagate instead of exposing a partly modified, successful-looking draft.
+    for (batch, _), proposal in zip(batches, proposals):
         attempted += len(batch)
         for result in proposal.measures:
             _apply_proposal(draft.measures[result.index], source[result.index], result, proposal)

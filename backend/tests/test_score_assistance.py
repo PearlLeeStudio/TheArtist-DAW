@@ -2,6 +2,8 @@
 
 import base64
 import json
+from contextvars import ContextVar
+import threading
 from types import SimpleNamespace
 import unittest
 from unittest import mock
@@ -65,6 +67,59 @@ class ScoreAssistanceTest(unittest.TestCase):
                                                          chords=() if measure["index"] in self.empty_indices else ("Dm7b5",),
                                                          confidence=self.proposal_confidence, evidence=self.proposal_evidence,
                                                          needs_review=True) for measure in measures])
+
+    def test_batches_overlap_with_request_context_and_apply_in_source_order(self):
+        marker = ContextVar('import_request', default=None)
+        token = marker.set('this-request')
+        self.addCleanup(marker.reset, token)
+        gate = threading.Barrier(2)
+        second_finished = threading.Event()
+        admitted = mock.Mock()
+
+        def concurrent(measures, key, **kwargs):
+            self.assertEqual(marker.get(), 'this-request')
+            admitted.assert_called_once()
+            gate.wait(timeout=2)
+            start = measures[0]['index']
+            if start == 0:
+                self.assertTrue(second_finished.wait(timeout=2))
+            result = self.propose(measures, key, **kwargs)
+            result.request_id = f'batch-{start}'
+            if start != 0:
+                second_finished.set()
+            return result
+
+        self.proposer.side_effect = concurrent
+        result = enrich_local_harmony(request(), draft(20), before_meta=admitted)
+        self.assertEqual([bar.requestId for bar in result.measures[:16]], ['batch-0'] * 8 + ['batch-8'] * 8)
+        self.assertEqual(result.requestId, 'batch-8')
+        self.assertEqual(self.contexts[0], self.contexts[1])
+        self.assertEqual(len(self.calls), 2)
+
+    def test_failure_waits_for_other_call_and_never_applies_partial_results(self):
+        gate = threading.Barrier(2)
+        completed = threading.Event()
+        score = draft(20)
+        original = score.model_dump()
+
+        def concurrent(measures, key, **kwargs):
+            gate.wait(timeout=2)
+            if measures[0]['index'] == 0:
+                raise LLMTimeout('first failed')
+            result = self.propose(measures, key, **kwargs)
+            completed.set()
+            return result
+
+        self.proposer.side_effect = concurrent
+        with self.assertRaises(LLMTimeout):
+            enrich_local_harmony(request(), score)
+        self.assertTrue(completed.is_set())
+        self.assertEqual(score.model_dump(), original)
+
+    def test_admission_failure_starts_neither_batch(self):
+        with self.assertRaises(RuntimeError):
+            enrich_local_harmony(request(), draft(20), before_meta=mock.Mock(side_effect=RuntimeError('denied')))
+        self.proposer.assert_not_called()
 
     def test_local_or_meta_mode_cannot_trigger_note_assistance(self):
         for engine in ("local", "meta"):

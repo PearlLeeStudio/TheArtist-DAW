@@ -567,6 +567,25 @@ class SchemaTests(unittest.TestCase):
 
 
 class OpenWeightTests(LLMTestCase):
+    def test_copied_request_context_collects_all_parallel_child_settlements(self):
+        from concurrent.futures import ThreadPoolExecutor
+        from contextvars import copy_context
+
+        gate = threading.Barrier(2)
+
+        def transport(request):
+            gate.wait(timeout=3)
+            return response(json.dumps(GOOD)), {"x-request-id": "child-call"}
+
+        client = self.client(transport)
+        with llm.track_call_costs() as costs:
+            with ThreadPoolExecutor(max_workers=2) as executor:
+                futures = [executor.submit(copy_context().run, self.call, client) for _ in range(2)]
+                for future in futures:
+                    future.result()
+        self.assertAlmostEqual(costs.cost_usd, 2 * USAGE_COST)
+        self.assertEqual((costs.settled_calls, costs.reliable), (2, True))
+
     def test_cost_collectors_are_isolated_between_concurrent_request_threads(self):
         gate = threading.Barrier(2)
         costs, failures = [], []
