@@ -12,6 +12,19 @@ export interface TheoryExplanation {
   section: string;
   page_start: number;
   page_end: number;
+  kind?: 'generated' | 'source_excerpt';
+  citation?: {
+    source: 'omt' | 'berklee';
+    title: string;
+    url: string;
+    authors: string[];
+    editors?: string[];
+    license: string;
+    license_url: string;
+    copyright: string;
+    changes: string;
+    passage_id: string;
+  } | null;
 }
 
 export interface Suggestion {

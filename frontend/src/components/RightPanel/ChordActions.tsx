@@ -384,7 +384,7 @@ function TheoryNotes({ explanations }: { explanations: NonNullable<Suggestion['e
         className="cursor-pointer text-[10px] uppercase tracking-wide"
         style={{ color: 'var(--text-muted)' }}
       >
-        Theory ({explanations.length} transitions)
+        Theory references ({explanations.length})
       </summary>
       <ul className="mt-1 space-y-1.5 text-[11px]">
         {explanations.map((e, eIdx) => (
@@ -405,7 +405,26 @@ function TheoryNotes({ explanations }: { explanations: NonNullable<Suggestion['e
             </div>
             {e.explanation && (
               <div className="mt-0.5" style={{ color: 'var(--text-muted)', lineHeight: 1.4 }}>
+                {e.kind === 'source_excerpt' && <span className="mr-1 font-semibold">Source excerpt:</span>}
                 {e.explanation}
+              </div>
+            )}
+            {e.citation && (
+              <div className="mt-1 space-y-0.5 text-[10px]" style={{ color: 'var(--text-muted)' }}>
+                <p>
+                  {e.citation.url.startsWith('https://')
+                    ? <a className="underline" href={e.citation.url} target="_blank" rel="noreferrer">{e.citation.title}</a>
+                    : e.citation.title}
+                  {' · '}{e.citation.authors.join(', ')}
+                  {!!e.citation.editors?.length && <> · Editors: {e.citation.editors.join(', ')}</>}
+                </p>
+                <p>
+                  {e.citation.copyright}{' · '}
+                  {e.citation.license_url.startsWith('https://')
+                    ? <a className="underline" href={e.citation.license_url} target="_blank" rel="noreferrer">{e.citation.license}</a>
+                    : e.citation.license}
+                </p>
+                <p>{e.citation.changes}</p>
               </div>
             )}
           </li>

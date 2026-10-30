@@ -1,5 +1,6 @@
 #!/bin/bash
-# Fetch the source PDFs and run the RAG indexing pipeline end-to-end.
+# Legacy research only: fetch PDFs and run the old indexing pipeline.
+# Product setup is backend/scripts/setup_omt.py; it does not use this script.
 #
 # RAG corpora live at:
 #   ai/data/berklee/         The BERKLEE book of JAZZ HARMONY.pdf  (manual: copyright)
@@ -8,7 +9,7 @@
 # Both PDF directories are gitignored. Re-running this on a fresh checkout
 # downloads the open one and runs extract → chunk → embed → tag for both,
 # leaving chromadb collections berklee + openmusictheory ready for the
-# Retriever in backend/app/services/inference.py.
+# legacy research Retriever. The product never loads these Chroma collections.
 #
 # Berklee book is copyrighted; you must place your own legitimate copy at
 # ai/data/berklee/The BERKLEE book of JAZZ HARMONY.pdf before running.

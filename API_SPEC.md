@@ -25,7 +25,7 @@ flowchart LR
     EXP --> RENDER["Arrangement / MIDI / Scripter rendering"]
 ```
 
-Score import, planning, review, export and MCP use the same backend services. R2 retrieval and its local explanation model are preserved research code and disabled in the product configuration. MCP is not mounted on public hosts. There is no generic `POST /api/export` endpoint.
+Score import, planning, review, export and MCP use the same backend services. Local OMT retrieval is enabled by default after corpus setup; Berklee is independently disabled. The old embedding and explanation models are not used. MCP is not mounted on public hosts. There is no generic `POST /api/export` endpoint.
 
 ## Base URL
 
@@ -104,18 +104,7 @@ Generate chord suggestions for selected measures. Used by the frontend chord edi
         "2": ["Bm7", "E7"],
         "3": ["Am7", "D7"]
       },
-      "explanations": [
-        {
-          "chord_a": "Bm7",
-          "chord_b": "E7",
-          "concept": "ii-V",
-          "explanation": "Bm7 → E7 forms a ii-V unit targeting A...",
-          "chapter": "2",
-          "section": "The II V",
-          "page_start": 17,
-          "page_end": 19
-        }
-      ]
+      "explanations": null
     },
     {
       "label": "Option B — Tritone substitution",
@@ -143,7 +132,7 @@ Generate chord suggestions for selected measures. Used by the frontend chord edi
 | `suggestions` | `Suggestion[]` | 1-5 chord progression options |
 | `suggestions[].label` | `string` | Human-readable description of harmonic approach |
 | `suggestions[].chords` | `Record<string, [string, string]>` | Measure index → 2 chord names (slot 0, slot 1) |
-| `suggestions[].explanations` | `TheoryExplanation[] \| null` | Per-transition theory pointers from the R2 RAG layer (`RAG_ENABLED_GENRES` only — jazz family + classical; `null` otherwise). Each: `{chord_a, chord_b, concept, explanation, chapter, section, page_start, page_end}`. |
+| `suggestions[].explanations` | `TheoryExplanation[] \| null` | Up to 16 distinct transition references per candidate from enabled, ready sources; `null` when unavailable/disabled. Each: `{chord_a, chord_b, concept, explanation, chapter, section, page_start, page_end, kind, citation}`. Product `kind` is `source_excerpt`; `explanation` is a source excerpt of at most 400 characters, not generated analysis. `citation` contains source, title, URL, authors, editors, license, license URL, copyright, changes and passage ID. Web sources have page numbers 0. |
 | `source` | `"ai" \| "rules"` | Which generator produced the suggestions (`"rules"` = rule-based fallback fired). |
 
 **Error (4xx):**
@@ -177,9 +166,9 @@ Streaming variant of `/api/generate` — **the frontend's primary generate path*
 |-------|---------|------|
 | `model_load` | `{"label": "Loading <model label>"}` | Only when the checkpoint is cold (first request after startup / model switch). |
 | `composing` | `{"label", "step", "total", "creativity"}` | ×3 — one per temperature pass; `step` 1-3, `total` 3, `creativity` ∈ `conservative` (0.7) / `balanced` (0.9) / `creative` (1.1). |
-| `ranking` | `{"label": "Scoring consonance and theory grounding"}` | Composite rerank stage (R1 consonance + R2 theory). |
+| `ranking` | `{"label": "Scoring consonance and theory relevance"}` | R1 roughness + ready-source text relevance; label is `Scoring consonance` when no source is ready. |
 | `voicing` | `{"label": "Picking inversions for smooth bass motion"}` | Unless disabled via `THEARTIST_DISABLE_VOICE_LEADING`. |
-| `explaining` | `{"label": "Generating per-transition theory explanations"}` | RAG-enabled genres only (jazz family + classical). |
+| `explaining` | `{"label": "Retrieving related theory references"}` | Only when an enabled corpus is ready and explanation output is enabled; all genres may retrieve related references. |
 | `complete` | `{"label": "Done"}` | Right before `result`. |
 | `result` | Same payload shape as `/api/generate`'s 200 JSON (`{suggestions, source}`) plus `elapsed_ms` | Final frame, then the stream closes. |
 | `error` | `{"detail": "..."}` | Terminal — the 400 validation errors of `/api/generate` are streamed as an `error` frame instead of an HTTP 4xx; a failure inside generation ends the stream with `{"detail": "Chord generation failed"}`. |
@@ -279,7 +268,7 @@ The section response does not echo the seed; preserve the request for reproducti
 
 **Internal flow:**
 1. `context` + one empty row per new bar (indices from `len(context)`); the new indices are the selection.
-2. AI (torch + checkpoint available): resolve the checkpoint exactly like `/api/generate` → sample 3 candidates → **key anchor** (only when no chord precedes the section) → rerank → song-form rules for `sectionType` → voice-leading inversions (a section whose rule resolves to the tonic — verse, chorus, outro, tag, head, A section — keeps a root-position final tonic) → RAG explanations. Song form runs before voice leading and explanations, so slash basses and theory notes describe the final chords.
+2. AI (torch + checkpoint available): resolve the checkpoint exactly like `/api/generate` → sample 3 candidates → **key anchor** (only when no chord precedes the section) → rerank → song-form rules for `sectionType` → voice-leading inversions (a section whose rule resolves to the tonic — verse, chorus, outro, tag, head, A section — keeps a root-position final tonic) → attributed theory excerpts. Song form runs before voice leading and explanations, so slash basses and theory notes describe the final chords.
 3. Rules fallback: `generate_suggestions` with a position derived from the section (intro 0.0, verse 0.25, pre_chorus 0.4, chorus 0.6, post_chorus 0.65, bridge 0.7, outro 1.0, others 0.5), then the same song-form rules.
 
 **Key anchoring** (`app/services/key_anchor.py`): with no chords to continue from, the model largely ignores the `[KEY:…]` token (a fresh "C major" pop request can come back in E major). Each candidate's diatonic collection is estimated by counting its chord tones inside each of the 12 major-scale collections (relative major and minor are the same collection); when the best collection beats the requested key's by at least 5% of all chord tones (and at least 2 tones), every chord — root and slash bass — is transposed by the interval between the two collections' tonics and spelled for the requested key (sharps for G D A E B major, E B minor and any key named with a `#`; flats for flat keys and C major / A minor). Rock and blues progressions centre on their collection's 5th degree instead (C–Bb–F or C7–F7–G7 sits in F major's collection): a candidate that opens on that degree and either closes on it or lands on it more often than on the collection's tonic is transposed so that this centre falls on the requested tonic — an E blues asked for in C major comes back as a C blues, not a G blues, and a C blues asked for in C major stays as it is. Such a result is spelled like the major key on the requested tonic (`F#m`, not `Gbm`, for A minor). Ties and near-ties keep the model's chords; a candidate is never moved when the section follows chords the model could continue from.
@@ -873,7 +862,7 @@ limit variable or unreadable ledger.
 
 ### GET `/api/capabilities` and `/mcp/` — Shared contract discovery
 
-`GET /api/capabilities` returns `{"schemaVersion":"1.0","data":{...}}`, including implemented tools, contract names, payload limits, source/model fields and known limitations. The MCP `capabilities` tool returns the same envelope. Other REST responses keep their existing shapes; they are not wrapped in this envelope.
+`GET /api/capabilities` returns `{"schemaVersion":"1.0","data":{...}}`, including implemented tools, contract names, payload limits, source/model fields and known limitations. The MCP `capabilities` tool returns the same envelope. The `data.rag` object reports `enabled`, `ready`, `sources` (`omt` and `berklee`: `ready`, `missing`, `invalid` or `disabled`), `method: "local_tfidf"` and `notes: "source_excerpt"`. A bad source configuration returns `error: "invalid_source_configuration"`. Other REST responses keep their existing shapes; they are not wrapped in this envelope.
 
 `data.meta` includes `enabled`, `configured`, `provider`, `model` and
 `fullFileScoreImport`. The last is true only for an enabled, configured Standard
@@ -948,7 +937,7 @@ sequenceDiagram
     BE->>INF: generate_ai_suggestions()
     INF-->>FE: SSE phases: model_load / composing ×3 /<br/>ranking / voicing
     INF->>INF: Sample 3 → key anchor (fresh selection) → rerank<br/>→ song form → voice leading
-    Note over INF: R2 retrieval and explanation are disabled by default<br/>Each pass targets the requested bar count
+    Note over INF: OMT retrieval is on after setup; Berklee is off<br/>Each pass targets the requested bar count
     alt torch / checkpoint unavailable
         BE->>GEN: generate_suggestions()
         GEN->>GEN: Run 3 strategies<br/>(diatonic, tritone, modal)
@@ -1012,11 +1001,11 @@ The Music Transformer checkpoints are trained (Phase 0 + F1–F5 + F1 v2 + 11 Lo
 2. Tokenize context with the extended 359-vocab tokenizer (13 genre tokens)
 3. Sample 3 candidates at temperatures 0.7 / 0.9 / 1.1 (conservative / balanced / creative). Each pass is held to the selection's length: `[EOS]`, `[PAD]` and empty bars are banned until every selected bar is written, and sampling stops right after the last one, within a budget of 3 tokens per bar plus `max(8, bars // 2)`. A pass that still runs out of budget is logged as a warning, and the bars it did not write repeat its own bars
 4. Key-anchor each candidate when no chord precedes the selection (see [key anchoring](#post-apigeneratesection))
-5. Rerank by R1 (Sethares sensory roughness) in the product configuration
+5. Rerank by R1 (Sethares sensory roughness) plus text relevance from ready theory sources
 6. Apply the song-form rules for `sectionType`
 7. Inject voice-leading (bass-motion inversions; when the section's rule resolves to the tonic, that final tonic stays in root position)
-8. Return the suggestions with their actual model/source provenance
+8. Attach related source excerpts when enabled and ready; return suggestions with actual model/source provenance
 
-The preserved R2 research path can add retrieval distance and local theory explanations only with an explicit `THEARTIST_DISABLE_RAG=0` opt-in and its supporting corpora/services. It is disabled in the hackathon product.
+OMT retrieval defaults on; Berklee defaults off. Retrieval is local TF-IDF and uses no additional AI model or external service. It measures text relevance, not musical correctness. Missing/invalid corpora are reported in capabilities and contribute neither ranking nor notes. See [source setup and configuration](docs/theory-retrieval.md).
 
 The rule-based generator remains the fallback when torch or the chosen checkpoint is unavailable.

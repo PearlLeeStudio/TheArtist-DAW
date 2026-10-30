@@ -170,7 +170,7 @@ the notes-only PNG matched only 1/4 chords. These fixtures are not an accuracy b
 </p>
 
 <p align="center"><sub>
-Current Safari interface: section labels, chord staff, Play controls and the always-visible mixer. Theory corpora are not shipped or used in this demo.
+Current Safari interface: section labels, chord staff, Play controls and the always-visible mixer. This capture predates the optional theory references. Corpus text is not shipped in the repository.
 </sub></p>
 
 <p align="center">
@@ -200,8 +200,8 @@ Current Safari interface: section labels, chord staff, Play controls and the alw
 |---|---|
 | **Compose on a staff** | VexFlow notation, click to select measures, drag-select ranges, slash-chord support |
 | **Generate with a paper-trained model** | F1 default (10K pop mix); the released F1 base is weight-identical to the Phase 0 pop baseline (~84.2% pop / 72.9% jazz top-1 — a checkpoint-selection artifact), and the selection-corrected `ft_f1_v2` retrain (83.7% pop / 80.3% jazz) restores the jazz adaptation; F1–F5 + F1 v2 + Phase 0 baseline + 11 LoRA adapters (13-genre vocabulary) selectable |
-| **Live progress streaming** | `/api/generate/stream` SSE pipeline shows each phase (Read → Load → Compose → Rank → Voice → Done) as the model thinks; a Theory phase appears only when the R2 retrieval is opted in with `THEARTIST_DISABLE_RAG=0`, which this build leaves off |
-| **Candidate ranking** | R1 — Sethares sensory roughness. The baseline R2 retrieval pipeline is retained for research; its corpora and indices are not shipped or used in the hackathon demo. |
+| **Live progress streaming** | `/api/generate/stream` SSE pipeline shows each phase (Read → Load → Compose → Rank → Voice → Done) as the model thinks; a Theory phase retrieves attributed source excerpts when an enabled corpus is ready; OMT is enabled by default after its setup step |
+| **Candidate ranking** | R1 — Sethares sensory roughness, plus local OMT text relevance when its corpus is ready. Berklee is disabled by default. Retrieval relevance is not a musical-quality score. |
 | **Voice-leading inversions** | Post-process injects slash-chord inversions (e.g. `Am7/C`) where they smooth the bass line — the LM only emits root-position chords, voice leading is added on top |
 | **MIDI input with confirm flow** | Hold a chord ≥3 s → auto-commit · release early → Confirm card with root-cycling chips, slash-chord inversion detection, and a 3-chord transition view (prev → curr → next + voice-leading arrows) |
 | **Audio playback** | Tone.js + smplr — sampled piano, GM guitars / keys / strings, and 15 drum pattern presets. Switch instruments live mid-playback. |
@@ -229,8 +229,8 @@ Click **Generate** with a slot range selected. The right panel reports compositi
 ranking and voice-leading stages through SSE, then shows three candidates ordered
 by R1 roughness. This capture shows actual F1 A/B/C results. Apply a candidate,
 compare it with the original passage, or switch between alternatives. The model
-picker includes the F-series checkpoints and eleven genre LoRA adapters; R2 remains
-disabled in the product configuration.
+picker includes the F-series checkpoints and eleven genre LoRA adapters. This
+capture uses R1 alone; current builds also use OMT relevance when prepared.
 
 ### MIDI input
 
@@ -473,7 +473,7 @@ TheArtist-DAW/
 └── ai/
     ├── training/                        # Music Transformer/tokenizer and preserved research pipeline
     ├── physics/                         # R1 roughness and related research metrics
-    ├── rag/                             # Preserved R2 research code; disabled in the product
+    ├── rag/                             # Reviewed OMT preparation and separate legacy research code
     └── checkpoints/                     # Gitignored weights fetched from Hugging Face
 ```
 
@@ -484,8 +484,9 @@ passage to its key, and ranks by R1 roughness. Section/cadence rules run **befor
 voice-leading inversions, so the inversions describe the resulting chords.
 The response identifies the actual model or rule source; the frontend computes
 voicings and Roman numerals and plays the arrangement through Tone.js.
-SSE events report the stages actually performed. The R2 retrieval and local
-explanation path is preserved for research and disabled in this product build.
+SSE events report the stages actually performed. Ready OMT retrieval contributes
+text relevance to ranking and adds attributed source excerpts after voice leading.
+Berklee is disabled by default; retrieval makes no LLM or external API calls.
 
 Full-form planning wraps the section generator: Muse Spark proposes form and
 cadences, code validates them, the author's model generates the chords, and a
@@ -522,6 +523,8 @@ npm --prefix /absolute/path/TheArtist-DAW/frontend ci
 
 # Backend
 uv sync --frozen --directory /absolute/path/TheArtist-DAW/backend
+# Prepare the default OMT corpus once (network required for this step only).
+uv run --frozen --directory /absolute/path/TheArtist-DAW/backend python /absolute/path/TheArtist-DAW/backend/scripts/setup_omt.py
 
 # Model checkpoints — download trained weights from HuggingFace so the backend
 # serves real models (skip this and it falls back to a rule-based generator).
@@ -578,7 +581,7 @@ The backend defaults to F1 (`ft_f1`, pop-preserving baseline). Recommended ⭐ p
 
 These weights are gitignored — they live on HuggingFace as public repos under [PearlLeeStudio](https://huggingface.co/PearlLeeStudio) (seven F-series base — incl. the selection-corrected F1 v2 retrain `ft-pop80-v2` — + eleven LoRA adapters, CC BY-NC). Fetch them into `ai/checkpoints/` with `uv run --with huggingface_hub python /absolute/path/TheArtist-DAW/model/_download.py`; without them the backend serves rule-based fallback.
 
-### R1 ranking and preserved R2 research
+### R1 ranking and local theory retrieval
 
 **R1 is active in the product.** The backend uses mean Sethares sensory roughness
 from [`ai/physics/`](ai/physics/) to order the author's model candidates.
@@ -586,16 +589,20 @@ Roughness measures sensory consonance; it is not a next-chord accuracy or listen
 preference score. The same directory also contains Stolzenburg periodicity,
 composite metrics and diversity experiments from the pre-existing research.
 
-**R2 is preserved research code and is disabled in the product.**
-[`ai/rag/`](ai/rag/) contains extraction, chunking, Snowflake embedding, local
-Ollama tagging and retrieval over user-supplied Berklee and Open Music Theory
-corpora. Its optional research path can add retrieval distance to R1 and produce
-Gemma-based explanations. That path requires an explicit
-`THEARTIST_DISABLE_RAG=0` opt-in and supporting corpora/services; it is outside
-the hackathon product configuration. The product's model runtime uses the author's
-Music Transformer and Meta models, and does not run the research embedder or Gemma
-judge. The mix-ratio papers describe the training study, rather than a musical
-quality evaluation of the hackathon planner.
+**OMT retrieval is enabled by default once its corpus is prepared.** The product
+uses local TF-IDF over 29 reviewed prose passages from seven chapters of the
+original [Open Music Theory GitHub edition](https://openmusictheory.github.io/).
+It adds text relevance to R1 ranking and displays related source excerpts with
+attribution and CC BY-SA 4.0 links. These are references, not generated musical
+explanations or evidence of a quality improvement. Berklee is independently
+switchable and **off by default**; public hosts reject enabling it.
+
+[Setup, source controls and license handling](docs/theory-retrieval.md) describe
+the corpus boundaries and missing-data status. The older Snowflake/Chroma/Gemma
+research modules remain separate and are not loaded by the product. The product's
+AI runtime continues to use the author's Music Transformer and Meta models.
+The mix-ratio papers describe the training study, not a quality evaluation of
+this retrieval or the hackathon planner.
 
 The training and evaluation pipeline is included under `ai/training/` (preprocess → dataset splits → config-driven training → evaluation → aggregation, plus the checkpoint-selection audit scripts `check_claims.py` and `model/_verify_release.py` and the selection-criterion analysis under `ai/analysis/`). The experiments themselves (mix-ratio sweep, 13-genre LoRA grid, rank sweep, multi-seed validation) are documented in [arXiv:2605.04998](https://arxiv.org/abs/2605.04998) and [arXiv:2606.07334](https://arxiv.org/abs/2606.07334), and the per-model evaluation summaries live on the [HuggingFace model cards](https://huggingface.co/PearlLeeStudio). Datasets and checkpoints are not redistributed here — data comes from the upstream sources above, checkpoints from the Hub.
 
@@ -617,14 +624,17 @@ Raw datasets are **not redistributed** in this repo. Chordonomicon is CC BY-NC; 
 
 For the LoRA expansion, the 11 target genres draw from Chordonomicon's genre-labeled subsets; see paper §4 for selection-bias notes (e.g., the "electronic" slice is biased toward synthwave / melodic house, "hip-hop" toward jazz-rap / neo-soul).
 
-### Theory retrieval (preserved R2 research)
+### Theory retrieval
 
-The disabled research retrieval path supports two user-supplied corpora:
+- **Open Music Theory** — the default source is a reviewed subset of the original
+  GitHub edition, not the complete v2 book. Setup fetches hash-checked prose only;
+  music examples, images, block quotations and external-link paragraphs are excluded.
+  Retrieved excerpts retain author/editor credit, source, license and modification notices.
+- **The Berklee Book of Jazz Harmony** — disabled by default. Neither its text nor
+  its index is distributed. Explicit private opt-in is separate from the legal
+  permission needed for a particular use; public hosts reject it.
 
-- **Berklee Book of Jazz Harmony** — copyrighted, **not redistributed**. `ai/rag/_setup_corpora.sh` requires you to supply your own legitimate copy.
-- **Open Music Theory v2** — [open license](https://viva.pressbooks.pub/openmusictheory/), re-ingested from the upstream source by the setup script.
-
-The PDF text extraction, paragraph chunking, embedding (Snowflake `arctic-embed-l-v2`), and topic tagging (local LLM via ollama) pipeline lives in [`ai/rag/`](ai/rag/).
+See [theory retrieval](docs/theory-retrieval.md) for configuration and limitations.
 
 ## Project Structure
 
@@ -826,7 +836,7 @@ For the older `/api/generate/chords` programmatic chord-only endpoint (no arrang
 - **Paper sources** — the papers themselves are on arXiv (links above); LaTeX sources and research notes are private.
 - **Trained checkpoints** — published on [HuggingFace](https://huggingface.co/PearlLeeStudio) (CC BY-NC 4.0), fetched via `model/_download.py`.
 - **Raw datasets** — license + size constraints; see [Datasets](#datasets) for upstream sources.
-- **Berklee Book of Jazz Harmony PDF** — copyrighted; supply your own copy to rebuild the R2 `berklee` corpus.
+- **Berklee Book of Jazz Harmony PDF** — copyrighted; disabled by default and excluded from public retrieval. Owning a copy does not itself grant service or redistribution rights.
 - **Internal design notes, deliberation logs, and roadmap drafts** — private.
 
 ## License

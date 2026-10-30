@@ -1,21 +1,9 @@
-"""AI model inference service with lazy loading and graceful fallback.
+"""Own-model candidates, physical roughness and optional theory retrieval.
 
-Generates 3 candidates per request from the chosen checkpoint at three
-temperatures, then re-ranks them by a composite score:
-
-  • R1 — Sethares sensory roughness across the suggestion's transitions
-         (lower = more consonant).
-  • R2 — Berklee Book of Jazz Harmony retrieval distance per transition
-         (lower = closer to an indexed theory passage; pulls voice
-         leading, ii–V–I, modal interchange, tritone substitution,
-         common-tone retention, and ~25 other jazz harmony concepts
-         simultaneously).
-
-Composite = α·R1 + β·R2 (both lower-is-better, currently α=β=1).
-Each axis falls through gracefully if its module is unavailable; if
-both fall through, candidates ship in temperature order. R2, the
-per-transition explanations and the local judge behind them are opt-in
-in this build (THEARTIST_DISABLE_RAG=0, see `rag_disabled`).
+R1 measures Sethares sensory roughness. R2 measures local TF-IDF textual
+relevance to reviewed theory passages: OMT is enabled by default and Berklee
+is disabled. Retrieval relevance is not a musical-quality score. Source notes
+are attributed excerpts; this module never calls an explanation LLM.
 """
 
 from __future__ import annotations
@@ -78,26 +66,10 @@ try:
 except ImportError:
     log.warning("ai/physics not available — Sethares rerank disabled, candidates served in temperature order")
 
-# --- Guarded R2 RAG (theory explanations) ---
-RAG_AVAILABLE = False
-_rag_retriever = None  # lazy-loaded
-_rag_llm_client = None
-_rag_init_lock = threading.Lock()
-_rag_init_failed = False
-_explanation_cache: dict[tuple[str, str], TheoryExplanation] = {}
-# Separate cache for the fast theory-rerank path: just the Berklee
-# retrieval distance, no LLM call. Populated by `_theory_distance` /
-# `_theory_rerank_warmup`. Bounded by chord-symbol-pair space so memory
-# stays small in practice.
-_theory_rerank_cache: dict[tuple[str, str], float] = {}
-try:
-    from openai import OpenAI  # type: ignore[import-untyped]
-    from rag.explain import explain_transition  # type: ignore[import-untyped]
-    from rag.retrieve import Retriever  # type: ignore[import-untyped]
-
-    RAG_AVAILABLE = True
-except ImportError as e:
-    log.warning(f"ai/rag not available — theory explanations disabled ({e})")
+# Product theory retrieval is local and source-isolated. Research Chroma/Gemma
+# modules remain separate and are never imported by this runtime.
+from app.services import theory_rag
+RAG_AVAILABLE = True
 
 # --- Checkpoint paths (paper experiment models) ---
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent
@@ -199,39 +171,14 @@ def dispatch_model_for_genre(genre: str | None) -> str:
         return "ft_f1"
     return target
 
-# Berklee Book of Jazz Harmony only applies to jazz-adjacent genres. RAG
-# (R2 rerank + per-transition explanations) is gated to this family — for
-# pop/rock/country/hip-hop/electronic/etc. the theory book has no relevant
-# passages, so running the LLM judge wastes 5-10s/transition with no quality
-# signal. Pearl 2026-05-09.
-JAZZ_FAMILY_GENRES: set[str] = {"jazz", "blues", "bossa", "bossa nova", "rnb_soul"}
-RAG_ENABLED_GENRES: set[str] = JAZZ_FAMILY_GENRES | {"classical"}
-
-
 def rag_disabled() -> bool:
-    """Whether the R2 rerank, the theory explanations and the local judge stay off.
-
-    Off unless THEARTIST_DISABLE_RAG is explicitly 0: this build's runtime AI is
-    the Music Transformer plus Meta models, and the RAG path would also run the
-    Snowflake embedder and a gemma judge on ollama. An unparseable value raises.
-    """
-    return env_bool("THEARTIST_DISABLE_RAG", True)
+    """Global rollback or both source switches off; OMT is on by default."""
+    return not theory_rag.policy().sources
 
 
 def _should_use_rag(genre: str | None) -> bool:
-    """Centralised gate for the R2 theory-rerank + explanation RAG path.
-
-    Corpus = Berklee Book of Jazz Harmony (jazz-family genres) + Open Music
-    Theory v2 (classical and general harmony). The merged Retriever queries
-    both collections per call and surfaces the closest passages by cosine
-    distance, so a query naturally picks the relevant book. Genres outside
-    these books' coverage skip RAG to avoid noisy LLM-judge wastage.
-    """
-    if rag_disabled() or not RAG_AVAILABLE:
-        return False
-    if genre and genre.lower() not in RAG_ENABLED_GENRES:
-        return False
-    return True
+    """Only report a theory stage when an enabled corpus is actually ready."""
+    return _get_theory_retriever() is not None
 
 
 # Genre alias mapping (frontend → tokenizer).
@@ -611,103 +558,36 @@ def _bars_to_chord_map(
     return chord_map
 
 
-def _get_rag_services() -> tuple[object, object] | tuple[None, None]:
-    """Lazy-load the retriever and OpenAI client on first use, reused thereafter.
-
-    Serialised with a lock so concurrent worker threads don't race to construct
-    chroma's PersistentClient — that race surfaces as "Could not connect to
-    tenant default_tenant" / "RustBindingsAPI ... bindings" when the rust
-    bindings get half-initialised.
-    """
-    global _rag_retriever, _rag_llm_client, _rag_init_failed
-    if rag_disabled() or not RAG_AVAILABLE or _rag_init_failed:
-        return None, None
-    if _rag_retriever is not None:
-        return _rag_retriever, _rag_llm_client
-    with _rag_init_lock:
-        if _rag_retriever is not None:
-            return _rag_retriever, _rag_llm_client
-        if _rag_init_failed:
-            return None, None
-        try:
-            _rag_retriever = Retriever(collections=["berklee", "openmusictheory"])  # type: ignore[name-defined]
-            _rag_llm_client = OpenAI(base_url="http://localhost:11434/v1", api_key="ollama")  # type: ignore[name-defined]
-            log.info("RAG services initialised (Retriever + ollama client)")
-        except Exception as e:
-            log.warning(f"RAG services failed to initialise: {e}")
-            _rag_init_failed = True
-            return None, None
-    return _rag_retriever, _rag_llm_client
-
-
-def _explain_one(a: str, b: str) -> TheoryExplanation | None:
-    """Cached per-transition RAG explanation call."""
-    key = (a, b)
-    if key in _explanation_cache:
-        return _explanation_cache[key]
-    retriever, client = _get_rag_services()
-    if retriever is None or client is None:
+def _get_theory_retriever():
+    if not RAG_AVAILABLE or rag_disabled():
         return None
-    try:
-        e = explain_transition(a, b, retriever, client)  # type: ignore[name-defined]
-        te = TheoryExplanation(
-            chord_a=e.chord_a,
-            chord_b=e.chord_b,
-            concept=e.concept,
-            explanation=e.explanation,
-            chapter=e.top1_chapter,
-            section=e.top1_section,
-            page_start=e.top1_page_start,
-            page_end=e.top1_page_end,
-        )
-        _explanation_cache[key] = te
-        return te
-    except Exception as exc:
-        log.warning(f"RAG explanation failed for {a} → {b}: {exc}")
-        return None
+    return theory_rag.runtime()[0]
 
 
-def _attach_explanations(suggestions: list[Suggestion], selected_measures: list[int]) -> list[Suggestion]:
-    """For each suggestion, compute per-transition theory explanations and attach.
+def _explain_one(a: str, b: str, genre: str | None = None) -> TheoryExplanation | None:
+    retriever = _get_theory_retriever()
+    return retriever.explain(a, b, genre) if retriever is not None else None
 
-    Transitions are parallelised with a ThreadPoolExecutor; the in-memory
-    cache makes repeated (chord_a, chord_b) pairs free across suggestions.
-    Falls through unchanged if RAG is unavailable.
+
+def _attach_explanations(
+    suggestions: list[Suggestion], selected_measures: list[int], genre: str | None = None,
+) -> list[Suggestion]:
+    """Attach at most 16 distinct, attributed source excerpts per suggestion.
+
+    No generated prose, external inference or per-transition worker pool. The
+    active retriever owns its bounded cache, so changing sources cannot reuse a
+    disabled book's hits. Repeated transitions share the same lookup.
     """
-    if rag_disabled() or not RAG_AVAILABLE or os.getenv("THEARTIST_DISABLE_EXPLANATIONS"):
+    if env_bool("THEARTIST_DISABLE_EXPLANATIONS", False):
         return suggestions
-    from concurrent.futures import ThreadPoolExecutor
-
-    # Gather the unique ordered chord sequence per suggestion.
-    seq_per_sug: list[list[str]] = []
-    for s in suggestions:
-        chords: list[str] = []
-        for m in sorted(s.chords.keys(), key=int):
-            chords.extend(s.chords[m])
-        seq_per_sug.append(chords)
-
-    # Unique transitions across all suggestions (cache dedup).
-    all_pairs: list[tuple[str, str]] = []
-    seen: set[tuple[str, str]] = set()
-    for seq in seq_per_sug:
-        for a, b in zip(seq, seq[1:]):
-            if (a, b) not in seen and (a, b) not in _explanation_cache:
-                seen.add((a, b))
-                all_pairs.append((a, b))
-
-    if all_pairs:
-        log.info(f"RAG: computing {len(all_pairs)} new transition explanations (cache has {len(_explanation_cache)})")
-        with ThreadPoolExecutor(max_workers=4) as ex:
-            list(ex.map(lambda ab: _explain_one(*ab), all_pairs))
-
-    # Attach (pull from cache / already computed).
-    for s, seq in zip(suggestions, seq_per_sug):
-        explanations: list[TheoryExplanation] = []
-        for a, b in zip(seq, seq[1:]):
-            te = _explanation_cache.get((a, b)) or _explain_one(a, b)
-            if te is not None:
-                explanations.append(te)
-        s.explanations = explanations or None
+    retriever = _get_theory_retriever()
+    if retriever is None:
+        return suggestions
+    for suggestion in suggestions:
+        sequence = _flatten_suggestion(suggestion)
+        pairs = dict.fromkeys(zip(sequence, sequence[1:]))
+        notes = [retriever.explain(a, b, genre) for a, b in list(pairs)[:16]]
+        suggestion.explanations = [note for note in notes if note is not None] or None
     return suggestions
 
 
@@ -719,59 +599,14 @@ def _flatten_suggestion(s: Suggestion) -> list[str]:
     return out
 
 
-def _theory_distance(a: str, b: str) -> float | None:
-    """Berklee retrieval distance for the transition `a` → `b`.
-
-    Lower distance = closer to an indexed Berklee passage on chord
-    progression / voice leading / cadence. Returns ``None`` when RAG
-    is unavailable so callers can fall through to R1-only ranking.
-
-    Cached by (a, b) pair. Cheap on warm hits; ~50–150 ms on cold.
-    """
-    key = (a, b)
-    if key in _theory_rerank_cache:
-        return _theory_rerank_cache[key]
-    retriever, _ = _get_rag_services()
+def _theory_distance(a: str, b: str, genre: str | None = None) -> float | None:
+    """Textual retrieval distance from enabled sources, not harmonic correctness."""
+    retriever = _get_theory_retriever()
     if retriever is None:
         return None
-    try:
-        # Query template chosen to maximise overlap with Berklee chunks
-        # that discuss chord-to-chord motion (voice leading, cadence,
-        # secondary dominants, modal interchange, etc.).
-        query = (
-            f"{a} to {b}: chord progression, voice leading, "
-            "common tones, cadence, and harmonic function"
-        )
-        hits = retriever.query(query, k=1)  # type: ignore[union-attr]
-        if not hits:
-            return None
-        d = float(hits[0].distance)
-        _theory_rerank_cache[key] = d
-        return d
-    except Exception as exc:
-        log.warning(f"R2 theory rerank lookup failed for {a} → {b}: {exc}")
-        return None
-
-
-def _theory_rerank_warmup(suggestions: list[Suggestion]) -> None:
-    """Pre-populate the theory cache for all unique transitions in parallel.
-
-    Cuts cold-start cost from ~3×4×100 ms serial to ~300 ms wall-clock
-    (4-way thread pool). Free if RAG is disabled.
-    """
-    if rag_disabled() or not RAG_AVAILABLE:
-        return
-    pairs: set[tuple[str, str]] = set()
-    for s in suggestions:
-        flat = _flatten_suggestion(s)
-        for a, b in zip(flat, flat[1:]):
-            if (a, b) not in _theory_rerank_cache:
-                pairs.add((a, b))
-    if not pairs:
-        return
-    from concurrent.futures import ThreadPoolExecutor
-    with ThreadPoolExecutor(max_workers=4) as ex:
-        list(ex.map(lambda ab: _theory_distance(*ab), pairs))
+    hit = retriever.transition(a, b, genre)
+    # No coverage must not earn a better score than a covered transition.
+    return hit.distance if hit is not None else 1.0
 
 
 def _rerank_composite(
@@ -780,7 +615,7 @@ def _rerank_composite(
     beta: float | None = None,
     genre: str | None = None,
 ) -> list[Suggestion]:
-    """Sort suggestions by α·R1 (Sethares) + β·R2 (Berklee retrieval).
+    """Sort by α·R1 (Sethares) + β·R2 (enabled-source textual retrieval).
 
     Both axes are lower-is-better (R1 = mean roughness; R2 = mean retrieval
     distance), so the composite is a weighted sum and the lowest score wins.
@@ -791,15 +626,11 @@ def _rerank_composite(
     R1 / R2 / composite breakdown so quality regressions are diagnosable
     from the server log.
 
-    Safety knobs (env vars, all optional):
-      THEARTIST_DISABLE_RAG         = "0"  # opt in to the R2 rerank and the
-                                            # explanations; unset or "1" keeps
-                                            # both off (see rag_disabled)
-      THEARTIST_DISABLE_R2_RERANK   = "1"  # ship R1-only ranking
-      THEARTIST_DISABLE_EXPLANATIONS = "1"  # skip per-transition LLM
-                                            # explanations (fast path)
-      THEARTIST_RERANK_ALPHA        = "1.0"  # weight on Sethares
-      THEARTIST_RERANK_BETA         = "1.0"  # weight on Berklee
+    OMT is enabled by default; Berklee requires an explicit private-research
+    source switch. THEARTIST_DISABLE_RAG=1 disables both sources;
+    THEARTIST_DISABLE_R2_RERANK=1 disables ranking only, and
+    THEARTIST_DISABLE_EXPLANATIONS=1 disables source notes only.
+    THEARTIST_RERANK_ALPHA / THEARTIST_RERANK_BETA control the two weights.
     """
     if len(suggestions) <= 1:
         return suggestions
@@ -816,17 +647,11 @@ def _rerank_composite(
         except ValueError:
             beta = 1.0
 
-    # R2 (Berklee theory) gated on (a) the build-level RAG opt-in and the R2
-    # knob, (b) RAG availability, (c) genre being in the Berklee Book of Jazz
-    # Harmony's coverage. Pearl 2026-05-09 — non-jazz genres skip the slow LLM judge.
+    # Only score R2 when a selected source has actually loaded.
     r2_disabled = (
-        bool(os.getenv("THEARTIST_DISABLE_R2_RERANK"))
+        env_bool("THEARTIST_DISABLE_R2_RERANK", False)
         or not _should_use_rag(genre)
     )
-
-    # Warm the R2 cache in parallel so per-suggestion scoring is O(cache).
-    if not r2_disabled:
-        _theory_rerank_warmup(suggestions)
 
     def _r1(flat: list[str]) -> float:
         if not PHYSICS_AVAILABLE or len(flat) < 2:
@@ -837,7 +662,7 @@ def _rerank_composite(
     def _r2(flat: list[str]) -> float:
         if r2_disabled or not RAG_AVAILABLE or len(flat) < 2:
             return 0.0
-        ds = [d for d in (_theory_distance(a, b) for a, b in zip(flat, flat[1:])) if d is not None]
+        ds = [d for d in (_theory_distance(a, b, genre) for a, b in zip(flat, flat[1:])) if d is not None]
         return sum(ds) / len(ds) if ds else 0.0
 
     breakdown: list[tuple[float, float, float, Suggestion]] = []
@@ -975,11 +800,11 @@ def _compose_candidates(
 def _score_and_rerank(
     suggestions: list[Suggestion], on_phase, genre: str | None = None,
 ) -> list[Suggestion]:
-    """Stage 3 — composite rerank (R1 Sethares + R2 Berklee retrieval).
-    R2 only fires for jazz-family genres (Pearl 2026-05-09); other genres
-    skip the slow LLM-judged theory axis and rerank by R1 alone. Emits
+    """Stage 3 — composite rerank (R1 Sethares + enabled-source R2 retrieval).
+    Uses ready theory sources, or R1 alone when none are ready. Emits
     `ranking` and reassigns A/B/C labels by score."""
-    on_phase("ranking", {"label": "Scoring consonance and theory grounding"})
+    label = "Scoring consonance and theory relevance" if _should_use_rag(genre) else "Scoring consonance"
+    on_phase("ranking", {"label": label})
     return _rerank_composite(suggestions, genre=genre)
 
 
@@ -1020,14 +845,11 @@ def _explain_each_transition(
     on_phase,
     genre: str | None = None,
 ) -> list[Suggestion]:
-    """Stage 5 — per-transition theory explanations via Berklee RAG +
-    Gemma judgement. Skipped for non-jazz-family genres (the Berklee book
-    has no relevant passages, so the LLM judge wastes 5-10s/transition).
-    Emits `explaining` only when actually running."""
-    if not _should_use_rag(genre) or os.getenv("THEARTIST_DISABLE_EXPLANATIONS"):
+    """Stage 5 — related theory excerpts from enabled, ready sources."""
+    if not _should_use_rag(genre) or env_bool("THEARTIST_DISABLE_EXPLANATIONS", False):
         return suggestions
-    on_phase("explaining", {"label": "Generating per-transition theory explanations"})
-    return _attach_explanations(suggestions, selected_measures)
+    on_phase("explaining", {"label": "Retrieving related theory references"})
+    return _attach_explanations(suggestions, selected_measures, genre)
 
 
 def _has_chords_before(context: list[ContextMeasure], selected_measures: list[int]) -> bool:

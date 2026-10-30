@@ -50,16 +50,31 @@ class GenerateRequest(BaseModel):
         return self
 
 
+class TheoryCitation(BaseModel):
+    source: Literal["omt", "berklee"]
+    title: str
+    url: str = ""
+    authors: list[str] = Field(default_factory=list)
+    editors: list[str] = Field(default_factory=list)
+    license: str
+    license_url: str = ""
+    copyright: str = ""
+    changes: str = ""
+    passage_id: str
+
+
 class TheoryExplanation(BaseModel):
     """Per-transition theory pointer produced by the R2 RAG layer."""
     chord_a: str
     chord_b: str
     concept: str                     # e.g., "ii-V", "V-I", "secondary dominant", "uncovered"
-    explanation: str                 # 2-4 sentence prose
+    explanation: str                 # Product retrieval returns a labeled source excerpt
     chapter: str = ""
     section: str = ""
     page_start: int = 0
     page_end: int = 0
+    kind: Literal["generated", "source_excerpt"] = "generated"
+    citation: TheoryCitation | None = None
 
 
 class Suggestion(BaseModel):

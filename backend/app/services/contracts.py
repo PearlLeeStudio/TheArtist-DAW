@@ -13,6 +13,7 @@ from app.models.score_import import MAX_SCORE_BYTES, MAX_SCORE_MEASURES
 from app.services.env_flags import meta_enabled
 from app.services.llm import LLMConfig
 from app.services.planner import MAX_META_CALLS, MAX_RUN_USD, RUN_BUDGET_S
+from app.services import theory_rag
 
 SCHEMA_VERSION = "1.0"
 MAX_JSON_STATE_BYTES = 1024 * 1024
@@ -91,6 +92,7 @@ def capabilities() -> ContractEnvelope:
         "name": "TheArtist", "transport": "streamable-http", "endpoint": "/mcp/",
         "tools": list(TOOLS),
         "meta": _meta_status(),
+        "rag": theory_rag.status(),
         "contracts": {
             "generate_section": "SectionGenerateRequest / SectionGenerateResponse",
             "build_song": "SongGenerateRequest / SongGenerateResponse",
