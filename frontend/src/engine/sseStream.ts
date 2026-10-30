@@ -29,25 +29,41 @@ export async function* readSSEFrames<T = unknown>(
   const reader = response.body.getReader();
   const decoder = new TextDecoder();
   let buffer = '';
+  let finished = false;
 
-  while (true) {
-    const { value, done } = await reader.read();
-    if (done) break;
-    buffer += decoder.decode(value, { stream: true });
-
-    // Each frame ends with a blank line (\n\n).
-    let idx: number;
-    while ((idx = buffer.indexOf('\n\n')) !== -1) {
-      const block = buffer.slice(0, idx);
-      buffer = buffer.slice(idx + 2);
-      let event = '';
-      let dataLine = '';
-      for (const line of block.split('\n')) {
-        if (line.startsWith('event: ')) event = line.slice(7);
-        else if (line.startsWith('data: ')) dataLine = line.slice(6);
+  try {
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) {
+        finished = true;
+        break;
       }
-      if (!event || !dataLine) continue;
-      yield { event, data: JSON.parse(dataLine) as T };
+      buffer += decoder.decode(value, { stream: true });
+
+      // Each frame ends with a blank line (\n\n).
+      let idx: number;
+      while ((idx = buffer.indexOf('\n\n')) !== -1) {
+        const block = buffer.slice(0, idx);
+        buffer = buffer.slice(idx + 2);
+        let event = '';
+        let dataLine = '';
+        for (const line of block.split('\n')) {
+          if (line.startsWith('event: ')) event = line.slice(7);
+          else if (line.startsWith('data: ')) dataLine = line.slice(6);
+        }
+        if (!event || !dataLine) continue;
+        yield { event, data: JSON.parse(dataLine) as T };
+      }
+    }
+  } finally {
+    // Parser failures, caller errors and early exits must close an unfinished
+    // response. Cleanup must not hide the original transport or domain error.
+    try {
+      if (!finished) await reader.cancel();
+    } catch {
+      // An aborted/errored transport may already refuse cancellation.
+    } finally {
+      reader.releaseLock();
     }
   }
 }
