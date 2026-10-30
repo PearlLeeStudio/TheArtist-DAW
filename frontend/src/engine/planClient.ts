@@ -20,6 +20,7 @@ import { metaHeaders } from './metaSession.ts';
 import { calculateRomanNumeral } from './romanNumeral.ts';
 import { sectionPlacement } from './songForm.ts';
 import { readSSEFrames } from './sseStream.ts';
+import { describeHttpError, formatErrorDetail, postJson } from './httpClient.ts';
 
 export const TARGET_BARS = [16, 32, 48, 64] as const;
 export type TargetBars = (typeof TARGET_BARS)[number];
@@ -273,34 +274,6 @@ export function buildPlanRequest(song: Song, options: PlanOptions): PlanRequest 
   };
 }
 
-/** Readable text for a backend error `detail`: a plain string, or FastAPI's
- *  422 list of `{ loc, msg }` validation errors (as chordGenerator.ts reads it). */
-export function formatErrorDetail(detail: unknown): string | null {
-  if (typeof detail === 'string') return detail.trim() || null;
-  if (!Array.isArray(detail)) return null;
-  const parts = detail.map((item) => {
-    if (typeof item === 'string') return item;
-    if (typeof item !== 'object' || item === null) return '';
-    const { loc, msg } = item as { loc?: unknown; msg?: unknown };
-    const field = Array.isArray(loc) ? loc.filter((p) => p !== 'body').join('.') : '';
-    const text = typeof msg === 'string' ? msg : '';
-    return field && text ? `${field}: ${text}` : text;
-  }).filter(Boolean);
-  return parts.length > 0 ? parts.join('; ') : null;
-}
-
-async function describeHttpError(res: Response): Promise<string> {
-  let detail: string | null = null;
-  try {
-    const body = (await res.json()) as { detail?: unknown; error?: unknown } | null;
-    detail = formatErrorDetail(body?.detail) ?? formatErrorDetail(body?.error);
-  } catch {
-    // not a JSON body
-  }
-  if (detail) return detail;
-  return res.status >= 500 ? `Server error (HTTP ${res.status})` : `Request failed (HTTP ${res.status})`;
-}
-
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
@@ -357,19 +330,9 @@ export async function runPlan(
   request: PlanRequest,
   options: { signal?: AbortSignal; onEvent?: (event: PlanEvent) => void } = {},
 ): Promise<PlanTrace> {
-  let res: Response;
-  try {
-    res = await fetch('/api/plan/song/stream', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...metaHeaders() },
-      body: JSON.stringify(request),
-      signal: options.signal,
-    });
-  } catch (err) {
-    if (options.signal?.aborted) throw err;
-    throw new Error('Could not reach the server. Check the backend connection and try again.', { cause: err });
-  }
-  if (!res.ok) throw new Error(await describeHttpError(res));
+  const res = await postJson('/api/plan/song/stream', request, {
+    signal: options.signal, headers: metaHeaders(),
+  });
 
   let trace: PlanTrace | null = null;
   for await (const { event, data } of readSSEFrames<unknown>(res)) {

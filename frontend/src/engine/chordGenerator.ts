@@ -1,6 +1,7 @@
 import type { Chord, Measure, Song, SlotAddress, SectionType } from '../models/types';
 import { parseChordName, chordToString } from './chordParser.ts';
 import { readSSEFrames } from './sseStream.ts';
+import { formatErrorDetail, postJson } from './httpClient.ts';
 
 export interface TheoryExplanation {
   chord_a: string;
@@ -100,69 +101,6 @@ function _toSource(value: unknown): SuggestionSource | null {
   return value === 'ai' || value === 'rules' || value === 'ai+rules' ? value : null;
 }
 
-/**
- * Readable text for an error `detail` from the backend: a plain string
- * (HTTPException, SSE 'error' event) or FastAPI's 422 list of
- * `{ loc, msg }` validation errors, e.g. "chordCount: Input should be
- * less than or equal to 128".
- */
-function _formatErrorDetail(detail: unknown): string | null {
-  if (typeof detail === 'string') return detail.trim() || null;
-  if (!Array.isArray(detail)) return null;
-  const parts = detail.map((item) => {
-    if (typeof item === 'string') return item;
-    if (typeof item !== 'object' || item === null) return '';
-    const { loc, msg } = item as { loc?: unknown; msg?: unknown };
-    const field = Array.isArray(loc) ? loc.filter((p) => p !== 'body').join('.') : '';
-    const text = typeof msg === 'string' ? msg : '';
-    return field && text ? `${field}: ${text}` : text;
-  }).filter(Boolean);
-  return parts.length > 0 ? parts.join('; ') : null;
-}
-
-async function _describeHttpError(res: Response): Promise<string> {
-  let detail: string | null = null;
-  try {
-    const body = (await res.json()) as { detail?: unknown; error?: unknown } | null;
-    detail = _formatErrorDetail(body?.detail) ?? _formatErrorDetail(body?.error);
-  } catch {
-    // not a JSON body
-  }
-  if (detail) return detail;
-  return res.status >= 500
-    ? `Server error (HTTP ${res.status})`
-    : `Request failed (HTTP ${res.status})`;
-}
-
-/**
- * POST `body` as JSON, adding the `init` fields (if any) to the request.
- * A request that cannot reach the server rejects with `unreachableMessage`
- * (or with the AbortError once `init.signal` has aborted), and an HTTP error
- * status rejects with the server's error detail, or a generic HTTP-status
- * message when the body has none (see _describeHttpError).
- */
-async function _postJson(
-  url: string,
-  body: unknown,
-  unreachableMessage: string,
-  init: { signal?: AbortSignal } = {},
-): Promise<Response> {
-  let res: Response;
-  try {
-    res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-      ...init,
-    });
-  } catch (err) {
-    if (init.signal?.aborted) throw err;
-    throw new Error(unreachableMessage, { cause: err });
-  }
-  if (!res.ok) throw new Error(await _describeHttpError(res));
-  return res;
-}
-
 const _isChordSymbol = (value: unknown): boolean => typeof value === 'string' && value.trim() !== '';
 
 /** A labelled candidate whose chords map measure indexes to two chord symbols. */
@@ -191,8 +129,7 @@ export async function generateChords(
   onPhase?: (phase: GeneratePhase) => void,
 ): Promise<GenerateResult> {
   const body = _buildBody(song, selectedSlots, sectionType, modelKey);
-  const res = await _postJson('/api/generate/stream', body,
-    'Could not reach the server. Check the backend connection and try again.');
+  const res = await postJson('/api/generate/stream', body);
 
   let final: GenerateResult | null = null;
   for await (const { event, data } of readSSEFrames<Record<string, unknown>>(res)) {
@@ -203,7 +140,7 @@ export async function generateChords(
       }
       final = { suggestions, source: _toSource(data.source) };
     } else if (event === 'error') {
-      throw new Error(_formatErrorDetail(data?.detail) || 'The server reported a generation error');
+      throw new Error(formatErrorDetail(data?.detail) || 'The server reported a generation error');
     } else if (onPhase) {
       onPhase({ name: event, ...data } as GeneratePhase);
     }
@@ -235,7 +172,7 @@ export async function generateSection(
     context: _contextMeasures(song.measures.slice(0, startMeasure)),
     modelKey: modelKey ?? null,
   };
-  const res = await _postJson('/api/generate/section/stream', body, 'Could not reach the server', { signal });
+  const res = await postJson('/api/generate/section/stream', body, { signal, unreachableMessage: 'Could not reach the server' });
 
   let result: SectionGenerateResponse | null = null;
   for await (const { event, data } of readSSEFrames<Record<string, unknown>>(res)) {
@@ -243,7 +180,7 @@ export async function generateSection(
       if (!Array.isArray(data.suggestions)) throw new Error('The server sent an invalid section result');
       result = data as unknown as SectionGenerateResponse;
     } else if (event === 'error') {
-      throw new Error(_formatErrorDetail(data.detail) ?? 'The server reported an error');
+      throw new Error(formatErrorDetail(data.detail) ?? 'The server reported an error');
     } else if (onPhase) {
       onPhase({ name: event, ...data } as GeneratePhase);
     }

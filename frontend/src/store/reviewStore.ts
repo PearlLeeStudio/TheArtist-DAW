@@ -15,7 +15,8 @@ import type { Chord, SectionType, SlotAddress, Song, SongSection } from '../mode
 import { parseSuggestionChords, type Suggestion } from '../engine/chordGenerator';
 import { compareCandidate, slotKey, type GenerationComparison } from '../engine/generationComparison';
 import { metaHeaders } from '../engine/metaSession';
-import { formatErrorDetail, planGenre } from '../engine/planClient';
+import { planGenre } from '../engine/planClient';
+import { formatErrorDetail, postJson } from '../engine/httpClient';
 import { sectionContaining } from '../engine/songForm';
 import { useGenerationStore } from './generationStore';
 import { useSongStore } from './songStore';
@@ -169,25 +170,11 @@ function failureText(status: number, body: unknown): string {
 /** POST the review with the browser's session id. Rejects with the server's failure (a 429
  *  says when the allowance resets), an unreachable server, or an answer that is not a review. */
 export async function requestReview(request: ReviewRequest, signal?: AbortSignal): Promise<ReviewResult> {
-  let res: Response;
-  try {
-    res = await fetch('/api/review/candidates', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...metaHeaders() },
-      body: JSON.stringify(request),
-      signal,
-    });
-  } catch (err) {
-    if (signal?.aborted) throw err;
-    throw new Error('Could not reach the server. Check the backend connection and try again.', { cause: err });
-  }
-  let body: unknown = null;
-  try {
-    body = await res.json();
-  } catch {
-    // not a JSON body
-  }
-  if (!res.ok) throw new Error(failureText(res.status, body));
+  const res = await postJson('/api/review/candidates', request, {
+    signal, headers: metaHeaders(),
+    describeError: async (response) => failureText(response.status, await response.json().catch(() => null)),
+  });
+  const body: unknown = await res.json().catch(() => null);
   if (!isReviewResult(body)) throw new Error('The server sent an invalid review');
   return body;
 }
