@@ -316,7 +316,7 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
       aria-labelledby={`${id}-heading`}
       className="m-auto p-0 backdrop:bg-black/60"
       style={{
-        width: 'min(1040px, calc(100vw - 24px))',
+        width: draft ? 'min(1040px, calc(100vw - 24px))' : 'min(720px, calc(100vw - 24px))',
         maxHeight: 'calc(100dvh - 24px)',
         overflow: 'hidden',
         background: 'var(--bg-surface)',
@@ -334,22 +334,42 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
         </header>
 
         <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-5">
-          <div className="flex flex-wrap items-end justify-between gap-3">
-            <div className="flex min-w-0 flex-col gap-2">
-              <label className="flex min-w-0 flex-col gap-1 text-xs" style={mutedStyle}>
-                Score · PDF or image · up to 8 MiB
-                {/* Cleared after each pick, so choosing the same file again still starts an analysis. */}
-                <input ref={fileRef} type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,application/pdf,image/png,image/jpeg,image/webp" className="max-w-full text-sm" onChange={(e) => { void chooseFile(e.target.files?.[0]); e.target.value = ''; }} />
+          <div className="grid gap-6 sm:grid-cols-[208px_minmax(0,1fr)]">
+            <div className="min-w-0">
+              <h3 id={`${id}-file-heading`} className="font-display text-xl font-bold" style={{ color: 'var(--text-heading)' }}>Score</h3>
+              <p id={`${id}-file-hint`} className="mt-1 text-xs" style={mutedStyle}>PDF or image · up to 8 MiB</p>
+              <label
+                className="relative mt-4 flex aspect-square w-full max-w-52 cursor-pointer flex-col items-center justify-center gap-3 border border-dashed p-5 text-center btn-hover focus-within:outline-2 focus-within:outline-offset-4"
+                style={{ ...controlStyle, borderStyle: 'dashed', outlineColor: 'var(--brand-yellow)' }}
+              >
+                {/* Keep the native picker and keyboard focus; the whole square is its target.
+                    Cleared after each pick so selecting the same file starts another analysis. */}
+                <input
+                  ref={fileRef}
+                  type="file"
+                  accept=".pdf,.png,.jpg,.jpeg,.webp,application/pdf,image/png,image/jpeg,image/webp"
+                  aria-labelledby={`${id}-file-heading ${id}-file-action`}
+                  aria-describedby={`${id}-file-hint ${id}-file-name`}
+                  className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                  onChange={(e) => { void chooseFile(e.target.files?.[0]); e.target.value = ''; }}
+                />
+                <span aria-hidden="true" className="text-4xl font-light" style={{ color: 'var(--brand-yellow)' }}>+</span>
+                <span id={`${id}-file-action`} className="text-sm font-semibold">Choose file</span>
+                <span id={`${id}-file-name`} className="line-clamp-2 max-w-full break-all text-xs" style={mutedStyle} title={source?.file.name}>
+                  {source?.file.name ?? 'No file selected'}
+                </span>
               </label>
-              <fieldset disabled={running || reading} className="min-w-0 text-xs">
-                <legend className="mb-2" style={mutedStyle}>Reader</legend>
-                <div className="flex flex-wrap gap-x-5 gap-y-2">
+            </div>
+            <div className="min-w-0 space-y-4 border-t pt-6 sm:border-t-0 sm:border-l sm:pt-0 sm:pl-6" style={{ borderColor: 'var(--border)' }}>
+              <fieldset disabled={running || reading} className="min-w-0">
+                <legend className="mb-4 font-display text-xl font-bold" style={{ color: 'var(--text-heading)' }}>Reader</legend>
+                <div className="flex flex-col gap-1">
                   {([
                     { value: 'auto', label: 'TheArtist + Meta', disabled: !metaAvailable },
                     { value: 'meta', label: 'Meta only', disabled: !fullFileAvailable },
                     { value: 'local', label: 'TheArtist only', disabled: false },
                   ] as const).map((option) => (
-                    <label key={option.value} className="flex items-center gap-2 has-[:disabled]:opacity-50">
+                    <label key={option.value} className="flex min-h-12 cursor-pointer items-center gap-3 text-sm has-[:disabled]:cursor-default has-[:disabled]:opacity-50">
                       <input
                         type="radio"
                         name={`${id}-reader`}
@@ -357,6 +377,7 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
                         checked={readerEngine === option.value}
                         disabled={option.disabled}
                         onChange={() => selectReader(option.value)}
+                        className="h-4 w-4 shrink-0"
                         style={{ accentColor: 'var(--brand-yellow)' }}
                       />
                       {option.label}
@@ -372,10 +393,10 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
                     : 'Meta is off on this server: TheArtist only is available.'}
                 </p>
               )}
-            </div>
-            <div className="flex gap-2">
-              {(reading || running) && <button type="button" className="px-3 py-2 text-xs btn-hover" style={controlStyle} onClick={cancelRecognition}>Cancel</button>}
-              {source && !draft && !running && !reading && <button type="button" onClick={retryAnalysis} className="px-3 py-2 text-xs btn-hover" style={controlStyle}>Try again</button>}
+              {(reading || running || (source && !draft)) && <div className="flex gap-2">
+                {(reading || running) && <button type="button" className="px-3 py-2 text-xs btn-hover" style={controlStyle} onClick={cancelRecognition}>Cancel</button>}
+                {source && !draft && !running && !reading && <button type="button" onClick={retryAnalysis} className="px-3 py-2 text-xs btn-hover" style={controlStyle}>Try again</button>}
+              </div>}
             </div>
           </div>
 
