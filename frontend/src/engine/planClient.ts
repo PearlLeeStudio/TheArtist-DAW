@@ -30,6 +30,7 @@ export const MIN_PLAN_SECTION_BARS = 2;
 const MAX_SKETCH_BARS = 64;
 
 export type PlanContrast = 'low' | 'medium' | 'high';
+export type ChorusMode = 'reuse' | 'new';
 /** meta = Muse Spark plans the form; rules = the genre-default form, no Meta call. */
 export type PlannerKind = 'meta' | 'rules';
 export const CONTRASTS: readonly PlanContrast[] = ['low', 'medium', 'high'];
@@ -41,6 +42,7 @@ export interface PlanOptions {
   planner: PlannerKind;
   /** Checkpoint for every section, as the section flow sends it. */
   modelKey?: string | null;
+  chorusMode?: ChorusMode;
 }
 
 export interface SketchMeasure {
@@ -70,6 +72,7 @@ export interface PlanRequest {
   contrast: PlanContrast;
   planner: PlannerKind;
   modelKey: string | null;
+  chorusMode?: ChorusMode;
 }
 
 // --- The trace (backend PlanTrace) ---
@@ -124,6 +127,8 @@ export interface SectionReport {
   repeatRate: number | null;
   distinctChords: number;
   emptySlots: number;
+  reused?: boolean;
+  sourceSection?: number | null;
 }
 
 export interface JudgeDecision {
@@ -139,7 +144,17 @@ export interface JudgeDecision {
 
 /** A planned section as /api/generate/section returned it, plus the
  *  planner's cadence and the slots the song-form rules wrote. */
-export interface PlanSectionResult extends SectionGenerateResponse {
+export interface PlanSectionResult extends Omit<SectionGenerateResponse, 'source'> {
+  source: 'ai' | 'rules' | 'reuse';
+  reuse?: {
+    origin: 'sketch' | 'section';
+    sectionIndex: number | null;
+    startMeasure: number;
+    source: 'sketch' | 'ai' | 'rules';
+    modelUsed: string | null;
+    retainedSlots: number[];
+    changedSlots: number[];
+  } | null;
   cadence: string;
   /** Section-relative chord slot indices written by the rules, not the model. */
   rulesSlots: number[];
@@ -271,6 +286,7 @@ export function buildPlanRequest(song: Song, options: PlanOptions): PlanRequest 
     contrast: options.contrast,
     planner: options.planner,
     modelKey: options.modelKey ?? null,
+    ...(options.chorusMode ? { chorusMode: options.chorusMode } : {}),
   };
 }
 

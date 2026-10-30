@@ -45,6 +45,7 @@ import {
   sketchBars,
   type MetaCapability,
   type PlanContrast,
+  type ChorusMode,
   type PlannerKind,
   type TargetBars,
 } from '../../engine/planClient';
@@ -182,6 +183,7 @@ export default function SongFormDialog({ onClose, onGenerated, onEditSections }:
     () => targets.includes(DEFAULT_TARGET_BARS) ? DEFAULT_TARGET_BARS : (targets[0] ?? DEFAULT_TARGET_BARS));
   const [wantOutro, setWantOutro] = useState(true);
   const [contrast, setContrast] = useState<PlanContrast>('medium');
+  const [chorusMode, setChorusMode] = useState<ChorusMode>('reuse');
   // null until /api/capabilities answers (or when it does not): a run then
   // shows the server's own answer in this dialog.
   const [meta, setMeta] = useState<MetaCapability | null>(null);
@@ -279,7 +281,7 @@ export default function SongFormDialog({ onClose, onGenerated, onEditSections }:
   const startRun = async (planner: PlannerKind) => {
     if (blocker !== null || busy || planRunningRef.current || (planner === 'meta' && metaOff)) return;
     planRunningRef.current = true;
-    await startPlan({ targetBars, wantOutro, contrast, planner, modelKey });
+    await startPlan({ targetBars, wantOutro, contrast, chorusMode, planner, modelKey });
     if (!planRunningRef.current) return;
     planRunningRef.current = false;
     const result = usePlanStore.getState();
@@ -560,7 +562,19 @@ export default function SongFormDialog({ onClose, onGenerated, onEditSections }:
                 value={contrast}
                 onChange={setContrast}
               />
+              <ChoiceRow<ChorusMode>
+                label="Chorus returns"
+                options={[{ value: 'reuse', label: 'Keep the theme' }, { value: 'new', label: 'New progression' }]}
+                value={chorusMode}
+                onChange={setChorusMode}
+              />
             </fieldset>
+
+            {chorusMode === 'reuse' && (
+              <p className="text-xs" style={labelStyle}>
+                Same-length choruses keep the first progression; the ending follows the form.
+              </p>
+            )}
 
             {/* The sketch as the planner sees it: the song up to its last used bar. */}
             <p className="text-xs" style={labelStyle}>

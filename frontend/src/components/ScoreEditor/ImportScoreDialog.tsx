@@ -3,6 +3,7 @@ import type { CSSProperties, KeyboardEvent } from 'react';
 import type { Song } from '../../models/types';
 import { STANDARD_KEYS } from '../../engine/keySignatures';
 import { metaHeaders } from '../../engine/metaSession';
+import { beginTiming } from '../../engine/experienceTiming.ts';
 import { fetchMetaCapability, type MetaCapability } from '../../engine/planClient';
 import { SECTION_GROUPS, isSectionType, sectionLabel, sectionsInGroup } from '../../engine/songForm';
 import {
@@ -237,6 +238,7 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
     setStatus(engine === 'meta' ? 'Analyzing full file with Meta…' : engine === 'auto' ? 'Analyzing harmony and form with Meta…' : 'Analyzing score…');
     let timedOut = false;
     const timer = window.setTimeout(() => { timedOut = true; controller.abort(); }, ANALYSIS_TIMEOUT_MS);
+    const finish = beginTiming('import.review', engine);
     try {
       const dataBase64 = await fileBase64(selected.file);
       if (!isCurrent(sequence)) return;
@@ -255,6 +257,7 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
       const created = createScoreImportDraft(recognized, selected.file.name);
       setDraft(created);
       setStatus(scoreImportReadyStatus(created, engine));
+      finish();
     } catch (caught) {
       if (!isCurrent(sequence)) return;
       setStatus('');
@@ -263,6 +266,7 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
           : caught instanceof Error ? caught.message : 'The score could not be analyzed. Try again.');
     } finally {
       window.clearTimeout(timer);
+      finish(timedOut ? 'timeout' : controller.signal.aborted ? 'cancelled' : 'error');
       if (isCurrent(sequence)) {
         runningRef.current = false;
         controllerRef.current = null;

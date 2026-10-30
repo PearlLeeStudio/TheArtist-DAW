@@ -23,6 +23,7 @@ import * as Tone from 'tone';
 import { Soundfont, SplendidGrandPiano, ElectricPiano } from 'smplr';
 import { getInstrumentOutput } from './mixer';
 import type { InstrumentLayer } from './audioMixer';
+import { beginTiming } from './experienceTiming.ts';
 
 /**
  * Pearl 2026-05-09 — Logic Pro 퀄리티 요청. Tier-1 (curated, high quality):
@@ -130,6 +131,7 @@ export function preloadInstruments(
 ): Promise<void> {
   const wanted = [...new Set(names.filter((n): n is string => !!n))];
   if (wanted.length === 0) return Promise.resolve();
+  const finish = beginTiming('instrument.ready', wanted.every((name) => isInstrumentReady(name, layer)) ? 'warm' : 'cold');
   const loads = wanted.map((name) => {
     const inst = getInstrument(name, layer);
     // getInstrument() already attached a .catch, so this .then chain only
@@ -137,9 +139,10 @@ export function preloadInstruments(
     return inst ? Promise.resolve(inst.load).then(() => undefined, () => undefined) : Promise.resolve();
   });
   return new Promise<void>((resolve) => {
-    const timeout = setTimeout(resolve, timeoutMs);
+    const timeout = setTimeout(() => { finish('timeout'); resolve(); }, timeoutMs);
     void Promise.all(loads).then(() => {
       clearTimeout(timeout);
+      finish(wanted.every((name) => isInstrumentReady(name, layer)) ? 'ok' : 'error');
       resolve();
     });
   });

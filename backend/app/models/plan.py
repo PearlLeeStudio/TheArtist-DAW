@@ -72,6 +72,9 @@ class PlanRequest(BaseModel):
     targetBars: TargetBars = Field(..., description="Total length of the song, sketch included")
     wantOutro: bool = False
     contrast: Literal["low", "medium", "high"] = "medium"
+    chorusMode: Literal["reuse", "new"] = Field(
+        default="new", description="reuse keeps the first complete same-length chorus, adapting only its planned ending; new composes each chorus independently",
+    )
     planner: Literal["meta", "rules"] = Field(
         default="meta", description="meta = Muse Spark plans the form; rules = the genre-default form, no Meta call",
     )
@@ -188,6 +191,8 @@ class SectionReport(BaseModel):
     repeatRate: float | None     # share equal to the same slot of the material before it; null without any
     distinctChords: int
     emptySlots: int
+    reused: bool = False
+    sourceSection: int | None = None
 
 
 class JudgeTarget(BaseModel):
@@ -206,6 +211,16 @@ class JudgeDecision(BaseModel):
     latencyMs: int
 
 
+class ChorusReuse(BaseModel):
+    origin: Literal["sketch", "section"]
+    sectionIndex: int | None = None
+    startMeasure: int
+    source: Literal["sketch", "ai", "rules"]
+    modelUsed: str | None = None
+    retainedSlots: list[int]
+    changedSlots: list[int]
+
+
 class PlanSectionResult(SectionGenerateResponse):
     """A planned section as /api/generate/section returned it, plus the planner's
     cadence and the slots the song-form rules decided."""
@@ -215,6 +230,8 @@ class PlanSectionResult(SectionGenerateResponse):
     reason: str
     cites: list[PlanCite]
     regenerated: bool = False
+    source: Literal["ai", "rules", "reuse"]
+    reuse: ChorusReuse | None = None
 
 
 class PlanError(BaseModel):

@@ -1,4 +1,5 @@
 import * as Tone from 'tone';
+import { beginTiming } from './experienceTiming.ts';
 import type { Song, SlotAddress, Chord, Arrangement, Measure } from '../models/types';
 import { guitarVoicingNotes, resolvePianoVoicing } from './voicingEngine';
 import { scheduleDrumMeasure, clearDrumSchedule, setCurrentDrumPattern, setDrumVolume, swingDelay, DRUM_STEPS_PER_BEAT } from './drums';
@@ -395,6 +396,8 @@ export function schedulePlayback(
  * paused (cancelPendingStart) while it waited for audio and samples.
  */
 export async function startPlayback(): Promise<boolean> {
+  const finish = beginTiming('play.transport', audioStarted ? 'warm-context' : 'cold-context');
+  try {
   const generation = scheduleGeneration;
   await Tone.start();
   audioStarted = true;
@@ -406,11 +409,16 @@ export async function startPlayback(): Promise<boolean> {
     preloadInstruments([pendingBassInstrument], SAMPLE_WAIT_MS, 'bass'),
     pendingPiano ? pianoLoaded() : undefined,
   ]);
-  if (generation !== scheduleGeneration) return false;
+  if (generation !== scheduleGeneration) { finish('cancelled'); return false; }
   Tone.getTransport().start();
   isPlaying = true;
   isPaused = false;
+  finish();
   return true;
+  } catch (error) {
+    finish('error');
+    throw error;
+  }
 }
 
 /** A startPlayback() still waiting on samples will not start. */

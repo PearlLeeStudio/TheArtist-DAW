@@ -2,6 +2,9 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
+import { installTimingConsole } from './engine/experienceTiming.ts'
+
+installTimingConsole()
 
 // `?reset=1` wipes everything the app keeps in localStorage (current song,
 // saved sessions, Generate and Play settings, theme), drops the parameter

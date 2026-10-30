@@ -112,6 +112,13 @@ test('an empty score sends no sketch, and a song saved with the old bossa nova g
   assert.equal(request.modelKey, null);
 });
 
+test('chorus choice is carried explicitly without mutating a locked sketch', () => {
+  const before = structuredClone(song);
+  assert.equal(buildPlanRequest(song, { ...options, chorusMode: 'reuse' }).chorusMode, 'reuse');
+  assert.equal(buildPlanRequest(song, { ...options, chorusMode: 'new' }).chorusMode, 'new');
+  assert.deepEqual(song, before);
+});
+
 test('no genre, a target that leaves no room and a sketch too long to plan are refused before any request', () => {
   assert.match(planBlocker({ ...song, genre: null }) ?? '', /Pick a genre/);
   assert.throws(() => buildPlanRequest({ ...song, genre: null }, options), /Pick a genre/);

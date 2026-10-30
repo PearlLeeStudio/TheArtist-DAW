@@ -25,11 +25,12 @@ import {
 } from '../engine/planClient';
 import { CHORDS_PER_BAR, sectionLabel } from '../engine/songForm';
 import { useSongStore } from './songStore';
+import { beginTiming } from '../engine/experienceTiming.ts';
 
 export type PlanStatus = 'idle' | 'running' | 'done' | 'failed';
 export type PlanChipStep = 'plan' | 'validate' | 'revise' | 'generate_section' | 'judge' | 'error';
 /** Who did the step: Muse Spark, the author's chord model, or the rules. */
-export type PlanChipBadge = 'Muse Spark plan' | 'own model' | 'rules';
+export type PlanChipBadge = 'Muse Spark plan' | 'own model' | 'rules' | 'reused chorus';
 
 /** One step of the run as the band shows it, in run order. */
 export interface PlanChip {
@@ -98,8 +99,10 @@ function sectionChip(section: PlanSectionResult): PlanChip {
     ok: true,
     label: `${sectionLabel(section.sectionType)} · ${section.bars} bars${section.regenerated ? ' · regenerated' : ''}`,
     // The backend's rule-based generator answers as 'rules' when the model is unavailable.
-    badge: section.source === 'ai' ? 'own model' : 'rules',
-    note: rules > 0 ? `cadence: rules (${rules})` : null,
+    badge: section.source === 'reuse' ? 'reused chorus' : section.source === 'ai' ? 'own model' : 'rules',
+    note: section.reuse
+      ? `from bar ${section.reuse.startMeasure + 1} · ${section.reuse.changedSlots.length} ending slots changed`
+      : rules > 0 ? `cadence: rules (${rules})` : null,
     latencyMs: null,
     costUsd: null,
     requestId: null,
@@ -211,10 +214,12 @@ export const usePlanStore = create<PlanState>((set, get) => {
       controller = current;
       const runId = get().runId + 1;
       set({ ...idleState(), runId, status: 'running', planner: options.planner });
+      const finish = beginTiming('form.result', options.planner);
       try {
         const request = buildPlanRequest(useSongStore.getState().song, options);
         set({ request });
         const trace = await runPlan(request, { signal: current.signal, onEvent: onEventFor(runId) });
+        finish(trace.status === 'ok' ? 'ok' : 'error');
         if (!isCurrent(runId)) return;
         if (trace.status === 'ok') {
           set({ status: 'done', sections: trace.sections, spendUsd: trace.spendUsd, trace });
@@ -228,6 +233,7 @@ export const usePlanStore = create<PlanState>((set, get) => {
           }));
         }
       } catch (err) {
+        finish(current.signal.aborted ? 'cancelled' : 'error');
         if (!isCurrent(runId) || current.signal.aborted) return;
         const message = err instanceof Error ? err.message : String(err);
         set((state) => ({ status: 'failed', error: message, chips: [...state.chips, errorChip('failed', message)] }));

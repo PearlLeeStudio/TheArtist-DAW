@@ -53,6 +53,7 @@ from app.models.schemas import CADENCE_TYPES, ContextMeasure, SectionGenerateReq
 from app.models.sections import CHORDS_PER_BAR, SECTION_INFO, SECTION_TYPES
 from app.routes.generate import compose_section
 from app.services.key_anchor import _chord_pcs
+from app.services.chorus_memory import reuse_chorus
 from app.services.llm import (
     BudgetExceeded,
     LedgerError,
@@ -201,6 +202,10 @@ non-loop section with fewer than 2 distinct chords, or empty slots. Loop section
 chromatic chords. Accept when nothing stands out: a regeneration costs time and is not guaranteed to
 improve. Reply with one JSON object {{"decision", "targets": [{{"section", "reason"}}]}} and nothing else."""
 
+JUDGE_SYSTEM_PROMPT += """ Reused choruses are intentional user-selected repetition, not new model slots.
+Do not request regeneration of a reused section. If its generated source needs correction,
+target sourceSection instead; the controller refreshes dependent reprises. A sketch source is locked."""
+
 _ROMAN = re.compile(r"([#b]*)([ivIV]+)")
 _TRAILING_ONE = 1  # a leftover of one bar is folded into the section before it
 
@@ -274,7 +279,11 @@ def _plan_messages(request: PlanRequest) -> list[dict[str, str]]:
         "plan": {"barsToPlan": request.targetBars - len(request.measures),
                  "firstBar": len(request.measures), "maxSections": MAX_PLAN_SECTIONS},
     }
-    return [{"role": "system", "content": PLAN_SYSTEM_PROMPT},
+    prompt = PLAN_SYSTEM_PROMPT
+    if request.chorusMode == "reuse":
+        payload["chorusMode"] = "reuse"
+        prompt += " Same-length choruses reuse the first complete chorus, adapting only the planned cadence. Keep returning chorus lengths consistent when musically appropriate."
+    return [{"role": "system", "content": prompt},
             {"role": "user", "content": json.dumps(payload, ensure_ascii=False, separators=(",", ":"))}]
 
 
@@ -440,7 +449,7 @@ def section_report(index: int, section: PlanSectionResult, before: list[str | No
     right before the section (the previous section, else the sketch's tail) for the repeat rate."""
     chords = _flat_chords(section)
     collection = _key_collection(key)
-    model_slots = [i for i in range(len(chords)) if i not in set(section.rulesSlots)]
+    model_slots = [] if section.reuse else [i for i in range(len(chords)) if i not in set(section.rulesSlots)]
     symbols = [_symbol(chords[i]) for i in model_slots]
     filled = [symbol for symbol in symbols if symbol]
     outside = sum(1 for symbol in filled if not _in_key(symbol, collection))
@@ -451,6 +460,7 @@ def section_report(index: int, section: PlanSectionResult, before: list[str | No
         outsideKey=round(outside / len(filled), 3) if filled else 0.0,
         repeatRate=round(repeats / len(comparable), 3) if comparable else None,
         distinctChords=len(set(filled)), emptySlots=len(symbols) - len(filled),
+        reused=section.reuse is not None, sourceSection=section.reuse.sectionIndex if section.reuse else None,
     )
 
 
@@ -648,6 +658,9 @@ def _generate_section(run: _Run, index: int, regenerated: bool = False) -> PlanS
     planned = run.plan.sections[index]
     request = run.request
     run.check_clock()
+    reprise = reuse_chorus(request, run.plan, run.sections, index)
+    if reprise is not None:
+        return reprise
     if run.generation_ms >= OWN_MODEL_BUDGET_S * 1000:
         raise PlanFailure("timeout", f"the run's {OWN_MODEL_BUDGET_S:g} s of chord-model time is used up")
     section_request = SectionGenerateRequest(
@@ -730,7 +743,8 @@ def _judge_loop(run: _Run) -> None:
     regenerated: set[int] = set()
     for attempt in range(1, MAX_JUDGMENTS + 1):
         decision = _judge(run, attempt)
-        targets = [t.section for t in decision.targets if t.section not in regenerated]
+        targets = [t.section for t in decision.targets
+                   if t.section not in regenerated and run.sections[t.section].reuse is None]
         if decision.decision == "accept" or not targets:
             return
         for index in targets:
@@ -738,6 +752,16 @@ def _judge_loop(run: _Run) -> None:
             section = _generate_section(run, index, regenerated=True)
             run.sections[index] = section
             run.emit("generate_section", {"index": index, **section.model_dump()})
+        # A regenerated source must not leave its later choruses pointing at obsolete chords.
+        assert run.plan is not None
+        for index, section in enumerate(run.sections):
+            if section.reuse and section.reuse.sectionIndex in targets:
+                run.check_clock()
+                refreshed = reuse_chorus(run.request, run.plan, run.sections, index)
+                if refreshed is None:
+                    raise PlanFailure("generation", "The chorus source is no longer reusable")
+                run.sections[index] = refreshed
+                run.emit("generate_section", {"index": index, **refreshed.model_dump()})
 
 
 def _finish(run: _Run, failure: PlanFailure) -> None:

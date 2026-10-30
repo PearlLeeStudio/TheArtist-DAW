@@ -283,6 +283,28 @@ test('the rules planner is labelled rules on the plan chip and the sections keep
   usePlanStore.getState().dismiss();
 });
 
+test('a reused chorus retains its source through the stream and Apply/Undo', async (t) => {
+  useSongStore.getState().setSong(sketchSong());
+  const before = structuredClone(useSongStore.getState().song);
+  const reused = sectionResult(0, 'chorus', 2, 8, { source: 'reuse', modelUsed: null,
+    reuse: { origin: 'sketch', sectionIndex: null, startMeasure: 0, source: 'sketch', modelUsed: null,
+      retainedSlots: Array.from({ length: 14 }, (_, i) => i), changedSlots: [14, 15] } });
+  const sections = [reused, sectionResult(1, 'outro', 10, 6)];
+  t.mock.method(globalThis, 'fetch', async () => streamResponse([
+    frame('generate_section', { index: 0, ...reused, t_ms: 1 }),
+    frame('complete', trace({ sections })),
+  ]));
+  await usePlanStore.getState().startPlan({ ...options, chorusMode: 'reuse' });
+  assert.deepEqual(chipSummary()[0], ['Chorus · 8 bars', 'reused chorus', 'from bar 1 · 2 ending slots changed', true]);
+  assert.deepEqual(usePlanStore.getState().trace?.sections[0].reuse, reused.reuse);
+  usePlanStore.getState().applyPlan();
+  assert.equal(useSongStore.getState().song.measures.length, 16);
+  assert.deepEqual(useSongStore.getState().song.measures.slice(0, 2), before.measures.slice(0, 2));
+  usePlanStore.getState().undoPlan();
+  assert.deepEqual(useSongStore.getState().song, before);
+  usePlanStore.getState().dismiss();
+});
+
 test('a section the backend\'s rule-based generator answered is labelled rules, and a regeneration replaces its entry', async (t) => {
   useSongStore.getState().setSong(sketchSong());
   const sections = [sectionResult(0, 'chorus', 2, 8, { source: 'rules', modelUsed: null }), sectionResult(1, 'outro', 10, 6)];

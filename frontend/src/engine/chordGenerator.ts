@@ -2,6 +2,7 @@ import type { Chord, Measure, Song, SlotAddress, SectionType } from '../models/t
 import { parseChordName, chordToString } from './chordParser.ts';
 import { readSSEFrames } from './sseStream.ts';
 import { formatErrorDetail, postJson } from './httpClient.ts';
+import { timeOperation } from './experienceTiming.ts';
 
 export interface TheoryExplanation {
   chord_a: string;
@@ -141,26 +142,28 @@ export async function generateChords(
   modelKey?: string,
   onPhase?: (phase: GeneratePhase) => void,
 ): Promise<GenerateResult> {
-  const body = _buildBody(song, selectedSlots, sectionType, modelKey);
-  const res = await postJson('/api/generate/stream', body);
+  return timeOperation('generate.result', 'default', async () => {
+    const body = _buildBody(song, selectedSlots, sectionType, modelKey);
+    const res = await postJson('/api/generate/stream', body);
 
-  let final: GenerateResult | null = null;
-  for await (const { event, data } of readSSEFrames<Record<string, unknown>>(res)) {
-    if (event === 'result') {
-      const suggestions = data?.suggestions;
-      if (!Array.isArray(suggestions) || suggestions.length === 0 || !suggestions.every(_isSuggestion)) {
-        throw new Error('The server sent an invalid generation result');
+    let final: GenerateResult | null = null;
+    for await (const { event, data } of readSSEFrames<Record<string, unknown>>(res)) {
+      if (event === 'result') {
+        const suggestions = data?.suggestions;
+        if (!Array.isArray(suggestions) || suggestions.length === 0 || !suggestions.every(_isSuggestion)) {
+          throw new Error('The server sent an invalid generation result');
+        }
+        final = { suggestions, source: _toSource(data.source) };
+      } else if (event === 'error') {
+        throw new Error(formatErrorDetail(data?.detail) || 'The server reported a generation error');
+      } else if (onPhase) {
+        onPhase({ name: event, ...data } as GeneratePhase);
       }
-      final = { suggestions, source: _toSource(data.source) };
-    } else if (event === 'error') {
-      throw new Error(formatErrorDetail(data?.detail) || 'The server reported a generation error');
-    } else if (onPhase) {
-      onPhase({ name: event, ...data } as GeneratePhase);
     }
-  }
 
-  if (!final) throw new Error('The generation stream ended without a result. Please try again.');
-  return final;
+    if (!final) throw new Error('The generation stream ended without a result. Please try again.');
+    return final;
+  });
 }
 
 /**
@@ -177,29 +180,31 @@ export async function generateSection(
   onPhase?: (phase: GeneratePhase) => void,
   signal?: AbortSignal,
 ): Promise<SectionGenerateResponse> {
-  const { song, sectionType, chordCount, startMeasure, modelKey } = params;
-  const body = {
-    ..._songFields(song),
-    sectionType,
-    chordCount,
-    context: _contextMeasures(song.measures.slice(0, startMeasure)),
-    modelKey: modelKey ?? null,
-  };
-  const res = await postJson('/api/generate/section/stream', body, { signal, unreachableMessage: 'Could not reach the server' });
+  return timeOperation('section.result', 'default', async () => {
+    const { song, sectionType, chordCount, startMeasure, modelKey } = params;
+    const body = {
+      ..._songFields(song),
+      sectionType,
+      chordCount,
+      context: _contextMeasures(song.measures.slice(0, startMeasure)),
+      modelKey: modelKey ?? null,
+    };
+    const res = await postJson('/api/generate/section/stream', body, { signal, unreachableMessage: 'Could not reach the server' });
 
-  let result: SectionGenerateResponse | null = null;
-  for await (const { event, data } of readSSEFrames<Record<string, unknown>>(res)) {
-    if (event === 'result') {
-      if (!Array.isArray(data.suggestions)) throw new Error('The server sent an invalid section result');
-      result = data as unknown as SectionGenerateResponse;
-    } else if (event === 'error') {
-      throw new Error(formatErrorDetail(data.detail) ?? 'The server reported an error');
-    } else if (onPhase) {
-      onPhase({ name: event, ...data } as GeneratePhase);
+    let result: SectionGenerateResponse | null = null;
+    for await (const { event, data } of readSSEFrames<Record<string, unknown>>(res)) {
+      if (event === 'result') {
+        if (!Array.isArray(data.suggestions)) throw new Error('The server sent an invalid section result');
+        result = data as unknown as SectionGenerateResponse;
+      } else if (event === 'error') {
+        throw new Error(formatErrorDetail(data.detail) ?? 'The server reported an error');
+      } else if (onPhase) {
+        onPhase({ name: event, ...data } as GeneratePhase);
+      }
     }
-  }
-  if (!result) throw new Error('The stream ended without a result');
-  return result;
+    if (!result) throw new Error('The stream ended without a result');
+    return result;
+  });
 }
 
 /**
