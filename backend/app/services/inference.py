@@ -181,15 +181,9 @@ def _should_use_rag(genre: str | None) -> bool:
     return _get_theory_retriever() is not None
 
 
-# Genre alias mapping (frontend → tokenizer).
-# The tokenizer was trained on the five genres above; "classical" is
-# accepted from upstream callers (TheVoyager derives it from
-# serene/pastoral mood) but mapped to the unconditioned bucket so the
-# prompt does not carry an unknown genre token. Unknown genres
-# generally fall through to "none" via the .get default below.
-# After R4 LoRA expansion, extra-genre tokens (country/funk/gospel/etc.) are
-# in the extended tokenizer; tokenizer extension is loaded only when serving
-# a LoRA model.
+# Genre aliases for the always-served 359-token tokenizer. Base checkpoints
+# expand from 351 tokens with new genre rows initialized from [GENRE:none];
+# LoRA embedding overlays supply learned genre rows. Unknown genres use none.
 _GENRE_MAP = {
     "bossa nova": "bossa",
     "bossa": "bossa",

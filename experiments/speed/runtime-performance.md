@@ -28,8 +28,11 @@ time, Meta planning/judging and RAG are excluded. Timing order alternates.
 
 All 30 pairs have identical musical results and provenance after excluding
 generated IDs and elapsed-time fields. Raw samples and output hashes are in
-[inference_cache.json](inference_cache.json). Reproduce with the project's dev
-wrapper: `py -m scripts.inference_benchmark --out <absolute-output.json>`.
+[inference_cache.json](inference_cache.json). Reproduce with RAG explicitly disabled (the product now defaults OMT on):
+
+```sh
+THEARTIST_DISABLE_RAG=1 uv run --frozen --directory /absolute/path/TheArtist-DAW/backend python -m scripts.inference_benchmark --out /absolute/path/benchmark.json
+```
 The three installed checkpoints were loaded locally; no model or API download
 is part of the measurement. This sample establishes preserved results on these
 inputs, not better musical quality or bitwise equivalence on every device.
@@ -85,10 +88,10 @@ claimed.
 
 ## Quality and remaining work
 
-RAG remains disabled. The retained research retriever requires a separate
-Snowflake embedding model and non-distributed theory collections, and its old
-explanation path uses another research model. Enabling it would not constitute
-a validated product improvement under the Music Transformer + Meta runtime
-restriction. A product RAG path needs permitted source material, an appropriate
-retriever, bounded cached retrieval and a quality/latency comparison. These
-changes do not claim a new quality gain or add a model call.
+These measurements used **RAG off**. The product has since gained default-on
+[local OMT retrieval](../../docs/theory-retrieval.md), with Berklee disabled and
+no additional embedding or explanation model. The old Snowflake/Chroma/Gemma
+research path remains outside the product. The timing table is a controlled
+KV-cache comparison, not a benchmark of the current end-to-end default. A broader
+OMT-on/off quality and latency comparison, live Meta import timing, and audible
+instrument-switch timing remain unmeasured.

@@ -4,9 +4,10 @@ A DAW-side client of the shared music service: the editor's arrangement
 (voicings, comping rhythm, swing, bass line) exported as a
 [Scripter](https://support.apple.com/guide/logicpro/use-the-scripter-plug-in-lgcecc16550/mac)
 MIDI FX script that plays inside Logic Pro and follows Logic's transport.
-It is generated from the same `ExportSpec` and note placement as the MIDI
-export (`backend/app/services/smf_export.py`), so what Logic plays is what
-Play and the `.mid` file play.
+It uses the MIDI exporter's shared harmony/bass note placement
+(`backend/app/services/smf_export.py`). The script omits drums, and Logic's
+instrument and controller handling determine the sound. Note parity is tested;
+audible equivalence and transport behavior in the real host remain unverified.
 
 ## The song form is the frame
 

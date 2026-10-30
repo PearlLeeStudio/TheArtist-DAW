@@ -115,8 +115,8 @@ ai/checkpoints/ft_f1_lora_<genre>/embedding_extension.pt
 The Hub repos store the adapter files flat at the repo root; the downloader
 re-nests them under `adapter/` (mirroring `ai/checkpoints/`) so
 `PeftModel.from_pretrained` and the embedding overlay load without further moves.
-One internal selector key has no Hub source and stays unavailable
-unless trained locally.
+The product registers exactly these 18 released selections (seven base models
+and eleven adapters). Their availability depends on the local checkpoint files.
 
 ## Citation
 

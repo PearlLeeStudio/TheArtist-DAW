@@ -17,8 +17,8 @@ same rules:
   is a wrong answer in the "all" columns, not a skipped row.
 - **The Meta switch.** `THEARTIST_META_ENABLED=0` turns every Meta-backed path
   off at `get_client()`; those paths then report *disabled* (HTTP 503) instead of
-  calling the API or pretending to succeed. Evaluation scripts build their own
-  clients and still obey the ledger caps.
+  calling the API or pretending to succeed. Evaluation scripts may build their own clients independently of this switch;
+  read each runner's controls. They still obey their dedicated ledger caps.
 
 | # | Addition | Question | Before | After | Metrics | Data (N) | Results |
 |---|---|---|---|---|---|---|---|
@@ -29,6 +29,14 @@ same rules:
 | 5 | Import source flow and failure cases | Do note-based PDF analysis and full-file PNG reading recover the authored chords, and what form suggestions do they produce? | — (four pipeline checks, not a paired benchmark) | Local notes + Meta harmony/form for vector PDFs; Standard Meta full-file reading for PNG | Exact chord comparison; reviewed versus local bars; separate form suggestions; request IDs/tokens/cost | Four self-authored fixtures: C and F single-bar PDFs, a C8→F8→C4 twenty-bar PDF, and a four-bar notes-only PNG | [Import evaluation](../experiments/import_eval/README.md): PDFs 1/1, 1/1 and 20/20 (last four long-PDF bars remained local, not Meta-reviewed); PNG **1/4** despite high confidence. Form ranges are reported separately with no form-accuracy score. 8 calls, $0.04695955. No real-score accuracy claim |
 | 6 | Speed gate | Is a 32-bar section generated in ≤ 5 s on the serving host? | before the full-length fix | after | Wall-clock per section, RAG off | `backend/scripts/speed_probe.py` | [experiments/speed](../experiments/speed/) |
 | 7 | Whether it works | Do the checks pass and does the manual loop close? | — | — | Backend and frontend test counts, build, lint; the manual checklist | — | [HACKATHON.md](../HACKATHON.md), [docs/manual-checks.md](manual-checks.md) |
+
+The saved planner and speed measurements deliberately used **RAG off**. Product
+OMT retrieval is now on after setup, so those records do not establish OMT-on
+latency or musical quality. The [KV-cache comparison](../experiments/speed/runtime-performance.md)
+adds 30 pairs with preserved outputs and CPU medians of 1.73–3.89×; it excludes
+model loading, HTTP/browser time, Meta calls and RAG. Local PDF caching and
+concurrent assist scheduling are described there separately. OMT's source-isolation
+and attribution checks are functional tests, not a musical benchmark.
 
 ## Chord-interpretation metrics (row 1)
 

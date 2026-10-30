@@ -79,7 +79,8 @@ def create_app(env: Mapping[str, str] | None = None) -> FastAPI:
     if mcp_server is not None:
         app.mount("/mcp", mcp_server.streamable_http_app())
     else:
-        log.info("%s: DAW handoff, the warmup route and MCP are off, score import is local, Meta routes are limited "
+        log.info("%s: DAW handoff, the warmup route and MCP are off; score import permits local and bounded Meta assist, "
+                 "not whole-file Meta reading; Meta routes are limited "
                  "per session and per day", limits.PUBLIC_HOST_VAR)
     return app
 

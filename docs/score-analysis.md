@@ -1,9 +1,18 @@
 # Score import, harmony and form
 
-Selecting a file in Import Source starts the selected reader. The editor defaults
-to **Meta assist · harmony + form** when discovery reports Meta enabled and
-configured; otherwise it uses **Local**. **Full file (Meta)** is a separate option
-for PDF, PNG, JPEG and WebP, enabled only by `meta.fullFileScoreImport`.
+In **Import Score**, choose the file and Reader in either order, then click
+**Analyze score**. File selection validates size/type and prepares a local preview;
+it does not submit analysis. Reader remains selectable while checking a file or
+analyzing. Changing Reader clears the review and aborts an old browser request;
+an earlier result cannot populate the new selection. Start the new analysis explicitly.
+A provider call already in progress may still finish and incur cost.
+
+The editor defaults to **TheArtist + Meta** (`auto`) when discovery reports Meta
+enabled and configured; otherwise it uses **TheArtist only** (`local`). TheArtist
+here means the local score reader, not the composition Transformer. **Meta only**
+(`meta`) accepts PDF, PNG, JPEG and WebP when `meta.fullFileScoreImport` is true.
+Files can be selected before their compatible Reader; compatibility is checked
+when analysis starts, without discarding the selected file.
 The REST/MCP request default remains `engine: "local"`; the editor explicitly
 sends `mode: "infer_harmony"` and its selected engine.
 
@@ -16,7 +25,10 @@ There is no song-name lookup or stored answer for a particular score.
 The file is sent to the configured TheArtist backend. Local vector-PDF analysis
 needs no model key or external provider call. Meta assist sends bounded musical
 text to Meta; Full file sends the chosen attachment. Uploaded file bytes are not
-stored in the project.
+stored in the project. Parsed local results have a bounded in-memory cache
+(four entries, 8 MiB total, five-minute TTL), keyed by PDF digest and parsing
+limits; each caller gets an independent result. Raw bytes are not retained by
+that cache. See [performance measurements](../experiments/speed/runtime-performance.md).
 
 ## Reading notation
 
@@ -77,7 +89,8 @@ document images are excluded.
 
 All inferred bars are eligible, including confident local proposals. Printed
 chords and N.C. are excluded from replacement. At most two batches of eight bars
-are reviewed, with at most 512 notes per batch. The remaining bars retain their
+are reviewed, with at most 512 notes per batch. The two independent batches run concurrently over the same frozen synopsis,
+then form analysis uses their joined results. The remaining bars retain their
 local result and are counted as unreviewed. Whole-score context does not mean
 every bar was reviewed by Meta. Coverage and nonempty proposals are reported
 separately; an empty model proposal does not count as resolved harmony.
@@ -105,7 +118,7 @@ the saved section's origin, so inferred labels remain identifiable.
 ## Full-file reading and failures
 
 An unsupported local image/PDF never silently switches `auto` to a paid whole-file
-request. Choose **Full file (Meta)** explicitly to use that reader. It sends one
+request. Choose **Meta only** explicitly to use that reader. It sends one
 attachment request, bounded to 75 seconds, 8192 completion tokens, $1.35 and 128
 result bars. Harmony and form are returned together, without a second form call.
 `THEARTIST_PUBLIC_HOST=1` forbids this path with 403; local and bounded assist remain
@@ -113,7 +126,7 @@ available. Missing or false `meta.fullFileScoreImport` keeps it disabled in the 
 
 Configuration, budget, provider and validation failures stay errors. There is no
 successful-looking local fallback after an attempted Meta analysis. Disabling
-Meta leaves Local usable; an `auto` request that needs Meta fails with 503.
+Meta leaves TheArtist only usable; an `auto` request that needs Meta fails with 503.
 The ledger records each request ID and usage. Import admission settles only this
 request's actual calls, including failures, without counting another caller's
 concurrent spending. If settlement cannot be established, the admitted estimate

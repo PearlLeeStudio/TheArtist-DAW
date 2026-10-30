@@ -18,6 +18,7 @@ flowchart LR
     PLAN --> MUSIC
     MUSIC --> MT["Music Transformer"]
     MUSIC --> R1["R1 roughness + form rules + voice leading"]
+    MUSIC --> R2["Local OMT relevance + attributed source excerpts"]
     MUSIC --> RULES["Explicit rule fallback when model unavailable"]
     PLAN --> META["Bounded Meta client + ledger"]
     IMP --> LOCAL["Local vector-score reader + harmony analysis"]
@@ -700,17 +701,22 @@ A strike at beat `p` plays the chord of the slot `p` falls in (slot 0 = beats `[
 
 Accepts one explicitly chosen PDF, PNG, JPEG or WebP as bytes sent to the configured backend. `engine: "local"` (the request default) reads supported vector PDFs without a model key or external provider call. `mode: "chord_symbols"` reads written chords; `mode: "infer_harmony"` analyzes notes, timing and bass. Inference is reviewable interpretation, not verified original harmony. The endpoint does not fetch a URL, read a supplied filesystem path, store uploaded bytes, or import melody performance tracks.
 
-The editor offers **Meta assist · harmony + form** (`auto`), **Full file (Meta)**
-(`meta`) and **Local** (`local`), always with `mode: "infer_harmony"`. File selection
-starts the selected reader. Meta assist is the UI default when Meta is enabled
-and configured; otherwise the reader is Local. Images require explicit Full file
-selection and `meta.fullFileScoreImport: true`. Printed symbols and N.C. are preserved.
+The editor offers **TheArtist + Meta** (`auto`), **Meta only** (`meta`) and
+**TheArtist only** (`local`), always with `mode: "infer_harmony"`. File and Reader
+selection are independent; only **Analyze score** submits the request. Changing
+Reader clears any prior review, aborts an active browser request and waits for
+another explicit start. TheArtist + Meta is the UI default when Meta is enabled
+and configured; otherwise TheArtist only is selected. Images require Meta only
+and `meta.fullFileScoreImport: true` at analysis start. Printed symbols and N.C.
+are preserved. Browser cancellation suppresses stale results but does not undo
+an external call already sent or its cost.
 
 For `auto` plus `infer_harmony`, each harmony batch receives the complete ordered
 score synopsis: key/meter, printed versus inferred chords, confidence, N.C., pitch
 classes and known sections, plus target notes and neighboring harmony. All local
 inferred bars are eligible, including high-confidence proposals. At most two
-batches of eight bars and 512 notes each are reviewed. Remaining bars retain their
+batches of eight bars and 512 notes each are reviewed concurrently over the same
+frozen synopsis; form analysis follows their joined results. Remaining bars retain their
 local result and are reported as unreviewed, not Meta-analyzed.
 
 One additional form call uses the complete updated synopsis when any bars lack
@@ -936,7 +942,10 @@ sequenceDiagram
     BE->>BE: Validate key format
     BE->>INF: generate_ai_suggestions()
     INF-->>FE: SSE phases: model_load / composing ×3 /<br/>ranking / voicing
-    INF->>INF: Sample 3 → key anchor (fresh selection) → rerank<br/>→ song form → voice leading
+    INF->>INF: Sample 3 → key anchor (fresh selection) → rerank<br/>→ song form → voice leading → optional source excerpts
+    opt Ready theory source and notes enabled
+        INF-->>FE: SSE explaining phase
+    end
     Note over INF: OMT retrieval is on after setup; Berklee is off<br/>Each pass targets the requested bar count
     alt torch / checkpoint unavailable
         BE->>GEN: generate_suggestions()
@@ -972,7 +981,8 @@ backend/
 │   │   ├── score_import.py     # Score reading, harmony/form analysis and request-cost settlement
 │   │   └── export.py           # MIDI, Scripter and local DAW handoff
 │   ├── services/
-│   │   ├── inference.py        # Checkpoints, sampling, R1 rank, form rules and voice leading
+│   │   ├── inference.py        # Checkpoints, cached sampling, composite rank, form rules and voice leading
+│   │   ├── theory_rag.py       # OMT default on / Berklee off, local retrieval and actual-hit citations
 │   │   ├── planner.py · review.py · llm.py · limits.py
 │   │   ├── score_import.py · score_pdf.py · score_analysis.py
 │   │   ├── score_context.py · score_assistance.py · score_form.py
@@ -999,7 +1009,7 @@ The Music Transformer checkpoints are trained (Phase 0 + F1–F5 + F1 v2 + 11 Lo
 
 1. Resolve checkpoint (`modelKey` → genre dispatch via `GENRE_MODEL_DISPATCH` → `DEFAULT_MODEL`) and lazy-load via `ModelRegistry`
 2. Tokenize context with the extended 359-vocab tokenizer (13 genre tokens)
-3. Sample 3 candidates at temperatures 0.7 / 0.9 / 1.1 (conservative / balanced / creative). Each pass is held to the selection's length: `[EOS]`, `[PAD]` and empty bars are banned until every selected bar is written, and sampling stops right after the last one, within a budget of 3 tokens per bar plus `max(8, bars // 2)`. A pass that still runs out of budget is logged as a warning, and the bars it did not write repeat its own bars
+3. Sample 3 candidates with request-local KV caching (recomputed when the context window slides; `THEARTIST_DISABLE_KV_CACHE=1` disables it), at temperatures 0.7 / 0.9 / 1.1 (conservative / balanced / creative). Each pass is held to the selection's length: `[EOS]`, `[PAD]` and empty bars are banned until every selected bar is written, and sampling stops right after the last one, within a budget of 3 tokens per bar plus `max(8, bars // 2)`. A pass that still runs out of budget is logged as a warning, and the bars it did not write repeat its own bars
 4. Key-anchor each candidate when no chord precedes the selection (see [key anchoring](#post-apigeneratesection))
 5. Rerank by R1 (Sethares sensory roughness) plus text relevance from ready theory sources
 6. Apply the song-form rules for `sectionType`

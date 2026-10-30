@@ -9,13 +9,16 @@ Refresh the frontend, then check `/api/health` and `/api/capabilities`. Version
 restart it only if unreachable or missing those routes, or after further backend
 changes. Safari can exercise the score and audio workflow; use Chrome for Web MIDI.
 An HTTP response establishes availability, not successful generation, audio or
-DAW execution. Check `meta.fullFileScoreImport` before expecting full-file import.
+DAW execution. Check `meta.fullFileScoreImport` before expecting full-file import,
+and `rag.sources` before expecting OMT references (`omt: ready`, `berklee: disabled`).
+An inherited `THEARTIST_DISABLE_RAG=1` overrides the current OMT-on default.
 Logic detection may succeed even while Ableton is not installed.
 
 Follow the sections below in order: import and compare the source, revise a
 passage, audition the original and alternatives, adjust the controller, save and
 reopen, then inspect PDF/MIDI and the actual DAW result. Full-form planning and
-candidate review are implemented. Open-corpus source cards remain outside this build.
+candidate review are implemented. Generation can attach OMT source excerpts with
+author/editor credit and license links; their browser checks below remain open.
 
 ## Observed workflow
 
@@ -51,7 +54,7 @@ failures are recorded in [evaluation.md](evaluation.md).
   PDF and compare each measure with the source preview before confirming.
   The original `backend/tests/fixtures/vector-score-c.pdf` and `vector-score-f.pdf`
   are small notes-only starter cases. Local and Meta assist accept PDFs;
-  the explicit Full file (Meta) reader also accepts PNG/JPEG when available.
+  the explicit Meta only reader also accepts PNG/JPEG/WebP when available.
 - [ ] Verify one-chord expansion, unknown key/meter, unsupported chord names and
   zero or three-plus symbols in a bar. Unknown key/meter still requires correction;
   unfinished chord reading can open in the score view. Missing/unsupported slots
@@ -80,7 +83,7 @@ failures are recorded in [evaluation.md](evaluation.md).
 - [ ] Import the original vector-score C/F
   fixtures without a model key: verify read pitches, bass, local source and Roman I.
   An unsupported scan reports that local reading cannot handle it without making
-  an implicit external model request; Full file (Meta) is a separate choice.
+  an implicit external model request; Meta only is a separate choice.
 - [ ] The footer always shows why Import reviewed score
   is disabled. Correct missing key/meter or highlighted project fields using the footer
   links, then click Import reviewed score to confirm. Valid project metadata enables the
@@ -106,6 +109,18 @@ failures are recorded in [evaluation.md](evaluation.md).
   stopping the server. Regular and Favorite Generate show an error, do not invent
   offline candidates and leave the score unchanged. Restore the connection and
   retry; the old error clears and real suggestions appear.
+
+## Theory references
+
+- [ ] With OMT ready and Berklee disabled in capabilities, generate a passage and
+  expand Theory references. Check that each excerpt has its actual source link,
+  authors/editors, license link, copyright and modification notice; follow both
+  links. These are retrieved passages, not a generated explanation of the song.
+- [ ] With retrieval disabled or the corpus unavailable, generate again: no stale
+  notes or Theory progress phase should appear. Existing user servers must not be
+  stopped to perform this check; use a separate configured test server.
+- [ ] Inspect the cards in light/dark themes and a narrow window. Compare actual
+  relevance to the selected transition, separately from whether the UI renders.
 
 ## Projects
 

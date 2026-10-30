@@ -34,8 +34,12 @@ Only commits after the `baseline` tag. The demo video and the submission page sh
 The table records implementation history: an early row describes its commit,
 including its original test results and limitations. Later rows can replace that behavior.
 For the current workflow, see Projects export (52), the form dialog (53), whole-score
-Import reasoning (58), seeded chord generation (61), score rendering (62), and
-request-specific cost accounting (63). Import and planner evaluation findings are in
+Import reasoning (58), seeded chord generation (61), score rendering (62),
+request-specific cost accounting (63), runtime speed work (73–76), Import layout
+(77–78), OMT/Berklee retrieval (79), and explicit Analyze score (80).
+Row 79 replaces the earlier RAG-off product policy; row 80 replaces automatic
+file analysis and the Reader busy-state behavior in earlier rows.
+Import and planner evaluation findings are in
 rows 59 and 64; successful execution alone does not establish musical quality.
 
 | # | Feature | Commits | Meta model / tool used | Status |

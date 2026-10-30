@@ -23,7 +23,7 @@ passage with the author's Music Transformer, and hands the arrangement to the DA
 
 | | Pre-existing (tag `baseline`) | Hackathon work (commits after the tag) |
 |---|---|---|
-| Models | 25M-parameter Music Transformer, 11 genre LoRAs, R1 rerank | no new weights; Meta Muse Spark as planner / judge / reader |
+| Models | 25M-parameter Music Transformer, 11 genre LoRAs, R1 rerank | no new weights; Meta Muse Spark as planner / judge / reader; cached own-model inference and source-isolated OMT retrieval |
 | Editor | staff, voicings, Roman numerals, MIDI input, playback | Import Score, Original/A/B/C, Second ear, Complete the form, Projects, the Play panel and mixer |
 | Service | `/api/generate*` | local vector-PDF reader and harmony analyzer, MIDI/PDF/DAW export, Logic Scripter script, REST + MCP contract, Meta client with ledger, planner, Second-ear review |
 
@@ -32,7 +32,7 @@ passage with the author's Music Transformer, and hands the arrangement to the DA
 | Path | File | Calls per use | Switch |
 |---|---|---|---|
 | Full file score reading, explicitly selected `engine: "meta"` | `backend/app/services/score_import.py` | 1 PDF/image request, ≤ $1.35 | `THEARTIST_META_ENABLED`; unavailable on a public host |
-| Meta assist, `engine: "auto"` (the editor default when configured) | `score_assistance.py`, `harmony_meta.py`, `score_form.py` | ≤ 2 × 8-bar harmony reviews + 1 form analysis, ≤ $0.30 total; every call sees the complete musical synopsis | same; choose **Local** for no Meta calls |
+| Meta assist, `engine: "auto"` (the editor default when configured) | `score_assistance.py`, `harmony_meta.py`, `score_form.py` | ≤ 2 × 8-bar harmony reviews + 1 form analysis, ≤ $0.30 total; every call sees the complete musical synopsis | same; choose **TheArtist only** for no Meta calls |
 | Complete the form planner (plan, validate, revise, judge) | `backend/app/services/planner.py`, `routes/plan.py` | ≤ 5 calls per run (1 plan, ≤ 2 revisions, ≤ 2 judgments) | same; judge role via `LLM_JUDGE_*` |
 | Second ear: pick one of a Generate's A/B/C on analyzer facts, each reason checked | `backend/app/services/review.py`, `routes/review.py` | 1 judge call | same; judge role via `LLM_JUDGE_*` |
 
@@ -44,16 +44,19 @@ the author's model and every export keep working.
 → arrange in Play → export MIDI or PDF.** Local code reads supported vector-score
 notation and proposes note-based harmony; the author's Music Transformer generates
 chord variations. Muse Spark assistance reviews inferred harmony in whole-score
-context and proposes missing form sections. **Full file (Meta)** is a separate,
+context and proposes missing form sections. **Meta only** is a separate,
 explicit PDF/image reader; unsupported local files never switch to it automatically.
 The musician corrects the import, chooses the passage and keeps the version they want.
 
 The [hackathon work log](HACKATHON.md) separates these additions from the existing
 editor and trained models. This development repository stays intact; a separate
 submission repository will contain event work and patches against a pinned core
-dependency. The screenshots show the current interface; the linked YouTube video
+dependency. The screenshots illustrate their documented flows and predate the
+latest Import controls and theory references; the linked YouTube video
 is the pre-existing demo. Verified paths and remaining audio/device checks are
 separated in the [manual checklist](docs/manual-checks.md).
+The [repository consistency report](docs/repository-checks.md) records the
+file, contract and test coverage, fixes, and remaining verification limits.
 
 - **Import Score**, immediately left of **New from Song Form**, accepts one
   PDF or image up to 8 MiB. Choose the file and Reader in either order, then click
@@ -75,7 +78,8 @@ separated in the [manual checklist](docs/manual-checks.md).
   evidence can yield no sections. The synopsis is bounded at 40 KiB and is never
   silently truncated. Longer imports retain unreviewed local bars with their origin.
   Choose **Meta only** for an image or unsupported PDF on a local server,
-  or **Local** to make no Meta calls. API defaults remain local.
+  or **TheArtist only** to make no Meta calls. TheArtist here is the local score
+  reader, not the composition Transformer. API defaults remain local.
 - **Roman-numeral analysis** follows the review key: in C major, C → I, Am → vi,
   G7 → V7. Changing the review key reanalyzes the same symbols. The editor's main Key
   control retains its existing behavior of transposing the score. Source proposals
@@ -106,39 +110,14 @@ separated in the [manual checklist](docs/manual-checks.md).
   completed 60/60 pairs with actual F1 generation. Muse increased section-type
   variety and reduced out-of-key slots in the diatonic subset, but 21/60 final
   judgments still requested regeneration. This does not establish a listening preference.
-- **Play** keeps the active chord and its Piano/Guitar display directly below
-  transport. The keyboard keeps its natural SVG proportions with compact spacing;
-  the small 🎹/🎸 selectors retain English accessible labels and tooltips.
-  One continuous black housing with rounded top corners runs from the playback keys
-  and CD through the chord, drawing and selector surroundings to Rhythm/Drums.
-  Subtle inset grooves distinguish the black playback keys; display labels
-  contrast against the same black surface in both app themes.
-  Play uses bright Apple-style silver in the light theme and near-black charcoal
-  in the dark theme, with light labels on its black panel, fader bays and keys.
-  Selection, tab and emoji-selector keys have recessed faces, dark upper grooves
-  and soft lower highlights;
-  selected keys light up with a warm amber face. Bass off
-  keeps its unlit face and explicit off label.
-  Play uses a system Futura-first stack when available, with Avenir Next and
-  sans-serif fallbacks. Full-width Rhythm and Drums status windows remain underneath,
-  above the selection tabs, each 60 px tall with flat black/green step cells.
-  Preset names such as Bossa and Samba use right-aligned 12 px regular text.
-  At viewport heights of at least 900 px, the responsive layout targets a full-panel
-  fit; shorter windows keep vertical scrolling. All three selection panes fit
-  their controls without internal scrolling. Instrument uses five emoji family
-  selectors and shows the current family's 4–8 sound buttons to reach all 31 sounds.
-  Its family selectors and sound grid both use five columns; sound buttons keep
-  the same 36 px height as family keys rather than stretching into empty space.
-  Each pane starts with a full-width On/Off button for its part
-  (harmony, bass or drums), followed by a separate full-width Auto choice.
-  Rhythm and Drums use four-column preset grids. Harmony mute restores the previous
-  audible level, and drum On restores its previous Auto/manual pattern.
-  Their green step meters remain visible across every tab. The bottom controls stay
-  present without a tab: BPM plus Master, Harmony, Bass and Drums use five vertical
-  faders with photo-inspired slim black tracks, 10 px round metal caps and names
-  below. All six playback keys sit in one row, with a wider Play key and a 27 px 💿
-  disc that rotates only during playback. The 13 harmony rhythms and 15 drum patterns
-  retain their playback behavior.
+- **Play** shows the active chord on a piano or guitar, with 31 instrument sounds,
+  13 harmony rhythms and 15 drum patterns. Harmony, Bass and Drums have independent
+  mute controls; BPM, Master and the three part levels remain visible as faders.
+  Auto follows genre defaults, and explicit sound/rhythm choices override it.
+  The mix and playback settings are saved with each project. After the first Play
+  gesture, family browsing and sound hover/focus preload samples; a first uncached
+  sound can still take time to download. See [measured performance](experiments/speed/runtime-performance.md)
+  for generation/import improvements and the limits of the audio checks.
 - **Export** downloads editable, three-part MIDI with tempo, meter, section markers
   and mixer levels, or an A4 score PDF. Local Logic opening and Ableton file reveal
   use the local backend; hosted clients can download MIDI.
@@ -326,13 +305,14 @@ flowchart LR
   Music --> MT["Own Music Transformer"]
   Music --> MIDI["Editable MIDI · local DAW handoff"]
   Music --> Scripter["Exported Logic Scripter MIDI FX script"]
-  Editor --> Play["Play · four-part mixer"]
+  Editor --> Play["Play · Harmony/Bass/Drums + Master"]
   Editor --> Files["PDF · local Projects"]
 ```
 
 The MCP tools wrap implemented services, including score import and the
-planner's `plan_song` / `validate_plan`. Theory explanation is not advertised
-because it is not implemented. See the
+planner's `plan_song` / `validate_plan`. There is no standalone theory-explanation
+tool. Generation can return attributed OMT source excerpts; it does not generate
+new theory explanations. See the
 [versioned contract and tool list](docs/mcp.md).
 
 ### Model and editor internals
@@ -354,15 +334,16 @@ flowchart LR
 
   subgraph BE["FastAPI :8000"]
     Routes["routes/ generate · chords · models"]
-    Inference["services/inference.py<br/>(R1 rerank + form rules + voice leading)"]
+    Inference["services/inference.py<br/>(R1 + ready OMT relevance + form rules + voice leading)"]
     SongForm["services/song_form.py"]
     VL["services/voice_leading.py"]
     Rules["services/chord_generator.py<br/>(rule fallback)"]
   end
 
   subgraph AI["AI Pipeline (PyTorch)"]
-    MT["Music Transformer<br/>~25M params · 351 vocab"]
+    MT["Music Transformer<br/>~25M params · 351 base / 359 served tokens"]
     Phys["ai/physics — R1<br/>Sethares roughness"]
+    Theory["services/theory_rag.py<br/>Local OMT relevance + source excerpts"]
     CKPT[("checkpoints/<br/>Phase 0 · F1–F5 · F1 v2 · 11 genre LoRAs")]
   end
 
@@ -372,6 +353,7 @@ flowchart LR
   Routes -->|SSE stream| Inference
   Inference --> MT
   Inference --> Phys
+  Inference --> Theory
   Inference --> VL
   Inference --> SongForm
   MT --> CKPT
@@ -385,6 +367,7 @@ flowchart LR
   class Staff,RP,Engine,Tone fe
   class Routes,Inference,SongForm,VL,Rules be
   class MT,Phys ai
+  class Theory be
   class Store,CKPT store
 ```
 
@@ -398,6 +381,7 @@ sequenceDiagram
   participant Inf as inference.py (orchestrator)
   participant MT as Music Transformer
   participant R1 as R1 (Sethares)
+  participant R2 as Local theory retrieval
   participant VL as voice_leading.py
 
   FE->>API: { key, genre, context, selectedMeasures, modelKey }
@@ -406,16 +390,25 @@ sequenceDiagram
   Inf->>MT: load checkpoint
   loop step ∈ {1..3}
     Inf-->>FE: event: composing { step, total, creativity }
-    Inf->>MT: forward(prompt, temperature=0.7/0.9/1.1)
+    Inf->>MT: cached autoregressive sampling at 0.7/0.9/1.1
     MT-->>Inf: bars
   end
   Inf-->>FE: event: ranking
   Inf->>R1: mean Sethares roughness per suggestion
   R1-->>Inf: r1 score
+  opt enabled source ready and R2 ranking enabled
+    Inf->>R2: mean text-relevance distance per suggestion
+    R2-->>Inf: retrieval scores
+  end
   Note over Inf: sort candidates; apply section and cadence rules
   Inf-->>FE: event: voicing
   Inf->>VL: pick_bass_for_smooth_voice_leading(prev, curr)
   VL-->>Inf: chords w/ slash bass injected
+  opt enabled source ready and notes enabled
+    Inf-->>FE: event: explaining
+    Inf->>R2: related excerpts for final transitions
+    R2-->>Inf: excerpts with actual-hit attribution
+  end
   Inf-->>FE: event: complete
   Inf-->>API: GenerateResponse(suggestions, source)
   API-->>FE: event: result { suggestions }
@@ -463,7 +456,8 @@ TheArtist-DAW/
 │   │   ├── mcp_server.py                # Eleven tools over shared application services
 │   │   ├── models/                      # Pydantic music, plan, review, import/export contracts
 │   │   └── services/
-│   │       ├── inference.py             # Model sampling → rank → form rules → voice leading
+│   │       ├── inference.py             # Cached sampling → rank → form rules → voice leading
+│   │       ├── theory_rag.py            # Source-isolated OMT relevance and attributed excerpts
 │   │       ├── planner.py · review.py   # Meta form planning and candidate review
 │   │       ├── llm.py · limits.py       # Bounded Meta calls, attempt costs and admission limits
 │   │       ├── score_import.py · score_pdf.py · score_analysis.py
@@ -502,7 +496,7 @@ their source and cost records; neither substitutes an AI success for a failed ca
 |-------|-------------|
 | **Frontend** | React 19, TypeScript (strict), Vite 8, Tailwind CSS 4, Zustand 5, VexFlow 5, Tone.js 15, smplr (GM Soundfont + drum machines) |
 | **Backend** | FastAPI, Pydantic v2, Uvicorn, Python 3.12+ |
-| **AI/ML and score reading** | PyTorch, custom Music Transformer, music21, pypdf; HuggingFace Datasets and TensorBoard in the preserved training pipeline |
+| **AI/ML and score reading** | PyTorch, custom Music Transformer, music21, pdfplumber; HuggingFace Datasets and TensorBoard in the preserved training pipeline |
 | **Model/tool integration** | Meta Model API through the OpenAI-compatible SDK, official MCP Python SDK |
 | **Dev Tools** | uv (Python), npm, ESLint |
 
@@ -530,8 +524,8 @@ uv run --frozen --directory /absolute/path/TheArtist-DAW/backend python /absolut
 
 # Model checkpoints — download trained weights from HuggingFace so the backend
 # serves real models (skip this and it falls back to a rule-based generator).
-# Public repos (CC BY-NC, no token); ~2.2 GB into ai/checkpoints/.
-uv run --with huggingface_hub python /absolute/path/TheArtist-DAW/model/_download.py --smoke
+# Public repos (CC BY-NC, no token). --smoke fetches F1 only into ai/checkpoints/.
+uv run --frozen --directory /absolute/path/TheArtist-DAW/backend python /absolute/path/TheArtist-DAW/model/_download.py --smoke
 # Omit --smoke to download all 18 checkpoints for the genre adapters and model picker.
 ```
 
@@ -844,6 +838,9 @@ For the older `/api/generate/chords` programmatic chord-only endpoint (no arrang
 ## License
 
 **Code: [MIT](LICENSE)** © 2026 Jinju Lee (PearlLeeStudio).
+
+Downloaded OMT prose and its displayed excerpts retain CC BY-SA 4.0 with attribution;
+see [the source policy](docs/theory-retrieval.md). This does not change the app code license.
 
 The released model checkpoints are distributed separately on [HuggingFace](https://huggingface.co/PearlLeeStudio) under **CC BY-NC 4.0** (they derive from the CC BY-NC Chordonomicon corpus) — non-commercial paper / portfolio / demo use only. Bundled GPL-3.0 drum samples keep their own license ([frontend/public/drums/LICENSE.txt](frontend/public/drums/LICENSE.txt)). Raw datasets are not redistributed — see [Datasets](#datasets).
 
