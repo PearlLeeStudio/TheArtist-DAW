@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { usePlayStore } from '../../../store/playStore';
 import { useSongStore } from '../../../store/songStore';
 import { genreHarmonyInstrument } from '../../../engine/playSettings';
+import { prepareHarmonyFamily, prepareHarmonyInstrument } from '../../../engine/playback';
 import { HARMONY_INSTRUMENTS, instrumentLabel } from '../../../engine/genreTables';
 import type { InstrumentFamily } from '../../../engine/genreTables';
 import { genreTag } from './genreTag';
@@ -85,6 +86,7 @@ export default function InstrumentPane() {
       </button>
       <button type="button" aria-pressed={isAuto} data-instrument-choice
         data-active={isAuto ? '' : undefined} onClick={() => setHarmonyOverride(null)} title={autoTitle}
+        onPointerEnter={() => prepareHarmonyInstrument(genreDefault)} onFocus={() => prepareHarmonyInstrument(genreDefault)}
         className="te-key btn-hover flex w-full items-center justify-between gap-2 px-2 text-left"
         style={{ ...KEY_TEXT_STYLE, fontWeight: isAuto ? 700 : 400 }}>
         <span>Auto</span>
@@ -94,9 +96,12 @@ export default function InstrumentPane() {
       <div className="grid grid-cols-5 gap-[3px]" role="group" aria-label="Instrument families">
         {GROUPS.map((familyGroup) => {
           const isOpen = familyGroup.id === openGroupId;
+          const prepareFamily = () => prepareHarmonyFamily(HARMONY_INSTRUMENTS
+            .filter((sound) => familyGroup.families.includes(sound.family)).map((sound) => sound.name));
           return (
             <button key={familyGroup.id} type="button" className="te-key btn-hover flex min-w-0 flex-col items-center justify-center"
               aria-pressed={isOpen} data-active={isOpen ? '' : undefined}
+              onPointerEnter={prepareFamily} onFocus={prepareFamily}
               onClick={() => setOpenGroupId(familyGroup.id)} title={familyGroup.label} style={{ letterSpacing: 'normal' }}>
               <span aria-hidden="true" style={{ fontSize: 14, lineHeight: '16px' }}>{familyGroup.emoji}</span>
               <span style={{ fontSize: 10, lineHeight: '12px' }}>{familyGroup.keyLabel ?? familyGroup.label}</span>
@@ -114,6 +119,7 @@ export default function InstrumentPane() {
             <button key={instrument.name} type="button" aria-pressed={selected} data-instrument-choice
               aria-label={`${label}, ${openGroup.label}`}
               data-active={selected ? '' : undefined} onClick={() => setHarmonyOverride(instrument.name)}
+              onPointerEnter={() => prepareHarmonyInstrument(instrument.name)} onFocus={() => prepareHarmonyInstrument(instrument.name)}
               title={`${openGroup.label} · ${label}`} className="te-key btn-hover min-w-0 px-1 py-1 text-left"
               style={{ minHeight: 28, fontSize: 11, lineHeight: '12px', letterSpacing: 'normal',
                 whiteSpace: 'normal', overflowWrap: 'anywhere', ...pickedLabelStyle(selected) }}>

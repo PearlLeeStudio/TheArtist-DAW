@@ -74,8 +74,7 @@ function buildCuratedInstrument(name: string, destination: AudioNode): Instrumen
  * Names follow gleitz/midi-js-soundfonts convention: snake_case English
  * (e.g. "acoustic_grand_piano", "electric_piano_1", "alto_sax",
  * "acoustic_guitar_steel", "drawbar_organ"). A name outside FluidR3_GM's
- * 128-entry list 404s on the CDN and the instrument stays permanently
- * un-ready, i.e. silent — validate additions against
+ * 128-entry list 404s on the CDN — validate additions against
  * https://gleitz.github.io/midi-js-soundfonts/FluidR3_GM/names.json.
  */
 export function getInstrument(name: string, layer: InstrumentLayer = 'harmony'): InstrumentLike | null {
@@ -94,8 +93,9 @@ export function getInstrument(name: string, layer: InstrumentLayer = 'harmony'):
           destination,
         }) as unknown as InstrumentLike;
       }
-      registry[key] = { sf: inst, ready: false };
-      inst.load.then(() => { registry[key].ready = true; })
+      const entry = { sf: inst, ready: false };
+      registry[key] = entry;
+      inst.load.then(() => { entry.ready = true; })
         .catch((err) => console.warn(`Instrument '${name}' failed:`, err));
     } catch (err) {
       console.warn(`Instrument '${name}' init failed:`, err);
@@ -136,10 +136,39 @@ export function preloadInstruments(
     // has to swallow the rejection a second time for Promise.all's sake.
     return inst ? Promise.resolve(inst.load).then(() => undefined, () => undefined) : Promise.resolve();
   });
-  return Promise.race([
-    Promise.all(loads).then(() => undefined),
-    new Promise<void>((resolve) => setTimeout(resolve, timeoutMs)),
-  ]);
+  return new Promise<void>((resolve) => {
+    const timeout = setTimeout(resolve, timeoutMs);
+    void Promise.all(loads).then(() => {
+      clearTimeout(timeout);
+      resolve();
+    });
+  });
+}
+
+let prefetchQueue: string[] = [];
+let prefetchActive = 0;
+const PREFETCH_CONCURRENCY = 2;
+
+/** Warm the family the user is browsing. Replace stale queued choices and
+ * cap background decoding; direct selections still bypass this queue. */
+export function prefetchHarmonyInstruments(names: string[]): void {
+  prefetchQueue = [...new Set(names)].filter((name) => !registry[registryKey(name, 'harmony')]);
+  drainPrefetchQueue();
+}
+
+function drainPrefetchQueue(): void {
+  while (prefetchActive < PREFETCH_CONCURRENCY && prefetchQueue.length) {
+    const name = prefetchQueue.shift()!;
+    // A hover or selection may have started this load since it was queued.
+    if (registry[registryKey(name, 'harmony')]) continue;
+    const inst = getInstrument(name);
+    if (!inst) continue;
+    prefetchActive++;
+    void inst.load.catch(() => undefined).finally(() => {
+      prefetchActive--;
+      drainPrefetchQueue();
+    });
+  }
 }
 
 /**

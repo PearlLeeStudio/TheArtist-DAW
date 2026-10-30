@@ -2,7 +2,7 @@ import * as Tone from 'tone';
 import type { Song, SlotAddress, Chord, Arrangement, Measure } from '../models/types';
 import { guitarVoicingNotes, resolvePianoVoicing } from './voicingEngine';
 import { scheduleDrumMeasure, clearDrumSchedule, setCurrentDrumPattern, setDrumVolume, swingDelay, DRUM_STEPS_PER_BEAT } from './drums';
-import { playChordOnInstrument, preloadInstruments } from './instruments';
+import { playChordOnInstrument, preloadInstruments, prefetchHarmonyInstruments } from './instruments';
 import { scheduleBassSlot, setBassEnabled } from './arrangement';
 import { getInstrumentOutput, setMixerVolumes } from './mixer';
 import {
@@ -42,6 +42,16 @@ let voicingMode: VoicingMode = 'piano';
 let audioStarted = false;
 /** Genre of the song scheduled last; Auto's instrument is its default. */
 let scheduledGenre: string | null = null;
+
+/** Pointer/keyboard intent warms samples without changing the sound or
+ * opening an AudioContext before the first Play gesture. */
+export function prepareHarmonyInstrument(name: string | null): void {
+  if (audioStarted && name) void preloadInstruments([name]);
+}
+
+export function prepareHarmonyFamily(names: string[]): void {
+  if (audioStarted) prefetchHarmonyInstruments(names);
+}
 
 /** The harmony instrument a song of `genre` plays with now: the pick, else
  *  the genre's default; null = the built-in piano / guitar synth. */
