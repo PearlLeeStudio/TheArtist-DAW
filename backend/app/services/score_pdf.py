@@ -8,8 +8,10 @@ Geometric tolerances are multiples of a staff's spacing, the gap between its lin
 
 from __future__ import annotations
 
+import hashlib
 import io
 import re
+from bisect import bisect_left, bisect_right
 from collections import Counter
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass, field
@@ -18,12 +20,15 @@ from typing import Any
 
 import pdfplumber
 
+from app.services.score_cache import ScoreCache
+
 MAX_PDF_BYTES = 8 * 1024 * 1024
 MAX_PDF_PAGES = 50
 MAX_PDF_MEASURES = 512
 MAX_PAGE_OBJECTS = 60_000
 MAX_TOTAL_GLYPHS = 250_000
 _LIMIT_MESSAGE = "The vector score exceeds the bounded glyph/geometry limit."
+_score_cache = ScoreCache()
 
 
 class ScorePDFError(ValueError):
@@ -141,6 +146,27 @@ class _Page:
     tie_links: dict[int, int]
     resolved_tie_shapes: set[int]
     notes_by_glyph: dict[int, NoteEvent] = field(default_factory=dict)
+    duration_geometry: dict[int, _DurationGeometry] = field(default_factory=dict)
+
+
+class _DurationGeometry:
+    """Index stems once per staff, and reuse a chord's stem/beam duration work."""
+
+    def __init__(self, staff: _Staff, verticals: list[dict], shapes: list[dict]):
+        self.stems = sorted(enumerate(verticals), key=lambda item: item[1]["x0"])
+        self.xs = [line["x0"] for _, line in self.stems]
+        self.beams = [shape for shape in shapes if shape.get("fill") and not _is_curved(shape)
+                      and shape["x1"] - shape["x0"] >= staff.spacing * .65
+                      and shape["y1"] - shape["y0"] <= staff.spacing * 1.8]
+        self.flags = [g for g in staff.glyphs if g.text in _FLAGS]
+        self.dots = [g for g in staff.glyphs if g.text in _AUGMENTATION_DOTS]
+        self.beam_counts: dict[int, int] = {}
+
+    def near_stems(self, g: _Glyph, staff: _Staff) -> list[dict]:
+        start = bisect_left(self.xs, g.x - staff.spacing * .3)
+        end = bisect_right(self.xs, g.x + staff.spacing * 1.8)
+        # Preserve source order for equally close stems, as the original reader did.
+        return [line for _, line in sorted(self.stems[start:end])]
 
 
 @dataclass
@@ -522,24 +548,25 @@ def _beam_count(stem: dict, staff: _Staff, shapes: list[dict]) -> int:
     return len(_cluster(beam_levels, staff.spacing * .3))
 
 
-def _duration(g: _Glyph, staff: _Staff, verticals: list[dict], shapes: list[dict]) -> float | None:
+def _duration(g: _Glyph, staff: _Staff, geometry: _DurationGeometry) -> float | None:
     """Beats of a notehead: flags or beams on a filled head's stem shorten it, dots lengthen it."""
     base = _NOTEHEADS[g.text]
     if base == 1:
-        stem = _stem(g, staff, verticals)
+        stem = _stem(g, staff, geometry.near_stems(g, staff))
         if stem is None:
             return None
-        flags = [flag for flag in staff.glyphs if flag.text in _FLAGS and abs(flag.x - stem["x0"]) <= staff.spacing
+        flags = [flag for flag in geometry.flags if abs(flag.x - stem["x0"]) <= staff.spacing
                  and min(stem["y0"], stem["y1"]) - staff.spacing <= flag.y <= max(stem["y0"], stem["y1"]) + staff.spacing]
         if flags:
             base = min(_FLAGS[flag.text] for flag in flags)
         else:
-            beams = _beam_count(stem, staff, shapes)
+            if id(stem) not in geometry.beam_counts:
+                geometry.beam_counts[id(stem)] = _beam_count(stem, staff, geometry.beams)
+            beams = geometry.beam_counts[id(stem)]
             if beams > 4:  # Shorter than a 64th note is not read.
                 return None
             base = 1 / (2 ** beams)
-    dots = [dot for dot in staff.glyphs if dot.text in _AUGMENTATION_DOTS
-            and g.x + g.width <= dot.x <= g.x + g.width + staff.spacing * 2.5
+    dots = [dot for dot in geometry.dots if g.x + g.width <= dot.x <= g.x + g.width + staff.spacing * 2.5
             and abs(dot.y - g.y) <= staff.spacing * .8]
     if dots:  # One dot adds half the value; two or more add three quarters.
         count = min(2, len(_cluster([dot.x for dot in dots], staff.spacing * .3)))
@@ -948,7 +975,9 @@ def _read_note(state: _ReadState, page: _Page, measure: ScoreMeasure, staff_inde
     if not 0 <= midi <= 127:
         state.mark_incomplete("out_of_range_pitch")
         return None
-    duration = _duration(g, staff, page.verticals, page.shapes)
+    if id(staff) not in page.duration_geometry:
+        page.duration_geometry[id(staff)] = _DurationGeometry(staff, page.verticals, page.shapes)
+    duration = _duration(g, staff, page.duration_geometry[id(staff)])
     note = NoteEvent(staff_index, midi, spelling, 0, duration, g.x, g.y)
     if shift:
         note.written_midi, note.written_spelling, note.octave_shift = written_midi, written_spelling, shift
@@ -1102,17 +1131,26 @@ def _parse_pages(pages: Any, *, max_measures: int = MAX_PDF_MEASURES) -> ParsedS
     return _summarize(state)
 
 
-def parse_vector_score(data: bytes, *, max_pages: int = MAX_PDF_PAGES, max_measures: int = MAX_PDF_MEASURES) -> ParsedScore:
+def parse_vector_score(data: bytes, *, max_pages: int = MAX_PDF_PAGES, max_measures: int = MAX_PDF_MEASURES,
+                       use_cache: bool = True) -> ParsedScore:
     if not isinstance(data, bytes) or not data or len(data) > MAX_PDF_BYTES or not data.startswith(b"%PDF-"):
         raise ScorePDFError("Choose a nonempty PDF up to 8 MiB for local vector analysis.")
     if not 1 <= max_pages <= MAX_PDF_PAGES or not 1 <= max_measures <= MAX_PDF_MEASURES:
         raise ScorePDFError(f"Local vector analysis supports 1..{MAX_PDF_PAGES} pages and 1..{MAX_PDF_MEASURES} measures.")
+    cache_key = (hashlib.sha256(data).digest(), max_pages, max_measures)
+    if use_cache:
+        cached = _score_cache.get(cache_key)
+        if cached is not None:
+            return cached
     try:
         with pdfplumber.open(io.BytesIO(data)) as pdf:
             if not 1 <= len(pdf.pages) <= max_pages:
                 raise ScorePDFError(f"The PDF exceeds the local limit of {max_pages} pages.")
-            return _parse_pages(pdf.pages, max_measures=max_measures)
+            score = _parse_pages(pdf.pages, max_measures=max_measures)
     except ScorePDFError:
         raise
     except Exception as exc:
         raise ScorePDFError("The PDF could not be decoded into supported vector geometry.") from exc
+    if use_cache:
+        _score_cache.put(cache_key, score)
+    return score

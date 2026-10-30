@@ -1,0 +1,81 @@
+{
+  "runs": 5,
+  "scope": "Local vector PDF decoding and harmony analysis; warm process, cold or reused document cache",
+  "exclusions": [
+    "HTTP and browser",
+    "Meta reader",
+    "private PDF content and filename"
+  ],
+  "cases": [
+    {
+      "case": "synthetic",
+      "pages": 1,
+      "measures": 1,
+      "notes": 3,
+      "runs_ms": {
+        "before": [
+          1.588,
+          1.757,
+          1.497,
+          1.568,
+          1.495
+        ],
+        "after": [
+          1.515,
+          1.977,
+          1.975,
+          1.555,
+          1.62
+        ],
+        "repeat": [
+          0.269,
+          0.195,
+          0.189,
+          0.168,
+          0.173
+        ]
+      },
+      "median_ms": {
+        "before": 1.568,
+        "after": 1.62,
+        "repeat": 0.189
+      },
+      "identical_parser_and_analysis": true
+    },
+    {
+      "case": "local_large_score",
+      "pages": 24,
+      "measures": 465,
+      "notes": 5829,
+      "runs_ms": {
+        "before": [
+          1736.271,
+          1679.097,
+          1565.32,
+          1539.501,
+          1520.937
+        ],
+        "after": [
+          1530.359,
+          1485.276,
+          1481.812,
+          1491.275,
+          1416.896
+        ],
+        "repeat": [
+          159.205,
+          158.333,
+          161.29,
+          196.308,
+          158.421
+        ]
+      },
+      "median_ms": {
+        "before": 1565.32,
+        "after": 1485.276,
+        "repeat": 159.205
+      },
+      "identical_parser_and_analysis": true
+    }
+  ]
+}
