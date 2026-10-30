@@ -56,8 +56,10 @@ is the pre-existing demo. Verified paths and remaining audio/device checks are
 separated in the [manual checklist](docs/manual-checks.md).
 
 - **Import Score**, immediately left of **New from Song Form**, accepts one
-  PDF or image up to 8 MiB. Selecting a file starts analysis
-  automatically, with a progress indicator. Printed chords are preserved; only
+  PDF or image up to 8 MiB. Choose the file and Reader in either order, then click
+  **Analyze score**. File selection and Reader changes do not start analysis.
+  Changing Reader clears the previous review; during analysis it also cancels
+  that request. Printed chords are preserved; only
   passages without chords receive note-based harmony proposals. Confirm the
   title, key and meter, then open the score view to check and edit chords. Inferred
   chords are interpretations, not verified original harmony; melody notes and their
@@ -65,14 +67,14 @@ separated in the [manual checklist](docs/manual-checks.md).
   without blocking import; their original symbols and evidence are retained.
   Correct highlighted project fields, then click
   **Import reviewed score** to confirm. The footer explains any blocker.
-  **Meta assist · harmony + form** is selected when Meta is enabled and configured.
+  **TheArtist + Meta** is selected when Meta is enabled and configured.
   Up to sixteen eligible bars, including confident local inferences, receive a
   note-based review. Each batch receives the same complete ordered synopsis;
   printed chords and N.C. stay intact. One further call proposes form ranges in
   uncovered passages. Uncertain functions remain **Section**, and insufficient
   evidence can yield no sections. The synopsis is bounded at 40 KiB and is never
   silently truncated. Longer imports retain unreviewed local bars with their origin.
-  Choose **Full file (Meta)** for an image or unsupported PDF on a local server,
+  Choose **Meta only** for an image or unsupported PDF on a local server,
   or **Local** to make no Meta calls. API defaults remain local.
 - **Roman-numeral analysis** follows the review key: in C major, C → I, Am → vi,
   G7 → V7. Changing the review key reanalyzes the same symbols. The editor's main Key

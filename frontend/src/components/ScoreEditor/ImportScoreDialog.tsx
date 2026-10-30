@@ -85,7 +85,7 @@ function isEditorMeter(meter: string): boolean {
 function importBlockReason(reading: boolean, running: boolean, validation: ScoreImportValidation | null): string {
   if (reading) return 'Wait for the file check to finish.';
   if (running) return 'Wait for the score analysis to finish.';
-  if (!validation) return 'Choose a score to analyze.';
+  if (!validation) return 'Choose your file and reader, then select Analyze score.';
   if (validation.valid) return '';
   const corrections = validation.errors.length + validation.sectionErrors.filter(Boolean).length;
   return `Fix ${corrections} highlighted ${corrections === 1 ? 'field' : 'fields'} to enable import.`;
@@ -213,13 +213,9 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
       if (!isCurrent(sequence)) return;
       const checked = checkScoreFile(file, header);
       if (!checked.ok) throw new Error(checked.message);
-      if (checked.mimeType !== 'application/pdf' && readerEngine !== 'meta') throw new Error('Choose Meta only to analyze an image.');
-      if (readerEngine === 'meta' && !fullFileAvailable) throw new Error('Full-file analysis is not available on this server.');
       const selected = { file, mimeType: checked.mimeType, previewUrl: URL.createObjectURL(file) };
       sourceRef.current = selected;
       setSource(selected);
-      setReading(false);
-      void recognize(selected, sequence, readerEngine);
     } catch (caught) {
       if (isCurrent(sequence)) {
         setError(caught instanceof Error ? caught.message : 'The file could not be read.');
@@ -275,23 +271,29 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
     }
   };
 
-  const retryAnalysis = () => {
+  const startAnalysis = () => {
     const selected = sourceRef.current;
     if (!selected || runningRef.current || reading) return;
+    if (selected.mimeType !== 'application/pdf' && readerEngine !== 'meta') {
+      setError('Choose Meta only to analyze an image.');
+      return;
+    }
+    if (readerEngine === 'meta' && !fullFileAvailable) {
+      setError('Full-file analysis is not available on this server.');
+      return;
+    }
     void recognize(selected, ++sequenceRef.current, readerEngine);
   };
 
   const selectReader = (engine: ScoreImportEngine) => {
+    if (engine === readerEngine) return;
+    // Reader changes never submit the file. Cancel an old request so its result
+    // cannot appear under the new choice; a pending file check can still finish.
+    if (runningRef.current) cancelRecognition();
     setReader(engine);
-    const selected = sourceRef.current;
-    if (!selected || runningRef.current || reading) return;
-    if (selected.mimeType !== 'application/pdf' && engine !== 'meta') {
-      setDraft(null);
-      setStatus('');
-      setError('Choose Meta only to analyze an image.');
-      return;
-    }
-    void recognize(selected, ++sequenceRef.current, engine);
+    setDraft(null);
+    setStatus('');
+    setError(null);
   };
 
   const editDraft = (update: DraftUpdate) => {
@@ -343,7 +345,7 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
                 style={{ ...controlStyle, borderStyle: 'dashed', outlineColor: 'var(--brand-yellow)' }}
               >
                 {/* Keep the native picker and keyboard focus; the whole square is its target.
-                    Cleared after each pick so selecting the same file starts another analysis. */}
+                    Cleared after each pick so the same file can be selected again. */}
                 <input
                   ref={fileRef}
                   type="file"
@@ -361,7 +363,7 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
               </label>
             </div>
             <div className="min-w-0 space-y-4 border-t pt-6 sm:border-t-0 sm:border-l sm:pt-0 sm:pl-6" style={{ borderColor: 'var(--border)' }}>
-              <fieldset disabled={running || reading} className="min-w-0">
+              <fieldset className="min-w-0">
                 <legend className="mb-4 font-display text-xl font-bold" style={{ color: 'var(--text-heading)' }}>Reader</legend>
                 <div className="flex flex-col gap-1">
                   {([
@@ -393,10 +395,12 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
                     : 'Meta is off on this server: TheArtist only is available.'}
                 </p>
               )}
-              {(reading || running || (source && !draft)) && <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
+                <button type="button" onClick={startAnalysis} disabled={!source || reading || running} className="px-3 py-2 text-xs font-bold btn-hover disabled:opacity-45" style={{ background: 'var(--brand-yellow)', color: '#1a1a1a' }}>
+                  {running ? 'Analyzing…' : draft ? 'Analyze again' : 'Analyze score'}
+                </button>
                 {(reading || running) && <button type="button" className="px-3 py-2 text-xs btn-hover" style={controlStyle} onClick={cancelRecognition}>Cancel</button>}
-                {source && !draft && !running && !reading && <button type="button" onClick={retryAnalysis} className="px-3 py-2 text-xs btn-hover" style={controlStyle}>Try again</button>}
-              </div>}
+              </div>
             </div>
           </div>
 

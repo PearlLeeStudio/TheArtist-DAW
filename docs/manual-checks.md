@@ -58,12 +58,20 @@ failures are recorded in [evaluation.md](evaluation.md).
   stay unassigned with the source preserved. Longer bars retain all source symbols
   for placement rather than silently selecting two. Cancel, close and replace files
   while a request is running.
-- [ ] Selecting a file starts the analysis automatically with an indeterminate
-  progress bar. The default **Meta assist · harmony + form** reader sends complete
+- [x] Safari desktop: Reader can be selected before a file. Selecting the original
+  vector-score-c.pdf fixture only prepares its preview; changing Reader retains the
+  file without analyzing. **Analyze score** with TheArtist only completes the local
+  review. Changing Reader then clears the review and disables import until analysis
+  is requested again. A PNG can be selected with TheArtist only, reports the required
+  Reader when Analyze is clicked, and stays selected when switching to Meta only.
+  No Meta analysis was submitted in these checks.
+- [ ] An explicitly started analysis shows an indeterminate progress bar.
+  The default **TheArtist + Meta** reader sends complete
   score context to at most two eight-bar harmony calls and one form call. Confident
   local inferences are eligible; printed chords stay unchanged. The status reports
   reviewed coverage, while request IDs remain in provenance. Switching readers
-  with a file loaded analyzes again. Local makes no Meta call; Full file (Meta)
+  during analysis cancels the old request and waits for **Analyze score**; verify
+  its late response cannot populate the review. TheArtist only makes no Meta call; Meta only
   is explicit and unavailable on the public host. Failures stay visible.
   The Review score dialog has no chord-analysis list. After import, select a bar
   to check its chords, Roman numerals and retained source against the original.
