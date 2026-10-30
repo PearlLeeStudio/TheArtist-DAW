@@ -45,15 +45,6 @@ BASS_BASE_MIDI = 36
 HARMONY_BASE_MIDI = 60
 
 
-def _root_pc(chord_sym: str) -> int | None:
-    """Extract root pitch class from a chord symbol (e.g. 'Cmaj7' → 0)."""
-    parsed = _parse(chord_sym)
-    if parsed is None:
-        return None
-    root_pc, _q, _bass = parsed
-    return root_pc
-
-
 def _bass_pc(chord_sym: str) -> int | None:
     """Use the slash-bass note if specified, otherwise the root."""
     parsed = _parse(chord_sym)

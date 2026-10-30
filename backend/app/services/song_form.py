@@ -65,14 +65,6 @@ def _degree_of(chord: str, key_root: int) -> int | None:
     return (NOTE_TO_SEMI[parsed[0]] - key_root) % 12
 
 
-def _is_minor_chord(chord: str) -> bool:
-    parsed = _parse_chord_root(chord)
-    if not parsed:
-        return False
-    q = parsed[1]
-    return q.startswith("m") and not q.startswith("maj")
-
-
 def _make_chord(key_root: int, interval: int, quality: str, flats: bool) -> str:
     return f"{_note((key_root + interval) % 12, flats)}{quality}"
 
