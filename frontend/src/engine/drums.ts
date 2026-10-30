@@ -360,10 +360,6 @@ export function setCurrentDrumPattern(id: number | null): void {
   currentPatternId = id;
 }
 
-export function getCurrentDrumPattern(): number | null {
-  return currentPatternId;
-}
-
 /**
  * Seconds to delay a note at `beatInBar` while a swing pattern plays: the
  * off-beat 8ths (the "&"s) of every layer — drums, harmony, bass — land

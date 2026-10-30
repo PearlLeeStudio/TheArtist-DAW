@@ -497,7 +497,7 @@ their source and cost records; neither substitutes an AI success for a failed ca
 
 | Layer | Technologies |
 |-------|-------------|
-| **Frontend** | React 19, TypeScript (strict), Vite 8, Tailwind CSS 4, Zustand 5, VexFlow 5, Tone.js 15, smplr (GM Soundfont + drum machines), @tonejs/midi |
+| **Frontend** | React 19, TypeScript (strict), Vite 8, Tailwind CSS 4, Zustand 5, VexFlow 5, Tone.js 15, smplr (GM Soundfont + drum machines) |
 | **Backend** | FastAPI, Pydantic v2, Uvicorn, Python 3.12+ |
 | **AI/ML and score reading** | PyTorch, custom Music Transformer, music21, pypdf; HuggingFace Datasets and TensorBoard in the preserved training pipeline |
 | **Model/tool integration** | Meta Model API through the OpenAI-compatible SDK, official MCP Python SDK |

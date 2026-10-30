@@ -95,7 +95,6 @@ let isPaused = false;
 let loopEnabled = false;
 /** The running schedule repeats while the Loop key is on (MyPage's do not). */
 let scheduleFollowsLoop = true;
-let currentMeasureIndex = 0;
 let scheduledSlots: SlotAddress[] = [];
 /** Where Transport time 0 sits in its bar (a selection may start on the
  *  second chord slot) and the bar length — for getPlaybackStep(). */
@@ -343,7 +342,6 @@ export function schedulePlayback(
 
     // Position callback
     const eventId = Tone.getTransport().schedule(() => {
-      currentMeasureIndex = slot.measureIndex;
       positionCallback?.(slot.measureIndex, slot.slotIndex, chord);
     }, slotTime);
     scheduledEvents.push(eventId);
@@ -436,7 +434,6 @@ export function stopPlayback(time?: number): void {
   clearDrumSchedule();
   isPlaying = false;
   isPaused = false;
-  currentMeasureIndex = 0;
 }
 
 export function getIsPlaying(): boolean {
@@ -453,10 +450,6 @@ export function setLoopEnabled(enabled: boolean): void {
 
 export function getLoopEnabled(): boolean {
   return loopEnabled;
-}
-
-export function getCurrentMeasureIndex(): number {
-  return currentMeasureIndex;
 }
 
 /** The step of the bar playing now — a 16th by default — for the Play

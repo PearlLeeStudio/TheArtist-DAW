@@ -158,15 +158,6 @@ export const GENRE_TO_DRUM_PATTERN_ID: Record<string, number> = {
 
 export type InstrumentFamily = 'keys' | 'guitar' | 'strings' | 'winds' | 'reeds' | 'brass';
 
-export const INSTRUMENT_FAMILIES: { id: InstrumentFamily; label: string }[] = [
-  { id: 'keys',    label: 'Keys / Voice' },
-  { id: 'guitar',  label: 'Guitar' },
-  { id: 'strings', label: 'Strings' },
-  { id: 'winds',   label: 'Winds' },
-  { id: 'reeds',   label: 'Reeds' },
-  { id: 'brass',   label: 'Brass' },
-];
-
 export interface HarmonyInstrument {
   /** FluidR3_GM Soundfont key (instruments.ts loads it on first use) */
   name: string;

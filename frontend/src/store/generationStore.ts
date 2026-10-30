@@ -83,9 +83,7 @@ interface GenerationState {
   requestId: number;
 
   // Actions on suggestion display
-  setSuggestions: (s: Suggestion[]) => void;
   setShowSuggestions: (b: boolean) => void;
-  setActiveSuggestionIdx: (i: number | null) => void;
   clearSuggestions: () => void;
   /** Write suggestion `index` into targetSlots and mark it active. */
   applySuggestion: (index: number) => void;
@@ -330,9 +328,7 @@ export const useGenerationStore = create<GenerationState>((set, get) => {
     activeSuggestionIdx: null,
     requestId: 0,
 
-    setSuggestions: (suggestions) => set({ suggestions }),
     setShowSuggestions: (showSuggestions) => set({ showSuggestions }),
-    setActiveSuggestionIdx: (activeSuggestionIdx) => set({ activeSuggestionIdx }),
     clearSuggestions: () => set({ error: null, ...clearedSuggestions() }),
 
     applySuggestion: (index) => {

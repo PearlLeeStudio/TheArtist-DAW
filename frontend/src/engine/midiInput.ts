@@ -113,11 +113,6 @@ export function detectChordCandidates(midiNotes: number[], maxResults = 3): Chor
   });
 }
 
-export function detectChord(midiNotes: number[]): Chord | null {
-  const candidates = detectChordCandidates(midiNotes, 1);
-  return candidates[0] ?? null;
-}
-
 export async function initMidi(
   onNotes: MidiCallback,
   onChord: ChordCallback,

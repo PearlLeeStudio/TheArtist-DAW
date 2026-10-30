@@ -21,7 +21,6 @@
  */
 import * as Tone from 'tone';
 import { Soundfont, SplendidGrandPiano, ElectricPiano } from 'smplr';
-import { GENRE_BASS_INSTRUMENT, GENRE_HARMONY_INSTRUMENT } from './genreTables';
 import { getInstrumentOutput } from './mixer';
 import type { InstrumentLayer } from './audioMixer';
 
@@ -142,20 +141,6 @@ export function preloadInstruments(
     new Promise<void>((resolve) => setTimeout(resolve, timeoutMs)),
   ]);
 }
-
-export function harmonyInstrumentForGenre(genre: string | null | undefined): string | null {
-  if (!genre) return null;
-  return GENRE_HARMONY_INSTRUMENT[genre.toLowerCase()] ?? null;
-}
-
-export function bassInstrumentForGenre(genre: string | null | undefined): string | null {
-  if (!genre) return null;
-  return GENRE_BASS_INSTRUMENT[genre.toLowerCase()] ?? null;
-}
-
-// Melody layer dropped 2026-05-10 — see arrangement.ts header for
-// rationale. The Play panel's harmony instrument picker absorbs the
-// variety role melody used to provide.
 
 /**
  * Trigger a chord (one or more MIDI note numbers) on a specific GM instrument.
