@@ -14,6 +14,13 @@ to git does not make all of a file's content a new contribution. The complete
 feature history and evaluation limitations are in the reconstructed app's
 `HACKATHON.md` and `experiments/` directory.
 
+Reviewed pre-event derivations include `scoreSurface.ts` (staff rendering),
+`drumPatterns.ts` (drum patterns), `genres.ts` (genre settings) and
+`manualChordDraft.ts` (chord-input logic). Their extraction/refactoring is part
+of the patch; their underlying pre-event functionality is not claimed as a new
+asset. Empty Python package markers also match existing empty files. The
+provenance heuristic cannot establish absence of smaller copied fragments.
+
 ## Reproduce
 
 Install Git, Python 3.12, uv and Node/npm (tested with Node 25.9.0). Use absolute
@@ -43,6 +50,15 @@ are active; unavailable Meta actions remain explicit. To use Meta, set the
 server-side `MODEL_API_KEY`, `THEARTIST_META_ENABLED=1`, and the persistent budget
 configuration described in `deploy/README.md`. No provider key goes in a browser.
 This starts a local server; it does not purchase hosting or configure a domain.
+
+The development snapshot `1be8009` was reconstructed from the public core in a
+new checkout, with fresh environments and shared download caches. All 371 changed
+file hashes, frozen installs, build, F1/OMT setup and an in-process HTTP path
+passed: original 20-bar PDF import → actual F1 completion to 64 bars → four-track
+MIDI (metadata plus Harmony/Bass/Drums). This does not verify a Docker image,
+external hosting, actual browser audio or human preference. The reconstructed
+`scripts/verify_reconstruction.py` can repeat that path with `--root` and a new
+absolute `--out` report path.
 
 ## Rights and scope
 

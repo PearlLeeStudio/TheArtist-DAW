@@ -223,6 +223,15 @@ failures are recorded in [evaluation.md](evaluation.md).
 
 ## New from Song Form
 
+Safari also exercised the built single-origin server with Meta disabled and
+actual F1/OMT ready. Full form displayed **Keep the theme** selected and
+**New progression** as the alternative. Both choices could be switched; a
+64-bar Genre template run with Keep the theme completed, applied and closed the
+dialog. Three matching chorus bodies were visible on the resulting score.
+This did not measure audible latency or collect musical preference ratings.
+The generated blind-listening HTML and external hosting have not been manually
+verified. Existing unchecked audio/DAW cases below remain unchecked.
+
 - [ ] The dialog's title matches its button. Key, Genre and Model at the top are
   pickers shared with the song settings above the staff and Input → Generate: a
   new key transposes the score, a genre switches to the model it is served by, a

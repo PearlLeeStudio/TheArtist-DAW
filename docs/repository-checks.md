@@ -44,6 +44,32 @@ ranking/notes pipeline. Import does not use RAG. See [the source guide](theory-r
 
 ## Automated results
 
+The chorus/measurement/submission changes expanded the scan to 1,038 tracked
+files (935 text, 103 binary, 51 Markdown), with no syntax/JSON/TOML parsing,
+local-link, heading-anchor or credential-pattern findings. Backend **529** tests
+and frontend **235** tests passed, as did backend import, frontend build and lint.
+The 500 kB bundle warning remains (main JS 1,822.76 kB, gzip 892.96 kB).
+These counts extend the historical checks below; they do not imply additional
+audio, image-reader, container or human preference validation.
+
+The contribution extractor reconstructed snapshot `1be8009` from public core
+`f043e53`, with all 371 changed-file checksums matching. A new checkout and new
+Python/npm environments passed frozen installation, frontend build, app import,
+OMT setup and F1 download, using the shared download caches. Added-file review
+identified four derived code files: `scoreSurface.ts` extracts old staff drawing;
+`drumPatterns.ts` extracts old drum patterns; `genres.ts` extracts prior genre
+settings; `manualChordDraft.ts` extracts existing chord-input logic. Two empty
+Python package markers also matched existing empty files. These are retained as
+patch changes and are not claimed as newly invented pre-event functionality.
+The heuristic is a review aid and does not prove absence of all smaller reuse.
+
+The reconstructed environment also passed the [HTTP workflow smoke](../experiments/speed/reconstruction.json):
+static UI/health/capabilities, original 20-bar local PDF import, actual F1+OMT
+completion to 64 bars (five generated sections, one reused), and a 20,101-byte
+four-track MIDI with the expected duration. The exported original twenty bars
+retained their chord symbols. This uses an in-process client, not an external
+host or a real browser/DAW audition.
+
 - Python syntax, JSON/JSONL and TOML parsing passed. The two JSONC TypeScript
   configurations were checked by the frontend build rather than a strict JSON parser.
 - All 416 YAML files parsed, 65 MIDI files and 3 PDFs opened, 27 PNG headers
