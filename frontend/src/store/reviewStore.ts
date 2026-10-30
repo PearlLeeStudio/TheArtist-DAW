@@ -13,6 +13,8 @@
 import { create } from 'zustand';
 import type { Chord, SectionType, SlotAddress, Song, SongSection } from '../models/types';
 import { parseSuggestionChords, type Suggestion } from '../engine/chordGenerator';
+import { chordToString } from '../engine/chordParser';
+import { formatChordSymbol } from '../engine/chordDisplay';
 import { compareCandidate, slotKey, type GenerationComparison } from '../engine/generationComparison';
 import { metaHeaders } from '../engine/metaSession';
 import { planGenre } from '../engine/planClient';
@@ -89,10 +91,8 @@ interface ReviewState {
 /** The chord as the review sends it: the staff's symbol with its extensions, e.g. 'C7(b9)/E'. */
 function reviewSymbol(chord: Chord | null): string | null {
   if (!chord) return null;
-  const head = chord.root + (chord.quality === 'maj' ? '' : chord.quality === 'min' ? 'm' : chord.quality);
-  const bass = chord.bass ? `/${chord.bass}` : '';
-  const full = `${head}${chord.extensions.length > 0 ? `(${chord.extensions.join(',')})` : ''}${bass}`;
-  return full.length <= MAX_SYMBOL_CHARS ? full : `${head}${bass}`.slice(0, MAX_SYMBOL_CHARS);
+  const full = formatChordSymbol(chord);
+  return full.length <= MAX_SYMBOL_CHARS ? full : chordToString(chord).slice(0, MAX_SYMBOL_CHARS);
 }
 
 /** The bars of `measures` with each slot's chord from `chordAt`. */

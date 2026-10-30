@@ -5,7 +5,7 @@ import { useGenerationStore } from '../../store/generationStore';
 import { reasonFact, rulesSlotCount, useReviewStore } from '../../store/reviewStore';
 import { useSessionStore, selectStarredSessions } from '../../store/sessionStore';
 import GenerateProgress from './GenerateProgress';
-import { getChordDisplayParts } from '../../engine/chordDisplay';
+import { formatChordSymbol, getChordDisplayParts } from '../../engine/chordDisplay';
 import { manualChordDraft, manualDraftChord, type ManualChordDraft } from '../../engine/manualChordDraft';
 import { parseSuggestionChords } from '../../engine/chordGenerator';
 import type { Suggestion, SuggestionSource } from '../../engine/chordGenerator';
@@ -64,11 +64,7 @@ function measureRangeLabel(slots: SlotAddress[]): string {
 
 /** Compact chord symbol for the comparison rows, e.g. 'Dm7(b9)/F'; '—' marks an empty slot. */
 function comparisonChordLabel(chord: Chord | null): string {
-  if (!chord) return '—';
-  const quality = chord.quality === 'maj' ? '' : chord.quality === 'min' ? 'm' : chord.quality;
-  const extensions = chord.extensions.length > 0 ? `(${chord.extensions.join(',')})` : '';
-  const bass = chord.bass ? `/${chord.bass}` : '';
-  return `${chord.root}${quality}${extensions}${bass}`;
+  return chord ? formatChordSymbol(chord) : '—';
 }
 
 const BASE_QUALITIES = [

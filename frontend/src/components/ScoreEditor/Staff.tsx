@@ -1,19 +1,18 @@
 import { useEffect, useRef, useMemo, useCallback, useState } from 'react';
 import type { KeyboardEvent } from 'react';
-import { Renderer, Stave } from 'vexflow';
 import { useSongStore, isSlotInList } from '../../store/songStore';
 import { getChordDisplayParts } from '../../engine/chordDisplay';
 import { sectionColor, sectionDisplayLabel } from '../../engine/songForm';
 import type { Measure, SlotAddress, SongSection } from '../../models/types';
 import { scoreStaveLayout } from '../../engine/scoreStaveLayout';
+import { SCORE_MEASURES_PER_ROW, SCORE_ROW_HEIGHT } from '../../engine/scoreLayout';
 import { selectAllScore } from '../../engine/scoreShortcuts';
 import { keySignatureFor } from '../../engine/keySignatures';
+import { useStaffViewport, drawScoreStaves } from './scoreSurface';
 import ImportedMeasureReview from './ImportedMeasureReview';
 import { hasEmptySlot, isExplicitNoChord, needsSourceReview } from './importedBars';
 
-const MEASURES_PER_ROW = 4;
 const CHORD_AREA_HEIGHT = 8;
-const STAVE_HEIGHT = 170;
 const PADDING_Y = 10;
 const PADDING_X = 10;
 const ADD_BTN_HEIGHT = 50;
@@ -97,8 +96,7 @@ export default function Staff() {
   const addMeasures = useSongStore((s) => s.addMeasures);
 
   const [dragStart, setDragStart] = useState<SlotAddress | null>(null);
-  const [containerWidth, setContainerWidth] = useState(960);
-  const [theme, setTheme] = useState(document.documentElement.className);
+  const { containerWidth, theme } = useStaffViewport(wrapperRef);
 
   useEffect(() => {
     const handleKeyDown = (event: globalThis.KeyboardEvent) => {
@@ -112,36 +110,13 @@ export default function Staff() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [selectSlotRange]);
 
-  // Watch for theme class changes
-  useEffect(() => {
-    const observer = new MutationObserver(() => {
-      setTheme(document.documentElement.className);
-    });
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
-    return () => observer.disconnect();
-  }, []);
-
-  // Track container width
-  useEffect(() => {
-    const el = wrapperRef.current;
-    if (!el) return;
-    const ro = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        setContainerWidth(entry.contentRect.width);
-      }
-    });
-    ro.observe(el);
-    setContainerWidth(el.clientWidth);
-    return () => ro.disconnect();
-  }, []);
-
   const staveLayouts = useMemo(() => {
     return Array.from({ length: song.measures.length }, (_, i) => scoreStaveLayout(i, containerWidth));
   }, [song.measures.length, containerWidth]);
 
-  const rows = Math.ceil(song.measures.length / MEASURES_PER_ROW);
+  const rows = Math.ceil(song.measures.length / SCORE_MEASURES_PER_ROW);
   const totalWidth = containerWidth;
-  const totalHeight = rows * STAVE_HEIGHT + PADDING_Y * 2 + CHORD_AREA_HEIGHT + ADD_BTN_HEIGHT;
+  const totalHeight = rows * SCORE_ROW_HEIGHT + PADDING_Y * 2 + CHORD_AREA_HEIGHT + ADD_BTN_HEIGHT;
 
   // Drag handlers
   const handleSlotMouseDown = useCallback((slot: SlotAddress) => {
@@ -164,43 +139,13 @@ export default function Staff() {
     return () => window.removeEventListener('mouseup', handleMouseUp);
   }, [handleMouseUp]);
 
-  // Render VexFlow
   useEffect(() => {
-    if (!containerRef.current) return;
-    const container = containerRef.current;
-    container.innerHTML = '';
-
-    const renderer = new Renderer(container, Renderer.Backends.SVG);
-    renderer.resize(totalWidth, totalHeight);
-    const context = renderer.getContext();
-    const keySig = keySignatureFor(song.key);
-    if (!keySig) return;
-
-    // Get stave color from CSS variable
-    // Keep SVG paint bound to the theme even before the redraw effect runs.
-    const staveColor = 'var(--stave-color)';
-    context.setStrokeStyle(staveColor);
-    context.setFillStyle(staveColor);
-
-    for (let i = 0; i < song.measures.length; i++) {
-      const bl = staveLayouts[i];
-      const stave = new Stave(bl.x, bl.y, bl.width);
-
-      if (bl.isFirstInRow) {
-        stave.addClef('treble');
-        stave.addKeySignature(keySig);
-        if (i === 0) {
-          stave.addTimeSignature(`${song.timeSignature[0]}/${song.timeSignature[1]}`);
-        }
-      }
-
-      stave.setContext(context).draw();
-    }
-  }, [song.measures.length, song.key, song.timeSignature, staveLayouts, totalWidth, totalHeight, theme]);
+    drawScoreStaves(containerRef.current, staveLayouts, totalWidth, totalHeight, song.key, song.timeSignature);
+  }, [staveLayouts, totalWidth, totalHeight, song.key, song.timeSignature, theme]);
 
   // Position for add button
   const lastRow = rows - 1;
-  const addBtnY = PADDING_Y + CHORD_AREA_HEIGHT + (lastRow + 1) * STAVE_HEIGHT + 8;
+  const addBtnY = PADDING_Y + CHORD_AREA_HEIGHT + (lastRow + 1) * SCORE_ROW_HEIGHT + 8;
 
   if (!keySignatureFor(song.key)) {
     return (
@@ -231,7 +176,7 @@ export default function Staff() {
             const layout = staveLayouts[section.startMeasure + offset];
             if (!layout) return null;
             return <rect key={`${section.id}-${offset}`} x={layout.contentX} y={layout.y - CHORD_AREA_HEIGHT}
-              width={layout.x + layout.width - layout.contentX} height={STAVE_HEIGHT - 10}
+              width={layout.x + layout.width - layout.contentX} height={SCORE_ROW_HEIGHT - 10}
               fill={sectionColor(section.type)} fillOpacity={0.09} className="pointer-events-none" />;
           }),
         )}
@@ -253,7 +198,7 @@ export default function Staff() {
 
             // Full stave height for click/highlight zone
             const zoneY = layout.y - CHORD_AREA_HEIGHT;
-            const zoneHeight = STAVE_HEIGHT;
+            const zoneHeight = SCORE_ROW_HEIGHT;
 
             return (
               <g key={`${mi}-${si}`}>

@@ -1,5 +1,13 @@
 import type { Chord } from '../models/types';
 
+/** Full text symbol used by comparisons, exports and candidate review. */
+export function formatChordSymbol(chord: Chord): string {
+  const quality = chord.quality === 'maj' ? '' : chord.quality === 'min' ? 'm' : chord.quality;
+  const extensions = chord.extensions.length ? `(${chord.extensions.join(',')})` : '';
+  const bass = chord.bass ? `/${chord.bass}` : '';
+  return `${chord.root}${quality}${extensions}${bass}`;
+}
+
 export interface ChordDisplayParts {
   root: string;       // C, Db, F# — large
   sup: string;        // 7, maj7, 9, 11, 13, b9, #11 — superscript (top-right)

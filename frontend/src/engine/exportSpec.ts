@@ -1,4 +1,5 @@
 import type { Chord, PlaySettings, SavedSession, Song, SongSection } from '../models/types';
+import { formatChordSymbol } from './chordDisplay.ts';
 import { playSettingsFromSession, resolveVoicingMode, sanitizePlaySettings } from './playSettings.ts';
 import type { VoicingMode } from './playSettings.ts';
 import { guitarVoicingNotes, resolvePianoVoicing } from './voicingEngine.ts';
@@ -43,13 +44,6 @@ const WINDOWS_RESERVED_NAME = /^(con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)/i;
 const MAX_FILENAME_STEM_CHARS = 100;
 const LOOPBACK_NAMES = new Set(['localhost', '::1', '[::1]']);
 
-export function exportChordSymbol(chord: Chord): string {
-  const quality = chord.quality === 'maj' ? '' : chord.quality === 'min' ? 'm' : chord.quality;
-  const extensions = chord.extensions.length ? `(${chord.extensions.join(',')})` : '';
-  const bass = chord.bass ? `/${chord.bass}` : '';
-  return `${chord.root}${quality}${extensions}${bass}`;
-}
-
 /** The backend takes 1–16 whole MIDI note numbers per chord. */
 function isExportableVoicing(voicing: number[]): boolean {
   return voicing.length > 0 && voicing.length <= MAX_VOICING_NOTES &&
@@ -62,9 +56,9 @@ function exportChord(chord: Chord | null, voicingMode: VoicingMode): ExportChord
   // A copy: the piano voicing may be the chord's own stored array.
   const voicing = voicingMode === 'guitar' ? guitarVoicingNotes(chord) : [...resolvePianoVoicing(chord)];
   if (!isExportableVoicing(voicing)) {
-    throw new Error(`Cannot export the voicing for ${exportChordSymbol(chord)}.`);
+    throw new Error(`Cannot export the voicing for ${formatChordSymbol(chord)}.`);
   }
-  return { symbol: exportChordSymbol(chord), voicing };
+  return { symbol: formatChordSymbol(chord), voicing };
 }
 
 /** Throws the reason the song cannot be exported (yet), if there is one. */

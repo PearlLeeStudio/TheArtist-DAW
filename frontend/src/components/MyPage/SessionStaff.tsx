@@ -1,10 +1,10 @@
-import { useEffect, useRef, useMemo, useState } from 'react';
-import { Renderer, Stave } from 'vexflow';
+import { useEffect, useRef, useMemo } from 'react';
 import { getChordDisplayParts } from '../../engine/chordDisplay';
 import { SCORE_MEASURES_PER_ROW, SCORE_ROW_HEIGHT, SCORE_TOP } from '../../engine/scoreLayout';
 import { scoreStaveLayout } from '../../engine/scoreStaveLayout';
 import type { Song } from '../../models/types';
 import { keySignatureFor } from '../../engine/keySignatures';
+import { useStaffViewport, drawScoreStaves } from '../ScoreEditor/scoreSurface';
 
 /** Space below the last row; SCORE_TOP holds the space above the first. */
 const BOTTOM_PADDING = 10;
@@ -16,32 +16,10 @@ interface SessionStaffProps {
 export default function SessionStaff({ song }: SessionStaffProps) {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [containerWidth, setContainerWidth] = useState(960);
-  const [theme, setTheme] = useState(document.documentElement.className);
+  const { containerWidth, theme } = useStaffViewport(wrapperRef);
   // Project cards always show only the first staff row; exports keep the complete song.
-  const visibleMeasures = song.measures.slice(0, SCORE_MEASURES_PER_ROW);
-  const visibleCount = visibleMeasures.length;
-
-  useEffect(() => {
-    const observer = new MutationObserver(() => {
-      setTheme(document.documentElement.className);
-    });
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
-    return () => observer.disconnect();
-  }, []);
-
-  useEffect(() => {
-    const el = wrapperRef.current;
-    if (!el) return;
-    const ro = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        setContainerWidth(entry.contentRect.width);
-      }
-    });
-    ro.observe(el);
-    setContainerWidth(el.clientWidth);
-    return () => ro.disconnect();
-  }, []);
+  const visibleCount = Math.min(song.measures.length, SCORE_MEASURES_PER_ROW);
+  const visibleMeasures = song.measures.slice(0, visibleCount);
 
   const staveLayouts = useMemo(() => {
     return Array.from({ length: visibleCount }, (_, i) => scoreStaveLayout(i, containerWidth));
@@ -55,35 +33,8 @@ export default function SessionStaff({ song }: SessionStaffProps) {
   const totalHeight = rows * SCORE_ROW_HEIGHT + SCORE_TOP + BOTTOM_PADDING;
 
   useEffect(() => {
-    if (!containerRef.current) return;
-    const container = containerRef.current;
-    container.innerHTML = '';
-
-    const renderer = new Renderer(container, Renderer.Backends.SVG);
-    renderer.resize(totalWidth, totalHeight);
-    const context = renderer.getContext();
-    const keySig = keySignatureFor(song.key);
-    if (!keySig) return;
-
-    const staveColor = 'var(--stave-color)';
-    context.setStrokeStyle(staveColor);
-    context.setFillStyle(staveColor);
-
-    for (let i = 0; i < visibleCount; i++) {
-      const bl = staveLayouts[i];
-      const stave = new Stave(bl.x, bl.y, bl.width);
-
-      if (bl.isFirstInRow) {
-        stave.addClef('treble');
-        stave.addKeySignature(keySig);
-        if (i === 0) {
-          stave.addTimeSignature(`${song.timeSignature[0]}/${song.timeSignature[1]}`);
-        }
-      }
-
-      stave.setContext(context).draw();
-    }
-  }, [visibleCount, song.key, song.timeSignature, staveLayouts, totalWidth, totalHeight, theme]);
+    drawScoreStaves(containerRef.current, staveLayouts, totalWidth, totalHeight, song.key, song.timeSignature);
+  }, [staveLayouts, totalWidth, totalHeight, song.key, song.timeSignature, theme]);
 
   if (!keySignatureFor(song.key)) {
     return (
