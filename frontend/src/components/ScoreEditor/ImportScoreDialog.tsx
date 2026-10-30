@@ -213,7 +213,7 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
       if (!isCurrent(sequence)) return;
       const checked = checkScoreFile(file, header);
       if (!checked.ok) throw new Error(checked.message);
-      if (checked.mimeType !== 'application/pdf' && readerEngine !== 'meta') throw new Error('Choose Full file (Meta) to analyze an image.');
+      if (checked.mimeType !== 'application/pdf' && readerEngine !== 'meta') throw new Error('Choose Meta only to analyze an image.');
       if (readerEngine === 'meta' && !fullFileAvailable) throw new Error('Full-file analysis is not available on this server.');
       const selected = { file, mimeType: checked.mimeType, previewUrl: URL.createObjectURL(file) };
       sourceRef.current = selected;
@@ -288,7 +288,7 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
     if (selected.mimeType !== 'application/pdf' && engine !== 'meta') {
       setDraft(null);
       setStatus('');
-      setError('Choose Full file (Meta) to analyze an image.');
+      setError('Choose Meta only to analyze an image.');
       return;
     }
     void recognize(selected, ++sequenceRef.current, engine);
@@ -345,9 +345,9 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
                 <legend className="mb-2" style={mutedStyle}>Reader</legend>
                 <div className="flex flex-wrap gap-x-5 gap-y-2">
                   {([
-                    { value: 'auto', label: 'Meta assist · harmony + form', disabled: !metaAvailable },
-                    { value: 'meta', label: 'Full file (Meta)', disabled: !fullFileAvailable },
-                    { value: 'local', label: 'Local', disabled: false },
+                    { value: 'auto', label: 'TheArtist + Meta', disabled: !metaAvailable },
+                    { value: 'meta', label: 'Meta only', disabled: !fullFileAvailable },
+                    { value: 'local', label: 'TheArtist only', disabled: false },
                   ] as const).map((option) => (
                     <label key={option.value} className="flex items-center gap-2 has-[:disabled]:opacity-50">
                       <input
@@ -368,8 +368,8 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
               {readerEngine === 'meta' && <p className="text-xs" style={mutedStyle}>Sends the full file · PDF or image · 1 call / $1.35 max</p>}
               {meta && !metaAvailable && (
                 <p className="text-xs" style={mutedStyle}>
-                  {meta.enabled ? 'No Meta key is configured on this server: local reading only.'
-                    : 'Meta is off on this server: local reading only.'}
+                  {meta.enabled ? 'No Meta key is configured on this server: TheArtist only is available.'
+                    : 'Meta is off on this server: TheArtist only is available.'}
                 </p>
               )}
             </div>
