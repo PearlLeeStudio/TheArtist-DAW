@@ -565,6 +565,7 @@ def generate_with_model(
         chord_ids=chord_ids,
         end_ids={tokenizer.pad_id},
         generator=generator,
+        use_cache=not env_bool("THEARTIST_DISABLE_KV_CACHE", False),
     )
 
     gen_ids = output[0, len(prompt_ids):].tolist()

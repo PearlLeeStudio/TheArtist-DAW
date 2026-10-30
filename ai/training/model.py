@@ -47,6 +47,8 @@ class RelativeMultiHeadAttention(nn.Module):
         x: torch.Tensor,
         mask: torch.Tensor | None = None,
         prefix_kv: tuple[torch.Tensor, torch.Tensor] | None = None,
+        *,
+        kv_cache: list[tuple[torch.Tensor, torch.Tensor]] | None = None,
     ) -> torch.Tensor:
         """
         Args:
@@ -60,6 +62,8 @@ class RelativeMultiHeadAttention(nn.Module):
                 (no relative-position bias is added for them) and are
                 always attendable (causal mask is extended with False
                 columns on the left).
+            kv_cache: optional caller-owned slot containing the previous K/V
+                pair. Updated in place with the appended keys and values.
         Returns:
             (B, L, D)
         """
@@ -69,14 +73,20 @@ class RelativeMultiHeadAttention(nn.Module):
         Q = self.w_q(x).view(B, L, H, dk).transpose(1, 2)  # (B, H, L, dk)
         K = self.w_k(x).view(B, L, H, dk).transpose(1, 2)
         V = self.w_v(x).view(B, L, H, dk).transpose(1, 2)
+        if kv_cache is not None:
+            if kv_cache:
+                past_k, past_v = kv_cache[0]
+                K = torch.cat([past_k, K], dim=2)
+                V = torch.cat([past_v, V], dim=2)
+            kv_cache[:] = [(K, V)]
 
         # Content attention: Q K^T
-        content = torch.matmul(Q, K.transpose(-2, -1))  # (B, H, L, L)
+        content = torch.matmul(Q, K.transpose(-2, -1))  # (B, H, query length, key length)
 
         # Relative position attention: Q R^T via efficient gather
-        rel = self._relative_attention(Q, L)  # (B, H, L, L)
+        rel = self._relative_attention(Q, L, K.shape[2])
 
-        # Content+rel attention scores over the L "real" keys.
+        # Content+rel attention scores over the real keys (including cached ones).
         attn_content = (content + rel) / self.scale
 
         if prefix_kv is not None:
@@ -111,7 +121,7 @@ class RelativeMultiHeadAttention(nn.Module):
         out = out.transpose(1, 2).contiguous().view(B, L, -1)
         return self.w_o(out)
 
-    def _relative_attention(self, Q: torch.Tensor, L: int) -> torch.Tensor:
+    def _relative_attention(self, Q: torch.Tensor, L: int, key_length: int) -> torch.Tensor:
         """Compute Q @ R^T using relative position embeddings.
 
         Uses the index-gather approach: for each (i, j) pair, the relative
@@ -119,23 +129,16 @@ class RelativeMultiHeadAttention(nn.Module):
         """
         device = Q.device
         # Relative position indices: rel[i,j] = j - i + max_seq_len - 1
-        positions = torch.arange(L, device=device)
-        rel_idx = positions.unsqueeze(0) - positions.unsqueeze(1) + self.max_seq_len - 1
+        positions = torch.arange(key_length, device=device)
+        queries = positions[-L:]
+        rel_idx = positions.unsqueeze(0) - queries.unsqueeze(1) + self.max_seq_len - 1
         rel_idx = rel_idx.clamp(0, 2 * self.max_seq_len - 2)
 
-        R = self.rel_emb(rel_idx)  # (L, L, dk)
-
-        # Q: (B, H, L, dk)  R: (L, L, dk) → need (B, H, L, L)
-        # Reshape Q to (B*H, L, dk), bmm with R^T reshaped
+        R = self.rel_emb(rel_idx)  # (query length, key length, dk)
         BH = Q.shape[0] * Q.shape[1]
-        Q_flat = Q.reshape(BH, L, self.d_k)  # (BH, L, dk)
-
-        # For each query position i, we want dot(Q[i], R[i, :, :]) → (BH, L, L)
-        # R: (L, L, dk) → transpose last two → (L, dk, L)
-        # Then Q_flat[:, i, :] @ R[i, :, :].T for each i
-        # Efficient: einsum
-        rel_score = torch.einsum("bld,lsd->bls", Q_flat, R)  # (BH, L, L)
-        return rel_score.view(Q.shape[0], Q.shape[1], L, L)
+        Q_flat = Q.reshape(BH, L, self.d_k)
+        rel_score = torch.einsum("bld,lsd->bls", Q_flat, R)
+        return rel_score.view(Q.shape[0], Q.shape[1], L, key_length)
 
 
 class TransformerBlock(nn.Module):
@@ -167,8 +170,10 @@ class TransformerBlock(nn.Module):
         x: torch.Tensor,
         mask: torch.Tensor | None = None,
         prefix_kv: tuple[torch.Tensor, torch.Tensor] | None = None,
+        *,
+        kv_cache: list[tuple[torch.Tensor, torch.Tensor]] | None = None,
     ) -> torch.Tensor:
-        x = x + self.drop(self.attn(self.norm1(x), mask, prefix_kv=prefix_kv))
+        x = x + self.drop(self.attn(self.norm1(x), mask, prefix_kv=prefix_kv, kv_cache=kv_cache))
         x = x + self.ffn(self.norm2(x))
         return x
 
@@ -225,6 +230,8 @@ class MusicTransformer(nn.Module):
         self,
         input_ids: torch.Tensor,
         prefix_kvs: list[tuple[torch.Tensor, torch.Tensor]] | None = None,
+        *,
+        kv_cache: list[list[tuple[torch.Tensor, torch.Tensor]]] | None = None,
     ) -> torch.Tensor:
         """
         Args:
@@ -232,6 +239,8 @@ class MusicTransformer(nn.Module):
             prefix_kvs: optional per-layer prefix (K, V) tuples used by
                 the prefix-tuning wrapper. Must have length == n_layers
                 or be None.
+            kv_cache: inference-only caller-owned list of per-layer slots.
+                Start with one empty list per layer, then pass only new tokens.
         Returns:
             logits: (B, L, vocab_size)
         """
@@ -239,7 +248,18 @@ class MusicTransformer(nn.Module):
         x = self.token_emb(input_ids) * math.sqrt(self.d_model)
         x = self.drop(x)
 
-        mask = self._causal_mask(L, input_ids.device)
+        past_length = 0
+        if kv_cache is not None:
+            if self.training or torch.is_grad_enabled() or prefix_kvs is not None:
+                raise ValueError("KV caching requires inference without prefix tuning")
+            if len(kv_cache) != len(self.layers):
+                raise ValueError("KV cache must have one entry per layer")
+            if kv_cache[0]:
+                past_length = kv_cache[0][0][0].shape[2]
+            if past_length + L > self.max_seq_len:
+                raise ValueError("KV cache exceeds the context window; prefill a new cache")
+        # A single newly appended token may attend to every cached position.
+        mask = None if past_length and L == 1 else self._causal_mask(past_length + L, input_ids.device)[-L:]
         if prefix_kvs is not None and len(prefix_kvs) != len(self.layers):
             raise ValueError(
                 f"prefix_kvs has length {len(prefix_kvs)} but model has "
@@ -247,7 +267,7 @@ class MusicTransformer(nn.Module):
             )
         for i, layer in enumerate(self.layers):
             pkv = prefix_kvs[i] if prefix_kvs is not None else None
-            x = layer(x, mask, prefix_kv=pkv)
+            x = layer(x, mask, prefix_kv=pkv, kv_cache=kv_cache[i] if kv_cache is not None else None)
 
         return self.out_proj(self.norm(x))
 
@@ -272,6 +292,7 @@ class MusicTransformer(nn.Module):
         chord_ids: set[int] | None = None,
         end_ids: set[int] | None = None,
         generator: torch.Generator | None = None,
+        use_cache: bool = False,
     ) -> torch.Tensor:
         """Autoregressive generation from a prompt.
 
@@ -310,6 +331,9 @@ class MusicTransformer(nn.Module):
                 banned with ``eos_id`` under ``n_bars``.
             generator: request-local sampling RNG on the same device as the
                 model. None retains the caller's normal unseeded sampling.
+            use_cache: reuse request-local attention keys/values during inference.
+                Rebuild after cropping the context so sliding-window semantics
+                match the uncached path. Training and prefix tuning are unchanged.
 
         Returns:
             (1, L') full sequence including prompt and generated tokens.
@@ -323,12 +347,21 @@ class MusicTransformer(nn.Module):
         banned_ends = sorted({eos_id, *(end_ids or ())})
         bars_done = 0
         bar_chords: int | None = None  # chords in the bar being written; None before its [BAR]
+        kv_cache = None
 
         for _ in range(max_new_tokens):
             if n_bars is not None and bars_done >= n_bars:
                 break
             ctx = ids[:, -self.max_seq_len :]
-            logits = self(ctx)[:, -1, :] / max(temperature, 1e-8)
+            if use_cache:
+                if kv_cache is None or ids.shape[1] > self.max_seq_len:
+                    kv_cache = [[] for _ in self.layers]
+                    logits = self(ctx, kv_cache=kv_cache)[:, -1, :]
+                else:
+                    logits = self(ids[:, -1:], kv_cache=kv_cache)[:, -1, :]
+            else:
+                logits = self(ctx)[:, -1, :]
+            logits = logits / max(temperature, 1e-8)
 
             # Repetition penalty (HuggingFace-style): scale already-seen token
             # logits so they are less attractive. Positive logits get divided,
@@ -377,8 +410,9 @@ class MusicTransformer(nn.Module):
             # Top-p (nucleus)
             if 0 < top_p < 1.0:
                 sorted_logits, sorted_idx = torch.sort(logits, descending=True)
-                cum_probs = torch.cumsum(F.softmax(sorted_logits, dim=-1), dim=-1)
-                remove = cum_probs - F.softmax(sorted_logits, dim=-1) > top_p
+                sorted_probs = F.softmax(sorted_logits, dim=-1)
+                cum_probs = torch.cumsum(sorted_probs, dim=-1)
+                remove = cum_probs - sorted_probs > top_p
                 sorted_logits[remove] = float("-inf")
                 logits = sorted_logits.scatter(1, sorted_idx, sorted_logits)
 

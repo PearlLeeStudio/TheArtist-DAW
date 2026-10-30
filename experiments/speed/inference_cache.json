@@ -1,0 +1,244 @@
+{
+  "runtime": {
+    "torch": "2.13.0",
+    "threads": 4,
+    "platform": "Darwin",
+    "architecture": "arm64",
+    "device": "cpu"
+  },
+  "runs": 3,
+  "seeds": [
+    17,
+    18,
+    19
+  ],
+  "warmup_per_mode": 1,
+  "exclusions": [
+    "checkpoint loading",
+    "Meta planning and judging",
+    "RAG",
+    "HTTP and browser"
+  ],
+  "cases": [
+    {
+      "case": "ft_f1/8 bars/3 candidates",
+      "uncached_ms": [
+        386.567,
+        398.141,
+        389.198
+      ],
+      "cached_ms": [
+        208.07,
+        207.078,
+        208.964
+      ],
+      "median_before_ms": 389.198,
+      "median_after_ms": 208.07,
+      "speedup": 1.871,
+      "identical_outputs": true,
+      "output_sha256": [
+        "51f177d023d25c9ba219985a1c40bbd5fb00a3ed7e81d49f01a9392ff0bbf182",
+        "7f8d7d45a5b4650f8341e4078f81637d4ae30f9512167c4c1dc83690b44f9b40",
+        "56be9206984fb26a8488306889c1bb3dda79225193c421bfc7b8552897c23bec"
+      ]
+    },
+    {
+      "case": "ft_f1/32 bars/3 candidates",
+      "uncached_ms": [
+        2217.543,
+        2210.355,
+        2204.113
+      ],
+      "cached_ms": [
+        836.085,
+        842.296,
+        836.37
+      ],
+      "median_before_ms": 2210.355,
+      "median_after_ms": 836.37,
+      "speedup": 2.643,
+      "identical_outputs": true,
+      "output_sha256": [
+        "e7fc78ca923ed698895e5787000a1d376aee2942e03fea85e72fd31a58268fbb",
+        "6bc4a757a2d48a65389b8dc70b7d72cf4b0e12d31a5d479a461e440cf7a4aeb0",
+        "bc325d10ab6c8873b7a3dc4f1b871d11832ef62e2fa94c887b35cc411012c6a8"
+      ]
+    },
+    {
+      "case": "ft_f1/64 bars/3 candidates",
+      "uncached_ms": [
+        7182.635,
+        7013.971,
+        7266.47
+      ],
+      "cached_ms": [
+        1745.956,
+        1883.879,
+        1845.985
+      ],
+      "median_before_ms": 7182.635,
+      "median_after_ms": 1845.985,
+      "speedup": 3.891,
+      "identical_outputs": true,
+      "output_sha256": [
+        "33fce43a0ffcf85180ccedcaea298093bda6b79f2605759e6aec89996e6484d8",
+        "cd19c5659dc93436d1856123dea9a55257622842d6b02dc6c0633688d8fb71b8",
+        "a71999915f3e9f5b9c1fe0accb3d37113da20a8f7240f779f82f9d4279f73fb9"
+      ]
+    },
+    {
+      "case": "ft_f4/8 bars/3 candidates",
+      "uncached_ms": [
+        279.684,
+        292.861,
+        302.741
+      ],
+      "cached_ms": [
+        157.394,
+        169.635,
+        174.824
+      ],
+      "median_before_ms": 292.861,
+      "median_after_ms": 169.635,
+      "speedup": 1.726,
+      "identical_outputs": true,
+      "output_sha256": [
+        "fbbd31bf8b020565f1e1fb366fa7243d34948f2f9d17f85a102b009a8b3d77c6",
+        "700ab52db3319d540e4c0560930807b2a1033b6a85177f9013352e78b8060055",
+        "a01cedc77a223bc7b93fe3b6c73ac4bda5725c1d2ecc4ebc75f329fd46bbd0f3"
+      ]
+    },
+    {
+      "case": "ft_f4/32 bars/3 candidates",
+      "uncached_ms": [
+        1814.31,
+        1452.978,
+        1399.211
+      ],
+      "cached_ms": [
+        657.582,
+        702.403,
+        633.88
+      ],
+      "median_before_ms": 1452.978,
+      "median_after_ms": 657.582,
+      "speedup": 2.21,
+      "identical_outputs": true,
+      "output_sha256": [
+        "799bd6daa34c8778ad4ddc3a3cdbcf0e152065159c62baad4eadea3464784345",
+        "942d2f193b7c87d6c7538eb6228f42649e912a0991e3b8769a64dafea0b18383",
+        "d376a81c7cc9522ea74cfc1048c9e36b61a1a72c0d1c310b8ba1648e8f36a2ac"
+      ]
+    },
+    {
+      "case": "ft_f4/64 bars/3 candidates",
+      "uncached_ms": [
+        3820.452,
+        4056.203,
+        3826.788
+      ],
+      "cached_ms": [
+        1358.851,
+        1461.816,
+        1325.273
+      ],
+      "median_before_ms": 3826.788,
+      "median_after_ms": 1358.851,
+      "speedup": 2.816,
+      "identical_outputs": true,
+      "output_sha256": [
+        "cdeec5481b00298abebee519609857d0ab113bfdacc9b4f00d59f9e9040ad147",
+        "40a945e91d166079be65c28673c42372d90ac45815033a5ec65d2be3f342a07d",
+        "6c6f9a85c83b522e898321933cf81f172b0f1798cf0009adcbeb1325ffdc09fa"
+      ]
+    },
+    {
+      "case": "ft_f1_lora_rock/8 bars/3 candidates",
+      "uncached_ms": [
+        446.533,
+        474.563,
+        441.176
+      ],
+      "cached_ms": [
+        242.073,
+        254.307,
+        242.622
+      ],
+      "median_before_ms": 446.533,
+      "median_after_ms": 242.622,
+      "speedup": 1.84,
+      "identical_outputs": true,
+      "output_sha256": [
+        "817db4505cfb75f3064333e9dec9787116541165a7cb3b21dd47c2b146cf964a",
+        "17f11406237a47e29c60374aa0368a71b966856450c418c55308761c1e9202b4",
+        "127d3cefc9a473ec5ed030afcce0ffe099c26febdf8e531f871a2c4c5149a005"
+      ]
+    },
+    {
+      "case": "ft_f1_lora_rock/32 bars/3 candidates",
+      "uncached_ms": [
+        2443.367,
+        2448.991,
+        2457.308
+      ],
+      "cached_ms": [
+        951.353,
+        946.94,
+        952.632
+      ],
+      "median_before_ms": 2448.991,
+      "median_after_ms": 951.353,
+      "speedup": 2.574,
+      "identical_outputs": true,
+      "output_sha256": [
+        "ef795a3bff96a9cb692f275710df4109f8ab029ac53f3c4ea85fe9a63d965c01",
+        "072a3d8cbdb534df05a2c48832233c966d3f6ee7e847f6b6c9d5a45031129108",
+        "5da77b08e67dbff5af474cf41537f8b2a71a9c876d4fe1174c1435d70612e5ed"
+      ]
+    },
+    {
+      "case": "ft_f1_lora_rock/64 bars/3 candidates",
+      "uncached_ms": [
+        7518.812,
+        7612.695,
+        7508.168
+      ],
+      "cached_ms": [
+        1960.201,
+        1961.877,
+        1956.103
+      ],
+      "median_before_ms": 7518.812,
+      "median_after_ms": 1960.201,
+      "speedup": 3.836,
+      "identical_outputs": true,
+      "output_sha256": [
+        "e4df13f57cdef08a1f0c8fcd8be00799ef216807a8508a3ce0e0eaf3b0d6df5b",
+        "401a5c0fec2a384d58e186c129d50a833b1b927909b2b5a8c3d385517d99e769",
+        "5b58eb84472682238686582b38f4fb9926b068d30d0db4c9eea79e0402bc6ccc"
+      ]
+    },
+    {
+      "case": "song form/32 bars/local planner",
+      "uncached_ms": [
+        2385.147,
+        2410.001,
+        2314.47
+      ],
+      "cached_ms": [
+        999.414,
+        983.752,
+        992.881
+      ],
+      "median_before_ms": 2385.147,
+      "median_after_ms": 992.881,
+      "speedup": 2.402,
+      "identical_outputs": true,
+      "output_sha256": [
+        "c317eb941219099562143f932b761bbc21b07b92e6bdc754b73754fdf9afb09d",
+        "50af3b442fe3735a690ca90d98214ac782b38fb9629bbe2266679573207f09ef",
+        "d75bf628ca27e819159456dc3f296eb51b771d98b94159a3619b4e96619a045d"
+      ]
+    }
+  ]
+}
