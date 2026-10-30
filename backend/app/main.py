@@ -1,11 +1,13 @@
 import asyncio
 import logging
 import os
+from pathlib import Path
 from collections.abc import Mapping
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from app.routes.generate import router as generate_router
 from app.routes.chords import router as chords_router
@@ -31,6 +33,7 @@ log = logging.getLogger(__name__)
 
 WARMUP_VAR = "THEARTIST_WARMUP"
 _default_origins = "http://localhost:5173"
+FRONTEND_DIST = Path(__file__).resolve().parents[2] / "frontend/dist"
 
 
 def create_app(env: Mapping[str, str] | None = None) -> FastAPI:
@@ -82,6 +85,12 @@ def create_app(env: Mapping[str, str] | None = None) -> FastAPI:
         log.info("%s: DAW handoff, the warmup route and MCP are off; score import permits local and bounded Meta assist, "
                  "not whole-file Meta reading; Meta routes are limited "
                  "per session and per day", limits.PUBLIC_HOST_VAR)
+    if env_bool("THEARTIST_SERVE_FRONTEND", False, env):
+        if not (FRONTEND_DIST / "index.html").is_file():
+            raise RuntimeError("Build the frontend before enabling THEARTIST_SERVE_FRONTEND")
+        # Only built assets are exposed, never the repository or local source corpora.
+        # API routes are registered first so assets cannot shadow them.
+        app.mount("/", StaticFiles(directory=str(FRONTEND_DIST), html=True), name="frontend")
     return app
 
 

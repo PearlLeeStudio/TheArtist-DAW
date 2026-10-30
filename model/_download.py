@@ -121,6 +121,8 @@ def main() -> None:
                 print(f"  FAILED: {e}")
                 fail += 1
     print(f"\nDone: {ok} ok, {fail} failed.")
+    if fail:
+        raise SystemExit(1)
 
 
 if __name__ == "__main__":

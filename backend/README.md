@@ -30,8 +30,9 @@ are not loaded by product retrieval.
 `THEARTIST_PUBLIC_HOST=1` disables local DAW operations, manual model warmup and
 MCP, and rejects whole-file Meta import. It retains local import and bounded Meta
 assist with per-session/daily spend limits. This flag is not authentication or a
-complete internet deployment configuration. A hosted frontend needs a same-origin
-`/api` reverse proxy or an appropriate API deployment; Vite's proxy is development-only.
+complete internet deployment configuration. The [single-origin launcher](../deploy/README.md)
+serves the built frontend after API routes; separate hosting needs a suitable
+`/api` reverse proxy. Vite's proxy is development-only.
 
 ```sh
 uv run --frozen --directory /absolute/path/TheArtist-DAW/backend python -m unittest discover -s tests -t .
