@@ -1,4 +1,5 @@
 import type { GeneratePhase } from '../../engine/chordGenerator';
+import OperationProgress from '../OperationProgress';
 
 interface GenerateProgressProps {
   phase: GeneratePhase | null;
@@ -42,6 +43,7 @@ export default function GenerateProgress({ phase }: GenerateProgressProps) {
 
   return (
     <div className="space-y-1.5" style={{ background: 'var(--btn-bg)', border: '1px solid var(--border)', padding: '8px' }}>
+      <OperationProgress label={detailLabel} />
       {/* Grid (not flex) so each chip occupies a fixed slot — its width does NOT
           depend on its label content. Fixes layout-shift when "✓ " prefix or
           counter " 1/3" is added/removed mid-flight. Border kept at 1px solid
@@ -84,26 +86,6 @@ export default function GenerateProgress({ phase }: GenerateProgressProps) {
         })}
       </div>
 
-      <div className="text-[11px] flex items-center gap-1.5" style={{ color: 'var(--text-soft)' }}>
-        <PulsingDot />
-        <span>{detailLabel}</span>
-      </div>
     </div>
-  );
-}
-
-/** Small pulsing dot to make the active state feel alive. */
-function PulsingDot() {
-  return (
-    <span
-      className="inline-block"
-      style={{
-        width: 6,
-        height: 6,
-        borderRadius: '50%',
-        background: 'var(--brand-yellow)',
-        animation: 'pearl-pulse 1.2s ease-in-out infinite',
-      }}
-    />
   );
 }

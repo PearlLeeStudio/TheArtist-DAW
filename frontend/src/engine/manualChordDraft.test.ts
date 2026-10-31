@@ -50,11 +50,12 @@ registerHooks({
       return { url: 'data:text/javascript,export const useShallow = selector => selector;', shortCircuit: true };
     }
     if (context.parentURL?.startsWith(SRC_URL) && /^\.\.?\//.test(specifier) && !/\.\w+$/.test(specifier)) {
-      specifier += specifier.endsWith('/GenerateProgress') ? '.tsx' : '.ts';
+      specifier += /\/(GenerateProgress|OperationProgress)$/.test(specifier) ? '.tsx' : '.ts';
     }
     return nextResolve(specifier, context);
   },
   load(url, context, nextLoad) {
+    if (url.startsWith(SRC_URL) && url.endsWith('.css')) return { format: 'module', shortCircuit: true, source: '' };
     const stores: Record<string, string> = {
       'songStore': 'export const useSongStore = selector => selector(globalThis.manualChordTestSongState);',
       'generationStore': `export const useGenerationStore = selector => selector({

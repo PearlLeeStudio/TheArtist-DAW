@@ -1,4 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react';
+import OperationProgress from '../OperationProgress';
+import { readSSEFrames } from '../../engine/sseStream';
 import type { CSSProperties, KeyboardEvent } from 'react';
 import type { Song } from '../../models/types';
 import { STANDARD_KEYS } from '../../engine/keySignatures';
@@ -235,7 +237,7 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
     setRunning(true);
     setDraft(null);
     setError(null);
-    setStatus(engine === 'verified' ? 'Reading locally, then checking the original with Meta…' : 'Analyzing score…');
+    setStatus('Preparing the score file for analysis…');
     let timedOut = false;
     const timer = window.setTimeout(() => { timedOut = true; controller.abort(); }, ANALYSIS_TIMEOUT_MS);
     const finish = beginTiming('import.review', engine);
@@ -243,16 +245,24 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
       const dataBase64 = await fileBase64(selected.file);
       if (!isCurrent(sequence)) return;
       if (controller.signal.aborted) throw new Error('Recognition was interrupted.');
-      const response = await fetch('/api/import/score', {
+      setStatus('Uploading the score for analysis…');
+      const response = await fetch('/api/import/score/stream', {
         method: 'POST',
         // A server with Meta limits admits an assisted import per browser session
         headers: { 'Content-Type': 'application/json', ...(engine !== 'local' ? metaHeaders() : {}) },
         body: JSON.stringify(scoreImportRequestBody(selected.file.name, selected.mimeType, dataBase64, IMPORT_MODE, engine)),
         signal: controller.signal,
       });
-      const body: unknown = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(recognitionErrorMessage(await response.json().catch(() => null), response.status));
+      let body: unknown;
+      for await (const frame of readSSEFrames<Record<string, unknown>>(response)) {
+        if (!isCurrent(sequence)) return;
+        if (frame.event === 'progress' && typeof frame.data.label === 'string') setStatus(frame.data.label);
+        if (frame.event === 'error') throw new Error(recognitionErrorMessage(frame.data, Number(frame.data.status) || 500));
+        if (frame.event === 'result') { body = frame.data; break; }
+      }
       if (!isCurrent(sequence)) return;
-      if (!response.ok) throw new Error(recognitionErrorMessage(body, response.status));
+      if (!body) throw new Error('The score connection ended before analysis finished. Please try again.');
       const recognized = readScoreImportResponse(body, IMPORT_MODE, engine);
       const created = createScoreImportDraft(recognized, selected.file.name);
       setDraft(created);
@@ -394,7 +404,7 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
           </div>
 
           {(reading || status) && <p role="status" className="text-sm" style={mutedStyle}>{reading ? 'Checking the file…' : status}</p>}
-          {(reading || running) && <progress role="progressbar" aria-label={reading ? 'Checking score file' : 'Analyzing score'} className="h-2 w-full" style={{ accentColor: 'var(--brand-yellow)' }} />}
+          {(reading || running) && <OperationProgress label={reading ? 'Checking the score file…' : status} />}
 
           {source && (
             <div className={draft ? 'grid grid-cols-1 items-start gap-5 md:grid-cols-[minmax(220px,0.8fr)_minmax(0,1.2fr)]' : ''}>

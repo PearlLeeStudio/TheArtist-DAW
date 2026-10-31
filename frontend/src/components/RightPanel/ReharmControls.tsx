@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import OperationProgress from '../OperationProgress';
 import { useSongStore } from '../../store/songStore';
 import { useReharmonizeStore } from '../../store/reharmonizeStore';
 import { useGenerationStore } from '../../store/generationStore';
@@ -51,6 +52,7 @@ export default function ReharmControls({ modelKey }: { modelKey: string }) {
       {loading ? 'Exploring substitutes…' : 'Find 3 alternatives'}
     </button>
     {problem && <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{problem}</p>}
+    {loading && <OperationProgress label="Comparing substitutions against the surrounding chords…" />}
     {error && <p role="alert" className="text-xs">{error}</p>}
     {comparison && <button className="text-xs underline" onClick={() => {
       document.getElementById('reharmonization-comparison')?.scrollIntoView({ block: 'center', behavior: 'smooth' });

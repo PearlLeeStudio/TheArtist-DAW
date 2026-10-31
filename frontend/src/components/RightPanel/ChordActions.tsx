@@ -1,3 +1,4 @@
+import OperationProgress from '../OperationProgress';
 import { useState, useCallback, useEffect, useId } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useSongStore } from '../../store/songStore';
@@ -509,6 +510,7 @@ function SecondEar({ suggestions, disabled }: { suggestions: Suggestion[]; disab
           </p>
         </div>
       )}
+      {loading && <OperationProgress label="Meta is reviewing the selected harmony…" />}
       {error && (
         <p
           role="alert"
@@ -758,7 +760,7 @@ export default function ChordActions({ view = 'all' }: ChordActionsProps) {
               Each pipeline stage gets a chip; the active one is highlighted.
               Only shown for regular Generate; Favorite Generate runs N parallel
               calls and the chip flow would race across them. */}
-          {loading && phase && <GenerateProgress phase={phase} />}
+          {loading && <GenerateProgress phase={phase} />}
           {generationError && (
             <p
               role="alert"

@@ -97,12 +97,16 @@ def compare_readings(local: ScoreImportResponse | None, meta: ScoreImportRespons
 
 
 def import_verified_score(req: ScoreImportRequest, attachment: dict, *,
-                          before_meta: Callable[[float], None] | None = None) -> ScoreImportResponse:
+                          before_meta: Callable[[float], None] | None = None,
+                          on_progress: Callable[[str], None] | None = None) -> ScoreImportResponse:
+    progress = on_progress or (lambda _label: None)
     local = None
     try:
+        progress("Reading the score's notes, chord symbols and bar lines…")
         local = analyze_local_score(req)
         if req.mode == "infer_harmony":
             from app.services.score_completion import complete_sparse_harmony
+            progress("Analyzing harmony where printed chord symbols are missing…")
             local = complete_sparse_harmony(local)
     except LocalScoreUnsupported:
         pass  # The checked box explicitly authorizes original-file reading.
@@ -116,7 +120,9 @@ def import_verified_score(req: ScoreImportRequest, attachment: dict, *,
         context = score_context(local) if local is not None else None
         if before_meta is not None:
             before_meta(SCORE_MAX_REQUEST_USD)
+        progress("Meta is checking the original score against the local reading…")
         checked = _import_meta_score(req, attachment, local_context=context)
+        progress("Comparing both readings and marking unresolved bars for review…")
         return compare_readings(local, checked)
     except ScoreContextError as exc:
         raise ScoreInputError(str(exc), 422) from None

@@ -1,3 +1,4 @@
+import OperationProgress from '../OperationProgress';
 /**
  * SongFormDialog — "New from Song Form". The song's key and genre and the
  * chord model sit at the top for both tabs: they are the same settings as
@@ -585,7 +586,7 @@ export default function SongFormDialog({ onClose, onGenerated, onEditSections }:
               </span>
             </p>
 
-            {planning && <p role="status" className="text-xs" style={labelStyle}>Generating song form…</p>}
+            {planning && <OperationProgress label="Planning the song form and composing its sections…" />}
             {planStatus === 'failed' && (
               <p role="alert" className="text-xs" style={{ color: 'var(--text-heading)' }}>
                 {planError ?? 'The song form could not be generated.'}

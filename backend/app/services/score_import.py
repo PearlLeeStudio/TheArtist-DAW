@@ -228,22 +228,27 @@ def _attachment(req: ScoreImportRequest) -> dict[str, Any]:
 
 
 def import_score(req: ScoreImportRequest, *,
-                 before_meta: Callable[[float], None] | None = None) -> ScoreImportResponse:
+                 before_meta: Callable[[float], None] | None = None,
+                 on_progress: Callable[[str], None] | None = None) -> ScoreImportResponse:
     """Read the score; `before_meta(worst_case_usd)` runs right before a Meta call, and never when the
     local reader is enough (the route admits the spend there)."""
     attachment = _attachment(req)
+    progress = on_progress or (lambda _label: None)
     if req.engine == "verified":
         from app.services.score_verification import import_verified_score
-        return import_verified_score(req, attachment, before_meta=before_meta)
+        return import_verified_score(req, attachment, before_meta=before_meta, on_progress=progress)
     if req.engine == "meta":
         if before_meta is not None:
             before_meta(SCORE_MAX_REQUEST_USD)
+        progress("Meta is reading the original score and recognizing its harmony…")
         return _import_meta_score(req, attachment)
     from app.services.score_analysis import LocalScoreUnsupported, analyze_local_score
     try:
+        progress("Reading the score's notes, chord symbols and bar lines…")
         response = analyze_local_score(req)
         if req.mode == "infer_harmony":
             from app.services.score_completion import complete_sparse_harmony
+            progress("Analyzing harmony where printed chord symbols are missing…")
             response = complete_sparse_harmony(response)
         if req.engine == "auto" and req.mode == "infer_harmony":
             from app.services.score_assistance import enrich_local_harmony
@@ -260,8 +265,11 @@ def import_score(req: ScoreImportRequest, *,
                     before_meta(MAX_AUTO_REQUEST_USD)
                 admitted = True
 
+            progress("Meta is analyzing unresolved harmony from the score…")
             response = enrich_local_harmony(req, response, before_meta=admit_once)
+            progress("Meta is identifying the song sections…")
             return infer_score_form(response, before_meta=admit_once)
+        progress("Preparing the recognized score for review…")
         return response
     except ScoreContextError as exc:
         raise ScoreInputError(str(exc), 422) from None

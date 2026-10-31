@@ -1,3 +1,4 @@
+import OperationProgress from '../OperationProgress';
 import { useEffect, useRef, useState } from 'react';
 import { useSessionStore } from '../../store/sessionStore';
 import { useSongStore } from '../../store/songStore';
@@ -148,6 +149,8 @@ function SessionRow({
           <ExportMenu session={session} />
         </div>
       </div>
+      {isLoading && <OperationProgress label="Loading the project's instrument and drum samples…" />}
+      {exportingId === session.id && <OperationProgress label="Rendering the project's MIDI tracks…" />}
       <div className="overflow-x-auto" style={{ background: 'var(--bg-primary)', border: '1px solid var(--border)' }}>
         <SessionStaff song={session.song} />
       </div>

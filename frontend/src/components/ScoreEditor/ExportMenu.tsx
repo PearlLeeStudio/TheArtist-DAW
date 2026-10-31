@@ -1,3 +1,4 @@
+import OperationProgress from '../OperationProgress';
 import { useEffect, useId, useRef, useState } from 'react';
 import { useSongStore } from '../../store/songStore';
 import { usePlayStore } from '../../store/playStore';
@@ -227,7 +228,7 @@ export default function ExportMenu({ session }: ExportMenuProps) {
         <p className="px-3 py-2 text-[10px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>
           {dawHint(onLocalhost, targets, targetError)}
         </p>
-        {busy && <p role="status" className="px-3 pb-2 text-xs" style={{ color: 'var(--text-soft)' }}>Preparing export…</p>}
+        {busy && <OperationProgress label="Preparing the export file…" />}
         {feedback && <p role={feedback.error ? 'alert' : 'status'} className="px-3 py-2 text-xs leading-relaxed break-words"
           style={{ color: feedback.error ? ERROR_TEXT_COLOR : 'var(--text-accent)', borderTop: '1px solid var(--border)' }}>{feedback.text}</p>}
       </div>}

@@ -152,6 +152,8 @@ rows 59 and 64; successful execution alone does not establish musical quality.
 
 | 104 | **Load valid samples before playback**: use the original lossless CP80 samples, detect partial decoder failures, wait for drum and instrument loading, and show the preparation task or failure above an animated indicator | this commit | none | Reproduced damaged CP80 m4a/ogg in Safari; original FLAC decodes. Frontend 259 tests, build and lint pass; complete deployed playback regression remains in progress |
 
+| 105 | **Show ongoing work and stream score analysis**: publish actual Import reader stages with keepalives, retain typed terminal failures, and show task text above animated waiting indicators in Generate, Reharmonize, Song Form, review, playback and exports | this commit | same bounded Import calls and accounting | Import service tests and three streamed success/error regressions pass; frontend 259 tests, build/lint/import pass. Live Meta Import and full workflow verification remain in progress |
+
 Validation details and unchecked browser/audio/DAW cases are in the
 [manual checklist](docs/manual-checks.md). The README distinguishes application
 screenshots from the pre-existing baseline video. Safari export opened a sixteen-bar,
