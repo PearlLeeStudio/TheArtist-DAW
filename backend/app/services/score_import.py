@@ -22,7 +22,7 @@ from pydantic import ValidationError
 
 from app.models.score_import import (
     MAX_CHORDS_PER_MEASURE, MAX_NOTE_CHARS, MAX_SCORE_BASE64, MAX_SCORE_BYTES, MAX_SCORE_MEASURES,
-    MAX_SCORE_SECTIONS, MAX_SCORE_WARNINGS, MAX_TITLE_CHARS, ScoreExtraction, ScoreImportRequest,
+    MAX_SCORE_SECTIONS, MAX_SCORE_WARNINGS, MAX_TITLE_CHARS, MAX_PITCH_NAMES, ScoreExtraction, ScoreImportRequest,
     ScoreImportResponse,
 )
 from app.models.sections import SECTION_TYPES
@@ -89,6 +89,12 @@ SCORE_SCHEMA = {
                 "sourceLabel": _string(80), "needsReview": {"type": "boolean"}, "note": _string(MAX_NOTE_CHARS),
                 "chordBasis": {"type": "string", "enum": ["printed", "inferred", "unreadable"]},
                 "confidence": {"type": "string", "enum": ["high", "medium", "low"]},
+                "notes": {"type": "array", "maxItems": MAX_PITCH_NAMES, "items": _string(80)},
+                "writtenNotes": {"type": "array", "maxItems": MAX_PITCH_NAMES, "items": _string(80)},
+                "bassNotes": {"type": "array", "maxItems": MAX_PITCH_NAMES, "items": _string(80)},
+                "noChord": {"type": "boolean"},
+                "timeSignature": {"type": ["array", "null"], "minItems": 2, "maxItems": 2,
+                                  "items": {"type": "integer", "minimum": 1, "maximum": 32}},
             }}},
         "sections": {"type": "array", "maxItems": MAX_SCORE_SECTIONS, "items": {
             "type": "object", "properties": {
@@ -236,6 +242,9 @@ def import_score(req: ScoreImportRequest, *,
     from app.services.score_analysis import LocalScoreUnsupported, analyze_local_score
     try:
         response = analyze_local_score(req)
+        if req.mode == "infer_harmony":
+            from app.services.score_completion import complete_sparse_harmony
+            response = complete_sparse_harmony(response)
         if req.engine == "auto" and req.mode == "infer_harmony":
             from app.services.score_assistance import enrich_local_harmony
             from app.services.score_context import score_context
@@ -281,6 +290,19 @@ def _messages(mode: str, attachment: dict[str, Any], local_context: dict | None 
     else:
         system = SYSTEM_PROMPT
         instruction = "Transcribe the attached score's printed chord symbols for review."
+    system += (
+        "\nPopulate notes, writtenNotes and bassNotes with the note names actually read (octaves when "
+        "readable); never derive these lists from a proposed chord label. Empty lists mean no note "
+        "evidence was read. writtenNotes are notated pitches; notes are sounding pitches only when "
+        "octave/transposition marks are established. noChord is true only for explicit N.C. or a "
+        "fully silent measure, never for failed reading. Include each bar's readable meter, else null.\n")
+    if mode == "infer_harmony":
+        system += (
+            "Consider the entire written progression, including known chords BEFORE AND AFTER each "
+            "target, repetitions and cadences. Sparse readable notes need not form a simultaneous "
+            "triad: propose a plausible contextual harmonization with low confidence and an explicit "
+            "rationale. Distinguish that suggestion from recovered source harmony. One chord may "
+            "last the whole bar; do not invent a second change to fill the editor.\n")
     if local_context is not None:
         instruction += (
             " A local parser also produced the provisional musical data below. Verify it against "

@@ -725,19 +725,29 @@ an external call already sent or its cost.
 
 `verified` first tries local analysis, then sends the original attachment and any
 complete local musical synopsis (at most 40 KiB) to one Meta request. It retains
-the 75-second, 8192-token, $1.35 and 128-written-bar bounds. Local outputs above
-128 bars fail before admission. It compares bar counts, key, meter, chord readings
+the 75-second, 8192-token, $1.35 and 128-written-bar bounds. Complete local outputs
+above 128 bars return all local bars (up to 512) with `verification.status: local_only`,
+zero Meta calls and zero compared bars, instead of blocking import. It compares bar counts, key, meter, chord readings
 and note evidence. Aligned printed local symbols/N.C. are retained; discrepancies
 become review flags and low confidence. Unequal counts retain the whole local
 reading without merging or truncating bars. Agreement never increases confidence
 or clears an existing review flag. Meta errors remain errors, without local fallback.
 
 Responses have optional `verification`: `status` (`compared`, `local_unavailable`,
-`unaligned`), `localMeasures`, `metaMeasures`, `comparedMeasures`, zero-based
+`unaligned`, `local_only`), `localMeasures`, `metaMeasures`, `comparedMeasures`, zero-based
 `disputedMeasures`, and explanatory `notes`. An unsupported local file may be read
 by Meta because the checkbox explicitly authorizes that path; it reports zero
 compared bars and marks the result for review. This is not a measured accuracy score.
 Legacy `auto` and `meta` modes remain available to API/MCP clients.
+
+Local `infer_harmony` may use the served `ft_f1` checkpoint for up to eight
+unresolved note-bearing bars in a score of at most 128 bars. These suggestions
+keep `analysisSource: local`, `model: ft_f1`, `requestId: null`, low confidence
+and their original note evidence. Deterministic bars keep `model: null`.
+The model receives known harmony; candidates are compared against fixed later
+chords in written order, within its 512-token window. No mask-trained infilling
+or original-chord recovery is claimed. Unread notation and explicit N.C. are
+never targets. Unknown vocabulary or unavailable weights leave an explicit warning.
 
 For `auto` plus `infer_harmony`, each harmony batch receives the complete ordered
 score synopsis: key/meter, printed versus inferred chords, confidence, N.C., pitch

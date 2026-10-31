@@ -468,7 +468,9 @@ function ScoreReview({ idPrefix, draft, validation, onEdit }: ScoreReviewProps) 
         {changesMeter && <p className="text-xs" style={mutedStyle}>The original uses {meters.join(', ')}. The editor uses {draft.timeSignature || 'one chosen meter'} throughout.</p>}
         {draft.verification && <details open={draft.verification.status !== 'compared' || draft.verification.disputedMeasures.length > 0}
           className="text-xs" style={mutedStyle}>
-          <summary className="cursor-pointer">Reading checks · {draft.verification.disputedMeasures.length} differences flagged</summary>
+          <summary className="cursor-pointer">{draft.verification.status === 'local_only'
+            ? 'Local reading · Meta comparison skipped'
+            : `Reading checks · ${draft.verification.disputedMeasures.length} differences flagged`}</summary>
           <div className="mt-1 space-y-1">
             {[...draft.verification.notes, ...draft.warnings].map((note, index) => <p key={index}>{note}</p>)}
             {!!draft.verification.disputedMeasures.length && <p>Review bars: {draft.verification.disputedMeasures.map((index) => index + 1).join(', ')}.</p>}

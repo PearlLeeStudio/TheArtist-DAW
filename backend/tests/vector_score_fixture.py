@@ -10,7 +10,9 @@ import re
 
 def build_vector_score_pdf(*, tonic: str = "C4", clef: str = "treble", scale: float = 1.0,
                            offset_x: float = 0.0, offset_y: float = 0.0,
-                           time_signature: tuple[int, int] = (4, 4)) -> bytes:
+                           time_signature: tuple[int, int] = (4, 4),
+                           measure_steps: tuple[tuple[int, ...], ...] | None = None,
+                           printed_chords: tuple[tuple[str, ...], ...] | None = None) -> bytes:
     """Build one original bar containing a sustained major triad.
 
     C4/treble and F2/bass exercise different pitches, clefs and key signatures;
@@ -20,6 +22,10 @@ def build_vector_score_pdf(*, tonic: str = "C4", clef: str = "treble", scale: fl
         raise ValueError("Fixture supports C4/F2, treble/bass and 4/4 or 2/4.")
     if not .5 <= scale <= 2 or min(offset_x, offset_y) < 0:
         raise ValueError("Fixture scale/offset bounds exceeded.")
+    if measure_steps is not None and not 1 <= len(measure_steps) <= 4:
+        raise ValueError("One to four original measures are supported.")
+    if printed_chords is not None and (measure_steps is None or len(printed_chords) != len(measure_steps)):
+        raise ValueError("Printed symbols must align with every fixture measure.")
     objects: list[bytes] = [b"", b"", b""]
 
     def add(value: bytes) -> int:
@@ -56,9 +62,11 @@ def build_vector_score_pdf(*, tonic: str = "C4", clef: str = "treble", scale: fl
                    f"/ToUnicode {cmap_id} 0 R >>").encode())
     text_id = add(b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>")
     commands = [f"q {scale} 0 0 {scale} {offset_x} {offset_y} cm", ".65 w"]
+    right = 450 if measure_steps is None else 180 + 100 * (len(measure_steps) - 1)
     for y in (280, 285, 290, 295, 300):
-        commands.append(f"50 {y} m 450 {y} l S")
-    commands += ["50 280 m 50 300 l S", "450 280 m 450 300 l S"]
+        commands.append(f"50 {y} m {right} {y} l S")
+    edges = [50, right] if measure_steps is None else [50, *range(180, right + 1, 100)]
+    commands += [f"{x} 280 m {x} 300 l S" for x in edges]
 
     def music(code: int, x: float, y: float) -> None:
         commands.append(f"BT /Music 1 Tf 20 0 0 20 {x} {y} Tm <{code:02X}> Tj ET")
@@ -72,15 +80,19 @@ def build_vector_score_pdf(*, tonic: str = "C4", clef: str = "treble", scale: fl
     match = re.fullmatch(r"([A-G])(\d)", tonic)
     assert match is not None
     root = int(match[2]) * 7 + "CDEFGAB".index(match[1])
-    for step in (root, root + 2, root + 4):
-        y = 280 + (step - bottom_step) * 2.5
-        music(34 if time_signature == (4, 4) else 38, 210, y)
-        if y < 280:
-            for ledger in range(275, int(y) - 1, -5):
-                commands.append(f"207 {ledger} m 222 {ledger} l S")
-        elif y > 300:
-            for ledger in range(305, int(y) + 1, 5):
-                commands.append(f"207 {ledger} m 222 {ledger} l S")
+    for index, steps in enumerate(measure_steps if measure_steps is not None else ((0, 2, 4),)):
+        x = 210 if measure_steps is None else 140 if index == 0 else 130 + 100 * index
+        for relative in steps:
+            y = 280 + (root + relative - bottom_step) * 2.5
+            music(34 if time_signature == (4, 4) else 38, x, y)
+            for ledger in range(275, int(y) - 1, -5) if y < 280 else range(305, int(y) + 1, 5):
+                commands.append(f"{x - 3} {ledger} m {x + 12} {ledger} l S")
+        if printed_chords:
+            for j, symbol in enumerate(printed_chords[index]):
+                if not re.fullmatch(r"[A-Za-z0-9#./]+", symbol):
+                    raise ValueError("Use simple fixture chord symbols.")
+                text_x = (120 if index == 0 else edges[index] + 10) + j * 45
+                commands.append(f"BT /Text 12 Tf 1 0 0 1 {text_x} 320 Tm ({symbol}) Tj ET")
     if time_signature == (2, 4):
         upper_y = 280 + (root + 4 - bottom_step) * 2.5
         lower_y = 280 + (root - bottom_step) * 2.5

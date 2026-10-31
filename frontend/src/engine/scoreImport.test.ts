@@ -428,6 +428,31 @@ test('512-bar code analysis is supported without shortening or losing source bar
   assert.deepEqual(imported.measures[511].chords, [null, null]);
 });
 
+test('a checked Meta option can open all 129 locally read bars without claiming a Meta check', () => {
+  const raw = response({ analysisSource: 'local', model: null, requestId: null, sections: [],
+    verification: { status: 'local_only', localMeasures: 129, metaMeasures: 0, comparedMeasures: 0,
+      disputedMeasures: [], notes: ['Meta comparison was skipped for this long score.'] },
+    measures: Array.from({ length: 129 }, () => ({ chords: ['C'], sourceLabel: '', needsReview: false, note: '' })),
+  });
+  const parsed = readScoreImportResponse(raw, 'chord_symbols', 'verified');
+  const draft = createScoreImportDraft(parsed, 'long.pdf');
+  assert.equal(buildScoreImportForEditor(draft).measures.length, 129);
+  assert.match(scoreImportReadyStatus(draft, 'verified'), /Local analysis ready for all 129 bars/);
+  assert.throws(() => readScoreImportResponse({ ...raw, verification: { ...raw.verification, comparedMeasures: 129 } }, 'chord_symbols', 'verified'));
+});
+
+test('own-model sparse harmonization keeps its model and independent note evidence', () => {
+  const parsed = readScoreImportResponse(response({ analysisSource: 'local', model: 'ft_f1', requestId: null,
+    mode: 'infer_harmony', sections: [], measures: [{ chords: ['Dm'], sourceLabel: 'Bar 2', needsReview: true,
+      note: 'Contextual harmonization, not recovered source chords.', chordBasis: 'inferred', confidence: 'low',
+      analysisSource: 'local', model: 'ft_f1', requestId: null, notes: ['D4'] }],
+  }), 'infer_harmony', 'local');
+  const song = buildScoreImportForEditor(createScoreImportDraft(parsed, 'sparse.pdf'));
+  assert.equal(song.importSource?.measures[0].model, 'ft_f1');
+  assert.deepEqual(song.importSource?.measures[0].notes, ['D4']);
+  assert.equal(song.measures[0].chords[0]?.root, 'D');
+});
+
 test('malformed local evidence, source attribution and no-chord contradictions fail validation', () => {
   const raw = response({ analysisSource: 'local', model: null, requestId: null });
   assert.throws(() => readScoreImportResponse({ ...raw, model: 'not-a-local-model' }, 'chord_symbols', 'local'));

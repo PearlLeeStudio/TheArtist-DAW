@@ -71,10 +71,15 @@ def compare_readings(local: ScoreImportResponse | None, meta: ScoreImportRespons
             fields.append("note evidence differs or is missing")
         if source.timeSignature and checked.timeSignature and source.timeSignature != checked.timeSignature:
             fields.append("bar meter differs")
-        if source.noChord or (source.chordBasis == "printed" and source.chords):
+        retain_local = source.noChord or (source.chordBasis == "printed" and source.chords)
+        if source.chords and not checked.chords and not checked.noChord:
+            retain_local = True
+            fields.append("Meta supplied no chord; the local hypothesis is retained for review")
+        if retain_local:
             result.measures[index] = source.model_copy(deep=True)
             result.measures[index].analysisSource = "local"
-            result.measures[index].model = result.measures[index].requestId = None
+            result.measures[index].model = source.model
+            result.measures[index].requestId = None
             result.analysisSource = "mixed"
         rank = {"low": 0, "medium": 1, "high": 2}
         result.measures[index].confidence = min((source.confidence, checked.confidence), key=rank.get)
@@ -96,10 +101,17 @@ def import_verified_score(req: ScoreImportRequest, attachment: dict, *,
     local = None
     try:
         local = analyze_local_score(req)
+        if req.mode == "infer_harmony":
+            from app.services.score_completion import complete_sparse_harmony
+            local = complete_sparse_harmony(local)
     except LocalScoreUnsupported:
         pass  # The checked box explicitly authorizes original-file reading.
     if local is not None and len(local.measures) > MAX_META_SCORE_MEASURES:
-        raise ScoreInputError("Meta comparison supports up to 128 written measures. Split the score or turn off Use Meta model.", 422)
+        local.verification = ScoreVerification(
+            status="local_only", localMeasures=len(local.measures), metaMeasures=0,
+            comparedMeasures=0, disputedMeasures=[],
+            notes=["The complete local reading is ready. Meta comparison was skipped for this long score; no Meta request was made."])
+        return local
     try:
         context = score_context(local) if local is not None else None
         if before_meta is not None:

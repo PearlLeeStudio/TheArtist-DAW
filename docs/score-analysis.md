@@ -9,8 +9,9 @@ A provider call already in progress may still finish and incur cost.
 
 The checkbox defaults off (`local`). Checked analysis uses `verified`: local
 reading, one original-file Meta reading informed by the provisional local musical
-synopsis, then comparison. TheArtist here means the local score reader, not the
-composition Transformer. The checkbox accepts PDF, PNG, JPEG and WebP when
+synopsis, then comparison. Local processing combines vector-score reading,
+deterministic note analysis and, for unresolved passages with readable notes,
+bounded F1 harmonization proposals. The checkbox accepts PDF, PNG, JPEG and WebP when
 `meta.fullFileScoreImport` is true. File compatibility is checked
 when analysis starts, without discarding the selected file.
 The REST/MCP request default remains `engine: "local"`; the editor explicitly
@@ -27,6 +28,15 @@ confidence and mark review; agreement never raises confidence or clears a review
 flag. Different counts retain the complete local result without aligning bars by
 position. If local reading is unsupported, Meta may read the file but the review
 reports that local comparison was unavailable. Failed Meta calls remain failures.
+An empty Meta chord hypothesis no longer erases an existing local hypothesis;
+the local result remains attributed and the disagreement remains visible.
+Structured Meta output includes read notes, written notes, bass, meter and N.C.;
+these fields are not reconstructed from the chord label.
+
+A complete local score longer than 128 bars opens normally, up to the local
+512-bar limit. Its `verification.status` is `local_only`, with zero Meta calls
+and zero compared bars. The interface shows that Meta was skipped instead of
+blocking the import. This does not claim that Meta verified a long score.
 
 The response's `verification` record reports comparison coverage and zero-based
 disputed bars. Reading checks in the existing review show those bars and structural
@@ -39,9 +49,39 @@ and chord C. The comparison flagged that bar because Meta omitted structured not
 evidence even though the local reader had pitches; it remained low-confidence and
 needed review. Two earlier standalone Meta attempts on this fixture returned 422.
 This is a functional example of the combined path and missing-evidence detection,
-not a representative accuracy benchmark. Backend 559 tests and frontend 237 tests,
-build/lint and backend import passed. The Pages bundle and server revision were
-verified; browser interaction was not manually repeated for this checkbox change.
+not a representative accuracy benchmark. The missing structured fields were then
+added to the Meta extraction schema. See the [four-condition comparison](score-reader-comparison.md)
+for failures, matched inputs and the incremental value of a second review.
+
+## Why a passage can remain unresolved
+
+The deterministic analyzer normally requires three simultaneous structural pitch
+classes (with a narrow rootless-shell exception). A melody, dyad or uncertain
+duration can therefore remain empty even when adjacent chords suggest a plausible
+harmonization. This is distinct from unread notation, an unsupported chord spelling,
+or more source changes than the editor's two slots. One source chord already fills
+both editor slots; two different chords remain ordered. N.C. is a separate state.
+
+For up to eight empty note-bearing bars in a score of at most 128 bars, local
+analysis now calls the served `ft_f1` checkpoint. Three candidate variations use a
+fixed sampling seed. Read-note pitch-class overlap ranks them, with the whole-context
+model ordering breaking ties. Existing printed/inferred chords and N.C. are retained.
+The result says contextual harmonization, keeps low confidence, records `model: ft_f1`,
+and retains the read notes. Missing weights, unsupported context and bounds are
+reported; unread notation never becomes a successful transcription.
+
+The served tokenizer and dataset are causal next-token sequences, without a trained
+mask/suffix protocol. Candidate sampling uses preceding chords. When fixed later
+chords exist, each completed candidate is scored in written order with all supplied
+known bars, including later chords. Target and later-chord mean log likelihood orders
+the candidates. This is candidate reranking, not a newly trained bidirectional model.
+The model's 512-token limit and unsupported chord vocabulary stop that comparison
+explicitly; they are never hidden by truncating the suffix. Slash-bass distinctions
+remain in the source but are normalized by the trained chord tokenizer.
+
+The same context ranking applies when generating editor variations. It does not
+prove a unique original chord or optimal voice leading; it lets fixed later harmony
+affect the choice that previously used only preceding bars.
 
 ## Bounded API assist
 

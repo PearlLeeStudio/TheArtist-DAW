@@ -31,7 +31,8 @@ GOOD = {
 }
 for measure in GOOD["measures"]:
     measure.update(chordBasis="printed" if measure["chords"] else "unreadable",
-                   confidence="high" if measure["chords"] else "low")
+                   confidence="high" if measure["chords"] else "low", notes=[], writtenNotes=[],
+                   bassNotes=[], noChord=False, timeSignature=None)
 
 
 def body(raw=PDF, **overrides):
@@ -90,6 +91,18 @@ class ScoreImportTest(unittest.TestCase):
         self.assertEqual(settled["usage"]["prompt_tokens"], 1000)
         self.assertEqual(settled["usage"]["completion_tokens"], 500)
         self.assertAlmostEqual(settled["settled_usd"], 0.003375)
+
+    def test_meta_structured_note_evidence_and_explicit_nc_survive_the_api(self):
+        self.draft["measures"][0].update(notes=["C4", "E4", "G4"], writtenNotes=["C4", "E4", "G4"],
+                                           bassNotes=["C4"], timeSignature=[4, 4])
+        self.draft["measures"][3].update(noChord=True, chordBasis="printed")
+        response = CLIENT.post(ROUTE, json=body())
+        self.assertEqual(response.status_code, 200, response.text)
+        self.assertEqual(response.json()["measures"][0]["notes"], ["C4", "E4", "G4"])
+        self.assertTrue(response.json()["measures"][3]["noChord"])
+        fields = self.requests[0]["response_format"]["json_schema"]["schema"]["properties"]["measures"]["items"]
+        for name in ("notes", "writtenNotes", "bassNotes", "noChord", "timeSignature"):
+            self.assertIn(name, fields["required"])
 
     def test_images_use_image_url_and_do_not_claim_pdf_coverage(self):
         samples = [(b"\x89PNG\r\n\x1a\nbytes", "image/png", "score.png"),

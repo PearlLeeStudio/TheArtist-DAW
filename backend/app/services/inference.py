@@ -938,6 +938,19 @@ def generate_ai_result(
     suggestions = _score_and_rerank(suggestions, notify, genre=genre)
     apply_song_form_to_suggestions(suggestions, section_type, key_root, is_minor, cadence)
     suggestions = _inject_voice_leading(suggestions, notify, section_type=section_type, cadence=cadence)
+    # A causal continuation prompt cannot put future bars before the hole.
+    # Instead score each completed candidate in its real whole-score order,
+    # including the likelihood of the already fixed chords after the hole.
+    if selected_measures and any(cm.measure > min(selected_measures) and cm.measure not in selected_measures
+                                 and any(cm.chords) for cm in context):
+        from app.services.chord_context import rank_with_context
+        try:
+            header = build_prompt(tokenizer, key, genre, time_signature, [], [], bpm=bpm)
+            suggestions = rank_with_context(loaded, tokenizer, suggestions, header, context, selected_measures)
+            notify("ranking", {"label": "Compared candidates with preceding and following chords"})
+        except ValueError as exc:
+            notify("ranking", {"label": str(exc) + " Whole-score comparison was skipped."})
+            log.warning("Whole-score candidate comparison skipped: %s", exc)
     suggestions = _explain_each_transition(suggestions, selected_measures, notify, genre=genre)
 
     notify("complete", {"label": "Done"})

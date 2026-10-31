@@ -90,7 +90,9 @@ the author's model and every export keep working.
 **Import Score → review chords and song form → select a passage → Original/A/B/C
 → arrange in Play → export MIDI or PDF.** Local code reads supported vector-score
 notation and proposes note-based harmony; the author's Music Transformer generates
-chord variations. The **Use Meta model** checkbox adds one original-file reading
+chord variations and bounded contextual suggestions for sparse read-note passages.
+Fixed following chords now affect candidate ranking as well as preceding harmony.
+The **Use Meta model** checkbox adds one original-file reading
 with the local musical synopsis and a comparison of bar counts, key, meter, chords
 and note evidence. Differences remain review flags; model agreement is not proof
 of correctness. If local reading is unsupported, the result clearly states that
@@ -122,10 +124,12 @@ file, contract and test coverage, fixes, and remaining verification limits.
   The checkbox is off by default. Checked analysis tries the local reader first,
   then sends the original and a bounded 40-KiB musical synopsis to Meta once.
   It checks up to 128 written bars; uncertain or conflicting results are flagged.
+  Longer scores that the local reader reads completely open with all local bars
+  (up to 512), with a visible Meta-skipped status and no Meta charge.
   Unequal bar counts retain the complete local reading instead of merging misaligned
   bars. Printed local chords and N.C. are preserved. Images and unsupported PDFs
   require the checkbox; their Meta result states when no local comparison was possible.
-  TheArtist here is the local score reader, not the composition Transformer.
+  Local note reading stays distinct from own-model harmonization suggestions.
   API defaults remain local; the separate `auto` and `meta` API modes remain supported.
 - **Roman-numeral analysis** follows the review key: in C major, C → I, Am → vi,
   G7 → V7. Changing the review key reanalyzes the same symbols. The editor's main Key
@@ -519,6 +523,8 @@ TheArtist-DAW/
 │   │       ├── llm.py · limits.py       # Bounded Meta calls, attempt costs and admission limits
 │   │       ├── score_import.py · score_pdf.py · score_analysis.py
 │   │       ├── score_context.py · score_assistance.py · score_form.py
+│   │       ├── score_verification.py    # Local/Meta comparison and long-score local results
+│   │       ├── score_completion.py · chord_context.py  # F1 proposals and fixed future-chord ranking
 │   │       ├── harmony_analysis.py · harmony_meta.py
 │   │       ├── song_form.py · voice_leading.py · song_builder.py
 │   │       └── smf_export.py · scripter_export.py · daw_launcher.py

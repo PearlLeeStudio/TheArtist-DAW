@@ -12,7 +12,7 @@ export type ScoreMime = 'image/png' | 'image/jpeg' | 'image/webp' | 'application
 export type ScoreImportEngine = 'local' | 'meta' | 'auto' | 'verified';
 
 export interface ScoreVerification {
-  status: 'compared' | 'local_unavailable' | 'unaligned';
+  status: 'compared' | 'local_unavailable' | 'unaligned' | 'local_only';
   localMeasures: number;
   metaMeasures: number;
   comparedMeasures: number;
@@ -200,6 +200,7 @@ export function scoreImportReadyStatus(draft: Pick<ScoreImportDraft, 'measures' 
   if (reader === 'verified') {
     const check = draft.verification;
     if (!check) return 'Comparison result is missing. Analyze again.';
+    if (check.status === 'local_only') return `Local analysis ready for all ${check.localMeasures} bars. Meta comparison was skipped for this long score.`;
     if (check.status === 'local_unavailable') return 'Meta reading ready. Local cross-checking was unavailable; review every bar.';
     if (check.status === 'unaligned') return 'Bar counts disagree. The local reading was kept; review the score before importing.';
     return `Local + Meta compared ${check.comparedMeasures} bars; ${check.disputedMeasures.length} differences flagged. Ready to review.`;
@@ -225,10 +226,11 @@ function invalidResponse(): never {
   throw new Error('The recognition response was incomplete or invalid. Please try again.');
 }
 
-/** Local analysis names no model and no request. Any other source names the
+/** Local deterministic analysis has no model; own-model suggestions name F1.
+ *  Local work never names an API request. Any other source names the
  *  model that answered and, optionally, its request. */
 function hasValidAttribution(source: unknown, model: unknown, requestId: unknown): boolean {
-  if (source === 'local') return model === null && requestId === null;
+  if (source === 'local') return (model === null || model === 'ft_f1') && requestId === null;
   return isFilledTextUpTo(model, 200) && (requestId === null || isTextUpTo(requestId, 200));
 }
 
@@ -302,17 +304,19 @@ export function readScoreImportResponse(raw: unknown, expectedMode: ScoreImportM
   }
   if (raw.verification !== undefined && raw.verification !== null) {
     const check = raw.verification;
-    if (!isRecord(check) || !isOneOf(check.status, ['compared', 'local_unavailable', 'unaligned']) ||
-        ![check.localMeasures, check.metaMeasures, check.comparedMeasures].every((n) => Number.isInteger(n) && (n as number) >= 0 && (n as number) <= 128) ||
-        (check.metaMeasures as number) < 1 || !isTextList(check.notes, 4, 400) ||
+    if (!isRecord(check) || !isOneOf(check.status, ['compared', 'local_unavailable', 'unaligned', 'local_only']) ||
+        !Number.isInteger(check.localMeasures) || (check.localMeasures as number) < 0 || (check.localMeasures as number) > MAX_SCORE_IMPORT_MEASURES ||
+        ![check.metaMeasures, check.comparedMeasures].every((n) => Number.isInteger(n) && (n as number) >= 0 && (n as number) <= 128) ||
+        (check.status !== 'local_only' && (check.metaMeasures as number) < 1) || !isTextList(check.notes, 4, 400) ||
         !Array.isArray(check.disputedMeasures) || check.disputedMeasures.length > 128 ||
         check.disputedMeasures.some((n) => !Number.isInteger(n) || n < 0 || n >= measures.length) ||
         new Set(check.disputedMeasures).size !== check.disputedMeasures.length) return invalidResponse();
     if (check.status === 'compared' && (check.localMeasures !== measures.length || check.metaMeasures !== measures.length || check.comparedMeasures !== measures.length)) return invalidResponse();
     if (check.status === 'local_unavailable' && (check.localMeasures !== 0 || check.comparedMeasures !== 0 || check.metaMeasures !== measures.length)) return invalidResponse();
     if (check.status === 'unaligned' && (check.localMeasures !== measures.length || check.localMeasures === check.metaMeasures || check.comparedMeasures !== 0)) return invalidResponse();
+    if (check.status === 'local_only' && (analysisSource !== 'local' || check.localMeasures !== measures.length || check.metaMeasures !== 0 || check.comparedMeasures !== 0 || check.disputedMeasures.length !== 0)) return invalidResponse();
   }
-  if (expectedEngine === 'verified' && (!raw.verification || analysisSource === 'local')) return invalidResponse();
+  if (expectedEngine === 'verified' && (!isRecord(raw.verification) || (analysisSource === 'local' && raw.verification.status !== 'local_only'))) return invalidResponse();
   return { ...raw, mode, analysisSource, measures } as unknown as ScoreImportResponse;
 }
 

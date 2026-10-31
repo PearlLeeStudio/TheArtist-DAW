@@ -24,6 +24,14 @@ def reading(source="local", *, chords=None, count=1, basis="inferred", notes=Non
 
 
 class ScoreVerificationTest(unittest.TestCase):
+    def test_meta_empty_bar_retains_local_hypothesis_with_visible_disagreement(self):
+        result = verify.compare_readings(reading(), reading("meta", chords=[]))
+        self.assertEqual(result.measures[0].chords, ["C"])
+        self.assertEqual(result.measures[0].analysisSource, "local")
+        self.assertEqual(result.analysisSource, "mixed")
+        self.assertEqual(result.verification.disputedMeasures, [0])
+        self.assertIn("Meta supplied no chord", result.measures[0].note)
+
     def setUp(self):
         self.request = ScoreImportRequest(filename="private-name.pdf", mimeType="application/pdf",
                                           dataBase64="", engine="verified", mode="infer_harmony")
@@ -98,12 +106,15 @@ class ScoreVerificationTest(unittest.TestCase):
             with self.assertRaises(LLMTimeout):
                 verify.import_verified_score(self.request, {})
 
-    def test_large_local_score_is_rejected_before_spending(self):
+    def test_large_local_score_opens_all_bars_without_spending_or_comparison_claim(self):
         admit = Mock()
         with patch.object(verify, "analyze_local_score", return_value=reading(count=129)), \
              patch.object(verify, "_import_meta_score") as meta:
-            with self.assertRaisesRegex(ScoreInputError, "128"):
-                verify.import_verified_score(self.request, {}, before_meta=admit)
+            result = verify.import_verified_score(self.request, {}, before_meta=admit)
+        self.assertEqual(len(result.measures), 129)
+        self.assertEqual(result.analysisSource, "local")
+        self.assertEqual(result.verification.status, "local_only")
+        self.assertEqual(result.verification.comparedMeasures, 0)
         admit.assert_not_called()
         meta.assert_not_called()
 
