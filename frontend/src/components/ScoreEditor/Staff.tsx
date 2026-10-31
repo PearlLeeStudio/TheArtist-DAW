@@ -11,6 +11,7 @@ import { keySignatureFor } from '../../engine/keySignatures';
 import { useStaffViewport, drawScoreStaves } from './scoreSurface';
 import ImportedMeasureReview from './ImportedMeasureReview';
 import ReharmBand from './ReharmBand.tsx';
+import ScoreContextMenu from './ScoreContextMenu.tsx';
 import { useReharmonizeStore } from '../../store/reharmonizeStore';
 import { hasEmptySlot, isExplicitNoChord, needsSourceReview } from './importedBars';
 
@@ -87,7 +88,11 @@ function ImportPlaceholder({ x, width, midLineY, noChord }: ImportPlaceholderPro
   );
 }
 
-export default function Staff() {
+interface StaffProps {
+  onOpenControls?: (tool: 'generate' | 'reharmonize') => void;
+}
+
+export default function Staff({ onOpenControls }: StaffProps = {}) {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const reharmRef = useRef<HTMLDivElement>(null);
@@ -97,6 +102,7 @@ export default function Staff() {
   const bandRow = bandAfter >= 0 ? Math.floor(bandAfter / SCORE_MEASURES_PER_ROW) : -1;
   const bandSpace = bandRow < 0 ? 0 : bandHeight + 16;
   const song = useSongStore((s) => s.song);
+  const songEpoch = useSongStore((s) => s.songEpoch);
   const selectedSlots = useSongStore((s) => s.selectedSlots);
   const playbackPosition = useSongStore((s) => s.playbackPosition);
   const selectSlot = useSongStore((s) => s.selectSlot);
@@ -104,6 +110,9 @@ export default function Staff() {
   const addMeasures = useSongStore((s) => s.addMeasures);
 
   const [dragStart, setDragStart] = useState<SlotAddress | null>(null);
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; epoch: number; selection: SlotAddress[] } | null>(null);
+  const closeContextMenu = useCallback(() => setContextMenu(null), []);
+  const visibleMenu = contextMenu && contextMenu.epoch === songEpoch && contextMenu.selection === selectedSlots ? contextMenu : null;
   const { containerWidth, theme } = useStaffViewport(wrapperRef);
 
   useEffect(() => {
@@ -191,10 +200,6 @@ export default function Staff() {
         height={totalHeight}
         className="absolute top-0 left-0 pointer-events-none"
         style={{ zIndex: 1 }}
-        onContextMenu={(e) => {
-          e.preventDefault();
-          selectSlot(null);
-        }}
       >
         {/* Low-contrast form bands remain separate from selection and the playhead. */}
         {(song.sections ?? []).flatMap((section) =>
@@ -240,8 +245,27 @@ export default function Staff() {
                     'transparent'
                   }
                   className="pointer-events-auto cursor-pointer"
-                  onMouseDown={() => handleSlotMouseDown(slot)}
+                  onMouseDown={event => {
+                    // A secondary click (including macOS Control-click) must
+                    // not collapse the range the user just dragged.
+                    if (event.button !== 0 || event.ctrlKey) return;
+                    closeContextMenu();
+                    handleSlotMouseDown(slot);
+                  }}
                   onMouseEnter={() => handleSlotMouseEnter(slot)}
+                  onContextMenu={event => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    setDragStart(null);
+                    const selection = useSongStore.getState().selectedSlots;
+                    if (!isSlotInList(slot, selection)) selectSlot(slot);
+                    const bounds = event.currentTarget.getBoundingClientRect();
+                    setContextMenu({
+                      x: event.clientX || bounds.left + bounds.width / 2,
+                      y: event.clientY || bounds.top + bounds.height / 2,
+                      epoch: songEpoch, selection: useSongStore.getState().selectedSlots,
+                    });
+                  }}
                 />
 
                 {/* Top indicator bar — playback wins over selection so the
@@ -459,6 +483,8 @@ export default function Staff() {
         <ReharmBand />
       </div>}
     </div>
+    {visibleMenu && <ScoreContextMenu x={visibleMenu.x} y={visibleMenu.y} onClose={closeContextMenu}
+      onChoose={tool => { closeContextMenu(); onOpenControls?.(tool); }} />}
     </>
   );
 }

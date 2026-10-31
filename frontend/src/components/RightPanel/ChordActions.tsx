@@ -527,14 +527,14 @@ interface ChordActionsProps {
    * Which slice of the chord-actions UI to render.
    * - 'all'      → Generate + manual builder (legacy default).
    * - 'generate' → Model selector + Generate button + Suggestions only.
+   * - 'reharmonize' → Model selector + sparse substitution controls only.
    * - 'manual'   → Manual chord builder forced open (no toggle button).
    * Used by Layout to back the right-panel Input tabs.
    */
-  view?: 'all' | 'generate' | 'manual';
+  view?: 'all' | 'generate' | 'reharmonize' | 'manual';
 }
 
 export default function ChordActions({ view = 'all' }: ChordActionsProps) {
-  const [chordTool, setChordTool] = useState<'generate' | 'reharmonize'>('generate');
   const selectedSlots = useSongStore((s) => s.selectedSlots);
   const song = useSongStore((s) => s.song);
   const songEpoch = useSongStore((s) => s.songEpoch);
@@ -602,10 +602,11 @@ export default function ChordActions({ view = 'all' }: ChordActionsProps) {
   // list combining paper F-series + R4 LoRA adapters; both visible in one
   // dropdown (Pearl 2026-05-09 — single-selector preference).
   useEffect(() => {
+    let currentView = true;
     fetch('/api/models/list')
       .then(r => r.ok ? r.json() : null)
       .then((data: ModelListResponse | null) => {
-        if (!data?.models) return;
+        if (!currentView || !data?.models) return;
         // Hide checkpoints this install does not have, so the dropdown
         // lists only models the user can actually pick.
         const usable = data.models.filter((m) => m.available);
@@ -620,11 +621,12 @@ export default function ChordActions({ view = 'all' }: ChordActionsProps) {
           usable.some((m) => m.key === data.default)
         ) {
           setModelKey(data.default);
-          syncGenreToModel(data.default, setGenre);
+          if (view !== 'reharmonize') syncGenreToModel(data.default, setGenre);
         }
       })
       .catch(() => { /* fallback: model list unavailable */ });
-  }, [setModelKey, setGenre]);
+    return () => { currentView = false; };
+  }, [setModelKey, setGenre, view]);
 
   // Mount-time genre sync. song.genre and modelKey both persist across
   // reloads, so they normally come back in step; a song without a genre
@@ -633,7 +635,7 @@ export default function ChordActions({ view = 'all' }: ChordActionsProps) {
   // route to the fallback pattern until the user manually picked a genre
   // in SongSettings.
   useEffect(() => {
-    if (!song.genre) syncGenreToModel(modelKey, setGenre);
+    if (view !== 'reharmonize' && !song.genre) syncGenreToModel(modelKey, setGenre);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -645,7 +647,7 @@ export default function ChordActions({ view = 'all' }: ChordActionsProps) {
     generateSectionType === 'auto' ? autoSectionType : generateSectionType;
   const tooManyMeasures = selectedMeasures.length > MAX_SECTION_BARS;
   const generateDisabled = loading || reharmLoading || tooManyMeasures || !firstSlot;
-  const showGenerateControls = view !== 'manual';
+  const showGenerateControls = view === 'generate' || view === 'all';
   const comparisonOpen = showSuggestions && suggestions.length > 0;
   const previewParts = getChordDisplayParts(manualDraftChord(draft));
 
@@ -663,7 +665,7 @@ export default function ChordActions({ view = 'all' }: ChordActionsProps) {
   // current arrangement, so choosing a checkpoint must not change that genre.
   const pickModel = (key: string) => {
     setModelKey(key);
-    if (chordTool === 'generate') syncGenreToModel(key, setGenre);
+    if (view !== 'reharmonize') syncGenreToModel(key, setGenre);
   };
 
   const handleGenerate = () => {
@@ -702,21 +704,15 @@ export default function ChordActions({ view = 'all' }: ChordActionsProps) {
   return (
     <div className="space-y-2">
       <h3 className="text-xs uppercase tracking-wide font-semibold" style={{ color: 'var(--text-heading)' }}>
-        Chords <span className="font-normal normal-case">— {selectionLabel(selectedSlots)}</span>
+        {view === 'reharmonize' ? 'Reharmonize' : 'Chords'} <span className="font-normal normal-case">— {selectionLabel(selectedSlots)}</span>
       </h3>
+
+      {view !== 'manual' && modelList.length > 0 && <ModelSelect models={modelList} value={modelKey} onChange={pickModel} />}
+      {view === 'reharmonize' && <ReharmControls modelKey={modelKey} />}
 
       {/* ---------- Generate (model) UI ---------- */}
       {showGenerateControls && (
         <>
-          {modelList.length > 0 && <ModelSelect models={modelList} value={modelKey} onChange={pickModel} />}
-
-          <div role="group" aria-label="Chord operation" className="grid grid-cols-2 gap-1">
-            {(['generate', 'reharmonize'] as const).map(tool => <button key={tool}
-              aria-pressed={chordTool === tool} onClick={() => setChordTool(tool)}
-              className="px-2 py-1.5 text-xs capitalize" style={btnStyle(chordTool === tool)}>{tool}</button>)}
-          </div>
-          {chordTool === 'reharmonize' ? <ReharmControls modelKey={modelKey} /> : <>
-
           <SectionSelect
             id={sectionSelectId}
             value={generateSectionType}
@@ -794,7 +790,6 @@ export default function ChordActions({ view = 'all' }: ChordActionsProps) {
               disabled={loading || comparison === null || !canApplyComparison(comparison, song, songEpoch)}
             />
           )}
-          </>}
         </>
       )}
       {/* ---------- end Generate UI ---------- */}

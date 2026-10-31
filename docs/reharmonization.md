@@ -1,7 +1,12 @@
 # Contextual chord alternatives
 
-Select existing chords in the score, open **Input → Generate → Reharmonize**, and
-choose **Find 3 alternatives**. Each candidate changes at most one chord by default;
+Drag-select existing chords in the score, right-click the passage, and choose
+**Reharmonize**. This opens the matching **Input → Reharmonize** tab while retaining
+the selection, including when the panel is closed or showing Play. **Generate**
+and **Reharmonize** are separate primary tabs; **MIDI** and **Set manually** are
+compact additional tools below them. The context menu only opens the controls.
+
+Choose **Find 3 alternatives** to start the search. Each candidate changes at most one chord by default;
 the optional limit permits two. Empty slots and unselected chords stay untouched.
 Genre is not a search objective, and changing the checkpoint in Reharmonize does
 not change the song's genre or playback arrangement.

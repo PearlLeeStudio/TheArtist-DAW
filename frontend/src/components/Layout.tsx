@@ -18,14 +18,14 @@ import { usePlayStore } from '../store/playStore';
 import { playSettingsFromSession } from '../engine/playSettings';
 import type { PlaySettings, SessionGenerationContext, Song } from '../models/types';
 
-type InputMode = 'generate' | 'midi' | 'manual';
-// Order matters — Generate is the default and the most-used path, so it
-// occupies the leftmost tab. MIDI and Set Chord sit in declining-frequency
-// order to its right.
+type InputMode = 'generate' | 'reharmonize' | 'midi' | 'manual';
 const INPUT_TABS: { id: InputMode; label: string }[] = [
   { id: 'generate', label: 'Generate' },
+  { id: 'reharmonize', label: 'Reharmonize' },
+];
+const ADDITIONAL_INPUTS: { id: InputMode; label: string }[] = [
   { id: 'midi', label: 'MIDI' },
-  { id: 'manual', label: 'Set Chord' },
+  { id: 'manual', label: 'Set manually' },
 ];
 
 /** The Play panel needs this much width for its rail and one pane. */
@@ -82,6 +82,7 @@ export default function Layout() {
   const [panelWidth, setPanelWidth] = useState(320);
   const [panelMode, setPanelMode] = useState<'play' | 'input'>('input');
   const [inputMode, setInputMode] = useState<InputMode>('generate');
+  const inputButtons = useRef<Partial<Record<InputMode, HTMLButtonElement | null>>>({});
   // Top-level view: editor (staff + right panel) vs full-page MyPage.
   // MyPage is its own page, not a panel mode — sessions render as
   // read-only staves there, which needs the whole canvas width.
@@ -90,6 +91,13 @@ export default function Layout() {
   const [importOpen, setImportOpen] = useState(false);
   const [sectionsOpen, setSectionsOpen] = useState(false);
   const resizingRef = useRef(false);
+
+  const openScoreControls = useCallback((mode: 'generate' | 'reharmonize') => {
+    setPanelOpen(true);
+    setPanelMode('input');
+    setInputMode(mode);
+    requestAnimationFrame(() => inputButtons.current[mode]?.focus());
+  }, []);
 
   // After New from Song Form lands, show Input → Generate so the A/B/C
   // suggestions for the new section are right there to swap.
@@ -291,7 +299,7 @@ export default function Layout() {
             <SongSettings />
           </div>
 
-          <Staff />
+          <Staff onOpenControls={openScoreControls} />
         </div>
 
         {/* Toggle column — short yellow chevron button at the top
@@ -370,15 +378,29 @@ export default function Layout() {
           )}
 
           <div className="flex-1 min-h-0 overflow-y-auto space-y-3" style={{ display: panelMode === 'input' ? undefined : 'none' }}>
-            {/* Sub-tab bar — three input methods. */}
-            <div className="flex" style={{ borderBottom: '1px solid var(--border)' }}>
+            {/* Composition is primary; MIDI and manual entry remain compact utilities. */}
+            <div role="tablist" aria-label="Composition tools" className="flex" style={{ borderBottom: '1px solid var(--border)' }}>
               {INPUT_TABS.map((t) => {
                 const active = inputMode === t.id;
                 return (
                   <button
                     key={t.id}
+                    ref={element => { inputButtons.current[t.id] = element; }}
+                    id={`input-tool-${t.id}`}
+                    role="tab"
+                    aria-selected={active}
+                    aria-controls="input-tool-content"
+                    tabIndex={active || (inputMode !== 'generate' && inputMode !== 'reharmonize' && t.id === 'generate') ? 0 : -1}
                     onClick={() => setInputMode(t.id)}
-                    className="flex-1 px-3 py-2 text-xs font-semibold uppercase tracking-wide transition-colors btn-hover"
+                    onKeyDown={event => {
+                      if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+                      event.preventDefault();
+                      const next = event.key === 'Home' ? 'generate' : event.key === 'End' ? 'reharmonize'
+                        : t.id === 'generate' ? 'reharmonize' : 'generate';
+                      setInputMode(next);
+                      inputButtons.current[next]?.focus();
+                    }}
+                    className="flex-1 min-w-0 px-2 py-2 text-xs font-semibold transition-colors btn-hover"
                     style={{
                       color: active ? 'var(--text-heading)' : 'var(--text-muted)',
                       borderTop: active ? '2px solid var(--brand-yellow)' : '2px solid transparent',
@@ -391,16 +413,30 @@ export default function Layout() {
               })}
             </div>
 
-            {/* Hidden rather than unmounted, like this pane and the panel
-                itself, so MIDI monitoring stays connected while the panel is
-                closed or on Play. Played chords are captured only while the
-                MIDI tab is in front and no dialog is open. */}
-            <div hidden={inputMode !== 'midi'}>
-              <MidiStatus onMidiNotes={handleMidiNotes}
-                captureActive={inputPaneShown && inputMode === 'midi' && !dialogOpen} />
+            <div role="group" aria-label="Additional input tools" className="flex justify-end gap-2">
+              {ADDITIONAL_INPUTS.map(t => <button key={t.id} id={`input-tool-${t.id}`}
+                aria-pressed={inputMode === t.id} aria-controls="input-tool-content"
+                onClick={() => setInputMode(t.id)} className="px-2 py-1 text-[11px] rounded btn-hover"
+                style={{ background: 'var(--btn-bg)', color: inputMode === t.id ? 'var(--text-heading)' : 'var(--text-muted)',
+                  border: `1px solid ${inputMode === t.id ? 'var(--brand-yellow)' : 'var(--border)'}` }}>
+                {t.label}
+              </button>)}
             </div>
-            {inputPaneShown && inputMode === 'generate' && <ChordActions view="generate" />}
-            {inputPaneShown && inputMode === 'manual' && <ChordActions view="manual" />}
+
+            <div id="input-tool-content" role={inputMode === 'generate' || inputMode === 'reharmonize' ? 'tabpanel' : 'region'}
+              aria-labelledby={`input-tool-${inputMode}`}>
+              {/* Hidden rather than unmounted, like this pane and the panel
+                  itself, so MIDI monitoring stays connected while the panel is
+                  closed or on Play. Played chords are captured only while the
+                  MIDI tab is in front and no dialog is open. */}
+              <div hidden={inputMode !== 'midi'}>
+                <MidiStatus onMidiNotes={handleMidiNotes}
+                  captureActive={inputPaneShown && inputMode === 'midi' && !dialogOpen} />
+              </div>
+              {inputPaneShown && inputMode === 'generate' && <ChordActions view="generate" />}
+              {inputPaneShown && inputMode === 'reharmonize' && <ChordActions view="reharmonize" />}
+              {inputPaneShown && inputMode === 'manual' && <ChordActions view="manual" />}
+            </div>
           </div>
         </div>
 
