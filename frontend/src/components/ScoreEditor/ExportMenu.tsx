@@ -9,6 +9,7 @@ import {
 import type { ExportSpec } from '../../engine/exportSpec';
 import type { PdfTheme } from '../../engine/pdf';
 import type { SavedSession } from '../../models/types';
+import { openDawBridge } from '../../engine/dawBridge';
 
 type DawId = 'logic' | 'ableton';
 /** How the server hands the MIDI over: opened in the DAW, or shown in Finder. */
@@ -51,7 +52,7 @@ async function handOffToDaw(target: DawId, spec: ExportSpec, controller: AbortCo
 
 /** Tooltip of a DAW button: why it is disabled, or undefined when it can be used. */
 function dawUnavailableReason(onLocalhost: boolean, targets: DawTarget[] | null, targetError: string, target: DawTarget | undefined): string | undefined {
-  if (!onLocalhost) return 'Available on localhost. Download MIDI for use on this computer.';
+  if (!onLocalhost) return 'Use the running TheArtist MIDI Bridge on this Mac to open the MIDI.';
   if (targetError) return targetError;
   if (!targets) return CHECKING_DAWS;
   return target?.available ? undefined : 'This DAW is not installed on the server computer.';
@@ -59,7 +60,7 @@ function dawUnavailableReason(onLocalhost: boolean, targets: DawTarget[] | null,
 
 /** The note under the DAW buttons. */
 function dawHint(onLocalhost: boolean, targets: DawTarget[] | null, targetError: string): string {
-  if (!onLocalhost) return 'Download .mid, then import it into your DAW. Automatic handoff is available on localhost.';
+  if (!onLocalhost) return 'Direct opening uses TheArtist MIDI Bridge on your Mac. Download MIDI also works without it.';
   if (targetError) return targetError;
   if (!targets) return CHECKING_DAWS;
   return 'Local Mac: Logic opens the MIDI; Ableton uses drag from Finder.';
@@ -152,8 +153,15 @@ export default function ExportMenu({ session }: ExportMenuProps) {
         downloadExportBlob(blob, safeExportFilename(song.title, 'js'));
         setFeedback({ text: 'Scripter script downloaded. In Logic: MIDI FX ▸ Scripter ▸ Open Script in Editor, paste, Run Script.', error: false });
       } else if (action === 'logic' || action === 'ableton') {
-        if (!onLocalhost) throw new Error('Download MIDI and open it on your computer. DAW handoff requires localhost.');
-        const handoff = await handOffToDaw(action, buildExportSpec(song, settings), controller);
+        let handoff: DawHandoff;
+        if (onLocalhost) handoff = await handOffToDaw(action, buildExportSpec(song, settings), controller);
+        else {
+          const bridge = openDawBridge(controller.signal);
+          try {
+            const blob = await requestMidiExport(buildExportSpec(song, settings), controller.signal);
+            handoff = await bridge.send(action, song.title, blob);
+          } finally { bridge.close(); }
+        }
         if (controller.signal.aborted) return;
         setFeedback({ text: handoff === 'reveal'
           ? 'MIDI shown in Finder. Drag it into Ableton Live to continue.'
@@ -188,7 +196,7 @@ export default function ExportMenu({ session }: ExportMenuProps) {
   );
   const dawButton = (id: DawId, label: string) => {
     const target = targets?.find((item) => item.id === id);
-    return actionButton(label, id, !onLocalhost || !target?.available, dawUnavailableReason(onLocalhost, targets, targetError, target));
+    return actionButton(label, id, onLocalhost && !target?.available, dawUnavailableReason(onLocalhost, targets, targetError, target));
   };
 
   return (

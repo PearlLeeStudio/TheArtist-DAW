@@ -45,6 +45,10 @@ Public Git pushes update Pages automatically. The shared model server also polls
 this repository's `main` branch and deploys runtime changes with health checks
 and rollback; see [automatic deployment](deploy/autodeploy.md).
 
+Hosted **Open in Logic Pro** uses the [local Mac bridge](docs/midi-input.md#open-a-hosted-score-in-logic-pro)
+to deliver the generated MIDI to the user's Mac. The cloud server does not launch
+desktop applications. Download MIDI remains available without the helper.
+
 ```text
 Local edit → commit + push → public TheArtist-DAW/main
   ├─ Cloudflare Pages build → artist-daw.pearlleestudio.co

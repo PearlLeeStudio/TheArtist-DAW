@@ -62,3 +62,21 @@ physical keypress/browser confirmation remains a manual check.
 
 Mobile Safari is not a target for this Mac helper. A phone has no access to a
 keyboard attached to another machine's `127.0.0.1`.
+
+## Open a hosted score in Logic Pro
+
+The same Mac helper also supports **Export → Open in Logic Pro** on the hosted
+Artist-DAW site. The model server produces the MIDI; a separate, short-lived local
+window transfers it to the helper on this Mac. The helper saves a new `.mid` file
+under `tools/midi-bridge/.build/exports/` and asks macOS to open it in Logic. The
+window closes when the handoff is confirmed. MIDI input's connection window is
+independent and stays open. Ableton's export reveals the MIDI in Finder for dragging.
+
+Only the allowlisted app origin, the exact opener and a fresh nonce can initiate
+this transfer. The local POST requires the helper's own HTTP origin and JSON; it
+accepts bounded Standard MIDI files and fixed Logic/Finder commands. Files receive
+unique names and never replace an existing project. Errors remain visible in the
+Export menu. The MIDI download path works without the helper.
+
+Live keyboard notes remain unrecorded. Exported arrangements are intentionally
+saved on the Mac for the DAW; cloud generation/export still uses the existing API.
