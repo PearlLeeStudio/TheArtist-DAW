@@ -6,8 +6,8 @@ Connect the public `PearlLeeStudio/TheArtist-DAW` GitHub repository:
 - Root directory: `frontend`
 - Build command: `npm run build`
 - Build output: `dist`
-- Build variable: `NODE_VERSION=25.9.0`
-- Custom domain: `artist.pearlleestudio.co`
+- Build variable: `NODE_VERSION=26.13.0` (LTS)
+- Custom domain: `artist-daw.pearlleestudio.co`
 
 The built editor is static. `public/_worker.js` forwards only `/api` requests
 to the Python server configured by the Pages runtime variable `BACKEND_ORIGIN`,
@@ -23,9 +23,10 @@ Check both `/` and `/api/health` through the custom domain. A working editor
 alone does not verify AI generation. Test an actual F1 generation after the
 server is connected.
 
-To switch to the post-hackathon public release, prepare and verify a separate
-Git-connected Pages project from `PearlLeeStudio/TheArtist`, then move the custom
-domain to it. Keep the current deployment available until that check passes.
+Deploy the public release in a separate Git-connected Pages project from
+`PearlLeeStudio/TheArtist` at `artist.pearlleestudio.co`. Keep its deployment
+independent of this hackathon project. Retiring the hackathon deployment must
+not remove the public release's domain or resources.
 
 Routing follows Cloudflare's [advanced mode](https://developers.cloudflare.com/pages/functions/advanced-mode/)
 and [route configuration](https://developers.cloudflare.com/pages/functions/routing/).
