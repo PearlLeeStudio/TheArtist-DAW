@@ -30,7 +30,7 @@ import { beginTiming } from '../engine/experienceTiming.ts';
 export type PlanStatus = 'idle' | 'running' | 'done' | 'failed';
 export type PlanChipStep = 'plan' | 'validate' | 'revise' | 'generate_section' | 'judge' | 'error';
 /** Who did the step: Muse Spark, the author's chord model, or the rules. */
-export type PlanChipBadge = 'Muse Spark plan' | 'own model' | 'rules' | 'reused chorus';
+export type PlanChipBadge = 'Muse Spark plan' | 'Muse Spark chords' | 'own model' | 'rules' | 'reused chorus';
 
 /** One step of the run as the band shows it, in run order. */
 export interface PlanChip {
@@ -48,6 +48,7 @@ export interface PlanChip {
 }
 
 interface PlanState {
+  progress: string;
   status: PlanStatus;
   planner: PlannerKind | null;
   chips: PlanChip[];
@@ -80,9 +81,9 @@ interface PlanState {
 }
 
 /** Store fields of no run at all. */
-function idleState(): Pick<PlanState, 'status' | 'planner' | 'chips' | 'sections' | 'spendUsd' | 'error' | 'trace' | 'request' | 'applied' | 'snapshot'> {
+function idleState(): Pick<PlanState, 'progress' | 'status' | 'planner' | 'chips' | 'sections' | 'spendUsd' | 'error' | 'trace' | 'request' | 'applied' | 'snapshot'> {
   return {
-    status: 'idle', planner: null, chips: [], sections: [], spendUsd: 0, error: null, trace: null, request: null,
+    progress: 'Preparing the song form…', status: 'idle', planner: null, chips: [], sections: [], spendUsd: 0, error: null, trace: null, request: null,
     applied: false, snapshot: null,
   };
 }
@@ -99,7 +100,8 @@ function sectionChip(section: PlanSectionResult): PlanChip {
     ok: true,
     label: `${sectionLabel(section.sectionType)} · ${section.bars} bars${section.regenerated ? ' · regenerated' : ''}`,
     // The backend's rule-based generator answers as 'rules' when the model is unavailable.
-    badge: section.source === 'reuse' ? 'reused chorus' : section.source === 'ai' ? 'own model' : 'rules',
+    badge: section.source === 'reuse' ? 'reused chorus' : section.source === 'ai'
+      ? section.modelUsed === 'muse-spark-1.3' ? 'Muse Spark chords' : 'own model' : 'rules',
     note: section.reuse
       ? `from bar ${section.reuse.startMeasure + 1} · ${section.reuse.changedSlots.length} ending slots changed`
       : rules > 0 ? `cadence: rules (${rules})` : null,
@@ -195,6 +197,7 @@ export const usePlanStore = create<PlanState>((set, get) => {
 
   const onEventFor = (runId: number) => (event: PlanEvent) => {
     if (!isCurrent(runId)) return;
+    if (event.event === 'progress') { set({ progress: event.data.label }); return; }
     const chip = chipFor(event);
     if (!chip) return;
     set((state) => {

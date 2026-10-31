@@ -42,6 +42,7 @@ export interface PlanOptions {
   planner: PlannerKind;
   /** Checkpoint for every section, as the section flow sends it. */
   modelKey?: string | null;
+  chordSource?: 'own' | 'meta';
   chorusMode?: ChorusMode;
 }
 
@@ -72,13 +73,14 @@ export interface PlanRequest {
   contrast: PlanContrast;
   planner: PlannerKind;
   modelKey: string | null;
+  chordSource?: 'own' | 'meta';
   chorusMode?: ChorusMode;
 }
 
 // --- The trace (backend PlanTrace) ---
 
 export interface PlanCall {
-  step: 'plan_song' | 'judge';
+  step: 'plan_song' | 'compose' | 'judge';
   attempt: number;
   provider: string;
   model: string;
@@ -172,6 +174,7 @@ export interface PlanError {
 }
 
 export interface PlanTrace {
+  chordSource?: 'own' | 'meta';
   status: 'ok' | 'error';
   planner: PlannerKind;
   genre: string;
@@ -194,6 +197,7 @@ export interface PlanTrace {
 // --- The stream's events, in run order ---
 
 export type PlanEvent =
+  | { event: 'progress'; data: { label: string } }
   | { event: 'plan' | 'revise'; data: { attempt: number; source: PlannerKind; plan: SongPlan; call?: PlanCall; t_ms: number } }
   | { event: 'validate'; data: { attempt: number; ok: boolean; errors: PlanIssue[]; t_ms: number } }
   | { event: 'generate_section'; data: PlanSectionResult & { index: number; t_ms: number } }
@@ -286,6 +290,7 @@ export function buildPlanRequest(song: Song, options: PlanOptions): PlanRequest 
     contrast: options.contrast,
     planner: options.planner,
     modelKey: options.modelKey ?? null,
+    ...(options.chordSource ? { chordSource: options.chordSource } : {}),
     ...(options.chorusMode ? { chorusMode: options.chorusMode } : {}),
   };
 }
@@ -307,6 +312,9 @@ function isPlanTrace(value: unknown): value is PlanTrace {
 function toPlanEvent(event: string, data: unknown): PlanEvent | null {
   if (!isRecord(data)) throw new Error(`The server sent an invalid ${event} event`);
   switch (event) {
+    case 'progress':
+      if (typeof data.label !== 'string') throw new Error('The server sent an invalid progress event');
+      return { event, data: { label: data.label } };
     case 'plan':
     case 'revise':
       if (!isRecord(data.plan) || !Array.isArray(data.plan.sections)) throw new Error(`The server sent an invalid ${event} event`);

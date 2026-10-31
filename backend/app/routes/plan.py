@@ -154,7 +154,14 @@ async def plan_song_stream(req: PlanRequest,
             # cannot refund a worker that already owns the actual settlement.
             worker_started = True
             future.add_done_callback(worker_done)
-            while (item := await queue.get()) is not _STREAM_DONE:
+            while True:
+                try:
+                    item = await asyncio.wait_for(queue.get(), timeout=5)
+                except TimeoutError:
+                    yield b": composing song form\n\n"
+                    continue
+                if item is _STREAM_DONE:
+                    break
                 yield _sse(*item)
             try:
                 trace = future.result()

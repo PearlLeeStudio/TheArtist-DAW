@@ -79,6 +79,7 @@ class PlanRequest(BaseModel):
         default="meta", description="meta = Muse Spark plans the form; rules = the genre-default form, no Meta call",
     )
     modelKey: str | None = Field(default=None, description="Checkpoint for every section, as SectionGenerateRequest.modelKey")
+    chordSource: Literal["own", "meta"] = Field(default="own", description="own = Music Transformer sections; meta = Muse Spark writes all section chords without rule replacements")
     seed: int | None = Field(default=None, ge=0, le=MAX_SEED, strict=True,
                              description="Optional chord-sampling seed, split by section and regeneration; does not seed Meta")
 
@@ -102,6 +103,8 @@ class PlanRequest(BaseModel):
 
     @model_validator(mode="after")
     def _sketch_and_defaults(self) -> "PlanRequest":
+        if self.chordSource == "meta" and self.planner != "meta":
+            raise ValueError("Meta chord generation requires the Meta planner.")
         if [m.index for m in self.measures] != list(range(len(self.measures))):
             raise ValueError("measures must be the whole sketch in order, indexed 0..n-1")
         if len(self.measures) + MIN_PLAN_SECTION_BARS > self.targetBars:
@@ -169,7 +172,7 @@ class ValidationAttempt(BaseModel):
 
 class PlanCall(BaseModel):
     """One LLM call of the run. step names the MCP tool it stands for."""
-    step: Literal["plan_song", "judge"]
+    step: Literal["plan_song", "compose", "judge"]
     attempt: int
     provider: str
     model: str
@@ -246,6 +249,7 @@ class PlanTrace(BaseModel):
     """Everything a run did, in order. Stateless: nothing is applied server-side."""
     status: Literal["ok", "error"]
     planner: Literal["meta", "rules"]
+    chordSource: Literal["own", "meta"] = "own"
     genre: str
     key: str
     bpm: int

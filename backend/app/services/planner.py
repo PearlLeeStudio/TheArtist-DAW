@@ -49,8 +49,8 @@ from app.models.plan import (
     SongPlan,
     ValidationAttempt,
 )
-from app.models.schemas import CADENCE_TYPES, ContextMeasure, SectionGenerateRequest
-from app.models.sections import CHORDS_PER_BAR, SECTION_INFO, SECTION_TYPES
+from app.models.schemas import CADENCE_TYPES, ContextMeasure, SectionGenerateRequest, Suggestion
+from app.models.sections import CHORDS_PER_BAR, SECTION_INFO, SECTION_TYPES, section_title
 from app.routes.generate import compose_section
 from app.services.key_anchor import _chord_pcs
 from app.services.chorus_memory import reuse_chorus
@@ -559,6 +559,7 @@ class _Run:
         request = self.request
         return PlanTrace(
             status="error" if self.error else "ok", planner=request.planner, genre=request.genre,
+            chordSource=request.chordSource,
             key=request.key or "", bpm=request.bpm or 0, timeSignature=request.timeSignature or (4, 4),
             plan=self.plan, validation=self.validation, sections=self.sections, judge=self.judge,
             calls=self.calls, spendUsd=self.spend_usd, reservedUsd=round(self.reserved_usd, 8),
@@ -691,8 +692,68 @@ def _generate_section(run: _Run, index: int, regenerated: bool = False) -> PlanS
 def _generate_all(run: _Run) -> None:
     assert run.plan is not None
     for index in range(len(run.plan.sections)):
+        run.emit("progress", {"label": f"Composing {run.plan.sections[index].type.replace('_', ' ')} ({index + 1}/{len(run.plan.sections)})…"})
         section = _generate_section(run, index)
         run.sections.append(section)
+        run.emit("generate_section", {"index": index, **section.model_dump()})
+
+
+def _meta_composition(run: _Run) -> None:
+    """One bounded Meta call writes the validated form; no Transformer or cadence rewriting."""
+    from app.services.reharmonize import chord
+    assert run.plan is not None and run.client is not None
+    run.emit("progress", {"label": "Muse Spark is composing chords for every planned section…"})
+    schema = {
+        "type": "object", "additionalProperties": False, "required": ["sections"],
+        "properties": {"sections": {
+            "type": "array", "minItems": 1, "maxItems": MAX_PLAN_SECTIONS,
+            "items": {"type": "object", "additionalProperties": False, "required": ["index", "bars"],
+                      "properties": {"index": {"type": "integer", "minimum": 0},
+                                     "bars": {"type": "array", "minItems": 2, "maxItems": MAX_PLAN_SECTION_BARS,
+                                              "items": {"type": "array", "minItems": 2, "maxItems": 2,
+                                                        "items": {"type": "string", "minLength": 1, "maxLength": 40}}}}},
+        }},
+    }
+    result = run.call(run.client, "compose", 1, [
+        {"role": "system", "content": "Compose the harmony for every section of this validated song form. "
+         "Return sections in plan order, indexed from zero, with exactly the planned number of bars and two chord symbols per bar. "
+         "Follow the fixed key, genre, meter, contrast and each section's cadence. Build on the locked sketch without repeating it in the output. "
+         "Use meaningful section contrast and coherent voice leading. Respect chorusMode: reuse repeats a same-length chorus's harmony, "
+         "apart from its planned cadence. You write the actual chords: no downstream rules will repair your endings. "
+         "Use playable lead-sheet symbols (e.g. C, Am, Dm7, G7, Cmaj7, F6, Bm7b5, C/E); no N.C., Roman numerals or prose in the bars."},
+        {"role": "user", "content": json.dumps({"request": run.request.model_dump(mode="json", exclude={"modelKey", "seed"}),
+                                                  "plan": run.plan.model_dump(mode="json")})},
+    ], schema, name="song_form_chords", effort="low", max_tokens=8192)
+    sections = result.data.get("sections")
+    if not isinstance(sections, list) or len(sections) != len(run.plan.sections):
+        raise PlanFailure("invalid", "Meta did not return every planned section.", result.request_id)
+    # Validate the entire response before emitting/applying even its first section.
+    prepared = []
+    start = len(run.request.measures)
+    for index, planned in enumerate(run.plan.sections):
+        item = sections[index]
+        bars = item.get("bars") if isinstance(item, dict) else None
+        if not isinstance(item, dict) or item.get("index") != index or not isinstance(bars, list) or len(bars) != planned.bars:
+            raise PlanFailure("invalid", f"Meta returned an incorrect length for section {index + 1}.", result.request_id)
+        for pair in bars:
+            if not isinstance(pair, list) or len(pair) != CHORDS_PER_BAR:
+                raise PlanFailure("invalid", "Meta returned an incomplete bar.", result.request_id)
+            for symbol in pair:
+                try:
+                    if not isinstance(symbol, str): raise ValueError("Not a chord symbol")
+                    chord(symbol)
+                except (ValueError, TypeError):
+                    raise PlanFailure("invalid", f"Meta returned an unsupported chord: {symbol!r}.", result.request_id) from None
+        prepared.append(PlanSectionResult(
+            sectionType=planned.type, title=section_title(planned.type, planned.bars), startMeasure=start,
+            bars=planned.bars, chordCount=planned.bars * CHORDS_PER_BAR,
+            suggestions=[Suggestion(label="Muse Spark", chords={str(start + i): pair for i, pair in enumerate(bars)})],
+            source="ai", modelUsed=run.client.config.model, cadence=planned.cadence,
+            rulesSlots=[], reason=planned.reason, cites=planned.cites,
+        ))
+        start += planned.bars
+    run.sections = prepared
+    for index, section in enumerate(prepared):
         run.emit("generate_section", {"index": index, **section.model_dump()})
 
 
@@ -794,11 +855,17 @@ def complete_form(request: PlanRequest, on_event: OnEvent | None = None,
         run.check_clock()
         if request.planner == "meta":
             run.client = _client("default")
-            run.judge_client = _client("judge")
+            if request.chordSource == "own":
+                run.judge_client = _client("judge")
+        run.emit("progress", {"label": "Planning the song form from the sketch…"})
         _plan(run)
-        _generate_all(run)
-        if request.planner == "meta":
-            _judge_loop(run)
+        if request.chordSource == "meta":
+            _meta_composition(run)
+        else:
+            _generate_all(run)
+            if request.planner == "meta":
+                run.emit("progress", {"label": "Muse Spark is reviewing the generated sections…"})
+                _judge_loop(run)
     except PlanFailure as failure:
         _finish(run, failure)
     return run.trace()

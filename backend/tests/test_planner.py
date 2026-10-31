@@ -332,8 +332,8 @@ class PlannerRunTest(unittest.TestCase):
         self.assertAlmostEqual(trace.spendUsd, 3 * CALL_COST, places=8)
         self.assertAlmostEqual(trace.spendUsd, self.ledger.snapshot()["spent_usd"], places=8)
         self.assertLessEqual(trace.spendUsd, planner.MAX_RUN_USD)
-        self.assertEqual(events, ["plan", "validate", "revise", "validate", "generate_section", "generate_section",
-                                  "generate_section", "judge"])
+        self.assertEqual(events, ["progress", "plan", "validate", "revise", "validate", "progress", "generate_section",
+                                  "progress", "generate_section", "progress", "generate_section", "progress", "judge"])
         self.assertEqual(self.get_client.call_args_list, [mock.call("default"), mock.call("judge")])
 
     def test_sampling_seed_is_split_by_section_and_regeneration(self):

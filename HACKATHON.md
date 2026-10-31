@@ -154,6 +154,8 @@ rows 59 and 64; successful execution alone does not establish musical quality.
 
 | 105 | **Show ongoing work and stream score analysis**: publish actual Import reader stages with keepalives, retain typed terminal failures, and show task text above animated waiting indicators in Generate, Reharmonize, Song Form, review, playback and exports | this commit | same bounded Import calls and accounting | Import service tests and three streamed success/error regressions pass; frontend 259 tests, build/lint/import pass. Live Meta Import and full workflow verification remain in progress |
 
+| 106 | **Compose a complete song form with Meta alone**: choose Muse Spark only or the existing hybrid composer, validate every section and chord before applying, preserve the sketch, and stream actual planning/composition stages | this commit | Standard `muse-spark-1.3` plans and writes chords within the existing call, time and cost limits | Backend 620 and frontend 260 tests pass, including Meta-only provenance, malformed output rejection, Apply/Undo and stream accounting. Deployed verification remains in progress |
+
 Validation details and unchecked browser/audio/DAW cases are in the
 [manual checklist](docs/manual-checks.md). The README distinguishes application
 screenshots from the pre-existing baseline video. Safari export opened a sixteen-bar,

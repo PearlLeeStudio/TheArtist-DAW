@@ -170,7 +170,7 @@ class RunnerTest(unittest.TestCase):
         self.assertEqual(document["runs"][1]["plan"], [["outro", 2, "plagal"]])
         self.assertEqual((document["runs"][1]["sketchBars"], document["runs"][1]["targetBars"]), (14, 16))
         run = document["runs"][0]
-        self.assertEqual([event for event, _ in run["events"][:2]], ["plan", "validate"])
+        self.assertEqual([event for event, _ in run["events"][:3]], ["progress", "plan", "validate"])
         self.assertLessEqual(run["planMs"], run["totalMs"])
         self.assertEqual((run["judge"], run["regenerated"], run["requestIds"], run["costUsd"]), ([], 0, [], 0.0))
         self.assertEqual(run["trace"]["status"], "ok")

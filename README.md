@@ -159,13 +159,19 @@ file, contract and test coverage, fixes, and remaining verification limits.
   no account or cloud synchronization. Cards show the first staff row and offer the
   same **Export** menu as the editor, using the saved project's complete score and
   playback settings even when another song is open.
-- **New from Song Form → Full form** offers **Muse Spark** and **Genre template**.
+- **New from Song Form → Full form** defaults to **Muse Spark only**: Meta plans
+  the form and writes every new chord, preserving the existing sketch. The entire
+  result must have the planned section lengths and playable chord symbols before
+  it can be applied. **Music Transformer + Meta review** keeps the hybrid path;
+  **Genre template** uses the Music Transformer without a Meta call.
   A successful run is applied from the dialog; the staff stays free of execution
   logs. Reopen the dialog's collapsed **Run details** for Undo and the trace.
   Ctrl+A or ⌘A selects every bar in the editor; text inputs retain native selection.
-  The chord model receives key, meter, genre and preceding chords. Section identities
+  In the hybrid/template path, the chord model receives key, meter, genre and preceding chords. Section identities
   are not learned conditioning tokens in the served tokenizer: Muse or the genre
   template plans the form, and song-form rules adjust starts, loops and cadences.
+  Meta-only chords are not replaced by these rules; the trace names Muse Spark
+  as their source and records both planning and composition calls.
   The [three-seed paired evaluation](experiments/agent_eval/fixed-seed/comparison.md)
   completed 60/60 pairs with actual F1 generation. Muse increased section-type
   variety and reduced out-of-key slots in the diatonic subset, but 21/60 final

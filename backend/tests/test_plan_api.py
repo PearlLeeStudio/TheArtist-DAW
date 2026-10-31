@@ -26,7 +26,7 @@ CLIENT = TestClient(app.main.app)
 PLAN = "/api/plan/song"
 PLAN_STREAM = "/api/plan/song/stream"
 KEY = "sk-plan-api-test-never-shown"
-TRACE_KEYS = {"status", "planner", "genre", "key", "bpm", "timeSignature", "plan", "validation", "sections", "judge",
+TRACE_KEYS = {"status", "planner", "chordSource", "genre", "key", "bpm", "timeSignature", "plan", "validation", "sections", "judge",
               "calls", "spendUsd", "reservedUsd", "elapsedMs", "metaMs", "generationMs", "error"}
 _QUIET = logging.NullHandler()
 
@@ -243,6 +243,10 @@ class PlanApiTest(unittest.TestCase):
         self.assertEqual(res.status_code, 200)
         self.assertTrue(res.headers["content-type"].startswith("text/event-stream"))
         events = sse_events(res.text)
+        progress = [data for name, data in events if name == "progress"]
+        self.assertEqual(len(progress), 5)
+        self.assertTrue(all(data["label"] for data in progress))
+        events = [(name, data) for name, data in events if name != "progress"]
         self.assertEqual([name for name, _ in events],
                          ["plan", "validate", "revise", "validate", "generate_section", "generate_section",
                           "generate_section", "judge", "complete"])
@@ -273,6 +277,7 @@ class PlanApiTest(unittest.TestCase):
 
         async def disconnect():
             response = await plan_routes.plan_song_stream(PlanRequest(**body()))
+            self.assertIn(b"event: progress", await anext(response.body_iterator))
             waiting = asyncio.create_task(anext(response.body_iterator))
             try:
                 self.assertTrue(await asyncio.to_thread(started.wait, 2))
@@ -306,6 +311,7 @@ class PlanApiTest(unittest.TestCase):
     def test_stream_failure_ends_with_one_error_frame(self):
         self.fake_meta(completion(VALID_PLAN), TimeoutError("read timed out"))
         events = sse_events(CLIENT.post(PLAN_STREAM, json=body()).text)
+        events = [(name, data) for name, data in events if name != "progress"]
         self.assertEqual([name for name, _ in events],
                          ["plan", "validate", "generate_section", "generate_section", "generate_section", "error"])
         trace = events[-1][1]

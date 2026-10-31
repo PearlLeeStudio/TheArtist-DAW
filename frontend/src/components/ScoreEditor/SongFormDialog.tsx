@@ -9,7 +9,7 @@ import OperationProgress from '../OperationProgress';
  *   Section    pick a song-form section and how many bars it gets, then
  *              generate it after the last used measure.
  *   Full form  Muse Spark plans the rest of the form after the sketch;
- *              section generation uses the chord model and song-form rules.
+ *              Muse Spark alone or the Music Transformer writes its chords.
  *              A successful run is applied before the dialog closes.
  *              "Genre template" uses a rules plan without a Meta call.
  *
@@ -159,6 +159,8 @@ export default function SongFormDialog({ onClose, onGenerated, onEditSections }:
   const cancelSectionGenerate = useGenerationStore((s) => s.cancelSectionGenerate);
   const startPlan = usePlanStore((s) => s.startPlan);
   const planStatus = usePlanStore((s) => s.status);
+  const planProgress = usePlanStore((s) => s.progress);
+  const [chordSource, setChordSource] = useState<'own' | 'meta'>('meta');
   const planError = usePlanStore((s) => s.error);
   const cancelPlan = usePlanStore((s) => s.cancelPlan);
   const planning = planStatus === 'running';
@@ -282,7 +284,8 @@ export default function SongFormDialog({ onClose, onGenerated, onEditSections }:
   const startRun = async (planner: PlannerKind) => {
     if (blocker !== null || busy || planRunningRef.current || (planner === 'meta' && metaOff)) return;
     planRunningRef.current = true;
-    await startPlan({ targetBars, wantOutro, contrast, chorusMode, planner, modelKey });
+    await startPlan({ targetBars, wantOutro, contrast, chorusMode, planner, modelKey,
+      chordSource: planner === 'meta' ? chordSource : 'own' });
     if (!planRunningRef.current) return;
     planRunningRef.current = false;
     const result = usePlanStore.getState();
@@ -419,6 +422,9 @@ export default function SongFormDialog({ onClose, onGenerated, onEditSections }:
           </select>
 
           <label htmlFor={modelId} className={fieldLabelClass} style={labelStyle}>Model</label>
+          {tab === 'full' && chordSource === 'meta' ? (
+            <span id={modelId} className="px-2 py-1.5 text-sm" style={valueStyle}>Muse Spark</span>
+          ) : (
           <select
             id={modelId}
             value={modelKey}
@@ -433,6 +439,7 @@ export default function SongFormDialog({ onClose, onGenerated, onEditSections }:
               <option key={m.key} value={m.key}>{m.label}</option>
             ))}
           </select>
+          )}
         </div>
 
         {tab === 'section' && (
@@ -586,7 +593,16 @@ export default function SongFormDialog({ onClose, onGenerated, onEditSections }:
               </span>
             </p>
 
-            {planning && <OperationProgress label="Planning the song form and composing its sections…" />}
+            <label className="flex items-center justify-between gap-3 text-xs" style={labelStyle}>
+              Compose chords with
+              <select aria-label="Song form chord composer" value={chordSource} disabled={busy}
+                onChange={event => setChordSource(event.target.value as 'own' | 'meta')}
+                className="px-2 py-1" style={{ background: 'var(--btn-bg)', color: 'var(--text-primary)', border: '1px solid var(--border)' }}>
+                <option value="meta">Muse Spark only</option>
+                <option value="own">Music Transformer + Meta review</option>
+              </select>
+            </label>
+            {planning && <OperationProgress label={planProgress} />}
             {planStatus === 'failed' && (
               <p role="alert" className="text-xs" style={{ color: 'var(--text-heading)' }}>
                 {planError ?? 'The song form could not be generated.'}
@@ -644,9 +660,9 @@ export default function SongFormDialog({ onClose, onGenerated, onEditSections }:
                     // undefined when enabled, so btn-hover's hover dimming applies
                     opacity: planDisabled ? 0.6 : undefined,
                   }}
-                  title={metaOff ? 'Meta features are disabled on this server' : 'Plan with Muse Spark'}
+                  title={metaOff ? 'Meta features are disabled on this server' : chordSource === 'meta' ? 'Muse Spark writes the form and every chord' : 'Muse Spark plans and reviews Music Transformer chords'}
                 >
-                  {planning ? 'Generating…' : metaOff ? 'Muse Spark unavailable' : 'Muse Spark'}
+                  {planning ? 'Generating…' : metaOff ? 'Muse Spark unavailable' : chordSource === 'meta' ? 'Muse Spark only' : 'Meta + Music Transformer'}
                 </button>
               </div>
             </div>

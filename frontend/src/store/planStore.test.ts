@@ -113,6 +113,29 @@ function chipSummary() {
   return usePlanStore.getState().chips.map((chip) => [chip.label, chip.badge, chip.note, chip.ok]);
 }
 
+test('Meta-only form carries its composer, progress and real chord provenance through Apply and Undo', async (t) => {
+  useSongStore.getState().setSong(sketchSong());
+  const original = structuredClone(useSongStore.getState().song);
+  const section = sectionResult(0, 'chorus', 2, 14, { modelUsed: 'muse-spark-1.3', rulesSlots: [] });
+  t.mock.method(globalThis, 'fetch', async (_input: RequestInfo | URL, init?: RequestInit) => {
+    assert.equal(JSON.parse(String(init?.body)).chordSource, 'meta');
+    return streamResponse([
+      frame('progress', { label: 'Muse Spark is composing every chord…' }),
+      frame('generate_section', { index: 0, ...section, t_ms: 10 }),
+      frame('complete', trace({ chordSource: 'meta', sections: [section] })),
+    ]);
+  });
+  await usePlanStore.getState().startPlan({ ...options, chordSource: 'meta' });
+  assert.equal(usePlanStore.getState().progress, 'Muse Spark is composing every chord…');
+  assert.equal(usePlanStore.getState().chips[0].badge, 'Muse Spark chords');
+  usePlanStore.getState().applyPlan();
+  assert.equal(usePlanStore.getState().applied, true);
+  assert.equal(useSongStore.getState().song.measures.length, 16);
+  assert.ok(useSongStore.getState().song.measures.slice(2).every(bar => bar.chords.every(Boolean)));
+  usePlanStore.getState().undoPlan();
+  assert.deepEqual(useSongStore.getState().song, original);
+});
+
 test('a plan cannot apply to a sketch edited after the request, but keeps its trace and spend', async (t) => {
   t.mock.method(globalThis, 'fetch', async () => streamResponse(completedRun()));
   const edits = [
