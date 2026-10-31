@@ -51,9 +51,9 @@ After TLS and `/api/health` work, set Cloudflare Pages Production `BACKEND_ORIGI
 to the server's HTTPS origin and redeploy. Verify actual generation, Import failure
 boundaries, streamed results and MIDI download through the custom frontend domain.
 Both `artist-daw.pearlleestudio.co` and `artist.pearlleestudio.co` should use the
-same HTTPS backend and model process. The release Artist frontend needs its own
-compatible API forwarding change before it can use this host; its current static
-deployment does not include that change.
+same HTTPS backend and model process. The release Artist has the same API proxy
+in its published source; set Production `BACKEND_ORIGIN` separately on both Pages
+projects after the model server passes its checks.
 
 For the optional Meta demo, add `MODEL_API_KEY` to the server environment and set
 `THEARTIST_META_ENABLED=1` after the storage check. Defaults here cap total spend at
