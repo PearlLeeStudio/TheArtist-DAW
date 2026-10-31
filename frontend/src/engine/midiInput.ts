@@ -128,7 +128,7 @@ export function detectChordCandidates(midiNotes: number[], maxResults = 3): Chor
 export async function initMidi(
   onNotes: MidiCallback,
   onChord: ChordCallback,
-  onConnection?: (connected: boolean) => void,
+  onConnection?: (connected: boolean, devices: string[]) => void,
   transport: MidiTransport = 'auto',
 ): Promise<boolean> {
   const request = ++requestGeneration;
@@ -142,11 +142,11 @@ export async function initMidi(
     chordCallback = onChord;
     bridge = openMidiBridge((data, port) => {
       if (request === requestGeneration) onMidiMessage({ data: new Uint8Array(data) }, port);
-    }, (connected) => {
+    }, (connected, devices) => {
       if (request !== requestGeneration) return;
       resetMidiNotes();
       noteCallback?.([]);
-      onConnection?.(connected);
+      onConnection?.(connected, devices);
     });
     try { return await bridge.ready; }
     catch (error) { if (request === requestGeneration) disconnectMidi(); throw error; }
@@ -174,7 +174,7 @@ export async function initMidi(
         attachedInputs.add(input);
       }
       const connected = attachedInputs.size > 0;
-      onConnection?.(connected);
+      onConnection?.(connected, Array.from(attachedInputs, (input) => input.name || 'MIDI input'));
       return connected;
     };
     const connected = connectInputs();

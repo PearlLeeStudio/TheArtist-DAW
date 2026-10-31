@@ -32,6 +32,7 @@ export default function MidiStatus({ onMidiNotes, captureActive }: MidiStatusPro
   const {
     enabled,
     connected,
+    devices,
     connecting,
     error,
     awaitingRelease,
@@ -89,18 +90,14 @@ export default function MidiStatus({ onMidiNotes, captureActive }: MidiStatusPro
         {connecting ? 'Cancel MIDI connection' : enabled ? 'Disable MIDI' : 'Enable MIDI'}
       </button>
 
-      <p className="text-[11px] leading-snug" style={{ color: 'var(--text-muted)' }}>
-        Chrome connects directly. Safari uses TheArtist MIDI Bridge on the Mac with your keyboard.
-        {' '}<a href="https://github.com/PearlLeeStudio/TheArtist-DAW/blob/main/docs/midi-input.md"
-          target="_blank" rel="noreferrer" className="underline">Connection help</a>
+      <p className="text-[11px] truncate" title={devices.join(', ')} style={{ color: 'var(--text-muted)' }}>
+        {connecting ? 'Connecting…' : connected
+          ? `Connected: ${devices[0] || 'MIDI input'}${devices.length > 1 ? ` (+${devices.length - 1})` : ''}`
+          : 'No MIDI device connected'}
       </p>
 
-      <p className="text-[11px] italic leading-snug" style={{ color: 'var(--text-muted)' }}>
-        {!canEnable
-          ? 'Select one slot on the staff to enter chords. Connected MIDI continues to appear in Play → Visual.'
-          : awaitingRelease
-          ? 'Release the held notes, then play a new chord to enter it.'
-          : 'Hold a chord for 3 s to commit, or release early to review and pick the root. The selection auto-advances — build chords one slot at a time.'}
+      <p className="text-[11px] leading-snug" style={{ color: 'var(--text-muted)' }}>
+        Hold a chord for 3 s to commit, or release early to review and pick the root. The selection auto-advances — build chords one slot at a time.
       </p>
 
       {error && (
@@ -108,22 +105,6 @@ export default function MidiStatus({ onMidiNotes, captureActive }: MidiStatusPro
           {error}
         </p>
       )}
-      {enabled && (
-        <p className="text-[11px] leading-snug" style={{ color: 'var(--text-muted)' }}>
-          MIDI stays connected in Play → Visual. Chords are entered only while this input tab is open.
-        </p>
-      )}
-
-      {enabled && (
-        <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
-          {connected ? (
-            <span style={{ color: 'var(--text-heading)' }}>● Controller connected</span>
-          ) : (
-            <span style={{ color: 'var(--text-soft)' }}>○ No MIDI device detected</span>
-          )}
-        </div>
-      )}
-
       {/* Detected / Confirm card */}
       {enabled && view && active && (
         <div className="p-3 space-y-2" style={{ background: 'var(--btn-bg)', border: '1px solid var(--border)' }}>
@@ -251,9 +232,9 @@ export default function MidiStatus({ onMidiNotes, captureActive }: MidiStatusPro
         </div>
       )}
 
-      {enabled && !view && (
+      {enabled && !view && !canEnable && (
         <p className="text-xs italic" style={{ color: 'var(--text-muted)' }}>
-          Play 3+ notes to detect a chord.
+          Select one score slot to enter chords.
         </p>
       )}
     </div>

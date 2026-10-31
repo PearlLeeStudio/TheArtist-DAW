@@ -47,7 +47,7 @@ else {
     const value = JSON.parse(event.data);
     if(value.type === 'state') {
       status.textContent = value.error || (value.devices.length ? 'Connected: '+value.devices.map(d=>d.name).join(', ') : 'No MIDI input found. Connect or power on your keyboard.');
-      post({type:'state', connected:!value.error && value.devices.length>0});
+      post({type:'state', connected:!value.error && value.devices.length>0, devices:value.devices.map(d=>d.name)});
     } else if(value.type === 'midi') post(value);
   };
   stream.onerror = () => { status.textContent = 'Connection lost. Restart MIDI Bridge, then reconnect in TheArtist.'; post({type:'state',connected:false}); };

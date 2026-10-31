@@ -17,6 +17,7 @@ export type ChordView =
   | null;
 
 interface MidiConnection {
+  devices: string[];
   enabled: boolean;
   connected: boolean;
   connecting: boolean;
@@ -43,7 +44,7 @@ export interface UseMidiCaptureResult extends MidiConnection {
 
 /** MIDI turned off, with the reason when connecting failed. */
 function disconnected(error: string | null = null): MidiConnection {
-  return { enabled: false, connected: false, connecting: false, error };
+  return { enabled: false, connected: false, connecting: false, error, devices: [] };
 }
 
 /** Capture target: the one selected slot, or null when zero or several are selected. */
@@ -151,19 +152,19 @@ export function useMidiCapture(onMidiNotes: (notes: number[]) => void, captureAc
     enabledRef.current = true;
     connectingRef.current = true;
     capture.setContext(captureActiveRef.current, target);
-    setConnection({ enabled: true, connected: false, connecting: true, error: null });
+    setConnection({ enabled: true, connected: false, connecting: true, error: null, devices: [] });
     try {
-      const connected = await initMidi(handleNotes, handleDetected, (value) => {
+      const connected = await initMidi(handleNotes, handleDetected, (value, devices) => {
         if (!isCurrent()) return;
         // Port changes can lose note-off events. Discard that press
         // cycle instead of offering it as a released chord to confirm.
         capture.reset();
         onMidiNotesRef.current([]);
-        setConnection((state) => ({ ...state, connected: value }));
+        setConnection((state) => ({ ...state, connected: value, devices }));
       }, transport);
       if (!isCurrent()) return;
       connectingRef.current = false;
-      setConnection({ enabled: true, connected, connecting: false, error: null });
+      setConnection((state) => ({ ...state, enabled: true, connected, connecting: false, error: null }));
     } catch (error) {
       if (!isCurrent()) return;
       disable(error instanceof Error ? error.message : 'MIDI could not connect. Please try again.');

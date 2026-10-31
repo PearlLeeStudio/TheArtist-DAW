@@ -18,6 +18,9 @@ all-notes-off/all-sound-off message clears only its own channel.
 
 Chrome can also use **Local bridge (Mac)** when direct access is unavailable.
 Switch connection mode while MIDI is disabled.
+The editor shows the first connected input name on one line; `(+1)` means one
+additional input is connected. Hover over the line for the full list. The second
+line explains the existing hold/review flow.
 
 ## Safari on Mac
 
