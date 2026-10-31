@@ -128,8 +128,15 @@ tool payloads are covered with controlled transports, without a new paid Meta ru
 Tests cover sparse bounds, both neighboring chords, modes, tensions and slash
 basses, validated native calls, spending on failures, persistent A/B/C transitions,
 exact Original restoration, stale edits, and the actual staff/comparison markup.
-Browser interaction and audible playback of the complete comparison remain manual
-checks; automated transition tests do not establish audio quality.
+Automated transition tests do not establish audio quality.
+
+The LoRA regression originated in the whole-context scorer added by `1571197`,
+before the control-tab split in `c7a042c`: invoking the PEFT wrapper forwarded
+Hugging Face arguments that the Music Transformer does not accept. Earlier scorer
+tests used stand-in models and missed this integration. The regression test now
+uses an actual PEFT-wrapped Music Transformer, checks that the adapter changes the
+scores, and verifies that scoring preserves its weights. The `Eaug7` failure was
+a separate input-compatibility gap in the substitution search added by `075d12b`.
 
 The [augmented-seventh regression fixture](../experiments/meta/reharmonize_aug7_smoke.json)
 uses a self-authored five-bar input with empty bars and `Eaug7`. Actual Classical
@@ -140,3 +147,12 @@ its two calls ($0.01513575) remain in the record. The successful allowance is
 genre LoRAs plus F2/F3 also completed real local Generate and contextual candidate
 scoring. One local generation pass repeated its own short output using the existing
 padding behavior; this is functional coverage, not a musical-quality evaluation.
+
+The same fixture also completed through `artist-daw.pearlleestudio.co` with the
+Classical LoRA, three candidates and two Meta calls (response cost $0.013937).
+Safari Generate returned three Classical LoRA candidates for the previously failing
+four-slot selection in an imported score, leaving Original on the staff. In a separate
+Chrome verification score on the same deployment, `Eaug7` produced A/B/C, all three
+previews updated the staff while retaining the cards, Play reached active audio
+playback, and Original restored `Eaug7`. Playback was stopped and loop turned back
+off. This confirms the interaction and transport, not listening preference.

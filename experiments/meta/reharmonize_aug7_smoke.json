@@ -227,5 +227,169 @@
       }
     }
   ],
-  "totalCostUsd": 0.03466525
+  "hosted": {
+    "origin": "https://artist-daw.pearlleestudio.co",
+    "request": {
+      "key": "G major",
+      "modelKey": "ft_f1_lora_classical",
+      "context": [
+        {
+          "measure": 0,
+          "chords": [
+            "G",
+            null
+          ]
+        },
+        {
+          "measure": 1,
+          "chords": [
+            null,
+            null
+          ]
+        },
+        {
+          "measure": 2,
+          "chords": [
+            "Eaug7",
+            null
+          ]
+        },
+        {
+          "measure": 3,
+          "chords": [
+            null,
+            null
+          ]
+        },
+        {
+          "measure": 4,
+          "chords": [
+            "Am7",
+            null
+          ]
+        }
+      ],
+      "selectedSlots": [
+        {
+          "measureIndex": 2,
+          "slotIndex": 0
+        }
+      ]
+    },
+    "response": {
+      "candidates": [
+        {
+          "id": "4:Cmaj9",
+          "family": "common_tones",
+          "changes": [
+            {
+              "address": {
+                "measureIndex": 2,
+                "slotIndex": 0
+              },
+              "before": "Eaug7",
+              "after": "Cmaj9",
+              "commonTones": 3,
+              "modes": [
+                "ionian",
+                "mixolydian"
+              ],
+              "conventions": []
+            }
+          ],
+          "pitchDistance": 0.425,
+          "originalPitchDistance": 0.729,
+          "bassMotion": 4.0,
+          "originalBassMotion": 4.0,
+          "mathScore": 0.595,
+          "conventionScore": 0.0,
+          "modelScore": -12.79081
+        },
+        {
+          "id": "4:Bb9",
+          "family": "dominant",
+          "changes": [
+            {
+              "address": {
+                "measureIndex": 2,
+                "slotIndex": 0
+              },
+              "before": "Eaug7",
+              "after": "Bb9",
+              "commonTones": 3,
+              "modes": [
+                "phrygian"
+              ],
+              "conventions": [
+                "Resolving tritone substitute"
+              ]
+            }
+          ],
+          "pitchDistance": 0.854,
+          "originalPitchDistance": 0.729,
+          "bassMotion": 2.0,
+          "originalBassMotion": 4.0,
+          "mathScore": 0.9058,
+          "conventionScore": 0.5,
+          "modelScore": -14.50231
+        },
+        {
+          "id": "4:E7b13",
+          "family": "dominant",
+          "changes": [
+            {
+              "address": {
+                "measureIndex": 2,
+                "slotIndex": 0
+              },
+              "before": "Eaug7",
+              "after": "E7b13",
+              "commonTones": 4,
+              "modes": [],
+              "conventions": [
+                "Dominant resolution"
+              ]
+            }
+          ],
+          "pitchDistance": 0.608,
+          "originalPitchDistance": 0.729,
+          "bassMotion": 4.0,
+          "originalBassMotion": 4.0,
+          "mathScore": 1.1617,
+          "conventionScore": 0.25,
+          "modelScore": -17.00153
+        }
+      ],
+      "modelUsed": "F1 + LoRA: classical",
+      "contextMeasures": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "metaModel": "muse-spark-1.3",
+      "requestIds": [
+        "8ecac345-1689-498f-b9dd-a1a473b66ad3",
+        "9e97a394-a094-4a3c-ac3e-4962ea78b6d1"
+      ],
+      "costUsd": 0.013937,
+      "toolCalls": [
+        "search_substitutions",
+        "search_substitutions",
+        "offer_candidates"
+      ],
+      "modelApproximations": [
+        {
+          "address": {
+            "measureIndex": 2,
+            "slotIndex": 0
+          },
+          "original": "Eaug7",
+          "scoredAs": "E7"
+        }
+      ]
+    }
+  },
+  "localTotalCostUsd": 0.03466525
 }

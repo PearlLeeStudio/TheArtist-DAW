@@ -20,6 +20,23 @@ reopen, then inspect PDF/MIDI and the actual DAW result. Full-form planning and
 candidate review are implemented. Generation can attach OMT source excerpts with
 author/editor credit and license links; their browser checks below remain open.
 
+## Composition regression requirements
+
+Changes to composition controls, selection, chord parsing or shared model scoring
+must preserve both Generate and Reharmonize. Before publishing, run the frontend
+and backend suites, including the real PEFT-wrapper regression, build and lint.
+For model-call or scoring changes, also exercise the affected base checkpoints and
+genre adapters with real weights; mocked success is insufficient.
+
+After deployment, verify the affected flow in the hosted app using an imported or
+self-authored sparse score: select an unresolved passage and Generate; select an
+existing extended chord such as `Eaug7` and Reharmonize. Check A/B/C application,
+card persistence across control/Play changes, active playback, Original restoration,
+and preservation of untargeted slots. Exercise drag/right-click navigation when
+selection or control routing changes. Keep these checks on a separate score unless
+the user explicitly asks to edit their current score. Report untested behavior;
+passing unit tests alone does not complete this verification.
+
 ## Observed workflow
 
 - [x] User-confirmed: Logic Pro integration works in the user's own workflow.
