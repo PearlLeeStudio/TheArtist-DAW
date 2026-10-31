@@ -33,6 +33,29 @@ const response = (patch: Partial<ScoreImportResponse> = {}): ScoreImportResponse
   ...patch,
 });
 
+test('verified reading requires comparison evidence and preserves review notes', () => {
+  const verified = response({ verification: { status: 'compared', localMeasures: 2, metaMeasures: 2,
+    comparedMeasures: 2, disputedMeasures: [1], notes: ['Meter needs review.'] } });
+  assert.equal(scoreImportRequestBody('score.pdf', 'application/pdf', 'data', 'chord_symbols', 'verified').engine, 'verified');
+  const parsed = readScoreImportResponse(verified, 'chord_symbols', 'verified');
+  const draft = createScoreImportDraft(parsed, 'score.pdf');
+  assert.deepEqual(draft.verification, verified.verification);
+  assert.match(scoreImportReadyStatus(draft, 'verified'), /2 bars; 1 differences flagged/);
+  assert.throws(() => readScoreImportResponse(response(), 'chord_symbols', 'verified'));
+  assert.throws(() => readScoreImportResponse({ ...verified, verification: { ...verified.verification, disputedMeasures: [2] } }, 'chord_symbols', 'verified'));
+  assert.throws(() => readScoreImportResponse({ ...verified, verification: { ...verified.verification, metaMeasures: 3 } }, 'chord_symbols', 'verified'));
+});
+
+test('unavailable local comparison is never described as cross-checked', () => {
+  const parsed = readScoreImportResponse(response({ verification: {
+    status: 'local_unavailable', localMeasures: 0, metaMeasures: 2,
+    comparedMeasures: 0, disputedMeasures: [], notes: ['Review every bar.'],
+  } }), 'chord_symbols', 'verified');
+  const status = scoreImportReadyStatus(createScoreImportDraft(parsed, 'score.pdf'), 'verified');
+  assert.match(status, /Local cross-checking was unavailable/);
+  assert.doesNotMatch(status, /compared 2/);
+});
+
 test('file validation matches extension, MIME, magic bytes and the 8 MiB limit', () => {
   const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
   assert.deepEqual(checkScoreFile({ name: 'score.PNG', type: 'image/png', size: MAX_SCORE_IMPORT_BYTES }, png), { ok: true, mimeType: 'image/png' });

@@ -86,7 +86,7 @@ function isEditorMeter(meter: string): boolean {
 function importBlockReason(reading: boolean, running: boolean, validation: ScoreImportValidation | null): string {
   if (reading) return 'Wait for the file check to finish.';
   if (running) return 'Wait for the score analysis to finish.';
-  if (!validation) return 'Choose your file and reader, then select Analyze score.';
+  if (!validation) return 'Choose your file, then select Analyze score.';
   if (validation.valid) return '';
   const corrections = validation.errors.length + validation.sectionErrors.filter(Boolean).length;
   return `Fix ${corrections} highlighted ${corrections === 1 ? 'field' : 'fields'} to enable import.`;
@@ -141,10 +141,10 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
   const [running, setRunning] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState('');
-  const [reader, setReader] = useState<ScoreImportEngine>('auto');
+  const [useMeta, setUseMeta] = useState(false);
   const [meta, setMeta] = useState<MetaCapability | null>(null);
-  const metaAvailable = meta === null || (meta.enabled && meta.configured);
-  const readerEngine = metaAvailable ? reader : 'local';
+  const metaAvailable = !!meta?.enabled && !!meta?.configured;
+  const readerEngine: ScoreImportEngine = useMeta ? 'verified' : 'local';
   const fullFileAvailable = metaAvailable && meta?.fullFileScoreImport === true;
 
   useEffect(() => {
@@ -226,7 +226,7 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
     }
   };
 
-  /** Sending a whole file is a separate explicit reader choice. */
+  /** The checkbox opts into original-file verification; Analyze starts it. */
   const recognize = async (selected: SourceFile, sequence: number, engine: ScoreImportEngine) => {
     if (!isCurrent(sequence) || closedRef.current || runningRef.current) return;
     const controller = new AbortController();
@@ -235,7 +235,7 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
     setRunning(true);
     setDraft(null);
     setError(null);
-    setStatus(engine === 'meta' ? 'Analyzing full file with Meta…' : engine === 'auto' ? 'Analyzing harmony and form with Meta…' : 'Analyzing score…');
+    setStatus(engine === 'verified' ? 'Reading locally, then checking the original with Meta…' : 'Analyzing score…');
     let timedOut = false;
     const timer = window.setTimeout(() => { timedOut = true; controller.abort(); }, ANALYSIS_TIMEOUT_MS);
     const finish = beginTiming('import.review', engine);
@@ -278,23 +278,23 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
   const startAnalysis = () => {
     const selected = sourceRef.current;
     if (!selected || runningRef.current || reading) return;
-    if (selected.mimeType !== 'application/pdf' && readerEngine !== 'meta') {
-      setError('Choose Meta only to analyze an image.');
+    if (selected.mimeType !== 'application/pdf' && !useMeta) {
+      setError('Enable Use Meta model to analyze an image.');
       return;
     }
-    if (readerEngine === 'meta' && !fullFileAvailable) {
-      setError('Full-file analysis is not available on this server.');
+    if (useMeta && !fullFileAvailable) {
+      setError('Meta verification is not available on this server.');
       return;
     }
     void recognize(selected, ++sequenceRef.current, readerEngine);
   };
 
-  const selectReader = (engine: ScoreImportEngine) => {
-    if (engine === readerEngine) return;
+  const selectMeta = (checked: boolean) => {
+    if (checked === useMeta) return;
     // Reader changes never submit the file. Cancel an old request so its result
     // cannot appear under the new choice; a pending file check can still finish.
     if (runningRef.current) cancelRecognition();
-    setReader(engine);
+    setUseMeta(checked);
     setDraft(null);
     setStatus('');
     setError(null);
@@ -369,30 +369,15 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
             <div className="min-w-0 space-y-4 border-t pt-6 sm:border-t-0 sm:border-l sm:pt-0 sm:pl-6" style={{ borderColor: 'var(--border)' }}>
               <fieldset className="min-w-0">
                 <legend className="mb-4 font-display text-xl font-bold" style={{ color: 'var(--text-heading)' }}>Reader</legend>
-                <div className="flex flex-col gap-1">
-                  {([
-                    { value: 'auto', label: 'TheArtist + Meta', disabled: !metaAvailable },
-                    { value: 'meta', label: 'Meta only', disabled: !fullFileAvailable },
-                    { value: 'local', label: 'TheArtist only', disabled: false },
-                  ] as const).map((option) => (
-                    <label key={option.value} className="flex min-h-12 cursor-pointer items-center gap-3 text-sm has-[:disabled]:cursor-default has-[:disabled]:opacity-50">
-                      <input
-                        type="radio"
-                        name={`${id}-reader`}
-                        value={option.value}
-                        checked={readerEngine === option.value}
-                        disabled={option.disabled}
-                        onChange={() => selectReader(option.value)}
-                        className="h-4 w-4 shrink-0"
-                        style={{ accentColor: 'var(--brand-yellow)' }}
-                      />
-                      {option.label}
-                    </label>
-                  ))}
-                </div>
+                <p className="mb-2 text-sm">TheArtist</p>
+                <label className="flex min-h-12 cursor-pointer items-center gap-3 text-sm has-[:disabled]:cursor-default has-[:disabled]:opacity-50">
+                  <input type="checkbox" checked={useMeta} disabled={!fullFileAvailable}
+                    onChange={(event) => selectMeta(event.target.checked)}
+                    className="h-4 w-4 shrink-0" style={{ accentColor: 'var(--brand-yellow)' }} />
+                  Use Meta model
+                </label>
               </fieldset>
-              {readerEngine === 'auto' && <p className="text-xs" style={mutedStyle}>Whole-score context · up to 16 harmony bars + form · 3 calls / $0.30 max</p>}
-              {readerEngine === 'meta' && <p className="text-xs" style={mutedStyle}>Sends the full file · PDF or image · 1 call / $1.35 max</p>}
+              {useMeta && <p className="text-xs" style={mutedStyle}>Sends the original file to Meta after local analysis, then compares the readings. May take longer · 1 call / $1.35 max</p>}
               {meta && !metaAvailable && (
                 <p className="text-xs" style={mutedStyle}>
                   {meta.enabled ? 'No Meta key is configured on this server: TheArtist only is available.'
@@ -481,6 +466,15 @@ function ScoreReview({ idPrefix, draft, validation, onEdit }: ScoreReviewProps) 
         <h3 className="font-display text-xl font-semibold" style={{ color: 'var(--text-heading)' }}>Review score</h3>
         <p className="text-xs" style={mutedStyle}>Check the key and meter. Chords can be reviewed in the score view.</p>
         {changesMeter && <p className="text-xs" style={mutedStyle}>The original uses {meters.join(', ')}. The editor uses {draft.timeSignature || 'one chosen meter'} throughout.</p>}
+        {draft.verification && <details open={draft.verification.status !== 'compared' || draft.verification.disputedMeasures.length > 0}
+          className="text-xs" style={mutedStyle}>
+          <summary className="cursor-pointer">Reading checks · {draft.verification.disputedMeasures.length} differences flagged</summary>
+          <div className="mt-1 space-y-1">
+            {[...draft.verification.notes, ...draft.warnings].map((note, index) => <p key={index}>{note}</p>)}
+            {!!draft.verification.disputedMeasures.length && <p>Review bars: {draft.verification.disputedMeasures.map((index) => index + 1).join(', ')}.</p>}
+            <p>Agreement between readings does not establish accuracy. Review the original before importing.</p>
+          </div>
+        </details>}
       </div>
 
       <div id={scoreFieldsId(idPrefix)} tabIndex={-1} className="grid grid-cols-2 gap-3">

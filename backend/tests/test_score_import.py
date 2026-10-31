@@ -67,7 +67,7 @@ class ScoreImportTest(unittest.TestCase):
         response = CLIENT.post(ROUTE, json=body())
         self.assertEqual(response.status_code, 200, response.text)
         data = response.json()
-        self.assertEqual(set(data), {"title", "key", "timeSignature", "measures", "sections", "warnings", "model", "requestId", "mode", "analysisSource", "formAnalysis"})
+        self.assertEqual(set(data), {"title", "key", "timeSignature", "measures", "sections", "warnings", "model", "requestId", "mode", "analysisSource", "formAnalysis", "verification"})
         self.assertEqual(data["analysisSource"], "meta")
         self.assertEqual(data["mode"], "chord_symbols")
         self.assertEqual([m["chords"] for m in data["measures"]], [m["chords"] for m in GOOD["measures"]])

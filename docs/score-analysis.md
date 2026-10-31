@@ -1,17 +1,17 @@
 # Score import, harmony and form
 
-In **Import Score**, choose the file and Reader in either order, then click
+In **Import Score**, choose the file and optionally check **Use Meta model**, then click
 **Analyze score**. File selection validates size/type and prepares a local preview;
-it does not submit analysis. Reader remains selectable while checking a file or
-analyzing. Changing Reader clears the review and aborts an old browser request;
+it does not submit analysis. The checkbox remains selectable while checking a file or
+analyzing. Changing it clears the review and aborts an old browser request;
 an earlier result cannot populate the new selection. Start the new analysis explicitly.
 A provider call already in progress may still finish and incur cost.
 
-The editor defaults to **TheArtist + Meta** (`auto`) when discovery reports Meta
-enabled and configured; otherwise it uses **TheArtist only** (`local`). TheArtist
-here means the local score reader, not the composition Transformer. **Meta only**
-(`meta`) accepts PDF, PNG, JPEG and WebP when `meta.fullFileScoreImport` is true.
-Files can be selected before their compatible Reader; compatibility is checked
+The checkbox defaults off (`local`). Checked analysis uses `verified`: local
+reading, one original-file Meta reading informed by the provisional local musical
+synopsis, then comparison. TheArtist here means the local score reader, not the
+composition Transformer. The checkbox accepts PDF, PNG, JPEG and WebP when
+`meta.fullFileScoreImport` is true. File compatibility is checked
 when analysis starts, without discarding the selected file.
 The REST/MCP request default remains `engine: "local"`; the editor explicitly
 sends `mode: "infer_harmony"` and its selected engine.
@@ -118,7 +118,8 @@ the saved section's origin, so inferred labels remain identifiable.
 ## Full-file reading and failures
 
 An unsupported local image/PDF never silently switches `auto` to a paid whole-file
-request. Choose **Meta only** explicitly to use that reader. It sends one
+request. The checkbox explicitly selects the `verified` full-file path; the
+standalone `meta` API mode also remains available. Each sends one
 attachment request, bounded to 75 seconds, 8192 completion tokens, $1.35 and 128
 result bars. Harmony and form are returned together, without a second form call.
 `THEARTIST_PUBLIC_HOST=1` requires `THEARTIST_PUBLIC_META_READER=1` for this path;

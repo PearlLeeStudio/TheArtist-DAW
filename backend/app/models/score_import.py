@@ -33,7 +33,7 @@ class ScoreImportRequest(StrictModel):
     mimeType: str
     dataBase64: str
     mode: ScoreImportMode = "chord_symbols"
-    engine: Literal["local", "meta", "auto"] = "local"
+    engine: Literal["local", "meta", "auto", "verified"] = "local"
 
 
 class ImportedMeasure(StrictModel):
@@ -126,9 +126,19 @@ class FormAnalysis(StrictModel):
     sectionsProposed: int = Field(ge=0, le=MAX_SCORE_SECTIONS)
 
 
+class ScoreVerification(StrictModel):
+    status: Literal["compared", "local_unavailable", "unaligned"]
+    localMeasures: int = Field(ge=0, le=128)
+    metaMeasures: int = Field(ge=1, le=128)
+    comparedMeasures: int = Field(ge=0, le=128)
+    disputedMeasures: list[int] = Field(max_length=128)
+    notes: list[Note] = Field(max_length=4)
+
+
 class ScoreImportResponse(ScoreDraft):
     model: str | None
     requestId: str | None
     mode: ScoreImportMode = "chord_symbols"
     analysisSource: Literal["local", "meta", "mixed"] = "meta"
     formAnalysis: FormAnalysis | None = None
+    verification: ScoreVerification | None = None

@@ -77,8 +77,9 @@ passage with the author's Music Transformer, and hands the arrangement to the DA
 
 | Path | File | Calls per use | Switch |
 |---|---|---|---|
-| Full file score reading, explicitly selected `engine: "meta"` | `backend/app/services/score_import.py` | 1 PDF/image request, ≤ $1.35 | `THEARTIST_META_ENABLED`; public hosts also require `THEARTIST_PUBLIC_META_READER=1` |
-| Meta assist, `engine: "auto"` (the editor default when configured) | `score_assistance.py`, `harmony_meta.py`, `score_form.py` | ≤ 2 × 8-bar harmony reviews + 1 form analysis, ≤ $0.30 total; every call sees the complete musical synopsis | same; choose **TheArtist only** for no Meta calls |
+| **Use Meta model** checkbox, `engine: "verified"`: local analysis, original-file Meta check, then comparison | `score_verification.py`, `score_import.py` | 1 PDF/image request, ≤ $1.35; no automatic retry | `THEARTIST_META_ENABLED`; public hosts also require `THEARTIST_PUBLIC_META_READER=1` |
+| Direct full-file API reading, `engine: "meta"` | `score_import.py` | 1 request, ≤ $1.35 | same |
+| Bounded API assist, `engine: "auto"` | `score_assistance.py`, `harmony_meta.py`, `score_form.py` | ≤ 2 × 8-bar harmony reviews + 1 form analysis, ≤ $0.30 total | same; leave the editor checkbox off for no Meta calls |
 | Complete the form planner (plan, validate, revise, judge) | `backend/app/services/planner.py`, `routes/plan.py` | ≤ 5 calls per run (1 plan, ≤ 2 revisions, ≤ 2 judgments) | same; judge role via `LLM_JUDGE_*` |
 | Second ear: pick one of a Generate's A/B/C on analyzer facts, each reason checked | `backend/app/services/review.py`, `routes/review.py` | 1 judge call | same; judge role via `LLM_JUDGE_*` |
 
@@ -89,9 +90,11 @@ the author's model and every export keep working.
 **Import Score → review chords and song form → select a passage → Original/A/B/C
 → arrange in Play → export MIDI or PDF.** Local code reads supported vector-score
 notation and proposes note-based harmony; the author's Music Transformer generates
-chord variations. Muse Spark assistance reviews inferred harmony in whole-score
-context and proposes missing form sections. **Meta only** is a separate,
-explicit PDF/image reader; unsupported local files never switch to it automatically.
+chord variations. The **Use Meta model** checkbox adds one original-file reading
+with the local musical synopsis and a comparison of bar counts, key, meter, chords
+and note evidence. Differences remain review flags; model agreement is not proof
+of correctness. If local reading is unsupported, the result clearly states that
+local cross-checking was unavailable. The unchecked path never calls Meta.
 The musician corrects the import, chooses the passage and keeps the version they want.
 
 The [hackathon work log](HACKATHON.md) separates these additions from the existing
@@ -105,9 +108,9 @@ The [repository consistency report](docs/repository-checks.md) records the
 file, contract and test coverage, fixes, and remaining verification limits.
 
 - **Import Score**, immediately left of **New from Song Form**, accepts one
-  PDF or image up to 8 MiB. Choose the file and Reader in either order, then click
-  **Analyze score**. File selection and Reader changes do not start analysis.
-  Changing Reader clears the previous review; during analysis it also cancels
+  PDF or image up to 8 MiB. Choose the file and optionally check **Use Meta model**,
+  then click **Analyze score**. File selection and checkbox changes do not start analysis.
+  Changing the checkbox clears the previous review; during analysis it also cancels
   that request. Printed chords are preserved; only
   passages without chords receive note-based harmony proposals. Confirm the
   title, key and meter, then open the score view to check and edit chords. Inferred
@@ -116,16 +119,14 @@ file, contract and test coverage, fixes, and remaining verification limits.
   without blocking import; their original symbols and evidence are retained.
   Correct highlighted project fields, then click
   **Import reviewed score** to confirm. The footer explains any blocker.
-  **TheArtist + Meta** is selected when Meta is enabled and configured.
-  Up to sixteen eligible bars, including confident local inferences, receive a
-  note-based review. Each batch receives the same complete ordered synopsis;
-  printed chords and N.C. stay intact. One further call proposes form ranges in
-  uncovered passages. Uncertain functions remain **Section**, and insufficient
-  evidence can yield no sections. The synopsis is bounded at 40 KiB and is never
-  silently truncated. Longer imports retain unreviewed local bars with their origin.
-  Choose **Meta only** for an image or unsupported PDF on a local server,
-  or **TheArtist only** to make no Meta calls. TheArtist here is the local score
-  reader, not the composition Transformer. API defaults remain local.
+  The checkbox is off by default. Checked analysis tries the local reader first,
+  then sends the original and a bounded 40-KiB musical synopsis to Meta once.
+  It checks up to 128 written bars; uncertain or conflicting results are flagged.
+  Unequal bar counts retain the complete local reading instead of merging misaligned
+  bars. Printed local chords and N.C. are preserved. Images and unsupported PDFs
+  require the checkbox; their Meta result states when no local comparison was possible.
+  TheArtist here is the local score reader, not the composition Transformer.
+  API defaults remain local; the separate `auto` and `meta` API modes remain supported.
 - **Roman-numeral analysis** follows the review key: in C major, C → I, Am → vi,
   G7 → V7. Changing the review key reanalyzes the same symbols. The editor's main Key
   control retains its existing behavior of transposing the score. Source proposals
@@ -612,7 +613,7 @@ THEARTIST_WARMUP_KEYS=ft_f1,ft_f4 uv run --directory /absolute/path/TheArtist-DA
 
 For a public judge server, `THEARTIST_PUBLIC_HOST=1` turns off DAW handoff, the warmup
 route and MCP, and puts Meta calls behind per-session and daily spend limits.
-Whole-file reading (`engine: "meta"`, **Meta only**) also needs
+Whole-file reading (`engine: "meta"` or the checkbox's `verified`) also needs
 `THEARTIST_PUBLIC_META_READER=1`; the hosted Artist service enables that option.
 It retains the 75-second, one-call, $1.35 request bound. The hosted session and
 global daily limits are both $2, with a $10 total ledger cap. Local reading and

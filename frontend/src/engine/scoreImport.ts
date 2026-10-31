@@ -9,7 +9,16 @@ export const MAX_SCORE_IMPORT_BYTES = 8 * 1024 * 1024;
 export const MAX_SCORE_IMPORT_MEASURES = 512;
 export const IMPORT_TIME_SIGNATURES = ['4/4', '3/4', '6/8', '2/4', '5/4', '7/8'] as const;
 export type ScoreMime = 'image/png' | 'image/jpeg' | 'image/webp' | 'application/pdf';
-export type ScoreImportEngine = 'local' | 'meta' | 'auto';
+export type ScoreImportEngine = 'local' | 'meta' | 'auto' | 'verified';
+
+export interface ScoreVerification {
+  status: 'compared' | 'local_unavailable' | 'unaligned';
+  localMeasures: number;
+  metaMeasures: number;
+  comparedMeasures: number;
+  disputedMeasures: number[];
+  notes: string[];
+}
 
 // Size limits of a recognition response; anything larger is rejected, never truncated.
 const MAX_IMPORT_SECTIONS = 64;
@@ -45,6 +54,7 @@ interface RecognizedSection {
 }
 
 export interface ScoreImportResponse {
+  verification?: ScoreVerification | null;
   mode?: ScoreImportMode;
   analysisSource?: ScoreAnalysisSource;
   title: string;
@@ -89,6 +99,7 @@ export interface ImportSectionDraft {
 }
 
 export interface ScoreImportDraft {
+  verification?: ScoreVerification | null;
   mode: ScoreImportMode;
   analysisSource: ScoreAnalysisSource;
   filename: string;
@@ -184,8 +195,15 @@ export function metaAssistSummary(draft: Pick<ScoreImportDraft, 'measures'>): {
 }
 
 /** A successful HTTP response can still contain unresolved or empty proposals. */
-export function scoreImportReadyStatus(draft: Pick<ScoreImportDraft, 'measures' | 'formAnalysis'>, reader: ScoreImportEngine | boolean): string {
+export function scoreImportReadyStatus(draft: Pick<ScoreImportDraft, 'measures' | 'formAnalysis' | 'verification'>, reader: ScoreImportEngine | boolean): string {
   if (!reader || reader === 'local') return 'Ready to review.';
+  if (reader === 'verified') {
+    const check = draft.verification;
+    if (!check) return 'Comparison result is missing. Analyze again.';
+    if (check.status === 'local_unavailable') return 'Meta reading ready. Local cross-checking was unavailable; review every bar.';
+    if (check.status === 'unaligned') return 'Bar counts disagree. The local reading was kept; review the score before importing.';
+    return `Local + Meta compared ${check.comparedMeasures} bars; ${check.disputedMeasures.length} differences flagged. Ready to review.`;
+  }
   if (reader === 'meta') return 'Full file analyzed. Ready to review.';
   const { bars, proposedBars, unresolvedBars, unreviewedBars } = metaAssistSummary(draft);
   const form = draft.formAnalysis;
@@ -282,6 +300,19 @@ export function readScoreImportResponse(raw: unknown, expectedMode: ScoreImportM
   for (const section of raw.sections) {
     if (!isRecognizedSection(section)) return invalidResponse();
   }
+  if (raw.verification !== undefined && raw.verification !== null) {
+    const check = raw.verification;
+    if (!isRecord(check) || !isOneOf(check.status, ['compared', 'local_unavailable', 'unaligned']) ||
+        ![check.localMeasures, check.metaMeasures, check.comparedMeasures].every((n) => Number.isInteger(n) && (n as number) >= 0 && (n as number) <= 128) ||
+        (check.metaMeasures as number) < 1 || !isTextList(check.notes, 4, 400) ||
+        !Array.isArray(check.disputedMeasures) || check.disputedMeasures.length > 128 ||
+        check.disputedMeasures.some((n) => !Number.isInteger(n) || n < 0 || n >= measures.length) ||
+        new Set(check.disputedMeasures).size !== check.disputedMeasures.length) return invalidResponse();
+    if (check.status === 'compared' && (check.localMeasures !== measures.length || check.metaMeasures !== measures.length || check.comparedMeasures !== measures.length)) return invalidResponse();
+    if (check.status === 'local_unavailable' && (check.localMeasures !== 0 || check.comparedMeasures !== 0 || check.metaMeasures !== measures.length)) return invalidResponse();
+    if (check.status === 'unaligned' && (check.localMeasures !== measures.length || check.localMeasures === check.metaMeasures || check.comparedMeasures !== 0)) return invalidResponse();
+  }
+  if (expectedEngine === 'verified' && (!raw.verification || analysisSource === 'local')) return invalidResponse();
   return { ...raw, mode, analysisSource, measures } as unknown as ScoreImportResponse;
 }
 
@@ -329,6 +360,8 @@ export function createScoreImportDraft(response: ScoreImportResponse, filename: 
     model: response.model,
     requestId: response.requestId,
     formAnalysis: response.formAnalysis ?? null,
+    verification: response.verification ? { ...response.verification,
+      disputedMeasures: [...response.verification.disputedMeasures], notes: [...response.verification.notes] } : null,
   };
 }
 

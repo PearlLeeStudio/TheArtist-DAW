@@ -336,6 +336,21 @@ class ScoreImportLimitsTest(LimitsCase):
         self.assertEqual(response.status_code, 422, response.text)
         self.assertEqual(self.requests, [])
 
+    def test_verified_reader_needs_public_opt_in_and_the_same_single_reservation(self):
+        self.env(THEARTIST_PUBLIC_HOST="1", THEARTIST_META_SESSION_LIMIT_USD="2",
+                 THEARTIST_META_DAILY_LIMIT_USD="2")
+        request = score_body(engine="verified")
+        self.assertEqual(CLIENT.post(IMPORT, json=request, headers=SESSION).status_code, 403)
+        self.assertEqual(self.requests, [])
+        self.env(THEARTIST_PUBLIC_META_READER="1", THEARTIST_META_SESSION_LIMIT_USD="1")
+        self.assertEqual(CLIENT.post(IMPORT, json=request, headers=SESSION).status_code, 429)
+        self.assertEqual(self.requests, [])
+        self.env(THEARTIST_META_SESSION_LIMIT_USD="2")
+        result = CLIENT.post(IMPORT, json=request, headers=SESSION)
+        self.assertEqual(result.status_code, 200, result.text)
+        self.assertEqual(result.json()["verification"]["status"], "local_unavailable")
+        self.assertEqual(len(self.requests), 1)
+
     def test_an_auto_import_the_local_reader_finishes_is_never_charged(self):
         # Fully printed chords and a source section need no harmonic/form inference.
         body = score_body(build_vector_score_pdf(), engine="auto", mode="infer_harmony")

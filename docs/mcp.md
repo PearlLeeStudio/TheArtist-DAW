@@ -59,7 +59,7 @@ fails as disabled (HTTP 503 on REST, an error result on MCP). An auto request
 requiring no Meta work may still finish locally. Local reading, Music Transformer
 generation and export keep working.
 
-The import tool requires `attachmentConfirmed: true`. This asserts that the user explicitly attached this score for analysis. It accepts inline bytes, never filesystem paths or remote URLs. Do not gather journals, photographs, or other private files to supply it. `engine: "local"` is the request default and calls no model. The editor separately defaults to TheArtist + Meta when Meta is enabled and configured, and waits for Analyze score after file/Reader selection; MCP clients choose their engine explicitly.
+The import tool requires `attachmentConfirmed: true`. This asserts that the user explicitly attached this score for analysis. It accepts inline bytes, never filesystem paths or remote URLs. Do not gather journals, photographs, or other private files to supply it. `engine: "local"` is the request default and calls no model. The editor's Use Meta model checkbox is off by default and selects `verified` when checked; only Analyze score starts work. MCP clients choose their engine explicitly.
 
 The same import request supports `mode: "chord_symbols"` (default, printed transcription)
 and explicit `mode: "infer_harmony"` (notes-based interpretation). Preserve the echoed

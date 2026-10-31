@@ -121,8 +121,10 @@ def capabilities() -> ContractEnvelope:
                           "sections.*.source", "sections.*.modelUsed", "sections.*.rulesSlots"],
         },
         "limitations": ["build_song returns one arrangement; candidate fan-out is not implemented.",
-                        "Score import defaults to local vector-PDF reading. Meta/auto requires explicit selection and may incur API cost "
-                        "(the editor defaults to Meta assist when meta.enabled and meta.configured). Auto reviews up to 16 harmony "
+                        "Score import and the editor default to local vector-PDF reading. The editor's Use Meta model checkbox "
+                        "selects verified: local reading, one full-file Meta request, then a comparison that flags disagreements "
+                        "without treating agreement as accuracy proof. Unsupported local files are marked local_unavailable. "
+                        "Meta/auto/verified requires explicit selection and may incur API cost. Auto reviews up to 16 harmony "
                         "bars with whole-score context and infers uncovered song-form sections, at most three calls/$0.30. "
                         "It never switches an unsupported local file to a whole-file request. A public host requires "
                         "THEARTIST_PUBLIC_META_READER=1 for meta, with session and daily spend limits still enforced; "

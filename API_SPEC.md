@@ -714,15 +714,30 @@ A strike at beat `p` plays the chord of the slot `p` falls in (slot 0 = beats `[
 
 Accepts one explicitly chosen PDF, PNG, JPEG or WebP as bytes sent to the configured backend. `engine: "local"` (the request default) reads supported vector PDFs without a model key or external provider call. `mode: "chord_symbols"` reads written chords; `mode: "infer_harmony"` analyzes notes, timing and bass. Inference is reviewable interpretation, not verified original harmony. The endpoint does not fetch a URL, read a supplied filesystem path, store uploaded bytes, or import melody performance tracks.
 
-The editor offers **TheArtist + Meta** (`auto`), **Meta only** (`meta`) and
-**TheArtist only** (`local`), always with `mode: "infer_harmony"`. File and Reader
-selection are independent; only **Analyze score** submits the request. Changing
-Reader clears any prior review, aborts an active browser request and waits for
-another explicit start. TheArtist + Meta is the UI default when Meta is enabled
-and configured; otherwise TheArtist only is selected. Images require Meta only
-and `meta.fullFileScoreImport: true` at analysis start. Printed symbols and N.C.
+The editor keeps file selection and **Analyze score**, with a **Use Meta model**
+checkbox instead of Reader choices. It defaults off (`local`); checked means
+`verified`, always with `mode: "infer_harmony"`. Only Analyze submits the request.
+Toggling clears the prior review and aborts an active browser request without
+starting another one. Images require the checkbox and `meta.fullFileScoreImport: true`.
+Printed symbols and N.C.
 are preserved. Browser cancellation suppresses stale results but does not undo
 an external call already sent or its cost.
+
+`verified` first tries local analysis, then sends the original attachment and any
+complete local musical synopsis (at most 40 KiB) to one Meta request. It retains
+the 75-second, 8192-token, $1.35 and 128-written-bar bounds. Local outputs above
+128 bars fail before admission. It compares bar counts, key, meter, chord readings
+and note evidence. Aligned printed local symbols/N.C. are retained; discrepancies
+become review flags and low confidence. Unequal counts retain the whole local
+reading without merging or truncating bars. Agreement never increases confidence
+or clears an existing review flag. Meta errors remain errors, without local fallback.
+
+Responses have optional `verification`: `status` (`compared`, `local_unavailable`,
+`unaligned`), `localMeasures`, `metaMeasures`, `comparedMeasures`, zero-based
+`disputedMeasures`, and explanatory `notes`. An unsupported local file may be read
+by Meta because the checkbox explicitly authorizes that path; it reports zero
+compared bars and marks the result for review. This is not a measured accuracy score.
+Legacy `auto` and `meta` modes remain available to API/MCP clients.
 
 For `auto` plus `infer_harmony`, each harmony batch receives the complete ordered
 score synopsis: key/meter, printed versus inferred chords, confidence, N.C., pitch
@@ -744,7 +759,8 @@ three calls / $0.30**. `auto` with `chord_symbols` remains local transcription.
 Unsupported local input fails without a Meta request; `auto` never silently sends
 the whole file. Explicit `meta` sends the attachment in one 75-second, 8192-token
 request, capped at $1.35 and 128 result bars. It returns harmony/form together,
-without the separate form step. A public host forbids this engine with 403.
+without the separate form step. On a public host, `meta` and `verified` both
+require `THEARTIST_PUBLIC_META_READER=1` and usable Meta configuration.
 
 ```json
 {

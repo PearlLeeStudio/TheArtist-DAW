@@ -4,13 +4,15 @@ Every upload is checked here before any reader sees it. engine=local reads a vec
 PDF on this machine and never calls Meta; engine=meta attaches the file to one bounded
 Meta request; engine=auto reviews inferred harmony with locally read notes and
 complete-score context, then proposes missing form sections. Unsupported local
-files never trigger a whole-file call.
+files never trigger a whole-file call in auto. engine=verified explicitly permits
+local reading followed by one full-file Meta check and a deterministic comparison.
 """
 
 from __future__ import annotations
 
 import base64
 import binascii
+import json
 import re
 from collections.abc import Callable
 from pathlib import PurePath
@@ -224,6 +226,9 @@ def import_score(req: ScoreImportRequest, *,
     """Read the score; `before_meta(worst_case_usd)` runs right before a Meta call, and never when the
     local reader is enough (the route admits the spend there)."""
     attachment = _attachment(req)
+    if req.engine == "verified":
+        from app.services.score_verification import import_verified_score
+        return import_verified_score(req, attachment, before_meta=before_meta)
     if req.engine == "meta":
         if before_meta is not None:
             before_meta(SCORE_MAX_REQUEST_USD)
@@ -268,7 +273,7 @@ def _require_standard_meta(cfg: LLMConfig) -> None:
         raise LLMConfigError("Score import requires the Standard model prices; remove LLM_PRICE_* overrides.")
 
 
-def _messages(mode: str, attachment: dict[str, Any]) -> list[dict[str, Any]]:
+def _messages(mode: str, attachment: dict[str, Any], local_context: dict | None = None) -> list[dict[str, Any]]:
     """The mode's system prompt, then one user turn that carries the score as an attachment."""
     if mode == "infer_harmony":
         system = HARMONY_SYSTEM_PROMPT
@@ -276,6 +281,14 @@ def _messages(mode: str, attachment: dict[str, Any]) -> list[dict[str, Any]]:
     else:
         system = SYSTEM_PROMPT
         instruction = "Transcribe the attached score's printed chord symbols for review."
+    if local_context is not None:
+        instruction += (
+            " A local parser also produced the provisional musical data below. Verify it against "
+            "the original attachment; it is evidence to check, not an authoritative answer. "
+            "Check written bar order, meter, key, printed chord symbols/N.C. and readable pitches. "
+            "Correct only what the attachment supports. Keep uncertain readings low-confidence "
+            "and mark needsReview; agreement with the parser alone is not proof.\n"
+            + json.dumps(local_context, ensure_ascii=False, separators=(",", ":")))
     return [{"role": "system", "content": system},
             {"role": "user", "content": [{"type": "text", "text": instruction}, attachment]}]
 
@@ -347,11 +360,12 @@ def _review_warnings(req: ScoreImportRequest, draft: ScoreExtraction, unrecogniz
     return warnings
 
 
-def _import_meta_score(req: ScoreImportRequest, attachment: dict[str, Any]) -> ScoreImportResponse:
+def _import_meta_score(req: ScoreImportRequest, attachment: dict[str, Any], *,
+                       local_context: dict | None = None) -> ScoreImportResponse:
     client = get_client()
     _require_standard_meta(client.config)
     result = client.chat_json(
-        _messages(req.mode, attachment),
+        _messages(req.mode, attachment, local_context),
         SCORE_SCHEMA, name="score_import", label="score.import", timeout_s=SCORE_TIMEOUT_S,
         max_completion_tokens=SCORE_MAX_OUTPUT_TOKENS,
         input_token_upper_bound=SCORE_INPUT_TOKEN_BOUND, max_request_usd=SCORE_MAX_REQUEST_USD,

@@ -18,7 +18,7 @@ def import_score_route(req: ScoreImportRequest,
                        caller: Annotated[Caller | None, Depends(limits.caller)] = None) -> ScoreImportResponse:
     # Whole-file reading on a public host needs explicit opt-in. Its $1.35 worst
     # case must still fit the session, daily and persistent ledger allowances.
-    if req.engine == "meta" and not limits.full_file_score_import_allowed():
+    if req.engine in {"meta", "verified"} and not limits.full_file_score_import_allowed():
         raise HTTPException(status_code=403, detail=PUBLIC_HOST_REASON)
     charge: dict = {}
 

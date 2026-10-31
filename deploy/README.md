@@ -39,7 +39,7 @@ an enabled paid public demo. Session limits are abuse friction, not login or
 authentication. One worker owns the local ledger and model cache; do not scale
 to independent replicas with independent copies of the same spending budget.
 
-When Meta is off, use **TheArtist only** for a supported vector PDF and
+When Meta is off, leave **Use Meta model** unchecked for a supported vector PDF and
 **Genre template** for full form. Meta failures and disabled actions stay visible.
 The launcher accepts the same boolean switch spellings as the API.
 
