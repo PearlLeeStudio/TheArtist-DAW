@@ -61,3 +61,6 @@ backend/.exports/
 # Private evaluation material (the owner's real-song set and anything realized from it) never enters this repo
 eval_real_songs*
 *real-songs-dataset*
+
+# Downloaded evaluation corpora and local run ledger are not redistributed.
+experiments/reharmonization/.cache/
