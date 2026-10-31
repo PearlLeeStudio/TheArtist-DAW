@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useCallback, useRef, useState, useSyncExternalStore } from 'react';
 import { initMidi, disconnectMidi, resetMidiNotes } from '../../engine/midiInput';
+import type { MidiTransport } from '../../engine/midiInput';
 import { createMidiCaptureState } from '../../engine/midiCaptureState';
 import type { ConfirmState } from '../../engine/midiCaptureState';
 import { useSongStore } from '../../store/songStore';
@@ -33,7 +34,7 @@ export interface UseMidiCaptureResult extends MidiConnection {
   nextSlotChord: Chord | null;
   songKey: string;
   songMeasureCount: number;
-  toggleMidi: () => Promise<void>;
+  toggleMidi: (transport?: MidiTransport) => Promise<void>;
   setActiveIdx: (i: number) => void;
   setConfirmActiveIdx: (i: number) => void;
   handleConfirm: () => void;
@@ -128,7 +129,7 @@ export function useMidiCapture(onMidiNotes: (notes: number[]) => void, captureAc
     capture.detected(rankCandidatesByContext(chords, useSongStore.getState().song.key));
   }, [capture]);
 
-  const toggleMidi = useCallback(async () => {
+  const toggleMidi = useCallback(async (transport: MidiTransport = 'auto') => {
     const request = ++requestRef.current;
     // A later toggle or an unmount supersedes this request.
     const isCurrent = () => mountedRef.current && request === requestRef.current;
@@ -147,7 +148,6 @@ export function useMidiCapture(onMidiNotes: (notes: number[]) => void, captureAc
       return;
     }
     const target = targetKey(useSongStore.getState().selectedSlots);
-    if (captureActiveRef.current && target === null) return;
     enabledRef.current = true;
     connectingRef.current = true;
     capture.setContext(captureActiveRef.current, target);
@@ -160,7 +160,7 @@ export function useMidiCapture(onMidiNotes: (notes: number[]) => void, captureAc
         capture.reset();
         onMidiNotesRef.current([]);
         setConnection((state) => ({ ...state, connected: value }));
-      });
+      }, transport);
       if (!isCurrent()) return;
       connectingRef.current = false;
       setConnection({ enabled: true, connected, connecting: false, error: null });
@@ -183,8 +183,7 @@ export function useMidiCapture(onMidiNotes: (notes: number[]) => void, captureAc
     holdProgress: snapshot.holdProgress,
     confirming,
     awaitingRelease: snapshot.awaitingRelease,
-    // While capture is armed, MIDI turns on (and chords are entered) only
-    // with exactly one target slot; with capture off any selection works.
+    // Connection/monitoring is always available; writing needs one target.
     canEnable: !captureActive || selectedSlots.length === 1,
     view,
     active,

@@ -1,5 +1,8 @@
 import type { Chord } from '../models/types';
 import { NOTE_NAMES } from './constants.ts';
+import { openMidiBridge } from './midiBridge.ts';
+
+export type MidiTransport = 'auto' | 'bridge';
 
 const heldNotes = new Set<number>();
 
@@ -11,20 +14,29 @@ let chordCallback: ChordCallback | null = null;
 let midiAccess: MIDIAccess | null = null;
 let requestGeneration = 0;
 const attachedInputs = new Set<MIDIInput>();
+let bridge: ReturnType<typeof openMidiBridge> | null = null;
+const heldVoices = new Map<string, number>();
 
-function onMidiMessage(event: MIDIMessageEvent) {
+function onMidiMessage(event: Pick<MIDIMessageEvent, 'data'>, port = 'native') {
   const data = event.data;
   if (!data || data.length < 3) return;
 
   const status = data[0] & 0xf0;
   const note = data[1];
   const velocity = data[2];
+  const voice = `${port}:${data[0] & 0x0f}:${note}`;
 
   if (status === 0x90 && velocity > 0) {
-    heldNotes.add(note);
+    heldVoices.set(voice, note);
   } else if (status === 0x80 || (status === 0x90 && velocity === 0)) {
-    heldNotes.delete(note);
+    heldVoices.delete(voice);
+  } else if (status === 0xb0 && (note === 120 || note === 123)) {
+    const channel = `${port}:${data[0] & 0x0f}:`;
+    for (const key of heldVoices.keys()) if (key.startsWith(channel)) heldVoices.delete(key);
   } else return;
+
+  heldNotes.clear();
+  for (const pitch of heldVoices.values()) heldNotes.add(pitch);
 
   const notes = Array.from(heldNotes).sort((a, b) => a - b);
   noteCallback?.(notes);
@@ -117,6 +129,7 @@ export async function initMidi(
   onNotes: MidiCallback,
   onChord: ChordCallback,
   onConnection?: (connected: boolean) => void,
+  transport: MidiTransport = 'auto',
 ): Promise<boolean> {
   const request = ++requestGeneration;
   detachAccess();
@@ -124,12 +137,23 @@ export async function initMidi(
   noteCallback = null;
   chordCallback = null;
 
-  if (!navigator.requestMIDIAccess) {
-    throw new Error('This browser does not support MIDI input. Use a browser with Web MIDI support.');
+  if (transport === 'bridge' || !navigator.requestMIDIAccess) {
+    noteCallback = onNotes;
+    chordCallback = onChord;
+    bridge = openMidiBridge((data, port) => {
+      if (request === requestGeneration) onMidiMessage({ data: new Uint8Array(data) }, port);
+    }, (connected) => {
+      if (request !== requestGeneration) return;
+      resetMidiNotes();
+      noteCallback?.([]);
+      onConnection?.(connected);
+    });
+    try { return await bridge.ready; }
+    catch (error) { if (request === requestGeneration) disconnectMidi(); throw error; }
   }
 
   try {
-    const access = await navigator.requestMIDIAccess();
+    const access = await navigator.requestMIDIAccess({ sysex: false });
     // A cancelled permission request must never reconnect after the user
     // leaves the editor or starts a newer connection request.
     if (request !== requestGeneration) return false;
@@ -145,7 +169,7 @@ export async function initMidi(
       for (const input of access.inputs.values()) {
         if (input.state !== 'connected') continue;
         input.onmidimessage = (event) => {
-          if (isCurrent()) onMidiMessage(event);
+          if (isCurrent()) onMidiMessage(event, input.id);
         };
         attachedInputs.add(input);
       }
@@ -161,10 +185,13 @@ export async function initMidi(
       connectInputs();
     };
     return connected;
-  } catch {
+  } catch (error) {
     if (request !== requestGeneration) return false;
     disconnectMidi();
-    throw new Error('MIDI access was not granted. Check browser permissions, then try again.');
+    const reason = error instanceof Error ? error.name : '';
+    throw new Error(reason === 'NotAllowedError' || reason === 'SecurityError'
+      ? 'Allow MIDI in this site’s browser permissions, then enable MIDI again. You can also choose Local bridge on Mac.'
+      : 'The browser could not open MIDI. Check the controller connection, then retry or choose Local bridge on Mac.', { cause: error });
   }
 }
 
@@ -174,6 +201,8 @@ function detachInputs(): void {
 }
 
 function detachAccess(): void {
+  bridge?.close();
+  bridge = null;
   detachInputs();
   if (midiAccess) midiAccess.onstatechange = null;
   midiAccess = null;
@@ -182,6 +211,7 @@ function detachAccess(): void {
 /** Drop notes from the previous song while keeping the controller connected. */
 export function resetMidiNotes(): void {
   heldNotes.clear();
+  heldVoices.clear();
 }
 
 export function disconnectMidi(): void {

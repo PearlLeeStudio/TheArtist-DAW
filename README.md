@@ -277,9 +277,12 @@ capture uses R1 alone; current builds also use OMT relevance when prepared.
 
 <img src="screenshot/06-midi.png" alt="Safari MIDI input panel reporting that Web MIDI is unavailable">
 
-This Safari capture reports Web MIDI as unavailable. The input workflow needs a
-browser with Web MIDI support; connected-keyboard behavior has not been verified
-by this capture.
+This capture predates the local MIDI bridge and shows Safari's missing native Web
+MIDI support. Chrome now connects directly; Safari on Mac uses the
+[local MIDI bridge](docs/midi-input.md). Connection/monitoring needs no selected
+slot, while writing always requires exactly one selected slot in the Input tab.
+The bridge's native input and local event stream were checked with three available
+ports; physical keypress confirmation in both browsers remains a manual check.
 
 Pick a slot on the staff, hit **Enable MIDI** with a connected keyboard. Hold a chord on the keys for ≥3 s and it auto-commits to the slot (and the selection auto-advances to the next one). Release early and you get a Confirm card with root-cycling chips — `C6` ↔ `Am7/C` etc. — that reflect the actual played bass, plus inversion detection for slash chords. The Confirm card also shows a 3-chord transition view: prev (purple strip below the keyboard) → current candidate (yellow fill) → next (green strip above), with curved voice-leading arrows tracing how each voice moves.
 

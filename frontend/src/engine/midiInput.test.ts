@@ -89,3 +89,22 @@ test('queued messages from an old connection cannot appear in the new session', 
     assert.deepEqual(notes, [[64]]);
   });
 });
+
+test('matching notes on different MIDI channels release independently and all-notes-off clears only its channel', async () => {
+  const device = accessFixture();
+  await withMidi(() => Promise.resolve(device.access), async () => {
+    const notes: number[][] = [];
+    await initMidi((value) => notes.push(value), () => {});
+    const send = (data: number[]) => device.input.onmidimessage?.call(device.input, { data: new Uint8Array(data) } as MIDIMessageEvent);
+    send([0x90, 60, 100]); send([0x91, 60, 100]); send([0x80, 60, 0]);
+    assert.deepEqual(notes.at(-1), [60]);
+    send([0xb1, 123, 0]);
+    assert.deepEqual(notes.at(-1), []);
+  });
+});
+
+test('permission rejection is actionable and leaves no old input connected', async () => {
+  await withMidi(() => Promise.reject(Object.assign(new Error('denied'), { name: 'NotAllowedError' })), async () => {
+    await assert.rejects(initMidi(() => {}, () => {}), /Allow MIDI.*site.*permissions/);
+  });
+});

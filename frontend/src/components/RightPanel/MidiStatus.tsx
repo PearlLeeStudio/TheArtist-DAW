@@ -2,6 +2,8 @@ import { calculateRomanNumeral } from '../../engine/romanNumeral';
 import { chordToString } from '../../engine/chordParser';
 import ChordTransitionView from './ChordTransitionView';
 import { useMidiCapture, PROGRESS_TICK_MS } from './useMidiCapture';
+import { useState } from 'react';
+import type { MidiTransport } from '../../engine/midiInput';
 
 interface MidiStatusProps {
   onMidiNotes: (notes: number[]) => void;
@@ -26,6 +28,7 @@ const PITCH_CLASS_NAMES = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A',
  * presenter that wires the hook's output to UI.
  */
 export default function MidiStatus({ onMidiNotes, captureActive }: MidiStatusProps) {
+  const [transport, setTransport] = useState<MidiTransport>('auto');
   const {
     enabled,
     connected,
@@ -61,23 +64,36 @@ export default function MidiStatus({ onMidiNotes, captureActive }: MidiStatusPro
         MIDI Input
       </h3>
 
+      <label className="block text-[11px]" style={{ color: 'var(--text-muted)' }}>
+        Connection
+        <select value={transport} disabled={enabled} onChange={(event) => setTransport(event.target.value as MidiTransport)}
+          className="ml-2 px-1 py-1 text-xs" style={{ background: 'var(--bg-surface)', color: 'var(--text-primary)' }}>
+          <option value="auto">Automatic</option>
+          <option value="bridge">Local bridge (Mac)</option>
+        </select>
+      </label>
+
       <button
-        onClick={toggleMidi}
-        disabled={!enabled && !canEnable}
+        onClick={() => toggleMidi(transport)}
         className="w-full px-3 py-2 text-sm font-bold"
         style={enabled
           ? { background: 'var(--text-heading)', color: 'var(--bg-primary)' }
           : {
               background: 'var(--btn-bg)',
               color: 'var(--text-primary)',
-              opacity: canEnable ? 1 : 0.5,
-              cursor: canEnable ? 'pointer' : 'not-allowed',
+              cursor: 'pointer',
             }
         }
-        title={!enabled && !canEnable ? 'Select exactly one slot on the staff first' : undefined}
+        title="Connect your keyboard for monitoring; select one score slot to enter chords"
       >
         {connecting ? 'Cancel MIDI connection' : enabled ? 'Disable MIDI' : 'Enable MIDI'}
       </button>
+
+      <p className="text-[11px] leading-snug" style={{ color: 'var(--text-muted)' }}>
+        Chrome connects directly. Safari uses TheArtist MIDI Bridge on the Mac with your keyboard.
+        {' '}<a href="https://github.com/PearlLeeStudio/TheArtist-DAW/blob/main/docs/midi-input.md"
+          target="_blank" rel="noreferrer" className="underline">Connection help</a>
+      </p>
 
       <p className="text-[11px] italic leading-snug" style={{ color: 'var(--text-muted)' }}>
         {!canEnable
