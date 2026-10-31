@@ -1,0 +1,41 @@
+name: theartist-model-server
+services:
+  app:
+    build:
+      context: /srv/TheArtist-DAW
+      dockerfile: /srv/TheArtist-DAW/deploy/Dockerfile
+    restart: unless-stopped
+    init: true
+    env_file: /srv/theartist.env
+    environment:
+      THEARTIST_PUBLIC_HOST: "1"
+      THEARTIST_SERVE_FRONTEND: "1"
+      THEARTIST_META_LEDGER: /data/meta_ledger.json
+      THEARTIST_JUDGE_LEDGER: /data/meta_ledger.json
+      THEARTIST_RAG_BERKLEE_ENABLED: "0"
+      OMP_NUM_THREADS: "2"
+      MKL_NUM_THREADS: "2"
+    volumes:
+      - meta-ledger:/data
+    expose:
+      - "7860"
+    stop_grace_period: 90s
+  https:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    environment:
+      API_HOST: ${API_HOST:?Set API_HOST in /srv/theartist.env}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /srv/TheArtist-DAW/deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      app:
+        condition: service_healthy
+volumes:
+  meta-ledger:
+  caddy-data:
+  caddy-config:

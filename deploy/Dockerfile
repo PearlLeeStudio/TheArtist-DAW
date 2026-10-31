@@ -1,4 +1,4 @@
-FROM node:25.9.0-bookworm-slim AS frontend
+FROM node:26.13.0-bookworm-slim AS frontend
 WORKDIR /app/frontend
 COPY frontend/package.json frontend/package-lock.json /app/frontend/
 RUN npm ci
@@ -10,15 +10,16 @@ COPY --from=ghcr.io/astral-sh/uv:0.11.16 /uv /usr/local/bin/uv
 RUN apt-get update && apt-get install -y --no-install-recommends libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
-COPY backend/pyproject.toml backend/uv.lock backend/README.md /app/backend/
-RUN uv sync --frozen --no-dev --directory /app/backend
+COPY deploy/runtime/pyproject.toml deploy/runtime/uv.lock /app/deploy/runtime/
+RUN uv sync --frozen --no-dev --directory /app/deploy/runtime
 COPY . /app
 COPY --from=frontend /app/frontend/dist /app/frontend/dist
-ENV PATH="/app/backend/.venv/bin:$PATH" \
+ENV PATH="/app/deploy/runtime/.venv/bin:$PATH" \
     THEARTIST_PUBLIC_HOST=1 THEARTIST_SERVE_FRONTEND=1 THEARTIST_META_ENABLED=0 \
     THEARTIST_DISABLE_RAG=0 THEARTIST_RAG_OMT_ENABLED=1 THEARTIST_RAG_BERKLEE_ENABLED=0 \
     THEARTIST_WARMUP_KEYS=ft_f1 THEARTIST_META_LEDGER=/data/meta_ledger.json \
-    THEARTIST_JUDGE_LEDGER=/data/judge_ledger.json PORT=7860
+    THEARTIST_JUDGE_LEDGER=/data/judge_ledger.json PORT=7860 \
+    OMP_NUM_THREADS=2 MKL_NUM_THREADS=2
 RUN python /app/backend/scripts/setup_omt.py \
     && python /app/model/_download.py --smoke \
     && mkdir -p /data \

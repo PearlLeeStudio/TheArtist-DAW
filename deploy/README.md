@@ -46,14 +46,17 @@ docker build -f /absolute/TheArtist-DAW/deploy/Dockerfile -t theartist-demo /abs
 docker run --rm -p 7860:7860 theartist-demo
 ```
 
-The recipe builds assets separately, uses the frozen uv/npm locks, downloads
+The recipe builds assets separately, uses the frozen CPU runtime/npm locks, downloads
 public F1 and reviewed OMT, and runs as an unprivileged user. API keys and local
 model/corpus directories are excluded from the build context. For Meta, supply
 server secrets at runtime and mount durable writable storage at `/data`.
 
 **Verification scope:** the single-origin Python server was exercised locally,
 including a real 64-bar F1 form in Safari. The container was not built because
-Docker was unavailable. The existing Linux dependency lock includes large Torch
-and research packages; image size, Linux startup memory, external access and
-host resource limits have not been measured. This is a deployment recipe, not
-evidence of a live public URL.
+Docker was unavailable. The separate `deploy/runtime` lock selects Linux CPU Torch
+and excludes unused embedding/vector research dependencies. Its fresh local Mac
+environment passed actual F1/OMT generation, API health and built-frontend checks;
+Linux image size, memory, external access and host limits remain unmeasured.
+See the [shared CPU server recipe](vps.md) for HTTPS, persistent cost storage and
+disabling Meta while retaining the HF model. This recipe does not mean a live
+public model server has been provisioned.
