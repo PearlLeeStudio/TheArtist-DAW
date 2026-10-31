@@ -8,8 +8,15 @@ compact additional tools below them. The context menu only opens the controls.
 
 Choose **Find 3 alternatives** to start the search. Each candidate changes at most one chord by default;
 the optional limit permits two. Empty slots and unselected chords stay untouched.
+Dragging across empty half-bars is supported: the browser submits and captures
+only the written chords. A selection containing no chord symbols remains disabled
+and explains that chords must be added or generated first.
 Genre is not a search objective, and changing the checkpoint in Reharmonize does
 not change the song's genre or playback arrangement.
+
+**Mode → Auto · In context** is the default. It considers familiar substitutions
+and their local connections; an explicit parallel mode remains optional and limits
+every proposed chord to that scale. Auto does not assign one mode to the whole song.
 
 The Original/A/B/C comparison appears between the selected passage and the next
 measure. Click A, B, or C to put that version directly on the staff, then use the
@@ -26,7 +33,10 @@ editor session, not a saved-project version history; reloading the page clears i
 2. A bounded deterministic search enumerates sparse patches inside the selection.
    It prunes using shared pitch classes, a symmetric nearest-pitch-class distance
    across neighboring chords, circular bass motion, and parallel scale membership.
-   An explicitly selected mode constrains every proposed chord to that scale.
+   Empty half-bars do not hide the nearest written neighbors within eight measures.
+   A small convention prior also favors context-supported borrowed predominants,
+   familiar flat-root mixture, and resolving dominant substitutes. Root diversity
+   is retained before the per-slot shortlist is trimmed.
 3. The selected Music Transformer scores the shortlists in written order, retaining
    up to eight preceding and eight following measures. Its score includes target
    chords and known later chords. This is causal sequence reranking, not a new
@@ -36,6 +46,19 @@ editor session, not a saved-project version history; reloading the page clears i
    `offer_candidates` with three distinct IDs. It cannot invent an output chord,
    change the score, or call arbitrary functions. The frontend applies the chosen
    sparse patch only after the composer's click.
+
+The convention prior follows examples in Open Music Theory's
+[Modal Mixture](https://viva.pressbooks.pub/openmusictheory/chapter/modal-mixture/)
+and [Substitutions](https://viva.pressbooks.pub/openmusictheory/chapter/substitutions/):
+ii→iiø7, IV→iv, borrowed ♭III/♭VI/♭VII, and resolving dominant/tritone substitutions.
+Dorian raised-sixth and locally supported Lydian II colors are also considered;
+backdoor dominants receive more support when preceded by iv and resolving to I.
+The 0–0.5 weights are hand-authored preferences, not measured usage frequencies.
+Only the strongest matching preference per change contributes to the mean bonus;
+compatibility with multiple modes does not multiply it. The bonus is already in
+`mathScore`. Meta receives `conventionScore` and each change's `conventions` beside
+the learned score, and is instructed to balance these when choosing three distinct
+options. Candidate cards show the computed convention when one applies.
 
 Pitch-class distance is a heuristic, not measured voice leading or listening
 quality. Mode labels describe compatibility with parallel scales of the stated
@@ -49,6 +72,8 @@ than silently dropping tensions. Original chord objects and voicings are retaine
 with two chord slots, `selectedSlots`, `modelKey`, `maxChanges` (1 or 2), and `mode`
 (`auto` or one of the seven diatonic modes). A selection may span eight measures
 and contain sixteen occupied slots; input context is limited to 256 measures.
+API targets must be occupied; the editor filters gaps from a mixed drag selection
+before sending the request, without changing the score selection.
 
 The response contains three `candidates` with address/before/after patches and
 computed metrics, `modelUsed`, `contextMeasures`, `metaModel`, `requestIds`,
@@ -74,6 +99,8 @@ uses a self-authored three-bar sequence with F4 and actual Meta responses. Three
 requests executed three family searches and a final candidate choice, costing
 $0.021142. The alternatives each change one selected slot. This demonstrates the
 tool/model integration on one fixture; it is not a listening study.
+That paid fixture predates convention scoring. The updated preferences and final
+tool payloads are covered with controlled transports, without a new paid Meta run.
 
 Tests cover sparse bounds, both neighboring chords, modes, tensions and slash
 basses, validated native calls, spending on failures, persistent A/B/C transitions,

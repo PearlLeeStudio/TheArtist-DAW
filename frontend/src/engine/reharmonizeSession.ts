@@ -1,7 +1,7 @@
 import type { Song, SlotAddress } from '../models/types.ts';
 import { captureGenerationComparison, matchesCapturedRange } from './generationComparison.ts';
 import type { GenerationComparison, TargetChord } from './generationComparison.ts';
-import { reharmFingerprint, reharmSelectionError, reharmUpdates, requestReharmonization } from './reharmonize.ts';
+import { reharmFingerprint, reharmSelectionError, reharmTargets, reharmUpdates, requestReharmonization } from './reharmonize.ts';
 import type { ReharmMode, ReharmResult } from './reharmonize.ts';
 
 export interface ReharmState {
@@ -37,16 +37,17 @@ export function reharmActions(host: Host, get: () => ReharmState, set: (patch: P
       const { song, songEpoch, selectedSlots } = host.read();
       const problem = reharmSelectionError(song, selectedSlots);
       if (problem) { set({ error: problem }); return; }
+      const targets = reharmTargets(song, selectedSlots);
       request?.abort();
       const controller = new AbortController();
       request = controller;
-      const comparison = captureGenerationComparison(song, selectedSlots, songEpoch);
+      const comparison = captureGenerationComparison(song, targets, songEpoch);
       const fingerprint = reharmFingerprint(song);
       host.clearGeneration();
       set({ ...emptyReharmState, loading: true, comparison, applied: comparison,
         originalKey: song.key, expectedFingerprint: fingerprint });
       try {
-        const result = await requestCandidates(song, selectedSlots, maxChanges, mode, modelKey, controller.signal);
+        const result = await requestCandidates(song, targets, maxChanges, mode, modelKey, controller.signal);
         if (request !== controller) return;
         const current = host.read();
         if (current.songEpoch !== songEpoch || reharmFingerprint(current.song) !== fingerprint) {

@@ -7,7 +7,7 @@ from pydantic import ValidationError
 
 from app.models.reharmonize import ReharmRequest
 from app.services import llm, reharmonize_agent as agent
-from app.services.reharmonize import chord, context_window, search
+from app.services.reharmonize import chord, context_window, convention_preference, search
 from tests.test_llm import LLMTestCase, FakeTransport
 
 
@@ -95,6 +95,51 @@ class SearchTests(unittest.TestCase):
                       selectedSlots=[{"measureIndex": 30, "slotIndex": 0}])
         self.assertEqual([bar.measure for bar in context_window(req)], list(range(22, 39)))
 
+    def test_familiar_predominants_get_contextual_support_not_a_blanket_mode_bonus(self):
+        resolving, reasons = convention_preference('C major', 'Dm7', 'Dm7b5', 'Am7', 'G7')
+        unrelated, _ = convention_preference('C major', 'Dm7', 'Dm7b5', 'Am7', 'Bb')
+        self.assertGreater(resolving, unrelated)
+        self.assertTrue(any('predominant' in label for label in reasons))
+        self.assertGreater(convention_preference('C major', 'F', 'Fm', 'C', 'G7')[0], 0)
+        self.assertEqual(convention_preference('C major', 'F', 'F#m7b5', 'C', 'Ab')[0], 0)
+
+    def test_tritone_and_backdoor_preferences_require_their_resolution(self):
+        self.assertGreater(convention_preference('C major', 'G7', 'Db7', 'Dm7', 'Cmaj7')[0], 0)
+        self.assertEqual(convention_preference('C major', 'G7', 'Db7', 'Dm7', 'Am7')[0], 0)
+        prepared = convention_preference('C major', 'G7', 'Bb7', 'Fm7', 'Cmaj7')
+        unprepared = convention_preference('C major', 'G7', 'Bb7', 'Dm7', 'Cmaj7')
+        self.assertGreater(prepared[0], unprepared[0])
+        self.assertIn('Backdoor dominant to I', prepared[1])
+        self.assertNotIn('Backdoor dominant to I', convention_preference('C major', 'G7', 'Bb7', 'Fm7', 'Em7')[1])
+
+    def test_priors_transpose_and_support_minor_dorian_and_local_lydian(self):
+        self.assertEqual(convention_preference('C major', 'Dm7', 'Dm7b5', 'Am7', 'G7'),
+                         convention_preference('D major', 'Em7', 'Em7b5', 'Bm7', 'A7'))
+        self.assertGreater(convention_preference('C minor', 'Fm', 'F', 'Cm', 'G7')[0], 0)
+        self.assertGreater(convention_preference('C major', 'Dm', 'D', 'C', 'G')[0], 0)
+        self.assertEqual(convention_preference('C major', 'Dm', 'D', 'Am', 'G')[0], 0)
+
+    def test_familiar_options_reach_the_shortlist_with_the_contextual_prior(self):
+        candidates = search(request(), 'modal')
+        borrowed = next(c for c in candidates if c.changes[0].after == 'Dm7b5')
+        self.assertGreater(borrowed.conventionScore, 0)
+        with patch('app.services.reharmonize.convention_preference', return_value=(0, [])):
+            no_prior = search(request(), 'modal', limit=100)
+        self.assertNotIn(borrowed.id, {c.id for c in no_prior})
+        self.assertTrue(any('Resolving tritone substitute' in change.conventions
+                            for c in search(request(), 'dominant') for change in c.changes))
+
+    def test_empty_half_bars_do_not_hide_the_previous_or_following_harmony(self):
+        dense = request(context=[{'measure': 0, 'chords': ['Dm7', 'G7']}, {'measure': 1, 'chords': ['Cmaj7', None]}],
+                        selectedSlots=[{'measureIndex': 0, 'slotIndex': 1}])
+        sparse = request(context=[{'measure': i, 'chords': [symbol, None]}
+                                  for i, symbol in enumerate(['Dm7', 'G7', 'Cmaj7'])],
+                         selectedSlots=[{'measureIndex': 1, 'slotIndex': 0}])
+        def facts(req):
+            return {c.changes[0].after: (c.mathScore, c.conventionScore, c.changes[0].conventions)
+                    for c in search(req, 'dominant')}
+        self.assertEqual(facts(dense), facts(sparse))
+
 
 class NativeToolsTests(LLMTestCase):
     def test_tool_turn_has_auto_choice_and_settles_usage(self):
@@ -154,6 +199,11 @@ class NativeToolsTests(LLMTestCase):
         self.assertEqual(calls[1]['messages'][-2]['role'], 'assistant')
         self.assertEqual(calls[1]['messages'][-1]['tool_call_id'], 'call-1')
         self.assertEqual(req.model_dump_json(), original)
+        offered = [c for message in calls[-1]['messages'] if message['role'] == 'tool'
+                   for c in json.loads(message['content']).get('candidates', [])]
+        self.assertTrue(any(c['conventionScore'] > 0 and c['changes'][0]['conventions'] for c in offered))
+        facts_by_id = {c['id']: c for c in offered}
+        self.assertTrue(all(c.model_dump() == facts_by_id[c.id] for c in result.candidates))
 
     def test_repeated_searches_stop_at_four_turns(self):
         transport = FakeTransport(tool_response('search_substitutions', {'family': 'common_tones'}))

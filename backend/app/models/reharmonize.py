@@ -56,6 +56,7 @@ class Change(BaseModel):
     after: str
     commonTones: int
     modes: list[str]
+    conventions: list[str] = Field(default_factory=list)
 
 
 class ReharmCandidate(BaseModel):
@@ -67,6 +68,7 @@ class ReharmCandidate(BaseModel):
     bassMotion: float
     originalBassMotion: float
     mathScore: float
+    conventionScore: float = 0.0
     modelScore: float | None = None
 
 

@@ -12,12 +12,13 @@ export type ReharmMode = typeof REHARM_MODES[number];
 export interface ReharmCandidate {
   id: string;
   family: 'common_tones' | 'modal' | 'dominant';
-  changes: { address: SlotAddress; before: string; after: string; commonTones: number; modes: string[] }[];
+  changes: { address: SlotAddress; before: string; after: string; commonTones: number; modes: string[]; conventions?: string[] }[];
   pitchDistance: number;
   originalPitchDistance: number;
   bassMotion: number;
   originalBassMotion: number;
   mathScore: number;
+  conventionScore?: number;
   modelScore: number;
 }
 export interface ReharmResult {
@@ -38,12 +39,21 @@ export function reharmFingerprint(song: Song): string {
   return JSON.stringify([song.id, song.key, song.timeSignature, song.measures.map(m => [m.id, m.chords])]);
 }
 
+/** Dragged passages can include empty half-bars; only written chords are targets. */
+export function reharmTargets(song: Song, slots: SlotAddress[]): SlotAddress[] {
+  return slots.filter(s => !!song.measures[s.measureIndex]?.chords[s.slotIndex]);
+}
+
 export function reharmSelectionError(song: Song, slots: SlotAddress[]): string | null {
-  if (!slots.length || slots.some(s => !song.measures[s.measureIndex]?.chords[s.slotIndex])) {
-    return 'Select existing chords on the score to explore substitutes.';
+  if (!slots.length) return 'Select a passage on the score to explore substitutes.';
+  if (slots.some(s => !song.measures[s.measureIndex] || ![0, 1].includes(s.slotIndex))) {
+    return 'The selected passage changed. Select it again on the score.';
   }
   if (slots.length > 16 || Math.max(...slots.map(s => s.measureIndex)) - Math.min(...slots.map(s => s.measureIndex)) >= 8) {
     return 'Select a passage spanning at most eight measures.';
+  }
+  if (!reharmTargets(song, slots).length) {
+    return 'This selection has no chord symbols yet. Add or generate chords before reharmonizing.';
   }
   return null;
 }
@@ -65,6 +75,7 @@ export function validateReharmResult(value: unknown, song: Song, slots: SlotAddr
         ![candidate.pitchDistance, candidate.originalPitchDistance, candidate.bassMotion,
           candidate.originalBassMotion, candidate.mathScore, candidate.modelScore].every(Number.isFinite)) return fail();
     ids.add(candidate.id);
+    if (candidate.conventionScore !== undefined && !Number.isFinite(candidate.conventionScore)) return fail();
     const changed = new Set<string>();
     for (const change of candidate.changes) {
       if (!change?.address || !Number.isInteger(change.address.measureIndex) || ![0, 1].includes(change.address.slotIndex)) return fail();
@@ -73,7 +84,9 @@ export function validateReharmResult(value: unknown, song: Song, slots: SlotAddr
       if (!allowed.has(address) || changed.has(address) || !original || change.before !== reharmSymbol(original) ||
           typeof change.after !== 'string' || change.after === change.before || !parseChordName(change.after) ||
           !Number.isInteger(change.commonTones) || change.commonTones < 0 ||
-          !Array.isArray(change.modes) || !change.modes.every(m => typeof m === 'string')) return fail();
+          !Array.isArray(change.modes) || !change.modes.every(m => typeof m === 'string') ||
+          (change.conventions !== undefined && (!Array.isArray(change.conventions) ||
+            !change.conventions.every(reason => typeof reason === 'string' && reason.length <= 100)))) return fail();
       changed.add(address);
     }
     const signature = candidate.changes.map(c => `${slotKey(c.address)}:${c.after}`).sort().join(';');
@@ -85,12 +98,15 @@ export function validateReharmResult(value: unknown, song: Song, slots: SlotAddr
 
 export async function requestReharmonization(song: Song, slots: SlotAddress[], maxChanges: 1 | 2,
   mode: ReharmMode, modelKey: string, signal: AbortSignal): Promise<ReharmResult> {
+  const problem = reharmSelectionError(song, slots);
+  if (problem) throw new Error(problem);
+  const targets = reharmTargets(song, slots);
   const response = await postJson('/api/reharmonize', {
     key: song.key, timeSignature: song.timeSignature, modelKey, maxChanges, mode,
-    selectedSlots: slots,
+    selectedSlots: targets,
     context: song.measures.map((m, measure) => ({ measure, chords: m.chords.map(c => c ? reharmSymbol(c) : null) })),
   }, { signal, headers: metaHeaders() });
-  return validateReharmResult(await response.json(), song, slots, maxChanges);
+  return validateReharmResult(await response.json(), song, targets, maxChanges);
 }
 
 /** A/B/C always starts from the captured original, including untouched voicings. */

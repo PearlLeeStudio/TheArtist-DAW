@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import type { Song } from '../models/types.ts';
 import { parseChordName } from './chordParser.ts';
-import { reharmSymbol, validateReharmResult } from './reharmonize.ts';
+import { reharmSymbol, reharmSelectionError, requestReharmonization, validateReharmResult } from './reharmonize.ts';
 import type { ReharmCandidate, ReharmResult } from './reharmonize.ts';
 import { emptyReharmState, reharmActions } from './reharmonizeSession.ts';
 import type { ReharmState } from './reharmonizeSession.ts';
@@ -23,7 +23,7 @@ function result(): ReharmResult {
   return { candidates: [candidate('a', 1, 'Db7'), candidate('b', 0, 'Fm7'), candidate('c', 1, 'G9')],
     modelUsed: 'Music Transformer', metaModel: 'muse-spark-1.3', contextMeasures: [0, 1, 2] };
 }
-function harness(requester: () => Promise<ReharmResult> = async () => result()) {
+function harness(requester: typeof requestReharmonization = async () => result()) {
   let song = score();
   let epoch = 1;
   let writes = 0;
@@ -143,4 +143,55 @@ test('reject malformed, duplicate, excess, out-of-selection and mismatched-origi
 
 test('manual tension and explicit bass are preserved in the search request symbol', () => {
   assert.equal(reharmSymbol({ ...parseChordName('G7/B')!, extensions: ['b9'] }), 'G7(b9)/B');
+});
+
+test('a dragged range with empty half-bars is valid, but empty-only and over-wide selections remain blocked', () => {
+  const song = score();
+  song.measures[1].chords[1] = null;
+  assert.equal(reharmSelectionError(song, slots), null);
+  assert.match(reharmSelectionError(song, [slots[1]])!, /no chord symbols/);
+  assert.match(reharmSelectionError(song, [])!, /Select a passage/);
+  song.measures = Array.from({ length: 9 }, (_, i) => ({ ...song.measures[0], id: `m${i}`, index: i }));
+  song.measures[8].chords = [null, null];
+  assert.match(reharmSelectionError(song, [{ measureIndex: 0, slotIndex: 0 }, { measureIndex: 8, slotIndex: 1 }])!, /eight measures/);
+});
+
+test('mixed selections request and capture only chords; all previews and Original preserve the gaps', async () => {
+  const choices = { ...result(), candidates: ['Fm7', 'Em7', 'Bb7'].map((after, i) => candidate(String(i), 0, after)) };
+  const h = harness(async (song, targets, maximum, mode) => {
+    assert.deepEqual(targets, [slots[0]]);
+    assert.equal(song.measures[1].chords[1], null);
+    assert.equal(maximum, 1);
+    assert.equal(mode, 'auto');
+    return choices;
+  });
+  h.edit(song => { song.measures[1].chords[1] = null; });
+  const original = structuredClone(h.song());
+  await h.actions.run('ft_f1', 1, 'auto');
+  assert.equal(h.state().error, null);
+  assert.equal(h.state().comparison?.original.length, 1);
+  assert.equal(h.writes(), 0);
+  for (const index of [0, 1, 2, null]) {
+    h.actions.preview(index);
+    assert.equal(h.song().measures[1].chords[1], null);
+    assert.equal(h.state().result?.candidates.length, 3);
+  }
+  assert.deepEqual(h.song(), original);
+});
+
+test('HTTP request omits empty targets while retaining full context and auto mode; empty-only makes no call', async t => {
+  const song = score();
+  song.measures[1].chords[1] = null;
+  const choices = { ...result(), candidates: ['Fm7', 'Em7', 'Bb7'].map((after, i) => candidate(String(i), 0, after)) };
+  const fetch = t.mock.method(globalThis, 'fetch', async (_url, init) => {
+    const body = JSON.parse(String(init?.body));
+    assert.deepEqual(body.selectedSlots, [slots[0]]);
+    assert.equal(body.context[1].chords[1], null);
+    assert.equal(body.context.length, 3);
+    assert.equal(body.mode, 'auto');
+    return Response.json(choices);
+  });
+  await requestReharmonization(song, slots, 1, 'auto', 'ft_f1', new AbortController().signal);
+  await assert.rejects(requestReharmonization(song, [slots[1]], 1, 'auto', 'ft_f1', new AbortController().signal), /no chord symbols/);
+  assert.equal(fetch.mock.callCount(), 1);
 });

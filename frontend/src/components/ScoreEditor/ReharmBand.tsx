@@ -40,7 +40,8 @@ export default function ReharmBand() {
             <span className="opacity-60">{c.before}</span> → <strong>{c.after}</strong>
           </div>)}
           <div className="text-[10px] opacity-75">
-            {candidate.changes.map(c => `${c.commonTones} shared tones`).join(' · ')}
+            {[...new Set(candidate.changes.flatMap(c => c.conventions ?? []))].join(' · ') ||
+              candidate.changes.map(c => `${c.commonTones} shared tones`).join(' · ')}
           </div>
         </button>)}
       </div>

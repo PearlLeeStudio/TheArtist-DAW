@@ -34,6 +34,9 @@ MODES = {
     "mixolydian": (0, 2, 4, 5, 7, 9, 10), "aeolian": (0, 2, 3, 5, 7, 8, 10),
     "locrian": (0, 1, 3, 5, 6, 8, 10),
 }
+DOMINANTS = {"7", "9", "13", "7b9", "7#9", "7#11", "7b13"}
+MAJORS = {"maj", "maj7", "maj9", "6", "add9"}
+MINORS = {"m", "m7", "m9", "m6", "m11", "m13"}
 _SYMBOL = re.compile(r"([A-G][#b]?)([^/]*)(?:/([A-G][#b]?))?\Z")
 
 
@@ -71,14 +74,90 @@ def context_window(req: ReharmRequest):
     return [bar for bar in req.context if first - 8 <= bar.measure <= last + 8]
 
 
+def _neighbor(symbols, index, step):
+    # Imported charts often have one symbol per bar. Skip empty half-bars,
+    # bounded by the same eight-bar reach used by the learned context scorer.
+    for offset in range(1, 17):
+        target = index + step * offset
+        if not 0 <= target < len(symbols):
+            break
+        if symbols[target]:
+            return target
+    return None
+
+
 def _metrics(symbols, changed):
-    edges = {(i - 1, i) for i in changed if i > 0} | {(i, i + 1) for i in changed if i + 1 < len(symbols)}
-    edges = [(a, b) for a, b in sorted(edges) if symbols[a] and symbols[b]]
+    edges = set()
+    for i in changed:
+        for step in (-1, 1):
+            neighbor = _neighbor(symbols, i, step)
+            if neighbor is not None:
+                edges.add(tuple(sorted((i, neighbor))))
     if not edges:
         return 0.0, 0.0
-    pairs = [(chord(symbols[a]), chord(symbols[b])) for a, b in edges]
+    pairs = [(chord(symbols[a]), chord(symbols[b])) for a, b in sorted(edges)]
     return (sum(pitch_distance(a[1], b[1]) for a, b in pairs) / len(pairs),
             sum(distance(a[2], b[2]) for a, b in pairs) / len(pairs))
+
+
+def convention_preference(key, before, after, previous=None, following=None):
+    """Small, explicit theory priors, not measured usage frequencies or quality.
+
+    See OMT's Modal Mixture and Substitutions chapters. Borrowed predominants
+    and resolving dominants get more support than mere membership in a mode.
+    Never infer a mode from one chord or add bonuses for multiple compatible modes.
+    """
+    tonic = pitch(key.split()[0])
+    root, pcs, _, quality = chord(after)
+    old_root, _, _, old_quality = chord(before)
+    prev = chord(previous) if previous else None
+    nxt = chord(following) if following else None
+    degree = (root - tonic) % 12
+    aeolian = {(tonic + p) % 12 for p in MODES['aeolian']}
+    evidence = []
+    if key.endswith('major') and pcs <= aeolian:
+        if degree == 2 and quality in {'dim', 'm7b5'} and (old_root - tonic) % 12 in (2, 5):
+            resolves_v = nxt and nxt[0] == (tonic + 7) % 12 and nxt[3] in DOMINANTS | MAJORS
+            evidence.append((.5 if resolves_v else .3, 'Borrowed iiø / ii° predominant'))
+        if degree == 5 and quality in MINORS:
+            resolves = nxt and (nxt[0] == tonic or
+                               (nxt[0] == (tonic + 7) % 12 and nxt[3] in DOMINANTS | MAJORS))
+            evidence.append((.4 if resolves else .2, 'Borrowed iv'))
+        if degree in (3, 8, 10) and quality in MAJORS | {'7'}:
+            evidence.append((.15, {3: 'Borrowed ♭III', 8: 'Borrowed ♭VI', 10: 'Borrowed ♭VII'}[degree]))
+    if key.endswith('minor') and ((degree == 5 and quality in MAJORS | DOMINANTS) or
+                                 (degree == 2 and quality in MINORS)):
+        dorian = {(tonic + p) % 12 for p in MODES['dorian']}
+        if pcs <= dorian and (tonic + 9) % 12 in pcs:
+            evidence.append((.2, 'Dorian raised-sixth color'))
+    if key.endswith('major') and degree == 2 and quality in MAJORS:
+        lydian = {(tonic + p) % 12 for p in MODES['lydian']}
+        if pcs <= lydian and ((prev and prev[0] == tonic) or (nxt and nxt[0] == tonic)):
+            evidence.append((.15, 'Lydian II beside I'))
+    if quality in DOMINANTS and nxt:
+        approach = (root - nxt[0]) % 12
+        if approach == 7:
+            evidence.append((.25, 'Dominant resolution'))
+            if degree == 7 and quality == '7b9' and nxt[0] == tonic:
+                evidence.append((.45, 'V7♭9 resolving to tonic'))
+        if approach == 1 and old_quality in DOMINANTS and (root - old_root) % 12 == 6:
+            evidence.append((.5, 'Resolving tritone substitute'))
+        if approach == 10 and nxt[0] == tonic and nxt[3] in MAJORS:
+            prepared = prev and (prev[0] - tonic) % 12 == 5 and prev[3] in MINORS
+            evidence.append((.45 if prepared else .3, 'Backdoor dominant to I'))
+    return max((weight for weight, _ in evidence), default=0.0), [label for _, label in evidence]
+
+
+def _diverse_roots(candidates, limit):
+    result, signatures = [], set()
+    for item in sorted(candidates, key=lambda c: (-c.mathScore, c.id)):
+        signature = tuple((c.address.measureIndex, c.address.slotIndex, chord(c.after)[0]) for c in item.changes)
+        if signature not in signatures:
+            signatures.add(signature)
+            result.append(item)
+        if len(result) == limit:
+            break
+    return result
 
 
 def search(req: ReharmRequest, family: str, *, limit: int = 6) -> list[ReharmCandidate]:
@@ -98,30 +177,39 @@ def search(req: ReharmRequest, family: str, *, limit: int = 6) -> list[ReharmCan
 
     def make(replacements):
         version = list(symbols)
+        for i, after in replacements:
+            version[i] = after
         changes = []
+        preferences = []
         for i, after in sorted(replacements):
             before = symbols[i]
             before_pcs, after_pcs = chord(before)[1], chord(after)[1]
-            version[i] = after
+            left, right = _neighbor(version, i, -1), _neighbor(version, i, 1)
+            preference, conventions = convention_preference(req.key, before, after,
+                version[left] if left is not None else None, version[right] if right is not None else None)
+            preferences.append(preference)
             changes.append(Change(address=Slot(measureIndex=i // 2, slotIndex=i % 2), before=before, after=after,
                                   commonTones=len(before_pcs & after_pcs),
+                                  conventions=conventions,
                                   modes=[name for name, scale in scales.items() if after_pcs <= scale]))
         indexes = [i for i, _ in replacements]
         motion, bass = _metrics(version, indexes)
         old_motion, old_bass = _metrics(symbols, indexes)
         shared = sum(c.commonTones / len(chord(c.before)[1]) for c in changes) / len(changes)
         # Less movement and shared tones are useful pruning heuristics, never quality probabilities.
-        score = 2 * shared - motion - .12 * bass - .15 * (len(changes) - 1)
+        preference = sum(preferences) / len(preferences)
+        score = 2 * shared - motion - .12 * bass - .15 * (len(changes) - 1) + preference
         identity = ";".join(f"{i}:{symbol}" for i, symbol in sorted(replacements))
         return ReharmCandidate(id=identity, family=family, changes=changes,
                                pitchDistance=round(motion, 3), originalPitchDistance=round(old_motion, 3),
                                bassMotion=round(bass, 3), originalBassMotion=round(old_bass, 3),
-                               mathScore=round(score, 4))
+                               mathScore=round(score, 4), conventionScore=round(preference, 4))
 
     singles = []
     for i in selected:
         root, original, bass, quality = chord(symbols[i])
-        following = chord(symbols[i + 1]) if i + 1 < len(symbols) and symbols[i + 1] else None
+        next_index = _neighbor(symbols, i, 1)
+        following = chord(symbols[next_index]) if next_index is not None else None
         options = []
         for candidate_root in ROOTS:
             for candidate_quality in INTERVALS:
@@ -141,16 +229,16 @@ def search(req: ReharmRequest, family: str, *, limit: int = 6) -> list[ReharmCan
                 if family == "modal" and (pcs <= home or not any(pcs <= s for s in scales.values()) or common < 1):
                     continue
                 if family == "dominant":
-                    dominant = {"7", "9", "13", "7b9", "7#9", "7#11", "7b13"}
-                    tritone = quality in dominant and cq in dominant and (cr - root) % 12 == 6
-                    approaches = following and cq in dominant and (cr - following[0]) % 12 in (1, 7)
+                    tritone = quality in DOMINANTS and cq in DOMINANTS and (cr - root) % 12 == 6
+                    approaches = following and cq in DOMINANTS and ((cr - following[0]) % 12 in (1, 7) or
+                        ((cr - following[0]) % 12 == 10 and following[3] in MAJORS))
                     if not (tritone or approaches):
                         continue
                 # Reject needless density jumps before any neural/API work.
                 if abs(len(pcs) - len(original)) > 1:
                     continue
                 options.append(make([(i, after)]))
-        singles.extend(sorted(options, key=lambda c: (-c.mathScore, c.id))[:6])
+        singles.extend(_diverse_roots(options, 6))
     candidates = list(singles)
     if req.maxChanges == 2:
         # Bounded beam: pair only the best single changes, then recompute shared boundaries.
@@ -159,17 +247,8 @@ def search(req: ReharmRequest, family: str, *, limit: int = 6) -> list[ReharmCan
             ia, ib = ca.address.measureIndex * 2 + ca.address.slotIndex, cb.address.measureIndex * 2 + cb.address.slotIndex
             if ia != ib:
                 candidates.append(make([(ia, ca.after), (ib, cb.after)]))
-    candidates.sort(key=lambda c: (-c.mathScore, c.id))
     # Avoid presenting only extensions of one root as the entire shortlist.
-    result, signatures = [], set()
-    for item in candidates:
-        signature = tuple((c.address.measureIndex, c.address.slotIndex, chord(c.after)[0]) for c in item.changes)
-        if signature not in signatures:
-            signatures.add(signature)
-            result.append(item)
-        if len(result) == limit:
-            break
-    return result
+    return _diverse_roots(candidates, limit)
 
 
 class ContextScorer:
