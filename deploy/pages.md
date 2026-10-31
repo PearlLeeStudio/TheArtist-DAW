@@ -29,9 +29,11 @@ Check both `/` and `/api/health` through the custom domain. A working editor
 alone does not verify AI generation. Test an actual F1 generation after the
 server is connected.
 
-Git pushes automatically rebuild the corresponding Pages frontend. Backend
-Docker updates are a separate server operation described in [vps.md](vps.md);
-they are not automatically triggered by a Pages build.
+Git pushes automatically rebuild the corresponding Pages frontend. Independently,
+the model server polls this public repository's `main` branch about once a minute
+and deploys runtime changes through Docker with health checks and rollback.
+See [automatic model-server deployment](autodeploy.md). The public Artist release
+repository updates only its own frontend; it does not replace the shared backend.
 
 For command-line API checks, send a descriptive application `User-Agent`, such
 as `TheArtistDeploymentCheck/1.0`. Cloudflare's Pages integrity check can reject

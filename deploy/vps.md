@@ -22,7 +22,9 @@ Every released choice passed actual generation through the hosted API.
 - One Python worker; two CPU threads. All 18 choices stay resident on the
   deployed 2-vCPU / 4-GiB host. OMT is ready and Berklee is disabled.
 - Docker Engine 29.9.2 and Compose 5.6.1 run the image on Ubuntu 24.04 x64.
-  The image occupies 7,918,206,897 bytes; disk use includes separate build caches.
+  Dependency and public-model layers are cached independently of application code.
+  A 4-GiB swap file on the existing disk provides build headroom; no extra VM or
+  paid volume is used. Images and build caches also consume disk space.
 - HTTPS, persistent writable storage across app replacement, and both Pages
   API routes were verified. Meta keys are supplied at runtime, outside Git and
   the image.
@@ -73,16 +75,17 @@ projects after the model server passes its checks.
 
 The deployed production value on both projects is
 `https://music-api.pearlleestudio.co`. Frontend pushes trigger Pages automatically.
-To update the backend separately, review the public repository changes, then:
+The model server's systemd timer independently polls public `TheArtist-DAW/main`
+about once a minute. A runtime change builds a candidate while the old service
+continues running, then checks startup, all 18 resident choices, actual F1
+generation and public HTTPS. Failure restores the previous checkout and image.
+Documentation-only pushes do not restart the service. The separate public Artist
+release repository does not overwrite this shared backend.
 
-```sh
-git -C /srv/TheArtist-DAW pull --ff-only
-docker compose --env-file /srv/theartist.env -f /srv/TheArtist-DAW/deploy/compose.yaml up -d --build
-```
-
-Wait for the app to become healthy and verify generation after an update. A new
-image is built before the existing app is replaced. Model loading during
-replacement causes a short API interruption on this single-server deployment.
+See [automatic deployment](autodeploy.md) for installation, status, retry and
+pause commands. Model loading during replacement causes a short API interruption
+on this single-server deployment. Pause the timer and wait for any active
+deployment before making manual server changes.
 
 For the optional Meta demo, add `MODEL_API_KEY` to the server environment and set
 `THEARTIST_META_ENABLED=1` after the storage check. Defaults here cap total spend at

@@ -37,6 +37,25 @@ API checks on both editor domains passed vector-PDF import, streamed generation
 and MIDI export.
 Bounded Meta planning is enabled with a server-only key.
 See [deployment, measurements and limits](deploy/vps.md).
+Public Git pushes update Pages automatically. The shared model server also polls
+this repository's `main` branch and deploys runtime changes with health checks
+and rollback; see [automatic deployment](deploy/autodeploy.md).
+
+```text
+Local edit → commit + push → public TheArtist-DAW/main
+  ├─ Cloudflare Pages build → artist-daw.pearlleestudio.co
+  └─ DigitalOcean checks Git → Docker build + health checks → music-api.pearlleestudio.co
+
+Public TheArtist/main → Cloudflare Pages build → artist.pearlleestudio.co
+Both Artist websites → /api/* → the shared model API above
+```
+
+Docker packages the server code, libraries and all 18 model choices. The API key
+and persistent cost ledger stay outside the image. The server checks Git about
+once a minute; documentation-only pushes do not restart it. Runtime replacement
+briefly interrupts the API while models load. The release frontend follows its
+own reviewed public snapshot; hackathon code is not automatically merged into it.
+
 The Docker image includes MCP code, but public-host mode does not expose its MCP
 endpoint. [Voyager's API/MCP deployment path](docs/mcp.md#voyager-on-a-shared-host)
 distinguishes the existing adapter from the remaining hosted integration.
@@ -686,6 +705,9 @@ TheArtist-DAW/
 ├── deploy/
 │   ├── Dockerfile         # Frontend build, CPU runtime and all 18 HF model assets
 │   ├── compose.yaml       # Shared model service, Caddy HTTPS and persistent volumes
+│   ├── autodeploy.py      # Public main polling, candidate build, health checks and rollback
+│   ├── theartist-deploy.* # systemd service and one-minute timer
+│   ├── autodeploy.md      # Installation, deployment status, retry and pause commands
 │   ├── serve.py           # Full-catalog startup checks and one Python worker
 │   ├── catalog_probe.py   # All models resident; actual 8/32/64-bar CPU generation
 │   ├── runtime/           # Frozen CPU serving dependencies

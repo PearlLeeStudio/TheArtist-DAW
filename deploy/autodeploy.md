@@ -86,6 +86,22 @@ Pausing the timer does not cancel a deployment already running. Let that operati
 finish before making manual server changes. Resume with
 `systemctl enable --now theartist-deploy.timer`.
 
+## Verification
+
+The installed timer detected public commit `925759b`, built the candidate while
+both existing domain APIs remained healthy, and switched the running image to
+that revision. All 18 models were resident, actual F1 generation passed, and
+public HTTPS was healthy. The persistent storage marker survived and the Meta
+ledger checksum was unchanged. An earlier documentation-only push advanced the
+observed revision without replacing the app.
+
+Ten automated deployment tests cover failed builds, unhealthy startup, generation
+failure, rollback failure, interrupted-switch recovery, retry suppression,
+documentation-only changes and dirty checkout refusal. Failure recovery was
+tested with controlled doubles, not by deliberately breaking the production
+service. Frontend build/lint and backend import also pass; the existing large
+frontend bundle warning remains. No paid Meta call was made for these checks.
+
 [systemd timer behavior](https://www.freedesktop.org/software/systemd/man/latest/systemd.timer.html),
 [Compose health waiting](https://docs.docker.com/reference/cli/docker/compose/up/),
 [Docker layer caching](https://docs.docker.com/build/cache/optimize/).

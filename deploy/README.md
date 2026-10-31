@@ -68,3 +68,7 @@ is serialized across clients to bound concurrent working memory. `catalog_probe.
 keeps every model resident and exercises actual generation without Meta calls.
 Both public editors are connected to the deployed shared server. The local
 development setup remains separate.
+The server's [automatic deployment controller](autodeploy.md) follows the public
+DAW `main` branch, builds runtime changes, checks all 18 resident models and actual
+generation, and restores the previous image if deployment fails. Large model and
+dependency layers are cached independently of application edits.
