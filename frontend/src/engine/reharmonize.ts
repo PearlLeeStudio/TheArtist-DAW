@@ -26,12 +26,13 @@ export interface ReharmResult {
   modelUsed: string;
   contextMeasures: number[];
   metaModel: string;
+  modelApproximations?: { address: SlotAddress; original: string; scoredAs: string }[];
 }
 
 /** Include manually added tensions; unsupported combinations must fail rather than disappear. */
 export function reharmSymbol(chord: Chord): string {
   const quality = chord.quality === 'maj' ? '' : chord.quality === 'min' ? 'm' : chord.quality;
-  return `${chord.root}${quality}${chord.extensions.length ? `(${chord.extensions.join('')})` : ''}${chord.bass ? `/${chord.bass}` : ''}`;
+  return `${chord.root}${quality}${chord.extensions.length ? `(${chord.extensions.join(',')})` : ''}${chord.bass ? `/${chord.bass}` : ''}`;
 }
 
 /** Score content identity; transport, mixer, title and cursor edits do not invalidate a comparison. */
@@ -65,6 +66,9 @@ export function validateReharmResult(value: unknown, song: Song, slots: SlotAddr
   if (!result || !Array.isArray(result.candidates) || result.candidates.length !== 3 ||
       typeof result.modelUsed !== 'string' || typeof result.metaModel !== 'string' ||
       !Array.isArray(result.contextMeasures) || !result.contextMeasures.every(Number.isInteger)) return fail();
+  if (result.modelApproximations !== undefined && (!Array.isArray(result.modelApproximations) ||
+      !result.modelApproximations.every(a => a && typeof a.original === 'string' && typeof a.scoredAs === 'string' &&
+        Number.isInteger(a.address?.measureIndex) && [0, 1].includes(a.address?.slotIndex)))) return fail();
   const allowed = new Set(slots.map(slotKey));
   const ids = new Set<string>();
   const signatures = new Set<string>();

@@ -27,17 +27,67 @@ INTERVALS = {
 }
 ALIASES = {"": "maj", "min": "m", "min7": "m7", "min9": "m9", "min11": "m11",
            "min13": "m13", "min6": "m6", "mM7": "mMaj7", "minmaj7": "mMaj7", "M7": "maj7",
-           "M9": "maj9", "sus": "sus4"}
+           "M9": "maj9", "sus": "sus4", "major": "maj", "M": "maj", "minor": "m",
+           "+": "aug", "+7": "aug7", "7#5": "aug7", "o": "dim", "°": "dim",
+           "o7": "dim7", "°7": "dim7", "ø": "m7b5", "ø7": "m7b5",
+           "M11": "maj11", "M13": "maj13", "Δ": "maj7", "Δ7": "maj7", "Δ9": "maj9",
+           "augM7": "augmaj7", "+maj7": "augmaj7", "+M7": "augmaj7", "maj7#5": "augmaj7",
+           "mM9": "mMaj9", "7sus": "7sus4"}
+# Imported/editor chords are broader than the trained vocabulary. Keep their
+# exact tones for math/Meta, without expanding the set of generated candidates.
+INPUT_INTERVALS = {**INTERVALS,
+    "aug7": (0, 4, 8, 10), "augmaj7": (0, 4, 8, 11), "5": (0, 7),
+    "maj11": (0, 2, 4, 5, 7, 11), "maj13": (0, 2, 4, 5, 7, 9, 11),
+    "mMaj9": (0, 2, 3, 7, 11), "6/9": (0, 2, 4, 7, 9), "m6/9": (0, 2, 3, 7, 9),
+    "7sus2": (0, 2, 7, 10), "7sus4": (0, 5, 7, 10),
+    "9sus4": (0, 2, 5, 7, 10), "13sus4": (0, 2, 5, 7, 9, 10),
+    "add2": (0, 2, 4, 7), "add4": (0, 4, 5, 7), "add6": (0, 4, 7, 9),
+    "add11": (0, 4, 5, 7), "add13": (0, 4, 7, 9),
+}
+# Explicit coarse model encodings, disclosed to Meta and the caller. Never let
+# the tokenizer silently turn an unfamiliar quality (e.g. aug7) into major.
+MODEL_QUALITIES = {**{q: q for q in INTERVALS},
+    "aug7": "7", "augmaj7": "maj7", "5": "maj", "maj11": "maj9", "maj13": "maj9",
+    "mMaj9": "mMaj7", "6/9": "6", "m6/9": "m6", "7sus2": "7", "7sus4": "7",
+    "9sus4": "9", "13sus4": "13", "add2": "add9", "add4": "maj", "add6": "6",
+    "add11": "maj", "add13": "6",
+}
+_ALTERATION = re.compile(r"(?:b5|#5|b9|#9|#11|b13)")
+_QUALITY = re.compile(
+    "(" + "|".join(re.escape(q) for q in sorted(INPUT_INTERVALS.keys() | ALIASES.keys(),
+                                                key=lambda q: (-len(q), q))) + ")"
+    r"((?:(?:b5|#5|b9|#9|#11|b13)){0,4})(?:\(((?:b5|#5|b9|#9|#11|b13)(?:,?(?:b5|#5|b9|#9|#11|b13)){0,3})\))?\Z"
+)
+
+
+@lru_cache(maxsize=512)
+def _quality(quality: str):
+    match = _QUALITY.fullmatch(quality)
+    if not match:
+        raise ValueError("Unsupported chord quality")
+    base, suffix, extensions = match.groups()
+    base = ALIASES.get(base, base)
+    tones = set(INPUT_INTERVALS[base])
+    alterations = _ALTERATION.findall(suffix + (extensions or ""))
+    # Remove natural degrees together, then add all alterations: b9 and #9
+    # can coexist, and their order cannot change the resulting pitch set.
+    natural = {"5": 7, "9": 2, "11": 5, "13": 9}
+    tones.difference_update(natural[a[1:]] for a in alterations)
+    tones.update((natural[a[1:]] + (1 if a[0] == "#" else -1)) % 12 for a in alterations)
+    canonical = base + "".join(alterations)
+    # Single alterations already in the trained vocabulary retain their tokens.
+    model_quality = canonical if canonical in INTERVALS else MODEL_QUALITIES[base]
+    return frozenset(tones), canonical, model_quality
 MODES = {
     "ionian": (0, 2, 4, 5, 7, 9, 11), "dorian": (0, 2, 3, 5, 7, 9, 10),
     "phrygian": (0, 1, 3, 5, 7, 8, 10), "lydian": (0, 2, 4, 6, 7, 9, 11),
     "mixolydian": (0, 2, 4, 5, 7, 9, 10), "aeolian": (0, 2, 3, 5, 7, 8, 10),
     "locrian": (0, 1, 3, 5, 6, 8, 10),
 }
-DOMINANTS = {"7", "9", "13", "7b9", "7#9", "7#11", "7b13"}
+DOMINANTS = {"7", "9", "11", "13", "7b9", "7#9", "7#11", "7b13", "aug7", "7sus2", "7sus4", "9sus4", "13sus4"}
 MAJORS = {"maj", "maj7", "maj9", "6", "add9"}
 MINORS = {"m", "m7", "m9", "m6", "m11", "m13"}
-_SYMBOL = re.compile(r"([A-G][#b]?)([^/]*)(?:/([A-G][#b]?))?\Z")
+_SYMBOL = re.compile(r"([A-G][#b]?)(.*?)(?:/([A-G][#b]?))?\Z")
 
 
 def pitch(note: str) -> int:
@@ -50,13 +100,19 @@ def chord(symbol: str) -> tuple[int, frozenset[int], int, str]:
     if not match:
         raise ValueError(f"Unsupported chord symbol for substitution search: {symbol}")
     root, quality, bass = match.groups()
-    quality = quality.replace("(", "").replace(")", "")
-    quality = ALIASES.get(quality, quality)
-    if quality not in INTERVALS:
-        raise ValueError(f"Unsupported chord quality for substitution search: {symbol}")
+    try:
+        tones, quality, _ = _quality(quality)
+    except ValueError:
+        raise ValueError(f"Unsupported chord quality for substitution search: {symbol}") from None
     root_pc = pitch(root)
-    pcs = frozenset({(root_pc + interval) % 12 for interval in INTERVALS[quality]} | ({pitch(bass)} if bass else set()))
+    pcs = frozenset({(root_pc + interval) % 12 for interval in tones} | ({pitch(bass)} if bass else set()))
     return root_pc, pcs, pitch(bass) if bass else root_pc, quality
+
+
+def model_symbol(symbol: str) -> str:
+    root, _, _, _ = chord(symbol)
+    quality = _SYMBOL.fullmatch(symbol).group(2)
+    return ROOTS[root] + _quality(quality)[2]
 
 
 def distance(a: int, b: int) -> int:
@@ -72,6 +128,32 @@ def context_window(req: ReharmRequest):
     first = min(s.measureIndex for s in req.selectedSlots)
     last = max(s.measureIndex for s in req.selectedSlots)
     return [bar for bar in req.context if first - 8 <= bar.measure <= last + 8]
+
+
+def validate_context(req: ReharmRequest):
+    """Fail before model loading or paid calls, identifying the actual score slot."""
+    for bar in context_window(req):
+        for slot, symbol in enumerate(bar.chords):
+            if symbol:
+                try:
+                    chord(symbol)
+                except ValueError as exc:
+                    raise ValueError(f"M{bar.measure + 1}.{slot + 1}: {exc}. Edit this chord symbol and try again.") from None
+
+
+def model_approximations(req: ReharmRequest):
+    approximations = []
+    for bar in context_window(req):
+        for slot, symbol in enumerate(bar.chords):
+            if not symbol:
+                continue
+            projected = model_symbol(symbol)
+            # Slash bass is already a documented mathematical-only constraint.
+            head = _SYMBOL.fullmatch(symbol)
+            if chord(head.group(1) + head.group(2))[1] != chord(projected)[1]:
+                approximations.append({"address": {"measureIndex": bar.measure, "slotIndex": slot},
+                                       "original": symbol, "scoredAs": projected})
+    return approximations
 
 
 def _neighbor(symbols, index, step):
@@ -166,10 +248,7 @@ def search(req: ReharmRequest, family: str, *, limit: int = 6) -> list[ReharmCan
         raise ValueError("Unknown substitution family.")
     symbols = [symbol for bar in req.context for symbol in bar.chords]
     # Validate precisely the same local context that the model will score.
-    for bar in context_window(req):
-        for symbol in bar.chords:
-            if symbol:
-                chord(symbol)
+    validate_context(req)
     tonic = pitch(req.key.split()[0])
     scales = {name: {(tonic + p) % 12 for p in scale} for name, scale in MODES.items()}
     home = scales["aeolian" if req.key.endswith("minor") else "ionian"]
@@ -216,8 +295,9 @@ def search(req: ReharmRequest, family: str, *, limit: int = 6) -> list[ReharmCan
                 after = candidate_root + candidate_quality
                 cr, pcs, cb, cq = chord(after)
                 # Keep an explicitly written pedal/inversion bass; it is not an invitation to replace it.
-                if "/" in symbols[i]:
-                    after += "/" + symbols[i].split("/")[1]
+                slash_bass = _SYMBOL.fullmatch(symbols[i]).group(3)
+                if slash_bass:
+                    after += "/" + slash_bass
                     cr, pcs, cb, cq = chord(after)
                 if pcs == original and cb == bass:
                     continue
@@ -254,6 +334,7 @@ def search(req: ReharmRequest, family: str, *, limit: int = 6) -> list[ReharmCan
 class ContextScorer:
     """Load one chosen checkpoint once, and score only a small mathematical shortlist."""
     def __init__(self, req: ReharmRequest):
+        validate_context(req)
         from app.services import inference
         key = req.modelKey or inference.DEFAULT_MODEL
         if key not in inference.CHECKPOINTS:
@@ -274,8 +355,7 @@ class ContextScorer:
 
     @staticmethod
     def _token_symbol(symbol):
-        root, _, _, quality = chord(symbol)
-        return ROOTS[root] + quality
+        return model_symbol(symbol)
 
     def score(self, candidates):
         from app.models.schemas import Suggestion

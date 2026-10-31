@@ -37,15 +37,22 @@ def context_scores(loaded, tokenizer, suggestions, header, context, selected):
     """
     from app.services import inference
 
+    # PEFT's FEATURE_EXTRACTION wrapper injects Hugging Face arguments such as
+    # attention_mask. Our MusicTransformer accepts token tensors directly.
+    # get_base_model keeps the installed LoRA layers and saved embedding/output
+    # modules; it does not disable, merge or unload the adapter.
+    model = loaded.model
+    if inference.PEFT_AVAILABLE and isinstance(model, inference.PeftModel):
+        model = model.get_base_model()
     prepared = [sequence_tokens(tokenizer, header, context, item, selected) for item in suggestions]
-    limit = getattr(loaded.model, "max_seq_len", 512)
+    limit = getattr(model, "max_seq_len", 512)
     if any(len(ids) > limit for ids, _ in prepared):
         raise ValueError(f"Whole-score chord comparison exceeds the {limit}-token model context.")
     scores = []
     with inference._HOSTED_INFERENCE_LOCK, inference.torch.inference_mode():
         for ids, positions in prepared:
             inputs = inference.torch.tensor([ids[:-1]], device=loaded.device)
-            logits = loaded.model(inputs)[0]
+            logits = model(inputs)[0]
             indices = inference.torch.tensor([p - 1 for p in positions], device=loaded.device)
             targets = inference.torch.tensor([ids[p] for p in positions], device=loaded.device)
             values = logits[indices].log_softmax(-1).gather(1, targets[:, None])

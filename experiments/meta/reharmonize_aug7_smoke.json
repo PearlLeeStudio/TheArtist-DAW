@@ -1,0 +1,231 @@
+{
+  "scope": "Self-authored sparse fixture with an augmented seventh, unresolved slots, actual Classical LoRA scoring and bounded Meta tool calls; no listening claim.",
+  "request": {
+    "key": "G major",
+    "timeSignature": [
+      4,
+      4
+    ],
+    "context": [
+      {
+        "measure": 0,
+        "chords": [
+          "G",
+          null
+        ]
+      },
+      {
+        "measure": 1,
+        "chords": [
+          null,
+          null
+        ]
+      },
+      {
+        "measure": 2,
+        "chords": [
+          "Eaug7",
+          null
+        ]
+      },
+      {
+        "measure": 3,
+        "chords": [
+          null,
+          null
+        ]
+      },
+      {
+        "measure": 4,
+        "chords": [
+          "Am7",
+          null
+        ]
+      }
+    ],
+    "selectedSlots": [
+      {
+        "measureIndex": 2,
+        "slotIndex": 0
+      }
+    ],
+    "maxChanges": 1,
+    "mode": "auto",
+    "modelKey": "ft_f1_lora_classical"
+  },
+  "response": {
+    "candidates": [
+      {
+        "id": "4:Cmaj9",
+        "family": "common_tones",
+        "changes": [
+          {
+            "address": {
+              "measureIndex": 2,
+              "slotIndex": 0
+            },
+            "before": "Eaug7",
+            "after": "Cmaj9",
+            "commonTones": 3,
+            "modes": [
+              "ionian",
+              "mixolydian"
+            ],
+            "conventions": []
+          }
+        ],
+        "pitchDistance": 0.425,
+        "originalPitchDistance": 0.729,
+        "bassMotion": 4.0,
+        "originalBassMotion": 4.0,
+        "mathScore": 0.595,
+        "conventionScore": 0.0,
+        "modelScore": -12.79081
+      },
+      {
+        "id": "4:Bb9",
+        "family": "modal",
+        "changes": [
+          {
+            "address": {
+              "measureIndex": 2,
+              "slotIndex": 0
+            },
+            "before": "Eaug7",
+            "after": "Bb9",
+            "commonTones": 3,
+            "modes": [
+              "phrygian"
+            ],
+            "conventions": [
+              "Resolving tritone substitute"
+            ]
+          }
+        ],
+        "pitchDistance": 0.854,
+        "originalPitchDistance": 0.729,
+        "bassMotion": 2.0,
+        "originalBassMotion": 4.0,
+        "mathScore": 0.9058,
+        "conventionScore": 0.5,
+        "modelScore": -14.50231
+      },
+      {
+        "id": "4:E7b13",
+        "family": "common_tones",
+        "changes": [
+          {
+            "address": {
+              "measureIndex": 2,
+              "slotIndex": 0
+            },
+            "before": "Eaug7",
+            "after": "E7b13",
+            "commonTones": 4,
+            "modes": [],
+            "conventions": [
+              "Dominant resolution"
+            ]
+          }
+        ],
+        "pitchDistance": 0.608,
+        "originalPitchDistance": 0.729,
+        "bassMotion": 4.0,
+        "originalBassMotion": 4.0,
+        "mathScore": 1.1617,
+        "conventionScore": 0.25,
+        "modelScore": -17.00154
+      }
+    ],
+    "modelUsed": "F1 + LoRA: classical",
+    "contextMeasures": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "metaModel": "muse-spark-1.3",
+    "requestIds": [
+      "21e97294-1a31-435b-9d3f-70cd34c27897",
+      "984f4d46-dd04-4790-83bd-b5fd06ced840"
+    ],
+    "costUsd": 0.019529,
+    "toolCalls": [
+      "search_substitutions",
+      "search_substitutions",
+      "offer_candidates"
+    ],
+    "modelApproximations": [
+      {
+        "address": {
+          "measureIndex": 2,
+          "slotIndex": 0
+        },
+        "original": "Eaug7",
+        "scoredAs": "E7"
+      }
+    ]
+  },
+  "priorAttempt": {
+    "outcome": "failed at 1600 output tokens on turn 2; reasoning used 1598 tokens",
+    "failedRequestId": "94949480-c816-49a6-a4af-95227129b037",
+    "failedCallCostUsd": 0.01076125,
+    "totalCostUsd": 0.01513575
+  },
+  "calls": [
+    {
+      "label": "reharmonize:turn-1",
+      "model": "muse-spark-1.3",
+      "settled_usd": 0.0043745,
+      "status": "settled",
+      "request_id": "a477467d-1104-4de3-a97c-d64893615ecc",
+      "usage": {
+        "prompt_tokens": 1259,
+        "cached_tokens": 0,
+        "completion_tokens": 659,
+        "reasoning_tokens": 535
+      }
+    },
+    {
+      "label": "reharmonize:turn-2",
+      "model": "muse-spark-1.3",
+      "settled_usd": 0.01076125,
+      "status": "failed",
+      "request_id": "94949480-c816-49a6-a4af-95227129b037",
+      "usage": {
+        "prompt_tokens": 3169,
+        "cached_tokens": 0,
+        "completion_tokens": 1600,
+        "reasoning_tokens": 1598
+      }
+    },
+    {
+      "label": "reharmonize:turn-1",
+      "model": "muse-spark-1.3",
+      "settled_usd": 0.00434475,
+      "status": "settled",
+      "request_id": "21e97294-1a31-435b-9d3f-70cd34c27897",
+      "usage": {
+        "prompt_tokens": 1259,
+        "cached_tokens": 0,
+        "completion_tokens": 652,
+        "reasoning_tokens": 532
+      }
+    },
+    {
+      "label": "reharmonize:turn-2",
+      "model": "muse-spark-1.3",
+      "settled_usd": 0.01518475,
+      "status": "settled",
+      "request_id": "984f4d46-dd04-4790-83bd-b5fd06ced840",
+      "usage": {
+        "prompt_tokens": 3165,
+        "cached_tokens": 0,
+        "completion_tokens": 2642,
+        "reasoning_tokens": 2571
+      }
+    }
+  ],
+  "totalCostUsd": 0.03466525
+}

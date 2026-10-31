@@ -9,6 +9,9 @@ export default function ReharmControls({ modelKey }: { modelKey: string }) {
   const song = useSongStore(s => s.song);
   const slots = useSongStore(s => s.selectedSlots);
   const loading = useReharmonizeStore(s => s.loading);
+  const error = useReharmonizeStore(s => s.error);
+  const comparison = useReharmonizeStore(s => s.comparison);
+  const result = useReharmonizeStore(s => s.result);
   const generating = useGenerationStore(s => s.loading);
   const run = useReharmonizeStore(s => s.run);
   const [maxChanges, setMaxChanges] = useState<1 | 2>(1);
@@ -48,5 +51,9 @@ export default function ReharmControls({ modelKey }: { modelKey: string }) {
       {loading ? 'Exploring substitutes…' : 'Find 3 alternatives'}
     </button>
     {problem && <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{problem}</p>}
+    {error && <p role="alert" className="text-xs">{error}</p>}
+    {comparison && <button className="text-xs underline" onClick={() => {
+      document.getElementById('reharmonization-comparison')?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    }}>{result ? 'View 3 alternatives on the score' : 'View search on the score'}</button>}
   </div>;
 }

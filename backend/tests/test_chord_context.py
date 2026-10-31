@@ -3,12 +3,41 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 from app.models.schemas import ContextMeasure, Suggestion
-from app.services.chord_context import sequence_tokens, rank_with_context
+from app.services.chord_context import context_scores, sequence_tokens, rank_with_context
 from app.services.score_completion import complete_sparse_harmony
 from tests.test_score_verification import reading
 
 
 class ContextTest(unittest.TestCase):
+    def test_peft_context_scoring_keeps_lora_and_saved_modules_without_hf_kwargs(self):
+        from app.services import inference
+        from peft import LoraConfig, TaskType, get_peft_model
+        torch = inference.torch
+        with torch.random.fork_rng(devices=[]):
+            torch.manual_seed(7)
+            base = inference.MusicTransformer(vocab_size=24, d_model=16, n_heads=2,
+                d_ff=32, n_layers=1, max_seq_len=32, dropout=0)
+            wrapped = get_peft_model(base, LoraConfig(r=2, lora_alpha=4,
+                target_modules=['w_q', 'w_v'], modules_to_save=['embedding', 'output_proj'],
+                task_type=TaskType.FEATURE_EXTRACTION)).eval()
+            with torch.no_grad():
+                for name, parameter in wrapped.named_parameters():
+                    if 'lora_B' in name or 'modules_to_save.default' in name:
+                        parameter.add_(torch.randn_like(parameter) * .2)
+        loaded = SimpleNamespace(model=wrapped, device='cpu')
+        tokenizer = SimpleNamespace(bar_id=3, encode_chord=lambda s: {'C': 4, 'Dm': 5, 'G7': 6}[s])
+        context = [ContextMeasure(measure=0, chords=['C', None]), ContextMeasure(measure=2, chords=['G7', None])]
+        candidate = Suggestion(label='test', chords={'1': ['Dm', 'G7']})
+        before = {name: value.clone() for name, value in wrapped.state_dict().items()}
+        scores = context_scores(loaded, tokenizer, [candidate], [1], context, [1])
+        self.assertEqual(len(scores), 1)
+        self.assertTrue(torch.isfinite(torch.tensor(scores)).all())
+        with wrapped.disable_adapter():
+            plain = context_scores(loaded, tokenizer, [candidate], [1], context, [1])
+        self.assertNotAlmostEqual(scores[0], plain[0], places=5)
+        self.assertEqual(scores, context_scores(loaded, tokenizer, [candidate], [1], context, [1]))
+        self.assertTrue(all(torch.equal(before[name], value) for name, value in wrapped.state_dict().items()))
+
     def test_written_order_preserves_both_sides_and_one_or_two_chords(self):
         tokenizer = SimpleNamespace(bar_id=3, encode_chord=lambda symbol: {"C": 10, "Dm": 11, "G7": 12}[symbol])
         context = [ContextMeasure(measure=2, chords=["G7"]), ContextMeasure(measure=0, chords=["C"]),

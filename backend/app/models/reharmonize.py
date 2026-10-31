@@ -80,3 +80,10 @@ class ReharmResponse(BaseModel):
     requestIds: list[str]
     costUsd: float
     toolCalls: list[str]
+    modelApproximations: list["ModelApproximation"] = Field(default_factory=list)
+
+
+class ModelApproximation(BaseModel):
+    address: Slot
+    original: str
+    scoredAs: str

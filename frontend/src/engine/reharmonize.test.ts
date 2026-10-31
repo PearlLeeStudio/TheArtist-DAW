@@ -143,6 +143,33 @@ test('reject malformed, duplicate, excess, out-of-selection and mismatched-origi
 
 test('manual tension and explicit bass are preserved in the search request symbol', () => {
   assert.equal(reharmSymbol({ ...parseChordName('G7/B')!, extensions: ['b9'] }), 'G7(b9)/B');
+  assert.equal(reharmSymbol({ ...parseChordName('G7/B')!, extensions: ['b9', '#11'] }), 'G7(b9,#11)/B');
+});
+
+test('augmented-seventh targets survive request, A/B/C preview and Original beside unresolved slots', async t => {
+  const choices = { ...result(), modelApproximations: [{ address: slots[0], original: 'Eaug7', scoredAs: 'E7' }],
+    candidates: ['E7', 'Cmaj7', 'G#dim7'].map((after, i) => ({ ...candidate(String(i), 0, after),
+      changes: [{ ...candidate(String(i), 0, after).changes[0], before: 'Eaug7' }] })) };
+  const fetch = t.mock.method(globalThis, 'fetch', async (_url, init) => {
+    const body = JSON.parse(String(init?.body));
+    assert.deepEqual(body.context[1].chords, ['Eaug7', null]);
+    assert.deepEqual(body.selectedSlots, [slots[0]]);
+    return Response.json(choices);
+  });
+  const h = harness(requestReharmonization);
+  h.edit(song => { song.measures[1].chords = [parseChordName('Eaug7'), null]; });
+  const original = structuredClone(h.song());
+  await h.actions.run('ft_f1_lora_classical', 1, 'auto');
+  assert.equal(h.state().error, null);
+  assert.equal(fetch.mock.callCount(), 1);
+  for (const index of [0, 1, 2]) {
+    h.actions.preview(index);
+    assert.equal(reharmSymbol(h.song().measures[1].chords[0]!), choices.candidates[index].changes[0].after);
+    assert.equal(h.song().measures[1].chords[1], null);
+    assert.equal(h.state().result?.candidates.length, 3);
+  }
+  h.actions.preview(null);
+  assert.deepEqual(h.song(), original);
 });
 
 test('a dragged range with empty half-bars is valid, but empty-only and over-wide selections remain blocked', () => {

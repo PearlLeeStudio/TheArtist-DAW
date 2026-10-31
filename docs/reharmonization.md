@@ -25,6 +25,8 @@ Original restoration, and navigation to the Play panel. Every preview starts fro
 the captured original, so A's changes never leak into B. **Keep current & close**
 closes the comparison and retains the version on the score. This comparison is an
 editor session, not a saved-project version history; reloading the page clears it.
+The controls also show search errors and a **View 3 alternatives on the score**
+link, so the comparison remains findable when it is below the visible score rows.
 
 ## How candidates are made
 
@@ -63,8 +65,23 @@ options. Candidate cards show the computed convention when one applies.
 Pitch-class distance is a heuristic, not measured voice leading or listening
 quality. Mode labels describe compatibility with parallel scales of the stated
 tonic, not detected modes. The input is chord-symbol context; no melody validation
-or audio listening is claimed. Unsupported chord qualities fail explicitly rather
-than silently dropping tensions. Original chord objects and voicings are retained.
+or audio listening is claimed. Imported augmented sevenths (`Eaug7`, `E+7`, `E7#5`),
+suspended sevenths, major extensions, `6/9`, aliases and compound alterations such
+as `C7(b9,#11)` retain their exact pitch classes in the mathematical search.
+The generated candidate vocabulary remains bounded to the trained/editor qualities.
+The music model has only 26 qualities: broader input chords use explicit coarse
+encodings (for example `Eaug7` → `E7`) for its score only. `modelApproximations`
+discloses these to Meta, the API caller and an expandable note below the candidates.
+The original symbols and full tones remain available to Meta and the search; the
+projection never edits the score. Unrecognized or ambiguous symbols such as `7alt`
+fail before paid calls, naming the measure/slot to correct. Original chord objects
+and voicings are retained.
+
+Contextual scoring supports both base checkpoints and genre LoRA models. It calls
+the adapted Music Transformer directly, retaining the LoRA and saved embedding/output
+modules, instead of passing through PEFT's Hugging Face feature-extraction arguments.
+This also fixes Generate failing after composing candidates when a LoRA model must
+compare them with already written following chords.
 
 ## API and limits
 
@@ -87,7 +104,7 @@ Only Meta Standard `muse-spark-1.3` is used. Native calls follow the
 including `tool_choice: auto` and paired assistant/tool messages. Each search is
 bounded by four API turns, six function calls, three distinct family searches,
 six shortlisted candidates per family, a 30-second per-call timeout, a 100-second
-loop deadline, 1,600 output tokens per call, and a $0.15 request reservation cap.
+loop deadline, 4,096 output tokens per call (including reasoning), and a $0.15 request reservation cap.
 The existing persistent ledger records request IDs, tokens and costs, including
 failures; public session and daily limits also apply. Missing models, invalid tool
 output, timeout, and budget exhaustion return errors with no success fallback.
@@ -113,3 +130,13 @@ basses, validated native calls, spending on failures, persistent A/B/C transitio
 exact Original restoration, stale edits, and the actual staff/comparison markup.
 Browser interaction and audible playback of the complete comparison remain manual
 checks; automated transition tests do not establish audio quality.
+
+The [augmented-seventh regression fixture](../experiments/meta/reharmonize_aug7_smoke.json)
+uses a self-authored five-bar input with empty bars and `Eaug7`. Actual Classical
+LoRA + Meta returned three alternatives with two paid requests ($0.01952950).
+An earlier attempt failed when reasoning exhausted the 1,600-token allowance;
+its two calls ($0.01513575) remain in the record. The successful allowance is
+4,096 tokens; the four-turn, timeout and $0.15 caps remain enforced. All eleven
+genre LoRAs plus F2/F3 also completed real local Generate and contextual candidate
+scoring. One local generation pass repeated its own short output using the existing
+padding behavior; this is functional coverage, not a musical-quality evaluation.

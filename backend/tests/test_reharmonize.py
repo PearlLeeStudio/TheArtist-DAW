@@ -7,7 +7,7 @@ from pydantic import ValidationError
 
 from app.models.reharmonize import ReharmRequest
 from app.services import llm, reharmonize_agent as agent
-from app.services.reharmonize import chord, context_window, convention_preference, search
+from app.services.reharmonize import chord, context_window, convention_preference, model_symbol, search
 from tests.test_llm import LLMTestCase, FakeTransport
 
 
@@ -38,6 +38,47 @@ class FakeScorer:
 
 
 class SearchTests(unittest.TestCase):
+    def test_augmented_sevenths_and_imported_extensions_keep_exact_pitch_classes(self):
+        fixtures = {
+            'Eaug7': {0, 2, 4, 8}, 'E+7': {0, 2, 4, 8}, 'E7#5': {0, 2, 4, 8},
+            'Caugmaj7': {0, 4, 8, 11}, 'C7sus4': {0, 5, 7, 10},
+            'C6/9': {0, 2, 4, 7, 9}, 'C6/9/Db': {0, 1, 2, 4, 7, 9},
+            'C7(b9,#11)': {0, 1, 4, 6, 7, 10}, 'C7(b9#11)': {0, 1, 4, 6, 7, 10},
+            'C7(#9,b9)': {0, 1, 3, 4, 7, 10}, 'C7(b9,#9)': {0, 1, 3, 4, 7, 10},
+            'Cø7': {0, 3, 6, 10}, 'CΔ9': {0, 2, 4, 7, 11},
+        }
+        for symbol, expected in fixtures.items():
+            with self.subTest(symbol=symbol):
+                self.assertEqual(chord(symbol)[1], expected)
+        self.assertEqual(model_symbol('Eaug7'), 'E7')
+        self.assertEqual(model_symbol('C7(b9)'), 'C7b9')
+        for symbol in ('Cgarbage', 'C7(b9,,#11)', 'C7(b9', 'C7/', 'C7/9', 'C7alt'):
+            with self.subTest(symbol=symbol), self.assertRaises(ValueError):
+                chord(symbol)
+
+    def test_aug7_target_and_context_across_unresolved_bars_can_be_searched(self):
+        req = request(context=[{'measure': i, 'chords': row} for i, row in enumerate([
+            ['Cmaj7', None], [None, None], ['Eaug7', None], [None, None], ['Am7', None]])],
+            selectedSlots=[{'measureIndex': 2, 'slotIndex': 0}])
+        before = req.model_dump_json()
+        for family in ('common_tones', 'modal', 'dominant'):
+            candidates = search(req, family)
+            self.assertTrue(candidates)
+            self.assertTrue(all(c.changes[0].before == 'Eaug7' for c in candidates))
+            self.assertTrue(all(c.changes[0].address.measureIndex == 2 for c in candidates))
+        self.assertEqual(req.model_dump_json(), before)
+        req.selectedSlots[0].measureIndex = 4
+        self.assertTrue(search(req, 'common_tones'))
+
+    def test_six_nine_is_not_mistaken_for_a_slash_bass(self):
+        for symbol, bass in [('C6/9', None), ('C6/9/G', 'G')]:
+            req = request(context=[{'measure': 0, 'chords': [symbol, 'G7']}],
+                selectedSlots=[{'measureIndex': 0, 'slotIndex': 0}])
+            candidates = search(req, 'common_tones')
+            self.assertTrue(candidates)
+            self.assertTrue(all(c.changes[0].after.endswith('/G') if bass else '/' not in c.changes[0].after
+                                for c in candidates))
+
     def test_sparse_unique_and_original_immutable(self):
         for maximum in (1, 2):
             req = request(maxChanges=maximum)
@@ -142,6 +183,15 @@ class SearchTests(unittest.TestCase):
 
 
 class NativeToolsTests(LLMTestCase):
+    def test_bad_context_names_its_slot_before_model_loading_or_any_meta_call(self):
+        req = request()
+        req.context[0].chords[1] = 'Cmadeup'
+        transport = FakeTransport(tool_response('search_substitutions', {'family': 'modal'}))
+        with patch.object(agent, 'ContextScorer') as scorer, self.assertRaisesRegex(ValueError, 'M1.2'):
+            agent.propose(req, client=self.client(transport))
+        scorer.assert_not_called()
+        self.assertEqual(transport.calls, [])
+
     def test_tool_turn_has_auto_choice_and_settles_usage(self):
         transport = FakeTransport(tool_response("search_substitutions", {"family": "modal"}))
         client = self.client(transport)
@@ -174,6 +224,7 @@ class NativeToolsTests(LLMTestCase):
 
     def test_agent_explores_then_offers_only_searched_candidates(self):
         req = request()
+        req.context[0].chords[1] = 'Eaug7'
         calls = []
 
         def transport(body):
@@ -194,6 +245,7 @@ class NativeToolsTests(LLMTestCase):
             result = agent.propose(req, client=client, scorer=FakeScorer())
         self.assertEqual(len(result.candidates), 3)
         self.assertEqual(result.toolCalls, ['search_substitutions', 'search_substitutions', 'offer_candidates'])
+        self.assertTrue(all(call['max_completion_tokens'] == 4096 for call in calls))
         self.assertEqual(result.requestIds, ['req-1', 'req-2', 'req-3'])
         self.assertAlmostEqual(result.costUsd, costs.cost_usd)
         self.assertEqual(calls[1]['messages'][-2]['role'], 'assistant')
@@ -204,6 +256,9 @@ class NativeToolsTests(LLMTestCase):
         self.assertTrue(any(c['conventionScore'] > 0 and c['changes'][0]['conventions'] for c in offered))
         facts_by_id = {c['id']: c for c in offered}
         self.assertTrue(all(c.model_dump() == facts_by_id[c.id] for c in result.candidates))
+        expected = [{'address': {'measureIndex': 0, 'slotIndex': 1}, 'original': 'Eaug7', 'scoredAs': 'E7'}]
+        self.assertEqual([a.model_dump() for a in result.modelApproximations], expected)
+        self.assertEqual(json.loads(calls[0]['messages'][1]['content'])['modelApproximations'], expected)
 
     def test_repeated_searches_stop_at_four_turns(self):
         transport = FakeTransport(tool_response('search_substitutions', {'family': 'common_tones'}))

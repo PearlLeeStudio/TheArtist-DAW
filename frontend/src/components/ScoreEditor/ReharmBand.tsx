@@ -8,7 +8,7 @@ export default function ReharmBand() {
   if (!comparison) return null;
   const measures = comparison.original.map(c => c.address.measureIndex + 1);
   const range = Math.min(...measures) === Math.max(...measures) ? `M${measures[0]}` : `M${Math.min(...measures)}–${Math.max(...measures)}`;
-  return <section aria-label="Reharmonization comparison" className="p-3 space-y-2 rounded-md"
+  return <section id="reharmonization-comparison" aria-label="Reharmonization comparison" className="p-3 space-y-2 rounded-md"
     style={{ color: 'var(--text-primary)', background: 'var(--bg-secondary)', border: '1px solid var(--border)' }}>
     <div className="flex flex-wrap items-center justify-between gap-2">
       <div className="text-xs font-semibold">Reharmonize · {range}</div>
@@ -45,6 +45,13 @@ export default function ReharmBand() {
           </div>
         </button>)}
       </div>
+      {!!result.modelApproximations?.length && <details className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
+        <summary className="cursor-pointer">Some chord colors have limited model scoring</summary>
+        <p>Full chord tones are used for substitution matching and Meta comparison. The music model uses these simpler symbols for scoring only:</p>
+        <ul>{result.modelApproximations.map(a => <li key={`${a.address.measureIndex}.${a.address.slotIndex}`}>
+          M{a.address.measureIndex + 1}.{a.address.slotIndex + 1}: {a.original} → {a.scoredAs}
+        </li>)}</ul>
+      </details>}
     </>}
   </section>;
 }

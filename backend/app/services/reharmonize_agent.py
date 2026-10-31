@@ -6,12 +6,13 @@ import time
 
 from app.models.reharmonize import ReharmRequest, ReharmResponse
 from app.services import llm
-from app.services.reharmonize import ContextScorer, context_window, search
+from app.services.reharmonize import ContextScorer, context_window, model_approximations, search, validate_context
 
 MAX_USD = .15
 MAX_TURNS = 4
 MAX_TOOL_CALLS = 6
 MAX_SECONDS = 100
+MAX_COMPLETION_TOKENS = 4096  # Reasoning and the final native tool call share this allowance.
 TOOLS = [
     {"type": "function", "function": {
         "name": "search_substitutions",
@@ -45,12 +46,17 @@ and dominants that actually resolve (including tritone and backdoor approaches) 
 Dorian or Lydian colors need local support; mere scale membership is insufficient. Do not choose all
 three only because they have the highest conventionScore, or three extensions of the same substitution.
 Respect an explicitly selected mode as a hard compatibility constraint. Offer contrasting valid choices.
+modelApproximations identifies input chords simplified ONLY for the learned model's fixed vocabulary.
+For these chords, use the original symbol and exact mathematical tones when comparing substitutions;
+the learned score cannot distinguish every extension or alteration. Never treat a projection as an edit.
 Do not answer in prose. Finish with offer_candidates after at least two different searches.
 """
 
 
 def propose(req: ReharmRequest, *, client=None, scorer=None) -> ReharmResponse:
     started = time.monotonic()
+    validate_context(req)
+    approximations = model_approximations(req)
     client = client or llm.get_client()
     if not client.config.api_key:
         raise llm.LLMConfigError("MODEL_API_KEY is not set; reharmonization requires Meta.")
@@ -60,6 +66,7 @@ def propose(req: ReharmRequest, *, client=None, scorer=None) -> ReharmResponse:
         "key": req.key, "mode": req.mode, "maxChangedSlots": req.maxChanges,
         "selectedSlots": [s.model_dump() for s in req.selectedSlots],
         "context": [bar.model_dump() for bar in window],
+        "modelApproximations": approximations,
     })}]
     pool, searched, trace, ids = {}, set(), [], []
     cost = 0.0
@@ -71,7 +78,8 @@ def propose(req: ReharmRequest, *, client=None, scorer=None) -> ReharmResponse:
             raise llm.BudgetExceeded("The reharmonization search reached its cost limit.",
                                      spent_usd=cost, outstanding_usd=0, request_usd=0, cap_usd=MAX_USD)
         reply = client.chat_tools(messages, TOOLS, label=f"reharmonize:turn-{turn + 1}",
-                                  max_request_usd=MAX_USD - cost, timeout_s=min(30, remaining))
+                                  max_request_usd=MAX_USD - cost, timeout_s=min(30, remaining),
+                                  max_completion_tokens=MAX_COMPLETION_TOKENS)
         cost += reply.cost_usd
         if reply.request_id:
             ids.append(reply.request_id)
@@ -100,5 +108,6 @@ def propose(req: ReharmRequest, *, client=None, scorer=None) -> ReharmResponse:
                                            kind="tool_call", request_id=reply.request_id)
             return ReharmResponse(candidates=[pool[cid] for cid in chosen], modelUsed=scorer.label,
                                   contextMeasures=[bar.measure for bar in window], metaModel=reply.model,
-                                  requestIds=ids, costUsd=round(cost, 6), toolCalls=trace)
+                                  requestIds=ids, costUsd=round(cost, 6), toolCalls=trace,
+                                  modelApproximations=approximations)
     raise llm.LLMResponseError("Meta reached the four-turn search limit without offering three candidates.", kind="tool_call")
