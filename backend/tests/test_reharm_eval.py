@@ -2,6 +2,7 @@
 import importlib.util
 import io
 import json
+import threading
 from pathlib import Path
 import unittest
 
@@ -67,6 +68,20 @@ class DataTests(unittest.TestCase):
 
 
 class ExperimentTests(unittest.TestCase):
+    def test_requested_stop_does_not_reserve_or_send_another_call(self):
+        class Client:
+            def chat_json(self, *args, **kwargs):
+                raise AssertionError('A stopped experiment must not call its client')
+        event = threading.Event(); event.set()
+        record = experiment.run_case(fixture(), experiment.StoppableClient(Client(), event))
+        self.assertEqual(record['arms']['meta']['status'], 'cancelled')
+        self.assertEqual(record['arms']['hybrid1']['status'], 'cancelled')
+        self.assertEqual(record['arms']['hybrid2']['status'], 'blocked')
+        self.assertTrue(all(j['status'] == 'cancelled' and j['costUsd'] == 0 for j in record['judges']))
+        summary = reporter.summarize({'cases': [record]})
+        self.assertEqual(summary['recordedCalls'], 0)
+        self.assertEqual(summary['actualCostUsd'], 0)
+
     def test_meta_only_has_no_learned_scores_and_hybrid_review_shares_first_choices(self):
         p = fixture()
         meta = experiment.selector_payload(p['case'], p['candidates'], learned=False)

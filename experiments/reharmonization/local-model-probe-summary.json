@@ -1,0 +1,44 @@
+{
+  "scope": "Fixed original mathematical pools; local rankings only; original-judge overlap is incomplete and selection-biased.",
+  "datasetSha256": "74e36a2caf0d4616115d481942b7980a9a32d225c5b35771143ab73912a48e34",
+  "passages": 40,
+  "candidatePositionsPerModel": 80,
+  "definition": "Tune-balanced, changed-chord counts and qualities. Altered means # or b in quality, including m7b5; extended means 9, 11 or 13. These are not listening or musicality scores.",
+  "summary": {
+    "ft_f1": {
+      "changedChordToneCount": 4.71875,
+      "alteredQualityShare": 0.234375,
+      "extendedQualityShare": 0.7005208333333334,
+      "melodySupportDelta": 0.008568438515624999,
+      "originalJudgeCoverage": 62
+    },
+    "ft_f1_v2": {
+      "changedChordToneCount": 4.640625,
+      "alteredQualityShare": 0.2552083333333333,
+      "extendedQualityShare": 0.6171875,
+      "melodySupportDelta": -0.013453509635416668,
+      "originalJudgeCoverage": 72
+    },
+    "ft_f2": {
+      "changedChordToneCount": 4.606770833333333,
+      "alteredQualityShare": 0.3177083333333333,
+      "extendedQualityShare": 0.5989583333333334,
+      "melodySupportDelta": -0.015421416510416668,
+      "originalJudgeCoverage": 72
+    },
+    "ft_f3": {
+      "changedChordToneCount": 4.5703125,
+      "alteredQualityShare": 0.3489583333333333,
+      "extendedQualityShare": 0.546875,
+      "melodySupportDelta": -0.018693042916666666,
+      "originalJudgeCoverage": 77
+    },
+    "ft_f4": {
+      "changedChordToneCount": 4.578125,
+      "alteredQualityShare": 0.3333333333333333,
+      "extendedQualityShare": 0.546875,
+      "melodySupportDelta": -0.02433540401041667,
+      "originalJudgeCoverage": 80
+    }
+  }
+}

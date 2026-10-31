@@ -13,6 +13,7 @@ import math
 import os
 from pathlib import Path
 import random
+import signal
 from statistics import mean
 import sys
 import threading
@@ -20,6 +21,22 @@ import time
 
 ARMS = ('local', 'meta', 'hybrid1', 'hybrid2')
 RUBRIC = ('continuity', 'melodyFit', 'usefulChange', 'retainsIdentity')
+
+
+class ExperimentStopped(Exception):
+    """An intentional stop before reserving or sending another paid request."""
+
+
+class StoppableClient:
+    def __init__(self, client, event):
+        self.client, self.event = client, event
+
+    def chat_json(self, *args, **kwargs):
+        if self.event.is_set():
+            raise ExperimentStopped('Experiment stopped before another paid request')
+        return self.client.chat_json(*args, **kwargs)
+
+
 SELECT_SYSTEM = '''Choose THREE ranked sparse reharmonization alternatives for the selected passage.
 Preserve the original composition and surrounding chords. The pool is fixed and validated: choose only
 its IDs, never invent chords. Prefer useful, contrasting options with sound preceding/following harmonic
@@ -198,7 +215,7 @@ def run_case(prepared, client):
             record['arms'][arm] = {'status': 'ok', 'ids': chosen, 'response': response.to_dict(),
                                    'costUsd': response.cost_usd, 'seconds': time.perf_counter() - started}
         except Exception as exc:
-            record['arms'][arm] = {'status': 'failed', 'error': str(exc), 'costUsd': response.cost_usd if response else getattr(exc, 'cost_usd', 0),
+            record['arms'][arm] = {'status': 'cancelled' if isinstance(exc, ExperimentStopped) else 'failed', 'error': str(exc), 'costUsd': response.cost_usd if response else getattr(exc, 'cost_usd', 0),
                                    'requestId': getattr(exc, 'request_id', None), 'seconds': time.perf_counter() - started}
     for arm in ('meta', 'hybrid1', 'hybrid2'):
         item = record['arms'][arm]
@@ -223,7 +240,7 @@ def run_case(prepared, client):
                 raise ValueError('Judge duplicated an anonymous ID')
             record['judges'].append({'status': 'ok', 'mapping': mapping, 'response': response.to_dict()})
         except Exception as exc:
-            record['judges'].append({'status': 'failed', 'error': str(exc),
+            record['judges'].append({'status': 'cancelled' if isinstance(exc, ExperimentStopped) else 'failed', 'error': str(exc),
                                     'costUsd': response.cost_usd if response else getattr(exc, 'cost_usd', 0)})
         record['control'] = corrupt
     for arm in record['arms'].values():
@@ -241,6 +258,7 @@ def main():
     parser.add_argument('--offset', type=int, default=0)
     parser.add_argument('--limit', type=int, default=48)
     parser.add_argument('--workers', type=int, choices=(1, 2), default=2)
+    parser.add_argument('--model-key', choices=('ft_f1', 'ft_f1_v2', 'ft_f2', 'ft_f3', 'ft_f4', 'ft_f5'))
     args = parser.parse_args()
     if not all(getattr(args, name).is_absolute() for name in ('backend', 'dataset', 'output', 'ledger', 'raw')):
         parser.error('All paths must be absolute')
@@ -257,6 +275,9 @@ def main():
     cfg = LLMConfig(provider='meta', base_url='https://api.meta.ai/v1', model='muse-spark-1.3',
                     api_key=os.environ['MODEL_API_KEY'], key_source='MODEL_API_KEY', timeout_s=60)
     transport, lock, turns = OpenAITransport(cfg), threading.Lock(), 0
+    stopped = threading.Event()
+    for signal_number in (signal.SIGINT, signal.SIGTERM):
+        signal.signal(signal_number, lambda *_: stopped.set())
     def recorded(body):
         nonlocal turns
         with lock:
@@ -269,29 +290,44 @@ def main():
                                      'requestId': headers.get('x-request-id')}) + '\n')
         return completion, headers
     client = LLMClient(cfg, Ledger(args.ledger, 10.0), recorded)
+    cancellable = StoppableClient(client, stopped)
     report = {'datasetSha256': hashlib.sha256(args.dataset.read_bytes()).hexdigest(), 'source': dataset['source'],
-              'protocol': 'shared math pool; F4 top3 / Meta top3 / F4+Meta top3 / same hybrid first pass plus one review; two blinded orderings',
+              'protocol': 'shared math pool; local-checkpoint top3 / Meta top3 / local+Meta top3 / same hybrid first pass plus one review; two blinded orderings',
               'protocolVersion': 2, 'selectionMaxTokens': 4096, 'judgeMaxTokens': 8192, 'callTimeoutSeconds': 60,
               'reasoningEffort': cfg.reasoning_effort,
+              'modelKeyOverride': args.model_key, 'status': 'running', 'notStartedCases': [],
               'ledgerCapUsd': 10, 'maxCalls': 5 * len(selected), 'cases': [], 'preparationFailures': []}
     prepared = []
     for case in selected:
+        if stopped.is_set():
+            report['notStartedCases'].append(case['id'])
+            continue
+        if args.model_key:
+            case = {**case, 'request': {**case['request'], 'modelKey': args.model_key}}
         try:
             prepared.append(prepare_case(case))
         except Exception as exc:
             report['preparationFailures'].append({'id': case['id'], 'tuneGroup': case['tuneGroup'], 'error': str(exc)})
     args.output.write_text(json.dumps(report, ensure_ascii=False, indent=2) + '\n')
     print(f'Prepared {len(prepared)}/{len(selected)} real paired passages; starting bounded comparison', flush=True)
+    def run_if_active(item):
+        return None if stopped.is_set() else run_case(item, cancellable)
     with ThreadPoolExecutor(max_workers=args.workers) as executor:
-        futures = {executor.submit(run_case, item, client): item['case']['id'] for item in prepared}
+        futures = {executor.submit(run_if_active, item): item['case']['id'] for item in prepared}
         for future in as_completed(futures):
             record = future.result()
+            if record is None:
+                report['notStartedCases'].append(futures[future])
+                continue
             report['cases'].append(record)
             report['cases'].sort(key=lambda c: c['id'])
             report['ledger'] = {k: v for k, v in client.ledger.snapshot().items() if k != 'path'}
             args.output.write_text(json.dumps(report, ensure_ascii=False, indent=2) + '\n')
             print(record['id'], {name: arm['status'] for name, arm in record['arms'].items()},
                   f"{len(report['cases'])}/{len(prepared)}", flush=True)
+    report['status'] = 'interrupted' if stopped.is_set() else 'finished'
+    report['ledger'] = {k: v for k, v in client.ledger.snapshot().items() if k != 'path'}
+    args.output.write_text(json.dumps(report, ensure_ascii=False, indent=2) + '\n')
     print(json.dumps(report['ledger']), flush=True)
 
 

@@ -94,6 +94,12 @@ output, timeout, and budget exhaustion return errors with no success fallback.
 
 ## Evidence
 
+The [Korean evaluation synthesis](reharmonization-evaluation.md) brings together
+the F4 reference, recommendation-rank and eight-position coverage analysis,
+F2/F3 follow-up, model-training distinctions and limitations. Detailed numerical
+evidence is under [the selector experiment](../experiments/reharmonization/README.md).
+These offline comparisons do not change the three-candidate product controls.
+
 The [synthetic progression record](../experiments/meta/reharmonize_smoke.json)
 uses a self-authored three-bar sequence with F4 and actual Meta responses. Three API
 requests executed three family searches and a final candidate choice, costing

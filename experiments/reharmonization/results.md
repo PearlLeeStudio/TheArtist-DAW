@@ -1,5 +1,9 @@
 # Reharmonization comparison results
 
+This is the original **F4** batch. The [F2/F3 follow-up](f2-f3-rank-results.md)
+and [combined Korean interpretation](../../docs/reharmonization-evaluation.md)
+keep the subsequent changed-model results separate.
+
 40 passages across 16 tune groups; 480 candidate positions, 225 distinct versions within passages.
 
 **There is no clear quality winner among Meta, Hybrid 1 and Hybrid 2.** Meta has

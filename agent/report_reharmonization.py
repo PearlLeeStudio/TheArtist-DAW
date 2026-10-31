@@ -80,6 +80,7 @@ def summarize(report):
     cases = [case_facts(c) for c in report['cases']]
     summary = {'completedCases': len(cases), 'tunes': len({c['tuneGroup'] for c in cases}),
                'datasetSha256': report.get('datasetSha256'), 'protocolVersion': report.get('protocolVersion'),
+               'selectorModelKey': report.get('modelKeyOverride') or 'ft_f4',
                'preparationFailures': report.get('preparationFailures', []), 'arms': {}, 'paired': {},
                'generationFailures': [], 'judgeFailures': []}
     metrics = ('blindMean', 'blindTop1', 'blindBest3', 'blindWorst3', 'order0', 'order1', 'orderSensitivity',
@@ -123,8 +124,10 @@ def summarize(report):
     summary['actualCostUsd'] = sum(a.get('incrementalCostUsd', a['costUsd']) for c in report['cases'] for a in c['arms'].values())
     summary['actualCostUsd'] += sum(j.get('response', {}).get('cost_usd', j.get('costUsd', 0)) for c in report['cases'] for j in c['judges'])
     summary['actualCostUsd'] = round(summary['actualCostUsd'], 8)
-    summary['recordedCalls'] = sum('response' in a or a['status'] == 'failed' for c in report['cases']
-                                  for name, a in c['arms'].items() if name != 'local') + sum(len(c['judges']) for c in report['cases'])
+    summary['recordedCalls'] = sum(bool('response' in a or a.get('requestId') or a.get('incrementalCostUsd', a.get('costUsd', 0)) > 0)
+                                  for c in report['cases'] for name, a in c['arms'].items() if name != 'local')
+    summary['recordedCalls'] += sum(bool('response' in j or j.get('requestId') or j.get('costUsd', 0) > 0)
+                                   for c in report['cases'] for j in c['judges'])
     for case in report['cases']:
         for name, arm in case['arms'].items():
             if arm['status'] != 'ok':
@@ -139,6 +142,7 @@ def summarize(report):
 
 def markdown(summary):
     lines = ['# Reharmonization comparison results', '',
+             f"Local/hybrid checkpoint: `{summary['selectorModelKey']}`. Meta-only receives no checkpoint score.", '',
              f"{summary['completedCases']} passages across {summary['tunes']} tune groups; "
              f"{summary['candidatePositions']} candidate positions, {summary['uniqueCandidateVersions']} distinct versions within passages.", '',
              'Tune-balanced means. Blind scores are automated 0–4 ratings, not listening results.', '',
@@ -173,7 +177,7 @@ def markdown(summary):
     lines += ['', 'Δ is relative to the unchanged original. Lower motion means closer pitch classes/bass, not necessarily better harmony.',
               'Strict support counts chord tones only and can reward denser chords; a melody tension is not automatically an error.',
               'Performance-profile similarity is whole-excerpt descriptive evidence; the performance MIDI is not an expert chord answer.',
-              'F1 log likelihood is higher when less negative. F1 and selecting F4 share ancestry; this is not fully independent validation.', '',
+              'F1 log likelihood is higher when less negative. F1 and the selecting checkpoint share ancestry; this is not fully independent validation.', '',
               '## Completion and controls', '',
               f"Hybrid 2 changed the candidate set in {summary['hybrid2ChangedSetCount']}/{summary['hybridComparisonCases']} passages; "
               f"changed the ordered list in {summary['hybrid2ChangedRankingCount']}/{summary['hybridComparisonCases']}."]
@@ -197,7 +201,8 @@ def detailed_html(report):
     pieces = ['<!doctype html><html lang="en"><meta charset="utf-8"><title>Reharmonization comparison</title>',
               '<meta name="viewport" content="width=device-width,initial-scale=1">',
               '<style>body{font:15px system-ui;margin:2rem;line-height:1.5;background:#faf9f5;color:#222}table{width:100%;table-layout:fixed;border-collapse:collapse}td,th{border:1px solid #ccc;padding:12px;vertical-align:top}mark{background:#ffe48d}details{margin:1rem 0}summary{cursor:pointer;font-weight:650;padding:10px;background:#edece6}small{color:#555}.chords{font-family:monospace;overflow-wrap:anywhere}.score{font-weight:700;color:#333}p{max-width:100ch}th:first-child{width:8%}@media(max-width:700px){body{margin:1rem;font-size:12px}td,th{padding:5px}}</style>',
-              '<h1>Four selectors · Three alternatives each</h1><p>Automated ratings, no listening claim. Yellow marks changed chords. Each column is a complete alternative to the original passage. F4 is the local selecting checkpoint; F1 is a related secondary scorer.</p>',
+              '<h1>Four selectors · Three alternatives each</h1><p>Automated ratings, no listening claim. Yellow marks changed chords. Each column is a complete alternative to the original passage. '
+              + html.escape(report.get('modelKeyOverride') or 'ft_f4') + ' is the local selecting checkpoint; F1 is a related secondary scorer.</p>',
               '<p>Source: Row, Tang and Fazekas, <a href="https://zenodo.org/records/11264676">JAZZVAR</a> (CC BY-NC-SA 2.0). These derived musical inputs and outputs stay local and are not redistributed in the public repository.</p>']
     for case in report['cases']:
         maps = [rating_map(j) for j in case['judges']]
@@ -211,7 +216,8 @@ def detailed_html(report):
                 symbols = [f'<mark>{esc(c)}</mark>' if c != case['original'][i] else esc(c) for i,c in enumerate(candidate['chords'])]
                 ratings = [mean(j[tuple(candidate['chords'])].values()) for j in maps if tuple(candidate['chords']) in j]
                 score = f'{mean(ratings):.2f}/4 ({len(ratings)} ratings)' if ratings else 'Not rated'
-                reason = next((c['reason'] for c in arm.get('response', {}).get('data', {}).get('choices', []) if c['id'] == candidate['id']), 'F4 contextual likelihood ranking')
+                reason = next((c['reason'] for c in arm.get('response', {}).get('data', {}).get('choices', []) if c['id'] == candidate['id']),
+                              (report.get('modelKeyOverride') or 'ft_f4') + ' contextual likelihood ranking')
                 judge_reasons = []
                 for index, judge in enumerate(case['judges']):
                     if judge['status'] != 'ok':
