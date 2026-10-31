@@ -16,6 +16,10 @@
 
 ## Web projects
 
+On narrow or portrait screens, header controls sit above the title and the side
+panel starts collapsed. Open it with the yellow arrow to use Play or Input; it
+fits within the screen. The editor remains primarily a desktop workspace.
+
 | Project | Website | Role |
 |---|---|---|
 | **TheArtist-DAW — hackathon demo** | [artist-daw.pearlleestudio.co](https://artist-daw.pearlleestudio.co) | Score → composition → arrangement → DAW workflow developed in this repository |

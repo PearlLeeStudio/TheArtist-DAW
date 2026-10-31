@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
+import './Layout.css';
 import Staff from './ScoreEditor/Staff';
 import SongFormDialog from './ScoreEditor/SongFormDialog';
 import ImportScoreDialog from './ScoreEditor/ImportScoreDialog';
@@ -77,7 +78,7 @@ export default function Layout() {
   }, [addSession, song, modelKey, playSettings]);
 
   const [midiActiveNotes, setMidiActiveNotes] = useState<number[]>([]);
-  const [panelOpen, setPanelOpen] = useState(true);
+  const [panelOpen, setPanelOpen] = useState(() => !window.matchMedia('(max-width: 760px), (orientation: portrait)').matches);
   const [panelWidth, setPanelWidth] = useState(320);
   const [panelMode, setPanelMode] = useState<'play' | 'input'>('input');
   const [inputMode, setInputMode] = useState<InputMode>('generate');
@@ -165,10 +166,10 @@ export default function Layout() {
   const dialogOpen = songFormOpen || importOpen || sectionsOpen;
 
   return (
-    <div className="flex flex-col h-screen" style={{ background: 'var(--bg-primary)', color: 'var(--text-primary)' }}>
+    <div className="artist-layout flex flex-col h-screen" style={{ background: 'var(--bg-primary)', color: 'var(--text-primary)' }}>
       {/* Top header — editorial brand lockup, compact so the right panel
           can fit a full-screen viewport without scrolling. */}
-      <header className="shrink-0 py-4 px-4 relative text-center" style={{ borderBottom: '1px solid var(--border)' }}>
+      <header className="artist-header shrink-0 py-4 px-4 relative text-center" style={{ borderBottom: '1px solid var(--border)' }}>
         <h1
           className="font-display text-4xl leading-none"
           style={{ color: 'var(--text-heading)', fontWeight: 700 }}
@@ -181,7 +182,7 @@ export default function Layout() {
         >
           TheArtist
         </p>
-        <div className="absolute top-3 right-4 flex items-center gap-2">
+        <div className="header-actions absolute top-3 right-4 flex items-center gap-2">
           <ThemeToggle />
           <button
             onClick={toggleProjectsView}
@@ -200,12 +201,12 @@ export default function Layout() {
       {view === 'my' ? (
         <MyPage onExitToEditor={() => setView('editor')} />
       ) : (
-      <div className="flex flex-1 min-h-0">
+      <div className="editor-shell flex flex-1 min-h-0">
         {/* Left Panel - Score Editor */}
-        <div className="flex-1 overflow-y-auto p-4 min-w-0">
+        <div className="score-pane flex-1 overflow-y-auto p-4 min-w-0">
           {/* Top bar: import and song-form entry left, title centered,
               export/save/clear right-aligned */}
-          <div className="flex flex-wrap items-center mb-4 gap-3">
+          <div className="editor-toolbar flex flex-wrap items-center mb-4 gap-3">
             {/* Left group — flex-1 like the right group, so the title
                 stays centered */}
             <div className="flex-1 flex items-center justify-start gap-2">
@@ -298,7 +299,7 @@ export default function Layout() {
             transparent resize handle filling the rest when the panel
             is open. Drag the handle to resize, click the button to
             collapse. */}
-        <div className="shrink-0 flex flex-col" style={{ width: '20px' }}>
+        <div className="panel-toggle shrink-0 flex flex-col" style={{ width: 'var(--panel-toggle-width, 20px)' }}>
           <button
             onClick={() => setPanelOpen(!panelOpen)}
             className="flex items-center justify-center btn-hover"
@@ -310,13 +311,15 @@ export default function Layout() {
               fontWeight: 700,
             }}
             title={panelOpen ? 'Hide panel' : 'Show panel'}
+            aria-expanded={panelOpen}
+            aria-controls="artist-side-panel"
           >
             {panelOpen ? '▶' : '◀'}
           </button>
           {panelOpen && (
             <div
               onMouseDown={startResize}
-              className="flex-1 cursor-col-resize"
+              className="panel-resize flex-1 cursor-col-resize"
               title="Drag to resize panel"
             />
           )}
@@ -326,7 +329,8 @@ export default function Layout() {
             the mode's content filling the rest. Play never scrolls (one
             pane at a time); Input scrolls inside its own area. */}
         <div
-          className="shrink-0 flex flex-col min-h-0 p-3 gap-3"
+          id="artist-side-panel"
+          className="side-panel shrink-0 flex flex-col min-h-0 p-3 gap-3"
           style={{
             width: `${panelWidth}px`,
             borderLeft: '1px solid var(--border)',
