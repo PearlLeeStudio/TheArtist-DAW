@@ -33,8 +33,9 @@ The local failures include missing measure boundaries, clefs and meters. Detecte
 regions without notes are not successful measures. These findings narrow the
 previous self-authored-fixture results; they do not support general LilyPond PDF import.
 The default local-plus-Meta mode requires readable local notes and therefore cannot
-rescue these files. Explicit whole-file Meta reading is a separate local-only option
-and remains disabled on the public host.
+rescue these files. Explicit whole-file Meta reading is a separate option. Public
+hosts require `THEARTIST_PUBLIC_META_READER=1`; the hosted Artist service enables
+it under the same per-request, session, daily and total spend limits.
 
 The three fixed Meta cases use Standard `muse-spark-1.3`, one request per score,
 75-second request timeout, 8,192 output-token ceiling, a $1.35 per-request admission

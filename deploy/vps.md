@@ -126,7 +126,9 @@ share this service rather than loading a second catalog merely for that app.
 - Both `artist-daw.pearlleestudio.co` and `artist.pearlleestudio.co` returned 18
   loaded models, imported the original one-bar vector-PDF fixture locally,
   returned streamed F1 result frames and produced valid four-track MIDI. Public
-  DAW launch, manual warmup and whole-file Meta reading returned HTTP 403.
+  DAW launch and manual warmup returned HTTP 403. Whole-file Meta reading also
+  returned 403 before its explicit opt-in; the hosted reader is now enabled as
+  described above.
 - One hosted 16-bar Meta form completed through Artist-DAW: three Meta calls,
   three generated sections, 34.655 seconds, **$0.01916725**. The three settled
   entries were present in the persistent ledger. A storage marker survived
@@ -134,6 +136,11 @@ share this service rather than loading a second catalog merely for that app.
 - The running Python process reached 2,642.3 MiB peak RSS after the API checks;
   the host had about 788 MiB available. This is a low-traffic validation, not a
   maximum-user count or a large-PDF/concurrent-workload capacity guarantee.
+- Explicit hosted Meta reading completed the public-domain Mutopia Mozart K.2
+  PDF through Artist-DAW: 24 written bars, F major, 3/4, 30.142 seconds and
+  $0.02335825. These structural facts do not establish chord accuracy. Two earlier
+  attempts on the tiny custom-glyph fixture returned 422 (no usable reading),
+  costing $0.01286175 combined; they are not counted as successful imports.
 
 The imported fixture is synthetic and contains one bar. These checks establish
 deployment behavior, not general score-reading accuracy or musical preference.

@@ -99,11 +99,15 @@ public HTTPS was healthy. The persistent storage marker survived and the Meta
 ledger checksum was unchanged. An earlier documentation-only push advanced the
 observed revision without replacing the app.
 
-Ten automated deployment tests cover failed builds, unhealthy startup, generation
+Eleven automated deployment tests cover failed builds, unhealthy startup, generation
 failure, rollback failure, interrupted-switch recovery, retry suppression,
-documentation-only changes and dirty checkout refusal. Failure recovery was
-tested with controlled doubles, not by deliberately breaking the production
-service. Frontend build/lint and backend import also pass; the existing large
+documentation-only changes, unavailable diagnostics and dirty checkout refusal.
+During the Meta reader rollout, restrictive checkout permissions caused a real
+candidate startup failure and automatic restoration of the previous healthy app.
+Git checkout permissions, Docker source ownership and the offline import check
+were corrected afterward. Failure scenarios also use controlled test doubles;
+the production failure was not deliberate. Frontend build/lint and backend import
+also pass; the existing large
 frontend bundle warning remains. No paid Meta call was made for these checks.
 
 [systemd timer behavior](https://www.freedesktop.org/software/systemd/man/latest/systemd.timer.html),
