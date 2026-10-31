@@ -22,6 +22,9 @@ author/editor credit and license links; their browser checks below remain open.
 
 ## Observed workflow
 
+- [x] User-confirmed: Logic Pro integration works in the user's own workflow.
+  This confirms the DAW handoff; the separate Scripter, hardware and detailed
+  meter/controller cases below retain their own verification scope.
 - [x] Safari: Muse Spark Full form produced a 16-bar song with five sections,
   applied it and closed the dialog. No execution log appeared above the staff.
 - [x] Safari: section selection and real F1 passage generation returned Original
