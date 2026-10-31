@@ -29,8 +29,8 @@ def sequence_tokens(tokenizer, header, context, candidate, selected):
     return ids, positions
 
 
-def rank_with_context(loaded, tokenizer, suggestions, header, context, selected):
-    """Mean log likelihood of target chords AND known later chords, three passes max.
+def context_scores(loaded, tokenizer, suggestions, header, context, selected):
+    """Mean log likelihood of target chords AND known later chords.
 
     Empty non-target bars stay empty; they are not replaced. Long/unsupported
     context raises before inference rather than silently clipping the suffix.
@@ -50,4 +50,9 @@ def rank_with_context(loaded, tokenizer, suggestions, header, context, selected)
             targets = inference.torch.tensor([ids[p] for p in positions], device=loaded.device)
             values = logits[indices].log_softmax(-1).gather(1, targets[:, None])
             scores.append(float(values.mean().item()))
+    return scores
+
+
+def rank_with_context(loaded, tokenizer, suggestions, header, context, selected):
+    scores = context_scores(loaded, tokenizer, suggestions, header, context, selected)
     return [item for _, item in sorted(zip(scores, suggestions), key=lambda pair: -pair[0])]

@@ -2,9 +2,11 @@ import { useState, useCallback, useEffect, useId } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useSongStore } from '../../store/songStore';
 import { useGenerationStore } from '../../store/generationStore';
+import { useReharmonizeStore } from '../../store/reharmonizeStore';
 import { reasonFact, rulesSlotCount, useReviewStore } from '../../store/reviewStore';
 import { useSessionStore, selectStarredSessions } from '../../store/sessionStore';
 import GenerateProgress from './GenerateProgress';
+import ReharmControls from './ReharmControls.tsx';
 import { formatChordSymbol, getChordDisplayParts } from '../../engine/chordDisplay';
 import { manualChordDraft, manualDraftChord, type ManualChordDraft } from '../../engine/manualChordDraft';
 import { parseSuggestionChords } from '../../engine/chordGenerator';
@@ -532,6 +534,7 @@ interface ChordActionsProps {
 }
 
 export default function ChordActions({ view = 'all' }: ChordActionsProps) {
+  const [chordTool, setChordTool] = useState<'generate' | 'reharmonize'>('generate');
   const selectedSlots = useSongStore((s) => s.selectedSlots);
   const song = useSongStore((s) => s.song);
   const songEpoch = useSongStore((s) => s.songEpoch);
@@ -567,6 +570,7 @@ export default function ChordActions({ view = 'all' }: ChordActionsProps) {
   // (Play tab / MyPage) before completion.
   const suggestions = useGenerationStore((s) => s.suggestions);
   const loading = useGenerationStore((s) => s.loading);
+  const reharmLoading = useReharmonizeStore((s) => s.loading);
   const phase = useGenerationStore((s) => s.phase);
   const generationError = useGenerationStore((s) => s.error);
   const showSuggestions = useGenerationStore((s) => s.showSuggestions);
@@ -640,7 +644,7 @@ export default function ChordActions({ view = 'all' }: ChordActionsProps) {
   const resolvedSectionType: SectionType | null =
     generateSectionType === 'auto' ? autoSectionType : generateSectionType;
   const tooManyMeasures = selectedMeasures.length > MAX_SECTION_BARS;
-  const generateDisabled = loading || tooManyMeasures || !firstSlot;
+  const generateDisabled = loading || reharmLoading || tooManyMeasures || !firstSlot;
   const showGenerateControls = view !== 'manual';
   const comparisonOpen = showSuggestions && suggestions.length > 0;
   const previewParts = getChordDisplayParts(manualDraftChord(draft));
@@ -655,11 +659,11 @@ export default function ChordActions({ view = 'all' }: ChordActionsProps) {
     updateDraft({ alts: alts.includes(alt) ? alts.filter(a => a !== alt) : [...alts, alt] });
   };
 
-  // Picking a model also re-syncs song.genre, so the harmony rhythm pattern
-  // in playback.ts routes correctly without a second click.
+  // Generate keeps its genre preset behavior. Reharmonization compares in the
+  // current arrangement, so choosing a checkpoint must not change that genre.
   const pickModel = (key: string) => {
     setModelKey(key);
-    syncGenreToModel(key, setGenre);
+    if (chordTool === 'generate') syncGenreToModel(key, setGenre);
   };
 
   const handleGenerate = () => {
@@ -705,6 +709,13 @@ export default function ChordActions({ view = 'all' }: ChordActionsProps) {
       {showGenerateControls && (
         <>
           {modelList.length > 0 && <ModelSelect models={modelList} value={modelKey} onChange={pickModel} />}
+
+          <div role="group" aria-label="Chord operation" className="grid grid-cols-2 gap-1">
+            {(['generate', 'reharmonize'] as const).map(tool => <button key={tool}
+              aria-pressed={chordTool === tool} onClick={() => setChordTool(tool)}
+              className="px-2 py-1.5 text-xs capitalize" style={btnStyle(chordTool === tool)}>{tool}</button>)}
+          </div>
+          {chordTool === 'reharmonize' ? <ReharmControls modelKey={modelKey} /> : <>
 
           <SectionSelect
             id={sectionSelectId}
@@ -783,6 +794,7 @@ export default function ChordActions({ view = 'all' }: ChordActionsProps) {
               disabled={loading || comparison === null || !canApplyComparison(comparison, song, songEpoch)}
             />
           )}
+          </>}
         </>
       )}
       {/* ---------- end Generate UI ---------- */}

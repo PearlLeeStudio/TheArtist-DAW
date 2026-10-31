@@ -62,6 +62,7 @@ registerHooks({
       });`,
       'sessionStore': 'export const selectStarredSessions = () => []; export const useSessionStore = selector => selector({});',
       'reviewStore': 'export const useReviewStore = () => {}; export const reasonFact = () => {}; export const rulesSlotCount = () => 0;',
+      'reharmonizeStore': 'export const useReharmonizeStore = selector => selector({ loading: false, comparison: null });',
     };
     for (const [name, source] of Object.entries(stores)) {
       if (url === `${SRC_URL}store/${name}.ts`) return { format: 'module', shortCircuit: true, source };

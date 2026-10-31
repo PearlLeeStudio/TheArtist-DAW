@@ -941,6 +941,36 @@ class LLMClient:
             raise ValueError(f"reasoning_effort must be one of {', '.join(allowed)} or none, got {override!r}")
         return effort
 
+    def chat_tools(self, messages: Sequence[Mapping[str, Any]], tools: list[dict[str, Any]], *,
+                   label: str, max_request_usd: float, timeout_s: float = 30,
+                   max_completion_tokens: int = 1600) -> LLMResult:
+        """One native Meta tool turn, using the same reservation/settlement as JSON calls.
+
+        The service owns the bounded loop. Up to three validated function calls per turn
+        are accepted; unknown tools and malformed arguments fail visibly. Meta supports
+        tool_choice=auto, so a prose-only response is a failure, never a fabricated call.
+        """
+        if self.config.provider != "meta" or self.config.model != "muse-spark-1.3":
+            raise LLMConfigError("Reharmonization tools require Meta Standard muse-spark-1.3.")
+        if not tools or len({t['function']['name'] for t in tools}) != len(tools):
+            raise ValueError("Provide unique tool definitions.")
+        if _has_media(messages):
+            raise ValueError("Tool requests accept text context only.")
+        # Count tool definitions and history together. A byte per input token is a
+        # conservative bound for UTF-8 text, including non-English chord annotations.
+        bound = len(json.dumps([messages, tools], ensure_ascii=False).encode("utf-8")) + 256
+        prepared = self.prepare(messages, {"type": "object", "properties": {}}, name="tool_turn",
+                                input_token_upper_bound=bound, timeout_s=timeout_s,
+                                max_completion_tokens=max_completion_tokens,
+                                max_request_usd=max_request_usd, reasoning_effort="none")
+        body = dict(prepared.body)
+        body.pop("response_format")
+        body.update(tools=tools, tool_choice="auto")
+        prepared = replace(prepared, body=body)
+        if not self.config.api_key:
+            raise LLMConfigError(f"{self.config.key_source} is not set, so Meta cannot be called")
+        return self._attempt(self._get_transport(), prepared, label, 1)
+
     def chat_json(self, messages: Sequence[Mapping[str, Any]], schema: Mapping[str, Any], *, name: str,
                   label: str, max_completion_tokens: int = 2048, timeout_s: float | None = None,
                   input_token_upper_bound: int | None = None,
@@ -1096,6 +1126,32 @@ class LLMClient:
             raise fail("content_filter", "the provider's content filter stopped the output")
         if message.get("refusal"):
             raise fail("refusal", f"the model refused: {str(message['refusal'])[:200]}")
+        if "tools" in prepared.body:
+            calls = message.get("tool_calls")
+            if finish != "tool_calls" or not isinstance(calls, list) or not 1 <= len(calls) <= 3:
+                raise fail("tool_call", "Expected one to three native function calls from Meta.")
+            parsed, seen = [], set()
+            for call in calls:
+                if not isinstance(call, dict) or call.get("type") != "function" or not isinstance(call.get("id"), str) or not call['id'] or call['id'] in seen:
+                    raise fail("tool_call", "The function call is missing its type or unique id.")
+                seen.add(call['id'])
+                function = call.get("function")
+                if not isinstance(function, dict):
+                    raise fail("tool_call", "The function call has no function.")
+                definition = next((t['function'] for t in prepared.body['tools']
+                                   if t['function']['name'] == function.get('name')), None)
+                if definition is None:
+                    raise fail("tool_call", "Meta requested an unknown tool.")
+                try:
+                    args = json.loads(function.get("arguments", ""))
+                except (TypeError, ValueError):
+                    raise fail("tool_call", "The tool arguments are not JSON.") from None
+                if schema_errors(args, definition['parameters']):
+                    raise fail("tool_call", "The tool arguments do not match the declared schema.")
+                parsed.append({"name": function['name'], "arguments": args, "callId": call['id']})
+            assistant = {"role": "assistant", "content": message.get("content"), "tool_calls": calls}
+            return {"assistant": assistant, "calls": parsed}, \
+                json.dumps(assistant), self.config.model
         if finish not in (None, "stop"):
             raise fail("finish_reason", f"unexpected finish_reason {finish!r}")
         text = message.get("content")

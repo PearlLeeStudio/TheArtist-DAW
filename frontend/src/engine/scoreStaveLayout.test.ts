@@ -18,6 +18,10 @@ registerHooks({
     return nextResolve(specifier, context);
   },
   load(url, context, nextLoad) {
+    if (url === `${SRC_URL}store/reharmonizeStore.ts`) {
+      return { format: 'module', shortCircuit: true,
+        source: 'export const useReharmonizeStore = selector => { const state = globalThis.staffReharmTestState ?? { comparison: null }; return selector ? selector(state) : state; };' };
+    }
     if (url === `${SRC_URL}store/songStore.ts`) {
       return {
         format: 'module', shortCircuit: true,
@@ -80,6 +84,32 @@ test('overlay geometry matches VexFlow before drawing, across rows and narrow wi
       assert.ok(Number.isFinite(layout.midLineY));
       assert.ok(layout.contentX < layout.x + layout.width);
     }
+  }
+});
+
+test('reharmonization choices stay between the selected bar and the next bar through A/B switching', () => {
+  const state = {
+    comparison: { original: [{ address: { measureIndex: 1, slotIndex: 0 }, chord: song.measures[1].chords[0] }] },
+    active: 0, loading: false, error: null, close() {}, preview() {},
+    result: { candidates: ['Dm', 'Fm', 'Am'].map((after, index) => ({
+      id: `choice-${index}`, family: 'common_tones',
+      changes: [{ address: { measureIndex: 1, slotIndex: 0 }, before: 'C', after, commonTones: 2 }],
+    })) },
+  };
+  Object.defineProperty(globalThis, 'staffReharmTestState', { configurable: true, value: state });
+  try {
+    for (const active of [0, 1, 2, null]) {
+      Object.assign(state, { active });
+      const html = renderToStaticMarkup(createElement(Staff));
+      for (const letter of ['A', 'B', 'C']) assert.ok(html.includes(`Preview candidate ${letter} on the score`));
+      assert.ok(html.includes('Original'));
+      const ys = [...html.matchAll(/<text[^>]*\sy="([\d.]+)"[^>]*>C<\/text>/g)].map(match => Number(match[1]));
+      assert.equal(ys.length, 16);
+      assert.equal(ys[0], ys[1]);
+      assert.ok(ys[2] > ys[1] + 170, 'following bars make room for the comparison');
+    }
+  } finally {
+    Reflect.deleteProperty(globalThis, 'staffReharmTestState');
   }
 });
 

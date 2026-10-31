@@ -1,0 +1,141 @@
+{
+  "fixture": "Self-authored three-bar chord progression; no user score",
+  "request": {
+    "key": "C major",
+    "timeSignature": [
+      4,
+      4
+    ],
+    "context": [
+      {
+        "measure": 0,
+        "chords": [
+          "Cmaj7",
+          "Am7"
+        ]
+      },
+      {
+        "measure": 1,
+        "chords": [
+          "Dm7",
+          "G7"
+        ]
+      },
+      {
+        "measure": 2,
+        "chords": [
+          "Cmaj7",
+          "Cmaj7"
+        ]
+      }
+    ],
+    "selectedSlots": [
+      {
+        "measureIndex": 1,
+        "slotIndex": 0
+      },
+      {
+        "measureIndex": 1,
+        "slotIndex": 1
+      }
+    ],
+    "maxChanges": 1,
+    "mode": "auto",
+    "modelKey": "ft_f4"
+  },
+  "response": {
+    "candidates": [
+      {
+        "id": "2:F6",
+        "family": "common_tones",
+        "changes": [
+          {
+            "address": {
+              "measureIndex": 1,
+              "slotIndex": 0
+            },
+            "before": "Dm7",
+            "after": "F6",
+            "commonTones": 4,
+            "modes": [
+              "ionian",
+              "dorian",
+              "mixolydian"
+            ]
+          }
+        ],
+        "pitchDistance": 0.75,
+        "originalPitchDistance": 0.75,
+        "bassMotion": 3.0,
+        "originalBassMotion": 5.0,
+        "mathScore": 0.89,
+        "modelScore": -3.46597
+      },
+      {
+        "id": "3:Em9",
+        "family": "modal",
+        "changes": [
+          {
+            "address": {
+              "measureIndex": 1,
+              "slotIndex": 1
+            },
+            "before": "G7",
+            "after": "Em9",
+            "commonTones": 3,
+            "modes": [
+              "lydian"
+            ]
+          }
+        ],
+        "pitchDistance": 0.713,
+        "originalPitchDistance": 0.688,
+        "bassMotion": 3.0,
+        "originalBassMotion": 5.0,
+        "mathScore": 0.4275,
+        "modelScore": -4.32228
+      },
+      {
+        "id": "3:Db7#11",
+        "family": "dominant",
+        "changes": [
+          {
+            "address": {
+              "measureIndex": 1,
+              "slotIndex": 1
+            },
+            "before": "G7",
+            "after": "Db7#11",
+            "commonTones": 3,
+            "modes": []
+          }
+        ],
+        "pitchDistance": 0.713,
+        "originalPitchDistance": 0.688,
+        "bassMotion": 1.0,
+        "originalBassMotion": 5.0,
+        "mathScore": 0.6675,
+        "modelScore": -4.22679
+      }
+    ],
+    "modelUsed": "F4 \u2014 1K pop mix",
+    "contextMeasures": [
+      0,
+      1,
+      2
+    ],
+    "metaModel": "muse-spark-1.3",
+    "requestIds": [
+      "1be65ef1-0320-453f-a9a0-3137114d18b5",
+      "dcde1911-669b-4086-83f4-77eb0fca72d7",
+      "0501b8cb-3098-4f65-9266-baf474164738"
+    ],
+    "costUsd": 0.021142,
+    "toolCalls": [
+      "search_substitutions",
+      "search_substitutions",
+      "search_substitutions",
+      "offer_candidates"
+    ]
+  }
+}

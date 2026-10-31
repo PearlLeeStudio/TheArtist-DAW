@@ -10,6 +10,8 @@ import { selectAllScore } from '../../engine/scoreShortcuts';
 import { keySignatureFor } from '../../engine/keySignatures';
 import { useStaffViewport, drawScoreStaves } from './scoreSurface';
 import ImportedMeasureReview from './ImportedMeasureReview';
+import ReharmBand from './ReharmBand.tsx';
+import { useReharmonizeStore } from '../../store/reharmonizeStore';
 import { hasEmptySlot, isExplicitNoChord, needsSourceReview } from './importedBars';
 
 const CHORD_AREA_HEIGHT = 8;
@@ -88,6 +90,12 @@ function ImportPlaceholder({ x, width, midLineY, noChord }: ImportPlaceholderPro
 export default function Staff() {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const reharmRef = useRef<HTMLDivElement>(null);
+  const comparison = useReharmonizeStore(s => s.comparison);
+  const [bandHeight, setBandHeight] = useState(210);
+  const bandAfter = comparison ? Math.max(...comparison.original.map(c => c.address.measureIndex)) : -1;
+  const bandRow = bandAfter >= 0 ? Math.floor(bandAfter / SCORE_MEASURES_PER_ROW) : -1;
+  const bandSpace = bandRow < 0 ? 0 : bandHeight + 16;
   const song = useSongStore((s) => s.song);
   const selectedSlots = useSongStore((s) => s.selectedSlots);
   const playbackPosition = useSongStore((s) => s.playbackPosition);
@@ -97,6 +105,15 @@ export default function Staff() {
 
   const [dragStart, setDragStart] = useState<SlotAddress | null>(null);
   const { containerWidth, theme } = useStaffViewport(wrapperRef);
+
+  useEffect(() => {
+    if (bandRow < 0 || !reharmRef.current) return;
+    const observer = new ResizeObserver(([entry]) => {
+      setBandHeight(Math.ceil(entry.target.getBoundingClientRect().height));
+    });
+    observer.observe(reharmRef.current);
+    return () => observer.disconnect();
+  }, [bandRow]);
 
   useEffect(() => {
     const handleKeyDown = (event: globalThis.KeyboardEvent) => {
@@ -111,12 +128,21 @@ export default function Staff() {
   }, [selectSlotRange]);
 
   const staveLayouts = useMemo(() => {
-    return Array.from({ length: song.measures.length }, (_, i) => scoreStaveLayout(i, containerWidth));
-  }, [song.measures.length, containerWidth]);
+    return Array.from({ length: song.measures.length }, (_, i) => {
+      // Break the staff after the selected passage so the choices sit between
+      // that bar and the next, even when the passage ends mid-row.
+      const afterBand = bandAfter >= 0 && i > bandAfter;
+      const displayIndex = afterBand ? (bandRow + 1) * SCORE_MEASURES_PER_ROW + i - bandAfter - 1 : i;
+      const layout = scoreStaveLayout(displayIndex, containerWidth);
+      const offset = afterBand ? bandSpace : 0;
+      return { ...layout, y: layout.y + offset, midLineY: layout.midLineY + offset };
+    });
+  }, [song.measures.length, containerWidth, bandAfter, bandRow, bandSpace]);
 
-  const rows = Math.ceil(song.measures.length / SCORE_MEASURES_PER_ROW);
+  const rows = bandAfter < 0 ? Math.ceil(song.measures.length / SCORE_MEASURES_PER_ROW)
+    : bandRow + 1 + Math.ceil(Math.max(0, song.measures.length - bandAfter - 1) / SCORE_MEASURES_PER_ROW);
   const totalWidth = containerWidth;
-  const totalHeight = rows * SCORE_ROW_HEIGHT + PADDING_Y * 2 + CHORD_AREA_HEIGHT + ADD_BTN_HEIGHT;
+  const totalHeight = rows * SCORE_ROW_HEIGHT + PADDING_Y * 2 + CHORD_AREA_HEIGHT + ADD_BTN_HEIGHT + bandSpace;
 
   // Drag handlers
   const handleSlotMouseDown = useCallback((slot: SlotAddress) => {
@@ -145,7 +171,7 @@ export default function Staff() {
 
   // Position for add button
   const lastRow = rows - 1;
-  const addBtnY = PADDING_Y + CHORD_AREA_HEIGHT + (lastRow + 1) * SCORE_ROW_HEIGHT + 8;
+  const addBtnY = PADDING_Y + CHORD_AREA_HEIGHT + (lastRow + 1) * SCORE_ROW_HEIGHT + 8 + bandSpace;
 
   if (!keySignatureFor(song.key)) {
     return (
@@ -428,6 +454,10 @@ export default function Staff() {
 
       {/* VexFlow renders here */}
       <div ref={containerRef} className="w-full vf-staff" />
+      {bandRow >= 0 && <div ref={reharmRef} className="absolute left-2 right-2"
+        style={{ top: PADDING_Y + CHORD_AREA_HEIGHT + (bandRow + 1) * SCORE_ROW_HEIGHT, zIndex: 2 }}>
+        <ReharmBand />
+      </div>}
     </div>
     </>
   );

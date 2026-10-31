@@ -17,6 +17,7 @@ from app.routes.score_import import router as score_import_router
 from app.routes.export import router as export_router
 from app.routes.plan import router as plan_router
 from app.routes.review import router as review_router
+from app.routes.reharmonize import router as reharmonize_router
 from app.mcp_server import create_mcp_server
 from app.services import inference, limits
 from app.services.contracts import ContractEnvelope, capabilities
@@ -70,6 +71,7 @@ def create_app(env: Mapping[str, str] | None = None) -> FastAPI:
     app.include_router(export_router, prefix="/api")
     app.include_router(plan_router, prefix="/api")
     app.include_router(review_router, prefix="/api")
+    app.include_router(reharmonize_router, prefix="/api")
 
     @app.get("/api/health")
     def health():
