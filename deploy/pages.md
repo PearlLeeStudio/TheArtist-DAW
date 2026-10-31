@@ -19,9 +19,24 @@ set `BACKEND_ORIGIN` and redeploy Pages. Keep Meta credentials on that server,
 never in the frontend or Pages build variables. Streaming responses and session
 budget headers pass through; browser cookies and credentials do not.
 
+Both production Pages projects use
+`BACKEND_ORIGIN=https://music-api.pearlleestudio.co` and **Fail closed**. The
+setting is saved separately for `theartist-daw` and `theartist`; each was
+redeployed with the new value. Both custom-domain API health checks, vector-PDF
+import, streamed generation and MIDI download passed.
+
 Check both `/` and `/api/health` through the custom domain. A working editor
 alone does not verify AI generation. Test an actual F1 generation after the
 server is connected.
+
+Git pushes automatically rebuild the corresponding Pages frontend. Backend
+Docker updates are a separate server operation described in [vps.md](vps.md);
+they are not automatically triggered by a Pages build.
+
+For command-line API checks, send a descriptive application `User-Agent`, such
+as `TheArtistDeploymentCheck/1.0`. Cloudflare's Pages integrity check can reject
+Python urllib's default agent with error 1010 before the API is reached.
+[Cloudflare's 1010 guidance](https://developers.cloudflare.com/support/troubleshooting/http-status-codes/cloudflare-1xxx-errors/error-1010/).
 
 Deploy the public release in a separate Git-connected Pages project from
 `PearlLeeStudio/TheArtist` at `artist.pearlleestudio.co`. Keep its deployment

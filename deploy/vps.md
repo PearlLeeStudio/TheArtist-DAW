@@ -9,8 +9,9 @@ can run as separate services on this VM, with shared CPU/RAM/disk capacity.
 The Docker recipe downloads all 18 model choices. Startup checks every base
 checkpoint, adapter and learned embedding overlay, then loads every model and
 rejects a substituted identity. Public-host neural passes are serialized in the
-shared process. All 18 choices still need verification through the hosted API;
-the server has not been provisioned.
+shared process. The Ubuntu CPU server is deployed at
+`https://music-api.pearlleestudio.co`; both Artist Pages projects use it.
+Every released choice passed actual generation through the hosted API.
 
 ## Prepared configuration
 
@@ -18,13 +19,13 @@ the server has not been provisioned.
   runtime lock. No CUDA, Chroma or sentence-transformers packages in this lock.
 - All seven base checkpoints, eleven genre LoRA adapters and local OMT retrieval
   are included. Existing development/training dependencies are unchanged.
-- One Python worker; two CPU threads. Three eight-bar F1 runs, OMT readiness,
-  `/api/health` and the built frontend passed in a fresh local runtime environment.
-- The local Mac probe used 880.2 MiB peak process memory and a 0.206 s median for
-  eight-bar generation after model loading. These are **not Linux/cloud capacity
-  or latency measurements**. No paid Meta calls were made by the probe.
-- Docker is unavailable locally, so image build, Compose execution, Linux memory,
-  TLS issuance and durable-volume behavior still require the actual server check.
+- One Python worker; two CPU threads. All 18 choices stay resident on the
+  deployed 2-vCPU / 4-GiB host. OMT is ready and Berklee is disabled.
+- Docker Engine 29.9.2 and Compose 5.6.1 run the image on Ubuntu 24.04 x64.
+  The image occupies 7,918,206,897 bytes; disk use includes separate build caches.
+- HTTPS, persistent writable storage across app replacement, and both Pages
+  API routes were verified. Meta keys are supplied at runtime, outside Git and
+  the image.
 
 `compose.yaml` runs the app behind Caddy HTTPS. Only ports 80/443 are published;
 the Python port stays on the container network. Streaming responses are flushed
@@ -36,6 +37,21 @@ persistent on this VM, not a backup against deleting the VM or its disk.
 [Docker volume lifecycle](https://docs.docker.com/engine/storage/volumes/).
 
 ## Server setup
+
+For the low-traffic CPU deployment, select **Singapore / SGP1, Ubuntu 24.04 LTS
+x64, Basic / Regular, 2 vCPU / 4 GiB RAM / 80 GiB SSD ($24/month)**. Select one
+Droplet and the existing SSH public key. Keep **Public IPv4 address enabled**;
+extra volumes, automated backups and managed databases are separate optional
+products and are not part of this configuration.
+
+Verify a public IPv4 address on the created server before installing the app.
+A Private-only Droplet cannot be converted into a standard public Droplet and
+does not support the browser console. It would need replacement for this setup.
+[Private Droplet limits](https://docs.digitalocean.com/products/droplets/details/limits/#private-droplet-limits).
+CPU Droplets are billed for their actual lifetime in seconds, with a minimum
+charge of 60 seconds or $0.01, whichever is higher; creating a replacement does
+not immediately charge a second full month.
+[Droplet billing](https://www.digitalocean.com/pricing/droplets).
 
 The recipe expects the public repository at `/srv/TheArtist-DAW`, Docker with
 Compose, and a server DNS name supplied through `API_HOST`. Copy `vps.env.example`
@@ -55,6 +71,19 @@ same HTTPS backend and model process. The release Artist has the same API proxy
 in its published source; set Production `BACKEND_ORIGIN` separately on both Pages
 projects after the model server passes its checks.
 
+The deployed production value on both projects is
+`https://music-api.pearlleestudio.co`. Frontend pushes trigger Pages automatically.
+To update the backend separately, review the public repository changes, then:
+
+```sh
+git -C /srv/TheArtist-DAW pull --ff-only
+docker compose --env-file /srv/theartist.env -f /srv/TheArtist-DAW/deploy/compose.yaml up -d --build
+```
+
+Wait for the app to become healthy and verify generation after an update. A new
+image is built before the existing app is replaced. Model loading during
+replacement causes a short API interruption on this single-server deployment.
+
 For the optional Meta demo, add `MODEL_API_KEY` to the server environment and set
 `THEARTIST_META_ENABLED=1` after the storage check. Defaults here cap total spend at
 $10, daily global spend at $2 and daily session spend at $1. These are application
@@ -67,9 +96,39 @@ server file and recreate the app service:
 docker compose --env-file /srv/theartist.env -f /srv/TheArtist-DAW/deploy/compose.yaml up -d --force-recreate app
 ```
 
-The HF model remains usable. Disabled Meta actions report their state. No new
+All 18 HF choices remain usable. Disabled Meta actions report their state. No new
 model training or GPU is needed. If another app starts using the same model API,
-share this service rather than loading a second copy of F1 merely for that app.
+share this service rather than loading a second catalog merely for that app.
+
+## Hosted verification
+
+- Seven base checkpoints and eleven LoRAs were loaded together. The load probe
+  took 27.933 seconds after runtime import and recorded 2,566.4 MiB peak RSS.
+- Every model completed an eight-bar HTTPS request with seed 17: **18 requests /
+  54 candidates**, all `source=ai`, exact requested `modelUsed`, full bar count.
+  Individual request times ranged from 2.688 to 4.769 seconds, including network.
+- A 64-bar Classical LoRA request through Artist-DAW returned three full-length
+  candidates with the exact model identity in 34.538 seconds (one seed).
+- A separate Phase 0 probe completed seeds 17/18/19 at 8/32/64 bars. Median times
+  were 2.711 / 9.193 / 18.971 seconds; peak RSS was 2,579.5 MiB. The full repeated
+  162-request Linux matrix was stopped after this completed model to prioritize
+  checking all 18 through the deployed API. It is not reported as a completed run.
+- Both `artist-daw.pearlleestudio.co` and `artist.pearlleestudio.co` returned 18
+  loaded models, imported the original one-bar vector-PDF fixture locally,
+  returned streamed F1 result frames and produced valid four-track MIDI. Public
+  DAW launch, manual warmup and whole-file Meta reading returned HTTP 403.
+- One hosted 16-bar Meta form completed through Artist-DAW: three Meta calls,
+  three generated sections, 34.655 seconds, **$0.01916725**. The three settled
+  entries were present in the persistent ledger. A storage marker survived
+  app replacement before Meta was enabled.
+- The running Python process reached 2,642.3 MiB peak RSS after the API checks;
+  the host had about 788 MiB available. This is a low-traffic validation, not a
+  maximum-user count or a large-PDF/concurrent-workload capacity guarantee.
+
+The imported fixture is synthetic and contains one bar. These checks establish
+deployment behavior, not general score-reading accuracy or musical preference.
+The Voyager website still plays stored audio; live generation and remote MCP
+integration remain separate work.
 
 ## Full-catalog capacity and hosting options
 
@@ -110,4 +169,5 @@ For low traffic, first validate the $24 CPU configuration with the full catalog,
 bounded generation concurrency, PDF import and HTTPS running together. Move to
 8 GiB only if target measurements or additional services need the headroom. The
 2.49 GiB process result alone is not proof that a 4 GiB Linux VM has sufficient
-operating-system and concurrent-workload headroom. No VM has been provisioned.
+operating-system and concurrent-workload headroom. The hosted checks above support
+the selected low-traffic 4-GiB configuration within their stated scope.

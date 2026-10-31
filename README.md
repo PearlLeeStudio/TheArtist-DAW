@@ -30,9 +30,13 @@ connected. Voyager's application source and personal travel data are not bundled
 in this repository. Its existing travel experience and model assets are separate
 from the event contributions recorded in [HACKATHON.md](HACKATHON.md).
 
-The websites are published on Cloudflare Pages. The two Artist editors are intended
-to share one Docker backend serving **all 18 released model choices** on DigitalOcean;
-the external model server is not yet connected. See [deployment and capacity](deploy/vps.md).
+The websites are published on Cloudflare Pages. Both Artist editors share one
+Docker backend serving **all 18 released model choices** on DigitalOcean through
+`https://music-api.pearlleestudio.co`. Actual generation passed for every model;
+API checks on both editor domains passed vector-PDF import, streamed generation
+and MIDI export.
+Bounded Meta planning is enabled with a server-only key.
+See [deployment, measurements and limits](deploy/vps.md).
 The Docker image includes MCP code, but public-host mode does not expose its MCP
 endpoint. [Voyager's API/MCP deployment path](docs/mcp.md#voyager-on-a-shared-host)
 distinguishes the existing adapter from the remaining hosted integration.
@@ -685,7 +689,7 @@ TheArtist-DAW/
 │   ├── serve.py           # Full-catalog startup checks and one Python worker
 │   ├── catalog_probe.py   # All models resident; actual 8/32/64-bar CPU generation
 │   ├── runtime/           # Frozen CPU serving dependencies
-│   └── vps.md             # Hosting, capacity evidence and outstanding external checks
+│   └── vps.md             # Live hosting, CPU measurements, updates and remaining limits
 ├── model/_download.py     # Fetch released checkpoints into ai/checkpoints/
 ├── screenshot/            # Application and export captures
 ├── API_SPEC.md            # REST request/response contract

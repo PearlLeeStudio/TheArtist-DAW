@@ -53,15 +53,18 @@ all seven base checkpoints, eleven genre adapters and reviewed OMT, and runs as 
 model/corpus directories are excluded from the build context. For Meta, supply
 server secrets at runtime and mount durable writable storage at `/data`.
 
-**Verification scope:** the single-origin Python server was exercised locally,
-including a real 64-bar F1 form in Safari. The container was not built because
-Docker was unavailable. The separate `deploy/runtime` lock selects Linux CPU Torch
-and excludes unused embedding/vector research dependencies. Its fresh local Mac
-environment passed actual F1/OMT generation, API health and built-frontend checks;
-Linux image size, memory, external access and host limits remain unmeasured.
+**Verification scope:** the image was built and run on Ubuntu 24.04 x64 with
+2 shared vCPUs and 4 GiB RAM. All 18 models remain loaded in one worker; each
+passed an eight-bar HTTPS generation with three candidates and the exact model
+identity. API checks on both Artist domains passed a synthetic vector-PDF import,
+streamed F1 generation and four-track MIDI export. A hosted Meta form completed with a
+persistent cost record. These are functional deployment checks, not a listening
+evaluation or a concurrent-user capacity guarantee.
+The separate `deploy/runtime` lock selects Linux CPU Torch and excludes unused
+embedding/vector research dependencies.
 See the [shared CPU server recipe](vps.md) for HTTPS, persistent cost storage and
 disabling Meta while retaining the full HF catalog. Public-host neural generation
 is serialized across clients to bound concurrent working memory. `catalog_probe.py`
 keeps every model resident and exercises actual generation without Meta calls.
-This recipe does not mean a live
-public model server has been provisioned.
+Both public editors are connected to the deployed shared server. The local
+development setup remains separate.
