@@ -1,5 +1,6 @@
 .te-transport {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   flex-shrink: 0;
   gap: 6px;
@@ -7,6 +8,9 @@
   min-width: 0;
   min-height: 42px;
 }
+
+.te-transport > .operation-progress,
+.te-transport > [role='alert'] { flex-basis: 100%; }
 
 .te-transport__keys {
   display: grid;

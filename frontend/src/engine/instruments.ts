@@ -24,6 +24,7 @@ import { Soundfont, SplendidGrandPiano, ElectricPiano } from 'smplr';
 import { getInstrumentOutput } from './mixer';
 import type { InstrumentLayer } from './audioMixer';
 import { beginTiming } from './experienceTiming.ts';
+import { checkedInstrumentContext, instrumentStorage } from './instrumentAudio.ts';
 
 /**
  * Pearl 2026-05-09 — Logic Pro 퀄리티 요청. Tier-1 (curated, high quality):
@@ -40,7 +41,7 @@ type InstrumentLike = {
   load: Promise<unknown>;
   start: (args: { note: number | string; velocity?: number; time?: number; duration?: number }) => unknown;
 };
-const registry: Record<string, { sf: InstrumentLike; ready: boolean }> = {};
+const registry: Record<string, { sf: InstrumentLike; ready: boolean; failed: boolean }> = {};
 
 /** Each layer gets its own instance of an instrument, wired to that layer's gain. */
 function registryKey(name: string, layer: InstrumentLayer): string {
@@ -57,15 +58,14 @@ function getAudioContext(): AudioContext {
  *  Both smplr and Tone sources use native layer gains in the same context.
  *  A layer owns its instance, so changing harmony gain never changes bass.
  */
-function buildCuratedInstrument(name: string, destination: AudioNode): InstrumentLike | null {
-  const ctx = getAudioContext();
+function buildCuratedInstrument(name: string, destination: AudioNode, ctx: AudioContext): InstrumentLike | null {
   if (name === 'acoustic_grand_piano') {
-    return new SplendidGrandPiano(ctx, { destination }) as unknown as InstrumentLike;
+    return new SplendidGrandPiano(ctx, { destination, storage: instrumentStorage }) as unknown as InstrumentLike;
   }
   if (name === 'electric_piano_1') {
     // smplr's ElectricPiano accepts 'CP80' (no hyphen) — 'CP-80' throws.
     // Other valid names: PianetT, WurlitzerEP200, TX81Z.
-    return new ElectricPiano(ctx, { instrument: 'CP80', destination }) as unknown as InstrumentLike;
+    return new ElectricPiano(ctx, { instrument: 'CP80', destination, storage: instrumentStorage }) as unknown as InstrumentLike;
   }
   return null;
 }
@@ -86,18 +86,21 @@ export function getInstrument(name: string, layer: InstrumentLayer = 'harmony'):
       // ElectricPiano CP-80 etc. — closest free thing to Logic Pro
       // built-in samples). Falls back to FluidR3_GM Soundfont.
       const destination = getInstrumentOutput(layer);
-      let inst = buildCuratedInstrument(name, destination);
+      const checked = checkedInstrumentContext(getAudioContext());
+      let inst = buildCuratedInstrument(name, destination, checked.context);
       if (inst === null) {
-        inst = new Soundfont(getAudioContext(), {
+        inst = new Soundfont(checked.context, {
           instrument: name,
           kit: 'FluidR3_GM',
           destination,
+          storage: instrumentStorage,
         }) as unknown as InstrumentLike;
       }
-      const entry = { sf: inst, ready: false };
+      const source = inst;
+      const entry = { sf: { start: source.start.bind(source), load: source.load.then(() => checked.assertReady()) }, ready: false, failed: false };
       registry[key] = entry;
-      inst.load.then(() => { entry.ready = true; })
-        .catch((err) => console.warn(`Instrument '${name}' failed:`, err));
+      entry.sf.load.then(() => { entry.ready = true; })
+        .catch((err) => { entry.failed = true; console.warn(`Instrument '${name}' failed:`, err); });
     } catch (err) {
       console.warn(`Instrument '${name}' init failed:`, err);
       return null;
@@ -120,30 +123,36 @@ export function isInstrumentReady(name: string, layer: InstrumentLayer = 'harmon
  * instrument cuts in. Awaiting here makes the first bar sound like the
  * rest of the take.
  *
- * Never rejects and never blocks longer than `timeoutMs`: a 404 name or a
- * dead CDN degrades to the existing synth fallback rather than freezing
- * the play button.
+ * Reject on failure or timeout, so playback cannot silently substitute a
+ * different instrument or start with missing samples. A later Play retries.
  */
 export function preloadInstruments(
   names: (string | null | undefined)[],
-  timeoutMs = 8000,
+  timeoutMs = 30_000,
   layer: InstrumentLayer = 'harmony',
 ): Promise<void> {
   const wanted = [...new Set(names.filter((n): n is string => !!n))];
   if (wanted.length === 0) return Promise.resolve();
   const finish = beginTiming('instrument.ready', wanted.every((name) => isInstrumentReady(name, layer)) ? 'warm' : 'cold');
   const loads = wanted.map((name) => {
+    const key = registryKey(name, layer);
+    if (registry[key]?.failed) delete registry[key];
     const inst = getInstrument(name, layer);
-    // getInstrument() already attached a .catch, so this .then chain only
-    // has to swallow the rejection a second time for Promise.all's sake.
-    return inst ? Promise.resolve(inst.load).then(() => undefined, () => undefined) : Promise.resolve();
+    return inst ? inst.load : Promise.reject(new Error(`Could not prepare ${name.replaceAll('_', ' ')}.`));
   });
-  return new Promise<void>((resolve) => {
-    const timeout = setTimeout(() => { finish('timeout'); resolve(); }, timeoutMs);
+  return new Promise<void>((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      finish('timeout');
+      reject(new Error('Instrument samples are still loading. Please try Play again.'));
+    }, timeoutMs);
     void Promise.all(loads).then(() => {
       clearTimeout(timeout);
       finish(wanted.every((name) => isInstrumentReady(name, layer)) ? 'ok' : 'error');
       resolve();
+    }, (error: unknown) => {
+      clearTimeout(timeout);
+      finish('error');
+      reject(error);
     });
   });
 }

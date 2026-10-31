@@ -26,7 +26,7 @@ const stubs: Record<string, string> = {
   smplr: 'export const Soundfont = globalThis.InstrumentTestFake; export const SplendidGrandPiano = Soundfont; export const ElectricPiano = Soundfont;',
   './mixer': 'export const getInstrumentOutput = layer => layer; export const setMixerVolumes = () => {};',
   './voicingEngine': 'export const guitarVoicingNotes = () => []; export const resolvePianoVoicing = () => [];',
-  './drums': 'export const scheduleDrumMeasure = () => {}; export const clearDrumSchedule = () => {}; export const setCurrentDrumPattern = () => {}; export const setDrumVolume = () => {}; export const swingDelay = () => 0; export const DRUM_STEPS_PER_BEAT = 4;',
+  './drums': 'export const preloadDrums = async () => {}; export const scheduleDrumMeasure = () => {}; export const clearDrumSchedule = () => {}; export const setCurrentDrumPattern = () => {}; export const setDrumVolume = () => {}; export const swingDelay = () => 0; export const DRUM_STEPS_PER_BEAT = 4;',
   './arrangement': 'export const scheduleBassSlot = () => {}; export const setBassEnabled = () => {};',
   './playSettings': 'export const HARMONY_GRID = []; export const autoRhythmPreset = () => []; export const genreHarmonyInstrument = () => null; export const harmonyStrikesForChords = () => []; export const secondsPerMeterBeat = () => 1;',
 };
@@ -63,7 +63,7 @@ test('preload and selection share one load, release their timer, and play the pr
   const same = getInstrument('hovered');
   await waiting;
   assert.equal(instances.filter((inst) => inst.name === 'hovered').length, 1);
-  assert.equal(same, instances[0]);
+  assert.equal(same, getInstrument('hovered'));
   assert.equal(clear.mock.calls.length, 1);
   assert.equal(playChordOnInstrument('hovered', [60, 64, 67], 2, 1, 0.5), true);
   assert.deepEqual(instances[0].starts, [60, 64, 67].map((note) => ({ note, velocity: 64, time: 2, duration: 1 })));
@@ -90,8 +90,8 @@ test('background loads are bounded, stale families drop out, and a selection byp
   await flush();
 });
 
-test('a stalled load remains bounded by the foreground timeout and can become ready later', async () => {
-  await preloadInstruments(['slow'], 1);
+test('a stalled load rejects before playback and can become ready later', async () => {
+  await assert.rejects(preloadInstruments(['slow'], 1), /still loading/);
   assert.equal(isInstrumentReady('slow'), false);
   assert.equal(playChordOnInstrument('slow', [60], 0, 1), false);
   instances.find((inst) => inst.name === 'slow')!.resolve();
@@ -99,14 +99,16 @@ test('a stalled load remains bounded by the foreground timeout and can become re
   assert.equal(isInstrumentReady('slow'), true);
 });
 
-test('failed background decoding frees the next slot and does not reject preload', async (t) => {
+test('failed background decoding frees the next slot and foreground retries the instrument', async (t) => {
   t.mock.method(console, 'warn', () => {});
   prefetchHarmonyInstruments(['failed', 'finishes', 'next']);
   instances.find((inst) => inst.name === 'failed')!.reject(new Error('network'));
   await flush();
   assert.equal(instances.at(-1)!.name, 'next');
-  await preloadInstruments(['failed']);
+  const retry = preloadInstruments(['failed']);
   assert.equal(isInstrumentReady('failed'), false);
+  instances.at(-1)!.reject(new Error('decode error'));
+  await assert.rejects(retry, /decode error/);
   instances.find((inst) => inst.name === 'finishes')!.resolve();
   instances.find((inst) => inst.name === 'next')!.resolve();
   await flush();

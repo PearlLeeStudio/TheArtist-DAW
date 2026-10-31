@@ -16,6 +16,7 @@ import * as Tone from 'tone';
 import { drumPatternById, hitPos, hitVel } from './drumPatterns';
 import type { DrumHit, DrumVoice } from './drumPatterns';
 import { getMasterInput } from './mixer';
+import { setPlaybackStatus } from './playbackStatus.ts';
 
 // ---------- Synthesized drum voices (fallback while samples load) ----------
 
@@ -217,11 +218,17 @@ function ensureSynths(): void {
     T: 'tom-hi.flac',        M: 'tom-mid.flac',   L: 'tom-lo.flac',
   };
 
+  const loads: Promise<void>[] = [];
   for (const v of ['K','S','X','H','O','R','C','T','M','L'] as DrumVoice[]) {
+    let loaded!: () => void;
+    let failed!: (error: Error) => void;
+    loads.push(new Promise<void>((resolve, reject) => { loaded = resolve; failed = reject; }));
     const sampler = new Tone.Sampler({
       urls: { C2: SAMPLE_FILE[v] },
       baseUrl: '/drums/',
       release: SAMPLE_RELEASE[v],
+      onload: loaded,
+      onerror: () => failed(new Error(`The ${SAMPLE_FILE[v].replace('.flac', '')} drum sample could not be loaded. Please reload and try again.`)),
     }).connect(drumBus);
     sampler.volume.value = SAMPLE_VOL_DB[v];
     samplers[v] = sampler;
@@ -230,14 +237,27 @@ function ensureSynths(): void {
   // Mark ready once every Sampler has decoded its file. If decoding fails
   // (e.g. files missing in deployment), `samplesReady` stays false and we
   // keep using the synth fallback below — playback never errors.
-  Tone.loaded()
+  samplesLoad = Promise.all(loads)
     .then(() => { samplesReady = true; })
-    .catch((err) => { console.warn('Drum samples failed to load — using synth fallback:', err); });
+  void samplesLoad.catch((err) => { console.warn('Drum samples failed to load:', err); });
 }
 
 // ---------- Real-sample voices ----------
 const samplers: Partial<Record<DrumVoice, Tone.Sampler>> = {};
 let samplesReady = false;
+let samplesLoad: Promise<void> | null = null;
+
+export async function preloadDrums(timeoutMs = 30_000): Promise<void> {
+  if (currentPatternId === null || samplesReady) return;
+  ensureSynths();
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    await Promise.race([
+      samplesLoad,
+      new Promise<never>((_resolve, reject) => { timer = setTimeout(() => reject(new Error('Drum samples are still loading. Please try Play again.')), timeoutMs); }),
+    ]);
+  } finally { clearTimeout(timer); }
+}
 
 // How long to hold each voice before release. Shells get short holds (decay is
 // driven by the sample); cymbals get long holds so the natural ring isn't
@@ -358,6 +378,12 @@ let currentPatternId: number | null = null;
 
 export function setCurrentDrumPattern(id: number | null): void {
   currentPatternId = id;
+  if (drumBus && id !== null && !samplesReady) {
+    setPlaybackStatus({ loading: 'Loading drum samples…', error: null });
+    void preloadDrums().then(() => setPlaybackStatus({ loading: null, error: null }), (error: unknown) => {
+      setPlaybackStatus({ loading: null, error: error instanceof Error ? error.message : 'Drum samples could not be loaded.' });
+    });
+  }
 }
 
 /**

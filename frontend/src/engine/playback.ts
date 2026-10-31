@@ -1,8 +1,9 @@
 import * as Tone from 'tone';
 import { beginTiming } from './experienceTiming.ts';
+import { setPlaybackStatus } from './playbackStatus.ts';
 import type { Song, SlotAddress, Chord, Arrangement, Measure } from '../models/types';
 import { guitarVoicingNotes, resolvePianoVoicing } from './voicingEngine';
-import { scheduleDrumMeasure, clearDrumSchedule, setCurrentDrumPattern, setDrumVolume, swingDelay, DRUM_STEPS_PER_BEAT } from './drums';
+import { scheduleDrumMeasure, clearDrumSchedule, setCurrentDrumPattern, setDrumVolume, swingDelay, DRUM_STEPS_PER_BEAT, preloadDrums } from './drums';
 import { playChordOnInstrument, preloadInstruments, prefetchHarmonyInstruments } from './instruments';
 import { scheduleBassSlot, setBassEnabled } from './arrangement';
 import { getInstrumentOutput, setMixerVolumes } from './mixer';
@@ -17,7 +18,7 @@ import type { EnginePlayConfig, VoicingMode } from './playSettings';
 
 /** How long startPlayback() waits for samples before rolling anyway, so a
  *  404 name or a dead CDN never freezes the play button. */
-const SAMPLE_WAIT_MS = 8000;
+const SAMPLE_WAIT_MS = 30_000;
 const HARMONY_VELOCITY = 0.7;
 /** Beat positions closer than this are the same position (triplets are inexact). */
 const SAME_BEAT_EPSILON = 1e-9;
@@ -47,7 +48,7 @@ let scheduledGenre: string | null = null;
 /** Pointer/keyboard intent warms samples without changing the sound or
  * opening an AudioContext before the first Play gesture. */
 export function prepareHarmonyInstrument(name: string | null): void {
-  if (audioStarted && name) void preloadInstruments([name]);
+  if (audioStarted && name) void preloadInstruments([name]).catch(() => undefined);
 }
 
 export function prepareHarmonyFamily(names: string[]): void {
@@ -66,7 +67,18 @@ function setHarmonyOverride(name: string | null): void {
   // Fetch the samples as soon as the user picks the instrument (Auto: the
   // playing song's genre default), so a mid-playback swap has them ready by
   // the next trigger instead of dropping a few bars to the synth fallback.
-  if (audioStarted) void preloadInstruments([liveHarmonyInstrument(scheduledGenre)]);
+  if (audioStarted) {
+    const instrument = liveHarmonyInstrument(scheduledGenre);
+    setPlaybackStatus({ loading: `Loading ${instrument?.replaceAll('_', ' ') ?? 'piano'} samples…`, error: null });
+    void preloadInstruments([instrument]).then(() => {
+      if (harmonyOverride === name) setPlaybackStatus({ loading: null, error: null });
+    }, (error: unknown) => {
+      if (harmonyOverride !== name) return;
+      stopPlayback();
+      endCallback?.();
+      setPlaybackStatus({ loading: null, error: error instanceof Error ? error.message : 'Could not load this instrument.' });
+    });
+  }
 }
 
 /** Apply every Play-panel setting at once (playSettings.ts enginePlayConfig). */
@@ -192,12 +204,16 @@ function getGuitarSynth(): Tone.PolySynth {
 /** Resolves once the built-in piano's samples are in, or after
  *  SAMPLE_WAIT_MS — like preloadInstruments(), a dead CDN still lets
  *  playback start. */
-function pianoLoaded(): Promise<void> {
+async function pianoLoaded(): Promise<void> {
   if (getPianoSynth().loaded) return Promise.resolve();
-  return Promise.race([
-    Tone.loaded().then(() => undefined, () => undefined),
-    new Promise<void>((resolve) => setTimeout(resolve, SAMPLE_WAIT_MS)),
-  ]);
+  let timeout: ReturnType<typeof setTimeout> | undefined;
+  try {
+    await Promise.race([
+      Tone.loaded(),
+      new Promise<never>((_resolve, reject) => { timeout = setTimeout(() => reject(new Error('Piano samples are still loading. Please try Play again.')), SAMPLE_WAIT_MS); }),
+    ]);
+    if (!getPianoSynth().loaded) throw new Error('Piano samples could not be loaded. Please try Play again.');
+  } finally { clearTimeout(timeout); }
 }
 
 function midiToFreq(midi: number): number {
@@ -221,7 +237,10 @@ function voiceChord(chord: Chord): number[] {
 function strikeChord(chord: Chord, genre: string | null, time: number, duration: number): void {
   const voicing = voiceChord(chord);
   const instrument = liveHarmonyInstrument(genre);
-  if (instrument && playChordOnInstrument(instrument, voicing, time, duration, HARMONY_VELOCITY)) return;
+  if (instrument) {
+    playChordOnInstrument(instrument, voicing, time, duration, HARMONY_VELOCITY);
+    return;
+  }
   const piano = voicingMode === 'piano' ? getPianoSynth() : null;
   const synth = piano?.loaded ? piano : getGuitarSynth();
   try {
@@ -397,8 +416,9 @@ export function schedulePlayback(
  */
 export async function startPlayback(): Promise<boolean> {
   const finish = beginTiming('play.transport', audioStarted ? 'warm-context' : 'cold-context');
-  try {
   const generation = scheduleGeneration;
+  setPlaybackStatus({ loading: 'Preparing audio and loading instrument samples…', error: null });
+  try {
   await Tone.start();
   audioStarted = true;
   // Wait for the schedule's sampled instruments before rolling the
@@ -408,8 +428,10 @@ export async function startPlayback(): Promise<boolean> {
     preloadInstruments([pendingHarmonyInstrument], SAMPLE_WAIT_MS, 'harmony'),
     preloadInstruments([pendingBassInstrument], SAMPLE_WAIT_MS, 'bass'),
     pendingPiano ? pianoLoaded() : undefined,
+    preloadDrums(SAMPLE_WAIT_MS),
   ]);
   if (generation !== scheduleGeneration) { finish('cancelled'); return false; }
+  setPlaybackStatus({ loading: null, error: null });
   Tone.getTransport().start();
   isPlaying = true;
   isPaused = false;
@@ -417,6 +439,7 @@ export async function startPlayback(): Promise<boolean> {
   return true;
   } catch (error) {
     finish('error');
+    if (generation === scheduleGeneration) setPlaybackStatus({ loading: null, error: error instanceof Error ? error.message : 'Playback could not start.' });
     throw error;
   }
 }
@@ -424,6 +447,7 @@ export async function startPlayback(): Promise<boolean> {
 /** A startPlayback() still waiting on samples will not start. */
 export function cancelPendingStart(): void {
   scheduleGeneration++;
+  setPlaybackStatus({ loading: null, error: null });
 }
 
 /** Pause; a schedule that has not started yet stays paused at its start,

@@ -928,6 +928,11 @@ For the older `/api/generate/chords` programmatic chord-only endpoint (no arrang
 
 ## License
 
+Electric piano playback uses Greg Sullivan's Yamaha CP80 samples and kinwie's SFZ mapping from
+[GregSullivan.E-Pianos](https://github.com/sfzinstruments/GregSullivan.E-Pianos), under
+[CC BY 3.0](https://github.com/sfzinstruments/GregSullivan.E-Pianos/blob/master/LICENSE).
+The original FLAC samples are streamed unchanged; the player maps its CP80 sample requests to those lossless files.
+
 **Code: [MIT](LICENSE)** © 2026 Jinju Lee (PearlLeeStudio).
 
 Downloaded OMT prose and its displayed excerpts retain CC BY-SA 4.0 with attribution;

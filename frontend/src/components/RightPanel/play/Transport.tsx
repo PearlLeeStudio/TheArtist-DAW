@@ -6,7 +6,9 @@
  * otherwise schedules the selection (or the whole song) afresh. Every
  * schedule carries the Play-panel settings, voicing and bass layer.
  */
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useSyncExternalStore } from 'react';
+import OperationProgress from '../../OperationProgress';
+import { getPlaybackStatus, subscribePlaybackStatus } from '../../../engine/playbackStatus';
 import type { ReactNode } from 'react';
 import type { SlotAddress, Song } from '../../../models/types';
 import { useSongStore } from '../../../store/songStore';
@@ -161,6 +163,7 @@ function TransportKey({ label, title = label, onClick, active, play, children }:
 }
 
 export default function Transport() {
+  const audio = useSyncExternalStore(subscribePlaybackStatus, getPlaybackStatus);
   const song = useSongStore((s) => s.song);
   const selectedSlots = useSongStore((s) => s.selectedSlots);
   const playing = useSongStore((s) => s.isPlaying);
@@ -301,6 +304,8 @@ export default function Transport() {
         </TransportKey>
       </div>
       <div className="te-transport__disc" aria-hidden="true">💿</div>
+      {audio.loading && <OperationProgress label={audio.loading} />}
+      {audio.error && <p role="alert" className="text-xs" style={{ color: 'var(--text-primary)' }}>{audio.error}</p>}
     </div>
   );
 }
