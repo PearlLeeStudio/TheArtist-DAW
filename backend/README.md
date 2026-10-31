@@ -35,6 +35,12 @@ complete internet deployment configuration. The [single-origin launcher](../depl
 serves the built frontend after API routes; separate hosting needs a suitable
 `/api` reverse proxy. Vite's proxy is development-only.
 
+The editor defaults to local reading and keeps Analyze as the explicit trigger.
+Its **Use Meta model** checkbox sends `engine: "verified"`: local analysis, one
+original-file Meta call, then comparison. `score_verification.py` preserves printed
+local symbols/N.C., flags disagreement, and reports unavailable local comparison.
+The direct `meta` and bounded `auto` API modes remain supported.
+
 ```sh
 uv run --frozen --directory /absolute/path/TheArtist-DAW/backend python -m unittest discover -s tests -t .
 uv run --frozen --directory /absolute/path/TheArtist-DAW/backend python -c "import app.main; print('import app.main: ok')"

@@ -16,7 +16,36 @@ when analysis starts, without discarding the selected file.
 The REST/MCP request default remains `engine: "local"`; the editor explicitly
 sends `mode: "infer_harmony"` and its selected engine.
 
-Printed chords and N.C. are preserved. Meta assist reviews local inferred harmony
+## Local and Meta comparison
+
+Checked analysis uses one Meta call after local reading, not repeated calls until
+the model agrees. The complete provisional musical synopsis accompanies the
+original file; it is explicitly marked as evidence to verify, not ground truth.
+Deterministic comparison then checks counts, key/meter, chord labels and note
+evidence. Aligned printed local symbols and N.C. are preserved. Differences lower
+confidence and mark review; agreement never raises confidence or clears a review
+flag. Different counts retain the complete local result without aligning bars by
+position. If local reading is unsupported, Meta may read the file but the review
+reports that local comparison was unavailable. Failed Meta calls remain failures.
+
+The response's `verification` record reports comparison coverage and zero-based
+disputed bars. Reading checks in the existing review show those bars and structural
+differences. This adds a way to expose mistakes; no general accuracy improvement
+or independent second-model judgment has been established.
+
+The hosted `verified` path read the original one-bar C-major fixture in 17.454
+seconds with one Meta call costing $0.007548. It returned one bar, C major, 4/4
+and chord C. The comparison flagged that bar because Meta omitted structured note
+evidence even though the local reader had pitches; it remained low-confidence and
+needed review. Two earlier standalone Meta attempts on this fixture returned 422.
+This is a functional example of the combined path and missing-evidence detection,
+not a representative accuracy benchmark. Backend 559 tests and frontend 237 tests,
+build/lint and backend import passed. The Pages bundle and server revision were
+verified; browser interaction was not manually repeated for this checkbox change.
+
+## Bounded API assist
+
+Printed chords and N.C. are preserved. The separate `auto` API mode reviews local inferred harmony
 and automatically proposes form in uncovered passages. Valid project metadata
 enables Import reviewed score without a separate checkbox. The button opens an
 editable score, including unresolved bars; source details remain available there.
