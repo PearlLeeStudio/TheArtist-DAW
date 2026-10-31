@@ -860,7 +860,7 @@ This is an explicit side effect on the **backend computer**. The browser enables
 
 ### Judge-server lockdown and Meta spend limits
 
-Off by default. `THEARTIST_PUBLIC_HOST=1`: `GET /api/daw/targets`, `POST /api/daw/open` and `POST /api/models/warmup` answer 403 with a reason, `/mcp/` is not mounted, and `POST /api/import/score` refuses `engine: "meta"`, the whole-file read (403); `"auto"` and `"local"` stay. The Meta-calling routes — planner runs with `planner: "meta"`, Second-ear reviews, and a score import that is about to call Meta — are then admitted against limits (also available alone with `THEARTIST_META_LIMITS=1`):
+Off by default. `THEARTIST_PUBLIC_HOST=1`: `GET /api/daw/targets`, `POST /api/daw/open` and `POST /api/models/warmup` answer 403 with a reason, and `/mcp/` is not mounted. `POST /api/import/score` refuses the whole-file `engine: "meta"` read (403) unless `THEARTIST_PUBLIC_META_READER=1`; `"auto"` and `"local"` stay. Enabling the reader does not disable Meta's master switch, Standard model requirement or spend limits. A session allowance must accommodate the $1.35 full-file reservation. The Meta-calling routes — planner runs with `planner: "meta"`, Second-ear reviews, and a score import that is about to call Meta — are then admitted against limits (also available alone with `THEARTIST_META_LIMITS=1`):
 
 | Header | Meaning |
 |---|---|
@@ -885,7 +885,8 @@ limit variable or unreadable ledger.
 
 `data.meta` includes `enabled`, `configured`, `provider`, `model` and
 `fullFileScoreImport`. The last is true only for an enabled, configured Standard
-`muse-spark-1.3` provider on a non-public host; clients treat a missing field as
+`muse-spark-1.3` provider, with `THEARTIST_PUBLIC_META_READER=1` additionally required
+on a public host; clients treat a missing field as
 false. Import limits advertise `scoreMeasures: 512`, `metaScoreMeasures: 128`,
 `scoreAssistHarmonyBars: 16`, `scoreAssistCalls: 3`, `scoreAssistRunUsd: 0.30`, and
 source fields include `sections.*.basis` and `formAnalysis`.

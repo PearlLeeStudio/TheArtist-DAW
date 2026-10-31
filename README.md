@@ -77,7 +77,7 @@ passage with the author's Music Transformer, and hands the arrangement to the DA
 
 | Path | File | Calls per use | Switch |
 |---|---|---|---|
-| Full file score reading, explicitly selected `engine: "meta"` | `backend/app/services/score_import.py` | 1 PDF/image request, ≤ $1.35 | `THEARTIST_META_ENABLED`; unavailable on a public host |
+| Full file score reading, explicitly selected `engine: "meta"` | `backend/app/services/score_import.py` | 1 PDF/image request, ≤ $1.35 | `THEARTIST_META_ENABLED`; public hosts also require `THEARTIST_PUBLIC_META_READER=1` |
 | Meta assist, `engine: "auto"` (the editor default when configured) | `score_assistance.py`, `harmony_meta.py`, `score_form.py` | ≤ 2 × 8-bar harmony reviews + 1 form analysis, ≤ $0.30 total; every call sees the complete musical synopsis | same; choose **TheArtist only** for no Meta calls |
 | Complete the form planner (plan, validate, revise, judge) | `backend/app/services/planner.py`, `routes/plan.py` | ≤ 5 calls per run (1 plan, ≤ 2 revisions, ≤ 2 judgments) | same; judge role via `LLM_JUDGE_*` |
 | Second ear: pick one of a Generate's A/B/C on analyzer facts, each reason checked | `backend/app/services/review.py`, `routes/review.py` | 1 judge call | same; judge role via `LLM_JUDGE_*` |
@@ -611,9 +611,12 @@ THEARTIST_WARMUP_KEYS=ft_f1,ft_f4 uv run --directory /absolute/path/TheArtist-DA
 ```
 
 For a public judge server, `THEARTIST_PUBLIC_HOST=1` turns off DAW handoff, the warmup
-route, MCP and the whole-file Meta score read (`engine: "meta"`), keeps the bounded
-import assist (`engine: "auto"`), and puts the Meta-calling routes behind
-per-session and daily spend limits; see `deploy/env.example`.
+route and MCP, and puts Meta calls behind per-session and daily spend limits.
+Whole-file reading (`engine: "meta"`, **Meta only**) also needs
+`THEARTIST_PUBLIC_META_READER=1`; the hosted Artist service enables that option.
+It retains the 75-second, one-call, $1.35 request bound. The hosted session and
+global daily limits are both $2, with a $10 total ledger cap. Local reading and
+bounded import assist (`engine: "auto"`) remain available; see `deploy/env.example`.
 
 ## AI Model
 
@@ -750,8 +753,8 @@ follow the endpoint schemas.
 
 MCP `import_score` requires explicit attachment confirmation. `export_daw` requires
 a direct loopback connection, server opt-in and per-call confirmation. Public-host
-restrictions also disable DAW handoff and whole-file Meta reading; bounded Import
-assist remains available behind its spend limits. See [API_SPEC.md](API_SPEC.md)
+restrictions also disable DAW handoff. Whole-file Meta reading needs explicit
+server opt-in; it and bounded Import assist retain their spend limits. See [API_SPEC.md](API_SPEC.md)
 and [docs/mcp.md](docs/mcp.md) for the full contracts and the
 [async client](backend/theartist_client/client.py).
 

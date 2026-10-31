@@ -121,8 +121,10 @@ An unsupported local image/PDF never silently switches `auto` to a paid whole-fi
 request. Choose **Meta only** explicitly to use that reader. It sends one
 attachment request, bounded to 75 seconds, 8192 completion tokens, $1.35 and 128
 result bars. Harmony and form are returned together, without a second form call.
-`THEARTIST_PUBLIC_HOST=1` forbids this path with 403; local and bounded assist remain
-available. Missing or false `meta.fullFileScoreImport` keeps it disabled in the UI.
+`THEARTIST_PUBLIC_HOST=1` requires `THEARTIST_PUBLIC_META_READER=1` for this path;
+without it the route returns 403. The hosted Artist service enables the option.
+Local and bounded assist remain available. Session/daily/total spend limits still
+apply. Missing or false `meta.fullFileScoreImport` keeps it disabled in the UI.
 
 Configuration, budget, provider and validation failures stay errors. There is no
 successful-looking local fallback after an attempted Meta analysis. Disabling

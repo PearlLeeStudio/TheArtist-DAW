@@ -23,7 +23,9 @@ HTTPS and access routing with that host; no custom domain is required.
 Ordinary development keeps the Vite frontend and this switch off. Static files
 are mounted using [FastAPI StaticFiles](https://fastapi.tiangolo.com/tutorial/static-files/).
 There is no server-side project storage: the browser still owns saved projects.
-Public-host mode blocks DAW launch, model warmup, MCP and whole-file Meta reading.
+Public-host mode blocks DAW launch, model warmup and MCP. Whole-file Meta reading
+also requires `THEARTIST_PUBLIC_META_READER=1`; the hosted Artist service enables
+it while preserving the one-call timeout and all spend limits.
 Hosted users download MIDI for their own DAW.
 
 ## Optional Meta service

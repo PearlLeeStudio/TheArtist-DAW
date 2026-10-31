@@ -83,7 +83,7 @@ def create_app(env: Mapping[str, str] | None = None) -> FastAPI:
         app.mount("/mcp", mcp_server.streamable_http_app())
     else:
         log.info("%s: DAW handoff, the warmup route and MCP are off; score import permits local and bounded Meta assist, "
-                 "not whole-file Meta reading; Meta routes are limited "
+                 "whole-file Meta reading requires explicit opt-in; Meta routes are limited "
                  "per session and per day", limits.PUBLIC_HOST_VAR)
     if env_bool("THEARTIST_SERVE_FRONTEND", False, env):
         if not (FRONTEND_DIST / "index.html").is_file():

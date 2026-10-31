@@ -16,9 +16,9 @@ PUBLIC_HOST_REASON = ("Meta reading of the whole score file is not available on 
 @router.post("/import/score", response_model=ScoreImportResponse)
 def import_score_route(req: ScoreImportRequest,
                        caller: Annotated[Caller | None, Depends(limits.caller)] = None) -> ScoreImportResponse:
-    # A public host keeps bounded assist (two 8-bar harmony calls plus one form call,
-    # up to $0.30) and refuses the whole-file read, whose one request may reserve $1.35.
-    if req.engine == "meta" and limits.public_host():
+    # Whole-file reading on a public host needs explicit opt-in. Its $1.35 worst
+    # case must still fit the session, daily and persistent ledger allowances.
+    if req.engine == "meta" and not limits.full_file_score_import_allowed():
         raise HTTPException(status_code=403, detail=PUBLIC_HOST_REASON)
     charge: dict = {}
 

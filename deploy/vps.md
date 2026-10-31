@@ -89,8 +89,15 @@ deployment before making manual server changes.
 
 For the optional Meta demo, add `MODEL_API_KEY` to the server environment and set
 `THEARTIST_META_ENABLED=1` after the storage check. Defaults here cap total spend at
-$10, daily global spend at $2 and daily session spend at $1. These are application
+$10, daily global spend at $2 and daily session spend at $2. These are application
 limits, not the provider's balance or an automatic credit-expiry detector.
+
+The hosted **Meta only** PDF/image reader is enabled with
+`THEARTIST_PUBLIC_META_READER=1`. It uses one Standard Meta call, at most 75 seconds,
+8192 completion tokens and $1.35. The session allowance accommodates that worst-case
+reservation; the server's $2 daily and $10 total caps remain in place. The separate
+flag does not open DAW launch, manual model warmup or MCP. To disable just this
+reader, set its flag to `0` and recreate the app; local and bounded assist remain.
 
 To stop using Meta later, set `THEARTIST_META_ENABLED=0`, remove the key from the
 server file and recreate the app service:

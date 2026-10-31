@@ -1,8 +1,9 @@
 """Judge-server lockdown and daily Meta spend limits for the routes that call Meta.
 
 THEARTIST_PUBLIC_HOST (off by default) marks a server that strangers reach: the DAW
-handoff, the warmup route and the MCP mount are refused there, score import stays on
-the local reader, and the planner runs only through the limiter below. The limiter
+handoff, the warmup route and the MCP mount are refused there. Local score reading
+and bounded Meta assist remain available; THEARTIST_PUBLIC_META_READER explicitly
+opens whole-file Meta reading under the same limiter as the planner. The limiter
 (THEARTIST_META_LIMITS, forced on by the public host) admits a Meta-calling request
 while its worst-case reservation fits the caller's daily allowance and the server's
 daily cap, and answers 429 otherwise, before anything is reserved. Allowances are kept
@@ -27,6 +28,7 @@ from app.services.env_flags import env_bool
 from app.services.llm import Ledger, LLMError, _round_usd
 
 PUBLIC_HOST_VAR = "THEARTIST_PUBLIC_HOST"
+PUBLIC_META_READER_VAR = "THEARTIST_PUBLIC_META_READER"
 LIMITS_VAR = "THEARTIST_META_LIMITS"
 SESSION_LIMIT_VAR = "THEARTIST_META_SESSION_LIMIT_USD"
 DAILY_LIMIT_VAR = "THEARTIST_META_DAILY_LIMIT_USD"
@@ -45,6 +47,16 @@ _LEDGER_UNREADABLE = ("The Meta spend ledger cannot be read; check THEARTIST_MET
 
 def public_host(env: Mapping[str, str] | None = None) -> bool:
     return env_bool(PUBLIC_HOST_VAR, False, env)
+
+
+def full_file_score_import_allowed(env: Mapping[str, str] | None = None) -> bool:
+    """Public full-file reading is an explicit opt-in, independent of Meta's master switch."""
+    if not public_host(env):
+        return True
+    try:
+        return env_bool(PUBLIC_META_READER_VAR, False, env)
+    except ValueError:
+        return False
 
 
 def limits_enabled(env: Mapping[str, str] | None = None) -> bool:

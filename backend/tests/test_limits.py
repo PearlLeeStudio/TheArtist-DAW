@@ -35,7 +35,7 @@ KEY = "sk-limits-test-never-shown"
 SESSION = {limits.SESSION_HEADER: "browser-a"}
 JUDGE = {limits.JUDGE_CODE_HEADER: "open-sesame"}
 SCORE_USAGE = {"prompt_tokens": 1000, "completion_tokens": 500}  # settles at $0.003375
-_LIMIT_VARS = (limits.PUBLIC_HOST_VAR, limits.LIMITS_VAR, limits.SESSION_LIMIT_VAR, limits.DAILY_LIMIT_VAR,
+_LIMIT_VARS = (limits.PUBLIC_HOST_VAR, limits.PUBLIC_META_READER_VAR, limits.LIMITS_VAR, limits.SESSION_LIMIT_VAR, limits.DAILY_LIMIT_VAR,
                limits.JUDGE_CODE_VAR, limits.JUDGE_LIMIT_VAR, "THEARTIST_META_ENABLED", app.main.WARMUP_VAR,
                "THEARTIST_WARMUP_KEYS")
 
@@ -293,6 +293,48 @@ class ScoreImportLimitsTest(LimitsCase):
         self.assertEqual(Ledger(self.ledger_path).snapshot()["entries"], 3)
         res = CLIENT.post(IMPORT, json=score_body(engine="local"))  # the local reader is not metered
         self.assertEqual(res.status_code, 422, res.text)
+
+    def test_public_opt_in_reads_a_file_without_opening_other_hosted_routes(self):
+        self.env(THEARTIST_PUBLIC_HOST="1", THEARTIST_PUBLIC_META_READER="1",
+                 THEARTIST_META_SESSION_LIMIT_USD="2", THEARTIST_META_DAILY_LIMIT_USD="2")
+        no_session = CLIENT.post(IMPORT, json=score_body())
+        self.assertEqual(no_session.status_code, 400, no_session.text)
+        self.assertEqual(self.requests, [])
+        result = CLIENT.post(IMPORT, json=score_body(), headers=SESSION)
+        self.assertEqual(result.status_code, 200, result.text)
+        self.assertEqual(result.json()["analysisSource"], "meta")
+        self.assertEqual(len(self.requests), 1)
+        self.assertEqual(Ledger(self.ledger_path).snapshot()["entries"], 1)
+        self.assertEqual(CLIENT.get("/api/daw/targets").status_code, 403)
+        self.assertEqual(CLIENT.post("/api/models/warmup").status_code, 403)
+        self.assertFalse(any(route.path.startswith("/mcp") for route in app.main.create_app().routes
+                             if isinstance(route, Mount)))
+
+    def test_public_opt_in_still_enforces_session_global_and_meta_switch(self):
+        self.env(THEARTIST_PUBLIC_HOST="1", THEARTIST_PUBLIC_META_READER="1",
+                 THEARTIST_META_SESSION_LIMIT_USD="1", THEARTIST_META_DAILY_LIMIT_USD="2")
+        self.assertEqual(CLIENT.post(IMPORT, json=score_body(), headers=SESSION).status_code, 429)
+        self.env(THEARTIST_META_SESSION_LIMIT_USD="2", THEARTIST_META_DAILY_LIMIT_USD="1")
+        self.assertEqual(CLIENT.post(IMPORT, json=score_body(), headers=SESSION).status_code, 429)
+        self.env(THEARTIST_META_DAILY_LIMIT_USD="2", THEARTIST_META_ENABLED="0")
+        # The transport double bypasses get_client's master-switch check; exercise
+        # the real factory here, which must reject before configuring any transport.
+        with mock.patch.object(score_import, "get_client", side_effect=llm.get_client):
+            self.assertEqual(CLIENT.post(IMPORT, json=score_body(), headers=SESSION).status_code, 503)
+        self.assertEqual(self.requests, [])
+
+    def test_invalid_public_opt_in_refuses_before_the_reader_or_spending(self):
+        self.env(THEARTIST_PUBLIC_HOST="1", THEARTIST_PUBLIC_META_READER="invalid",
+                 THEARTIST_META_SESSION_LIMIT_USD="2")
+        self.assertEqual(CLIENT.post(IMPORT, json=score_body(), headers=SESSION).status_code, 403)
+        self.assertEqual(self.requests, [])
+
+    def test_public_opt_in_does_not_make_auto_send_unsupported_files(self):
+        self.env(THEARTIST_PUBLIC_HOST="1", THEARTIST_PUBLIC_META_READER="1",
+                 THEARTIST_META_SESSION_LIMIT_USD="2")
+        response = CLIENT.post(IMPORT, json=score_body(engine="auto"), headers=SESSION)
+        self.assertEqual(response.status_code, 422, response.text)
+        self.assertEqual(self.requests, [])
 
     def test_an_auto_import_the_local_reader_finishes_is_never_charged(self):
         # Fully printed chords and a source section need no harmonic/form inference.

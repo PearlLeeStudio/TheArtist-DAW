@@ -82,9 +82,9 @@ def _meta_status() -> dict[str, Any]:
         provider, model, configured = config.provider, config.model, bool(config.api_key)
     except Exception:  # an LLMConfigError, or a malformed URL that urlsplit rejects
         pass
-    from app.services.limits import public_host
+    from app.services.limits import full_file_score_import_allowed
     return {"enabled": enabled, "configured": configured, "provider": provider, "model": model,
-            "fullFileScoreImport": enabled and configured and provider == "meta" and model == "muse-spark-1.3" and not public_host()}
+            "fullFileScoreImport": enabled and configured and provider == "meta" and model == "muse-spark-1.3" and full_file_score_import_allowed()}
 
 
 def capabilities() -> ContractEnvelope:
@@ -124,7 +124,8 @@ def capabilities() -> ContractEnvelope:
                         "Score import defaults to local vector-PDF reading. Meta/auto requires explicit selection and may incur API cost "
                         "(the editor defaults to Meta assist when meta.enabled and meta.configured). Auto reviews up to 16 harmony "
                         "bars with whole-score context and infers uncovered song-form sections, at most three calls/$0.30. "
-                        "It never switches an unsupported local file to a whole-file request. A public host refuses meta; "
+                        "It never switches an unsupported local file to a whole-file request. A public host requires "
+                        "THEARTIST_PUBLIC_META_READER=1 for meta, with session and daily spend limits still enforced; "
                         "meta.fullFileScoreImport controls that explicit PDF/image option. With THEARTIST_META_ENABLED=0 "
                         "(meta.enabled false), attempted Meta calls return HTTP 503 and the local reader remains available.",
                         "Note-based harmony analysis is opt-in and returns reviewable interpretations, not verified original chords or imported melody notes.",

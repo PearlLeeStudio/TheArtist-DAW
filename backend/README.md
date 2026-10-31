@@ -28,8 +28,9 @@ Chroma/SentenceTransformers research dependencies remain in the environment but
 are not loaded by product retrieval.
 
 `THEARTIST_PUBLIC_HOST=1` disables local DAW operations, manual model warmup and
-MCP, and rejects whole-file Meta import. It retains local import and bounded Meta
-assist with per-session/daily spend limits. This flag is not authentication or a
+MCP. Whole-file Meta import requires `THEARTIST_PUBLIC_META_READER=1` as well as
+usable Meta configuration and enough session/daily budget for its $1.35 reservation.
+Local import and bounded Meta assist remain available. This flag is not authentication or a
 complete internet deployment configuration. The [single-origin launcher](../deploy/README.md)
 serves the built frontend after API routes; separate hosting needs a suitable
 `/api` reverse proxy. Vite's proxy is development-only.

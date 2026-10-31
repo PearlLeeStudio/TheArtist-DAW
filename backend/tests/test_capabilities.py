@@ -82,6 +82,17 @@ class CapabilitiesMetaTest(unittest.TestCase):
                     {"MODEL_API_KEY": KEY, "THEARTIST_META_ENABLED": "0"}):
             self.assertFalse(discovered(env)["meta"]["fullFileScoreImport"])
 
+    def test_public_reader_opt_in_advertises_the_option_only_with_usable_meta(self):
+        env = {"MODEL_API_KEY": KEY, "THEARTIST_PUBLIC_HOST": "1",
+               "THEARTIST_PUBLIC_META_READER": "1"}
+        self.assertTrue(discovered(env)["meta"]["fullFileScoreImport"])
+        for override in ({"THEARTIST_PUBLIC_META_READER": "0"},
+                         {"THEARTIST_PUBLIC_META_READER": "maybe"},
+                         {"THEARTIST_META_ENABLED": "0"}, {"MODEL_API_KEY": ""},
+                         {"LLM_PROVIDER": "baseten", "BASETEN_API_KEY": KEY}):
+            with self.subTest(override=override):
+                self.assertFalse(discovered({**env, **override})["meta"]["fullFileScoreImport"])
+
 
 if __name__ == "__main__":
     unittest.main()

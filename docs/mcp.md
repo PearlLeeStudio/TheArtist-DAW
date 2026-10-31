@@ -88,9 +88,10 @@ whole attachment. Full-file `meta` is a separate selection with one 75-second,
 8192-token, $1.35 call, returning harmony and form together.
 
 `meta.fullFileScoreImport` reports whether that explicit full-file option is
-available: enabled, configured, Standard `muse-spark-1.3`, and not a public host.
+available: enabled, configured, Standard `muse-spark-1.3`, and either a non-public
+host or explicit `THEARTIST_PUBLIC_META_READER=1`.
 Clients should treat an absent field as unavailable. The public REST server
-rejects full-file imports with 403 while retaining local and bounded assist.
+rejects full-file imports with 403 unless opted in, while retaining local and bounded assist.
 Configuration, budget and provider errors do not become local-looking successes.
 Request IDs, usage and costs are ledgered; per-request settlement excludes other
 callers' concurrent costs. A guarded open-weight JSON retry counts both attempts
