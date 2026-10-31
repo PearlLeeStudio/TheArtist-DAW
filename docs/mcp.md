@@ -109,6 +109,36 @@ the editor's streaming generation/cancellation workflow.
 
 `export_daw` writes a unique MIDI under `backend/.exports/` and opens Logic Pro or reveals the file for Ableton. It is annotated as a side effect and requires all three gates: server environment `THEARTIST_MCP_ALLOW_DAW=1`, per-call `confirmed: true` after the user's explicit request, and a direct loopback connection. Remote addresses and forwarded/proxied requests are rejected. Downloading MIDI has no such side effect and needs no opt-in.
 
+## Voyager on a shared host
+
+The public [Voyager project](https://voyager.pearlleestudio.co) currently plays
+pre-generated audio. Its Python adapter already defaults to MCP, but the website
+does not yet invoke that pipeline to generate a new song.
+
+TheArtist's Docker image includes this MCP server and SDK. The prepared Compose
+configuration starts the public REST service and Caddy, not a Voyager worker;
+`THEARTIST_PUBLIC_HOST=1` keeps `/mcp/` unmounted. Packaging the code in an image
+does not enable a remote endpoint.
+
+To add browser-triggered music, Voyager needs a request/job endpoint and its own
+rendering service: browser → Voyager job → shared Artist `build_song` → arrangement
+→ Voyager audio renderer/storage → audio URL for the browser. A separate Voyager
+container can share the same VM without duplicating the 18 music models. Images,
+journals, API keys and generated audio are not part of the public source/image.
+The source can remain private while the user-facing website is public.
+
+Two explicit transports are possible. REST can use the existing public music API.
+For MCP, an authenticated remote endpoint or a restricted internal endpoint must
+first be implemented, preserving public-host restrictions and the single shared
+model process. Neither exists in the prepared deployment yet. Do not enable all
+local-only routes merely to make `/mcp/` reachable, and do not retry through REST
+automatically after an MCP error.
+
+The 18-model CPU capacity probe covers symbolic music generation, not a separate
+vision model or concurrent audio rendering. An event-specific Voyager extension
+can use the permitted Meta API for interpretation; that integration still needs
+implementation and evaluation before a live end-to-end claim.
+
 ## Thin clients
 
 `backend/theartist_client/` provides an async Python adapter using the official MCP SDK. It only initializes the connection, calls tools, validates the versioned envelope, and decodes bounded MIDI. In an environment where that package and `mcp>=1.30,<2` are available:

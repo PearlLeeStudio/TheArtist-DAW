@@ -6,17 +6,18 @@ by one Python service through `/api/*`. It can also call Meta with a server-only
 Voyager can use the same API if live generation is added. Separate unrelated apps
 can run as separate services on this VM, with shared CPU/RAM/disk capacity.
 
-**The checked-in Docker recipe still downloads and checks only F1.** Before a full
-deployment, remove the download's `--smoke` restriction, validate every requested
-model without fallback, and verify all 18 choices through the hosted API. The
-single-model recipe is not completion of the full-catalog deployment.
+The Docker recipe downloads all 18 model choices. Startup checks every base
+checkpoint, adapter and learned embedding overlay, then loads every model and
+rejects a substituted identity. Public-host neural passes are serialized in the
+shared process. All 18 choices still need verification through the hosted API;
+the server has not been provisioned.
 
 ## Prepared configuration
 
 - Linux CPU-only Torch from the official PyTorch index, with a separate frozen
   runtime lock. No CUDA, Chroma or sentence-transformers packages in this lock.
-- F1, LoRA support and local OMT retrieval remain available; the image downloads
-  only F1 by default. Existing development/training dependencies are unchanged.
+- All seven base checkpoints, eleven genre LoRA adapters and local OMT retrieval
+  are included. Existing development/training dependencies are unchanged.
 - One Python worker; two CPU threads. Three eight-bar F1 runs, OMT readiness,
   `/api/health` and the built frontend passed in a fresh local runtime environment.
 - The local Mac probe used 880.2 MiB peak process memory and a 0.206 s median for
@@ -49,8 +50,10 @@ docker compose --env-file /srv/theartist.env -f /srv/TheArtist-DAW/deploy/compos
 After TLS and `/api/health` work, set Cloudflare Pages Production `BACKEND_ORIGIN`
 to the server's HTTPS origin and redeploy. Verify actual generation, Import failure
 boundaries, streamed results and MIDI download through the custom frontend domain.
-The release Artist frontend needs its own compatible API forwarding change before
-it can use this host; its current static deployment does not include that change.
+Both `artist-daw.pearlleestudio.co` and `artist.pearlleestudio.co` should use the
+same HTTPS backend and model process. The release Artist frontend needs its own
+compatible API forwarding change before it can use this host; its current static
+deployment does not include that change.
 
 For the optional Meta demo, add `MODEL_API_KEY` to the server environment and set
 `THEARTIST_META_ENABLED=1` after the storage check. Defaults here cap total spend at

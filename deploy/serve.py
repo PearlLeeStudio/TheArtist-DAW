@@ -8,18 +8,19 @@ sys.path.insert(0, str(ROOT / "backend"))
 os.environ.setdefault("THEARTIST_PUBLIC_HOST", "1")
 os.environ.setdefault("THEARTIST_SERVE_FRONTEND", "1")
 os.environ.setdefault("THEARTIST_META_ENABLED", "0")
-os.environ.setdefault("THEARTIST_WARMUP_KEYS", "ft_f1")
+os.environ.setdefault("THEARTIST_WARMUP", "1")
+os.environ.setdefault("THEARTIST_WARMUP_KEYS", "")
 
 
 def main():
     import uvicorn
     from app.main import app
     from app.services.contracts import capabilities
-    from app.services.inference import ModelRegistry
+    from app.services.serving_readiness import require_full_catalog
     from app.services.env_flags import meta_enabled
 
-    if ModelRegistry.get().load_model("ft_f1") is None:
-        raise SystemExit("F1 is missing or invalid; run model/_download.py --smoke before serving")
+    models = require_full_catalog()
+    print(f"Serving all {len(models)} released model choices", flush=True)
     sources = capabilities().data["rag"]["sources"]
     if sources != {"omt": "ready", "berklee": "disabled"}:
         raise SystemExit("Serving requires prepared OMT and disabled Berklee; run backend/scripts/setup_omt.py")

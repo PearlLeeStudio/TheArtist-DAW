@@ -17,11 +17,11 @@ COPY --from=frontend /app/frontend/dist /app/frontend/dist
 ENV PATH="/app/deploy/runtime/.venv/bin:$PATH" \
     THEARTIST_PUBLIC_HOST=1 THEARTIST_SERVE_FRONTEND=1 THEARTIST_META_ENABLED=0 \
     THEARTIST_DISABLE_RAG=0 THEARTIST_RAG_OMT_ENABLED=1 THEARTIST_RAG_BERKLEE_ENABLED=0 \
-    THEARTIST_WARMUP_KEYS=ft_f1 THEARTIST_META_LEDGER=/data/meta_ledger.json \
+    THEARTIST_WARMUP=1 THEARTIST_WARMUP_KEYS="" THEARTIST_META_LEDGER=/data/meta_ledger.json \
     THEARTIST_JUDGE_LEDGER=/data/judge_ledger.json PORT=7860 \
     OMP_NUM_THREADS=2 MKL_NUM_THREADS=2
 RUN python /app/backend/scripts/setup_omt.py \
-    && python /app/model/_download.py --smoke \
+    && python /app/model/_download.py \
     && mkdir -p /data \
     && useradd --uid 1000 --create-home artist \
     && chown -R artist:artist /data /app

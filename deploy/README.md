@@ -4,14 +4,16 @@ The built frontend and API can run in one Python process on port 7860. This
 package does not provision a hosting account, publish an app or configure DNS.
 
 Prepare the locked backend environment, build the frontend, run
-`backend/scripts/setup_omt.py`, and download F1 with `model/_download.py --smoke`.
+`backend/scripts/setup_omt.py`, and download all 18 model choices with `model/_download.py`
+(without `--smoke`).
 Then use absolute paths:
 
 ```sh
 uv run --frozen --directory /absolute/TheArtist-DAW/backend python /absolute/TheArtist-DAW/deploy/serve.py
 ```
 
-Open `http://localhost:7860`. The launcher requires a valid F1 checkpoint and
+Open `http://localhost:7860`. The launcher requires every released base checkpoint,
+LoRA adapter and learned embedding overlay, verifies each loaded model's identity and
 ready OMT, serves only `frontend/dist`, and defaults to public-host restrictions
 with Meta disabled. It refuses to start if required assets are missing. For
 local-only access set `HOST=127.0.0.1`. For a host-managed deployment, configure
@@ -47,7 +49,7 @@ docker run --rm -p 7860:7860 theartist-demo
 ```
 
 The recipe builds assets separately, uses the frozen CPU runtime/npm locks, downloads
-public F1 and reviewed OMT, and runs as an unprivileged user. API keys and local
+all seven base checkpoints, eleven genre adapters and reviewed OMT, and runs as an unprivileged user. API keys and local
 model/corpus directories are excluded from the build context. For Meta, supply
 server secrets at runtime and mount durable writable storage at `/data`.
 
@@ -58,5 +60,8 @@ and excludes unused embedding/vector research dependencies. Its fresh local Mac
 environment passed actual F1/OMT generation, API health and built-frontend checks;
 Linux image size, memory, external access and host limits remain unmeasured.
 See the [shared CPU server recipe](vps.md) for HTTPS, persistent cost storage and
-disabling Meta while retaining the HF model. This recipe does not mean a live
+disabling Meta while retaining the full HF catalog. Public-host neural generation
+is serialized across clients to bound concurrent working memory. `catalog_probe.py`
+keeps every model resident and exercises actual generation without Meta calls.
+This recipe does not mean a live
 public model server has been provisioned.

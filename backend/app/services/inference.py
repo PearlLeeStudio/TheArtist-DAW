@@ -13,6 +13,7 @@ import os
 import sys
 import threading
 from collections.abc import Iterable, Mapping
+from contextlib import nullcontext
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -28,6 +29,7 @@ from app.services.song_form import (
 from app.services.voice_leading import apply_voice_leading_bass
 
 log = logging.getLogger(__name__)
+_HOSTED_INFERENCE_LOCK = threading.Lock()
 
 _AI_ROOT = Path(__file__).resolve().parent.parent.parent.parent / "ai"
 
@@ -491,23 +493,26 @@ def generate_with_model(
     # Every token that is not a bracketed special one ([BAR], [EOS], [KEY:...]) is a chord.
     chord_ids = {i for tok, i in tokenizer.token2id.items() if not tok.startswith("[")}
 
-    output = loaded.model.generate(
-        prompt,
-        max_new_tokens=max_new,
-        temperature=temperature,
-        top_k=top_k,
-        top_p=top_p,
-        eos_id=tokenizer.eos_id,
-        repetition_penalty=repetition_penalty,
-        no_repeat_ngram_size=no_repeat_ngram_size,
-        ignore_repeat_token_ids=exempt,
-        n_bars=n_bars,
-        bar_id=tokenizer.bar_id,
-        chord_ids=chord_ids,
-        end_ids={tokenizer.pad_id},
-        generator=generator,
-        use_cache=not env_bool("THEARTIST_DISABLE_KV_CACHE", False),
-    )
+    # All REST/song/MCP callers share this function and this model process.
+    # On the small public host, only one neural pass allocates its KV cache at a time.
+    with _HOSTED_INFERENCE_LOCK if env_bool("THEARTIST_PUBLIC_HOST", False) else nullcontext():
+        output = loaded.model.generate(
+            prompt,
+            max_new_tokens=max_new,
+            temperature=temperature,
+            top_k=top_k,
+            top_p=top_p,
+            eos_id=tokenizer.eos_id,
+            repetition_penalty=repetition_penalty,
+            no_repeat_ngram_size=no_repeat_ngram_size,
+            ignore_repeat_token_ids=exempt,
+            n_bars=n_bars,
+            bar_id=tokenizer.bar_id,
+            chord_ids=chord_ids,
+            end_ids={tokenizer.pad_id},
+            generator=generator,
+            use_cache=not env_bool("THEARTIST_DISABLE_KV_CACHE", False),
+        )
 
     gen_ids = output[0, len(prompt_ids):].tolist()
     gen_tokens = tokenizer.decode(gen_ids)

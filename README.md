@@ -14,6 +14,29 @@
   <img alt="Stack" src="https://img.shields.io/badge/stack-React%2019%20%C2%B7%20FastAPI%20%C2%B7%20PyTorch-1c1917?style=flat-square">
 </p>
 
+## Web projects
+
+| Project | Website | Role |
+|---|---|---|
+| **TheArtist-DAW — hackathon demo** | [artist-daw.pearlleestudio.co](https://artist-daw.pearlleestudio.co) | Score → composition → arrangement → DAW workflow developed in this repository |
+| TheArtist — public release | [artist.pearlleestudio.co](https://artist.pearlleestudio.co) | Separately deployed release editor |
+| **TheVoyager — project extension** | [voyager.pearlleestudio.co](https://voyager.pearlleestudio.co) | Travel globe, stories and photographs accompanied by generated music |
+
+TheVoyager extends the music service into a travel experience: its Python adapter
+requests a song through MCP `build_song` (or explicitly selected REST), then its
+own rendering pipeline turns the arrangement into audio. The published Voyager
+currently plays pre-generated WAV files; browser-triggered generation is not yet
+connected. Voyager's application source and personal travel data are not bundled
+in this repository. Its existing travel experience and model assets are separate
+from the event contributions recorded in [HACKATHON.md](HACKATHON.md).
+
+The websites are published on Cloudflare Pages. The two Artist editors are intended
+to share one Docker backend serving **all 18 released model choices** on DigitalOcean;
+the external model server is not yet connected. See [deployment and capacity](deploy/vps.md).
+The Docker image includes MCP code, but public-host mode does not expose its MCP
+endpoint. [Voyager's API/MCP deployment path](docs/mcp.md#voyager-on-a-shared-host)
+distinguishes the existing adapter from the remaining hosted integration.
+
 ## Hackathon workflow
 
 **Build for Your World.** The author's own problem: a chord sketch stops at eight
@@ -466,6 +489,7 @@ TheArtist-DAW/
 │   │   ├── models/                      # Pydantic music, plan, review, import/export contracts
 │   │   └── services/
 │   │       ├── inference.py             # Cached sampling → rank → form rules → voice leading
+│   │       ├── serving_readiness.py     # Require every model/adapter before hosted startup
 │   │       ├── theory_rag.py            # Source-isolated OMT relevance and attributed excerpts
 │   │       ├── planner.py · review.py   # Meta form planning and candidate review
 │   │       ├── llm.py · limits.py       # Bounded Meta calls, attempt costs and admission limits
@@ -655,7 +679,13 @@ TheArtist-DAW/
 ├── experiments/           # Public fixtures, request traces and evaluation results
 ├── backend/tests/         # API, service and contract regression tests
 ├── docs/                  # MCP, score analysis, evaluation and manual-check contracts
-├── deploy/                # Public-host configuration examples
+├── deploy/
+│   ├── Dockerfile         # Frontend build, CPU runtime and all 18 HF model assets
+│   ├── compose.yaml       # Shared model service, Caddy HTTPS and persistent volumes
+│   ├── serve.py           # Full-catalog startup checks and one Python worker
+│   ├── catalog_probe.py   # All models resident; actual 8/32/64-bar CPU generation
+│   ├── runtime/           # Frozen CPU serving dependencies
+│   └── vps.md             # Hosting, capacity evidence and outstanding external checks
 ├── model/_download.py     # Fetch released checkpoints into ai/checkpoints/
 ├── screenshot/            # Application and export captures
 ├── API_SPEC.md            # REST request/response contract
