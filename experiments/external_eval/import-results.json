@@ -1,0 +1,2425 @@
+{
+  "method": "Eight editions / seven unique compositions; local support coverage. Three fixed editions optionally read by Meta. Written-bar/key/meter agreement does not establish chord correctness.",
+  "maxMetaCalls": 3,
+  "batchCapUsd": 5.0,
+  "cases": [
+    {
+      "id": "bach-bwv846-prelude",
+      "sourcePage": "https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=5",
+      "license": "Public Domain",
+      "sha256": "b1c5be9fb63954df9c1a3e7b651ae930c4e5e332a5ab3e14b197379cfa04c35a",
+      "local": {
+        "supported": false,
+        "complete": false,
+        "bars": 0,
+        "notes": 0,
+        "key": null,
+        "meter": null,
+        "unresolved": [
+          "systems_without_measure_boundaries: 24"
+        ]
+      },
+      "reference": {
+        "key": "C major",
+        "meter": [
+          4,
+          4
+        ],
+        "writtenBars": 35
+      },
+      "meta": {
+        "status": "completed",
+        "response": {
+          "title": "Das Wohltemperierte Clavier I Prelude 1",
+          "key": "C major",
+          "timeSignature": [
+            4,
+            4
+          ],
+          "measures": [
+            {
+              "chords": [
+                "C"
+              ],
+              "sourceLabel": "p1 sys1 m1",
+              "needsReview": true,
+              "note": "RH C-E-G arpeggiation, bass C-C. C major triad; melody-only? No, full texture.",
+              "chordBasis": "inferred",
+              "confidence": "high",
+              "notes": [],
+              "writtenNotes": [],
+              "bassNotes": [],
+              "noChord": false,
+              "timeSignature": null,
+              "analysisSource": "meta",
+              "requestId": "e681a722-b626-448e-8ea8-141b1e63d071",
+              "model": "muse-spark-1.3"
+            },
+            {
+              "chords": [
+                "Dm7/C"
+              ],
+              "sourceLabel": "p1 sys1 m2",
+              "needsReview": true,
+              "note": "RH D-F-A-C-D, bass C. Dm7 over C pedal.",
+              "chordBasis": "inferred",
+              "confidence": "high",
+              "notes": [],
+              "writtenNotes": [],
+              "bassNotes": [],
+              "noChord": false,
+              "timeSignature": null,
+              "analysisSource": "meta",
+              "requestId": "e681a722-b626-448e-8ea8-141b1e63d071",
+              "model": "muse-spark-1.3"
+            },
+            {
+              "chords": [
+                "G7/D"
+              ],
+              "sourceLabel": "p1 sys1 m3",
+              "needsReview": true,
+              "note": "RH D-E-G-D-F, bass D then G. G-B-D-F implied; G7 in 3rd inversion moving to root.",
+              "chordBasis": "inferred",
+              "confidence": "high",
+              "notes": [],
+              "writtenNotes": [],
+              "bassNotes": [],
+              "noChord": false,
+              "timeSignature": null,
+              "analysisSource": "meta",
+              "requestId": "e681a722-b626-448e-8ea8-141b1e63d071",
+              "model": "muse-spark-1.3"
+            },
+            {
+              "chords": [
+                "C/E"
+              ],
+              "sourceLabel": "p1 sys2 m4",
+              "needsReview": true,
+              "note": "RH E-G-C-E-G, bass E-E. First-inversion C major.",
+              "chordBasis": "inferred",
+              "confidence": "high",
+              "notes": [],
+              "writtenNotes": [],
+              "bassNotes": [],
+              "noChord": false,
+              "timeSignature": null,
+              "analysisSource": "meta",
+              "requestId": "e681a722-b626-448e-8ea8-141b1e63d071",
+              "model": "muse-spark-1.3"
+            },
+            {
+              "chords": [
+                "Fmaj7"
+              ],
+              "sourceLabel": "p1 sys2 m5",
+              "needsReview": true,
+              "note": "RH E-G-A-C-E, bass F-F. F-A-C-E = Fmaj7.",
+              "chordBasis": "inferred",
+              "confidence": "high",
+              "notes": [],
+              "writtenNotes": [],
+              "bassNotes": [],
+              "noChord": false,
+              "timeSignature": null,
+              "analysisSource": "meta",
+              "requestId": "e681a722-b626-448e-8ea8-141b1e63d071",
+              "model": "muse-spark-1.3"
+            },
+            {
+              "chords": [
+                "Dm7/G"
+              ],
+              "sourceLabel": "p1 sys2 m6",
+              "needsReview": true,
+              "note": "RH F#-A-D-F-A?, bass F then G. F# implies D7 secondary; Dm/G to G pedal, G9sus sound.",
+              "chordBasis": "inferred",
+              "confidence": "medium",
+              "notes": [],
+              "writtenNotes": [],
+              "bassNotes": [],
+              "noChord": false,
+              "timeSignature": null,
+              "analysisSource": "meta",
+              "requestId": "e681a722-b626-448e-8ea8-141b1e63d071",
+              "model": "muse-spark-1.3"
+            },
+            {
+              "chords": [
+                "G7"
+              ],
+              "sourceLabel": "p1 sys3 m7",
+              "needsReview": true,
+              "note": "RH G-A-B-D-G, bass G-G. G major with F natural? G7 context.",
+              "chordBasis": "inferred",
+              "confidence": "high",
+              "notes": [],
+              "writtenNotes": [],
+              "bassNotes": [],
+              "noChord": false,
+              "timeSignature": null,
+              "analysisSource": "meta",
+              "requestId": "e681a722-b626-448e-8ea8-141b1e63d071",
+              "model": "muse-spark-1.3"
+            },
+            {
+              "chords": [
+                "C/G"
+              ],
+              "sourceLabel": "p1 sys3 m8",
+              "needsReview": true,
+              "note": "RH G-A-C-E-G, bass C-C? Actually G bass to C. C triad C-E-G.",
+              "chordBasis": "inferred",
+              "confidence": "high",
+              "notes": [],
+              "writtenNotes": [],
+              "bassNotes": [],
+              "noChord": false,
+              "timeSignature": null,
+              "analysisSource": "meta",
+              "requestId": "e681a722-b626-448e-8ea8-141b1e63d071",
+              "model": "muse-spark-1.3"
+            },
+            {
+              "chords": [
+                "C"
+              ],
+              "sourceLabel": "p1 sys3 m9",
+              "needsReview": true,
+              "note": "RH similar C-E-G pattern, bass C-C. Prolonged tonic.",
+              "chordBasis": "inferred",
+              "confidence": "medium",
+              "notes": [],
+              "writtenNotes": [],
+              "bassNotes": [],
+              "noChord": false,
+              "timeSignature": null,
+              "analysisSource": "meta",
+              "requestId": "e681a722-b626-448e-8ea8-141b1e63d071",
+              "model": "muse-spark-1.3"
+            },
+            {
+              "chords": [
+                "A7/C#"
+              ],
+              "sourceLabel": "p1 sys4 m10",
+              "needsReview": true,
+              "note": "Visible C# accidental. RH C#-E-G-C-E, bass E then D? A-C#-E-G = A7.",
+              "chordBasis": "inferred",
+              "confidence": "high",
+              "notes": [],
+              "writtenNotes": [],
+              "bassNotes": [],
+              "noChord": false,
+              "timeSignature": null,
+              "analysisSource": "meta",
+              "requestId": "e681a722-b626-448e-8ea8-141b1e63d071",
+              "model": "muse-spark-1.3"
+            },
+            {
+              "chords": [
+                "D7"
+              ],
+              "sourceLabel": "p1 sys4 m11",
+              "needsReview": true,
+              "note": "RH D-E-F-D-F, bass D-D. D-F#-A-C implied with prior C# resolution; D7.",
+              "chordBasis": "inferred",
+              "confidence": "high",
+              "notes": [],
+              "writtenNotes": [],
+              "bassNotes": [],
+              "noChord": false,
+              "timeSignature": null,
+              "analysisSource": "meta",
+              "requestId": "e681a722-b626-448e-8ea8-141b1e63d071",
+              "model": "muse-spark-1.3"
+            },
+            {
+              "chords": [
+                "G"
+              ],
+              "sourceLabel": "p1 sys4 m12",
+              "needsReview": true,
+              "note": "Visible F# accidental. RH F#-G-D-G-B, bass G-G then? G major, D7 to G.",
+              "chordBasis": "inferred",
+              "confidence": "medium",
+              "notes": [],
+              "writtenNotes": [],
+              "bassNotes": [],
+              "noChord": false,
+              "timeSignature": null,
+              "analysisSource": "meta",
+              "requestId": "e681a722-b626-448e-8ea8-141b1e63d071",
+              "model": "muse-spark-1.3"
+            },
+            {
+              "chords": [
+                "C/G"
+              ],
+              "sourceLabel": "p1 sys5 m13",
+              "needsReview": true,
+              "note": "RH G-A-C-E-G, bass G then E? C triad over G pedal moving to E.",
+              "chordBasis": "inferred",
+              "confidence": "medium",
+              "notes": [],
+              "writtenNotes": [],
+              "bassNotes": [],
+              "noChord": false,
+              "timeSignature": null,
+              "analysisSource": "meta",
+              "requestId": "e681a722-b626-448e-8ea8-141b1e63d071",
+              "model": "muse-spark-1.3"
+            },
+            {
+              "chords": [
+                "C/E"
+              ],
+              "sourceLabel": "p1 sys5 m14",
+              "needsReview": true,
+              "note": "RH E-F-G-A-B?, with Bb accidental in bass. C-E-G with passing Bb = C then G7/Bb area.",
+              "chordBasis": "inferred",
+              "confidence": "medium",
+              "notes": [],
+              "writtenNotes": [],
+              "bassNotes": [],
+              "noChord": false,
+              "timeSignature": null,
+              "analysisSource": "meta",
+              "requestId": "e681a722-b626-448e-8ea8-141b1e63d071",
+              "model": "muse-spark-1.3"
+            },
+            {
+              "chords": [
+                "F/C"
+              ],
+              "sourceLabel": "p1 sys5 m15",
+              "needsReview": true,
+              "note": "RH F-A-C-F-A, bass F-F. F major.",
+              "chordBasis": "inferred",
+              "confidence": "medium",
+              "notes": [],
+              "writtenNotes": [],
+              "bassNotes": [],
+              "noChord": false,
+              "timeSignature": null,
+              "analysisSource": "meta",
+              "requestId": "e681a722-b626-448e-8ea8-141b1e63d071",
+              "model": "muse-spark-1.3"
+            },
+            {
+              "chords": [
+                "Dm7"
+              ],
+              "sourceLabel": "p1 sys6 m16",
+              "needsReview": true,
+              "note": "RH F-G-A-D-F, bass D-D. D-F-A-C implied Dm7.",
+              "chordBasis": "inferred",
+              "confidence": "medium",
+              "notes": [],
+              "writtenNotes": [],
+              "bassNotes": [],
+              "noChord": false,
+              "timeSignature": null,
+              "analysisSource": "meta",
+              "requestId": "e681a722-b626-448e-8ea8-141b1e63d071",
+              "model": "muse-spark-1.3"
+            },
+            {
+              "chords": [
+                "G7"
+              ],
+              "sourceLabel": "p1 sys6 m17",
+              "needsReview": true,
+              "note": "RH G-A-B-D-G, bass G-G. G-B-D-F implied dominant.",
+              "chordBasis": "inferred",
+              "confidence": "medium",
+              "notes": [],
+              "writtenNotes": [],
+              "bassNotes": [],
+              "noChord": false,
+              "timeSignature": null,
+              "analysisSource": "meta",
+              "requestId": "e681a722-b626-448e-8ea8-141b1e63d071",
+              "model": "muse-spark-1.3"
+            },
+            {
+              "chords": [
+                "C"
+              ],
+              "sourceLabel": "p1 sys6 m18",
+              "needsReview": true,
+              "note": "RH G-A-C-E-G, bass C-C. Return to C major triad.",
+              "chordBasis": "inferred",
+              "confidence": "high",
+              "notes": [],
+              "writtenNotes": [],
+              "bassNotes": [],
+              "noChord": false,
+              "timeSignature": null,
+              "analysisSource": "meta",
+              "requestId": "e681a722-b626-448e-8ea8-141b1e63d071",
+              "model": "muse-spark-1.3"
+            },
+            {
+              "chords": [
+                "C"
+              ],
+              "sourceLabel": "p2 sys1 m19",
+              "needsReview": true,
+              "note": "p2 sys1 m19 same C-E-G pattern, bass C-C.",
+              "chordBasis": "inferred",
+              "confidence": "high",
+              "notes": [],
+              "writtenNotes": [],
+              "bassNotes": [],
+              "noChord": false,
+              "timeSignature": null,
+              "analysisSource": "meta",
+              "requestId": "e681a722-b626-448e-8ea8-141b1e63d071",
+              "model": "muse-spark-1.3"
+            },
+            {
+              "chords": [
+                "F"
+              ],
+              "sourceLabel": "p2 sys1 m20",
+              "needsReview": true,
+              "note": "Visible Bb accidental RH. Bb-F-A-D-F, bass D-D. Bb major / Dm7b5 to F area; interpreted as F prolongation.",
+              "chordBasis": "inferred",
+              "confidence": "medium",
+              "notes": [],
+              "writtenNotes": [],
+              "bassNotes": [],
+              "noChord": false,
+              "timeSignature": null,
+              "analysisSource": "meta",
+              "requestId": "e681a722-b626-448e-8ea8-141b1e63d071",
+              "model": "muse-spark-1.3"
+            },
+            {
+              "chords": [
+                "C"
+              ],
+              "sourceLabel": "p2 sys1 m21",
+              "needsReview": true,
+              "note": "RH C-D-E-G-C, bass C then C. C major.",
+              "chordBasis": "inferred",
+              "confidence": "medium",
+              "notes": [],
+              "writtenNotes": [],
+              "bassNotes": [],
+              "noChord": false,
+              "timeSignature": null,
+              "analysisSource": "meta",
+              "requestId": "e681a722-b626-448e-8ea8-141b1e63d071",
+              "model": "muse-spark-1.3"
+            },
+            {
+              "chords": [
+                "A7"
+              ],
+              "sourceLabel": "p2 sys2 m22",
+              "needsReview": true,
+              "note": "Visible Bb RH and C# in bass. Bass C#-C, RH Bb-C-E-G. A-C#-E-G = A7, Bb passing.",
+              "chordBasis": "inferred",
+              "confidence": "high",
+              "notes": [],
+              "writtenNotes": [],
+              "bassNotes": [],
+              "noChord": false,
+              "timeSignature": null,
+              "analysisSource": "meta",
+              "requestId": "e681a722-b626-448e-8ea8-141b1e63d071",
+              "model": "muse-spark-1.3"
+            },
+            {
+              "chords": [
+                "Dm"
+              ],
+              "sourceLabel": "p2 sys2 m23",
+              "needsReview": true,
+              "note": "Bass Bb then G, RH D-E-F-D-F. Dm with Bb passing (Bb major to Dm). Interpreted Dm.",
+              "chordBasis": "inferred",
+              "confidence": "medium",
+              "notes": [],
+              "writtenNotes": [],
+              "bassNotes": [],
+              "noChord": false,
+              "timeSignature": null,
+              "analysisSource": "meta",
+              "requestId": "e681a722-b626-448e-8ea8-141b1e63d071",
+              "model": "muse-spark-1.3"
+            },
+            {
+              "chords": [
+                "G7"
+              ],
+              "sourceLabel": "p2 sys2 m24",
+              "needsReview": true,
+              "note": "RH G-A-B-D-G, bass G-G. Dominant G.",
+              "chordBasis": "inferred",
+              "confidence": "medium",
+              "notes": [],
+              "writtenNotes": [],
+              "bassNotes": [],
+              "noChord": false,
+              "timeSignature": null,
+              "analysisSource": "meta",
+              "requestId": "e681a722-b626-448e-8ea8-141b1e63d071",
+              "model": "muse-spark-1.3"
+            },
+            {
+              "chords": [
+                "C"
+              ],
+              "sourceLabel": "p2 sys3 m25",
+              "needsReview": true,
+              "note": "RH G-A-C-E-G, bass C-C. Tonic C.",
+              "chordBasis": "inferred",
+              "confidence": "high",
+              "notes": [],
+              "writtenNotes": [],
+              "bassNotes": [],
+              "noChord": false,
+              "timeSignature": null,
+              "analysisSource": "meta",
+              "requestId": "e681a722-b626-448e-8ea8-141b1e63d071",
+              "model": "muse-spark-1.3"
+            },
+            {
+              "chords": [
+                "C"
+              ],
+              "sourceLabel": "p2 sys3 m26",
+              "needsReview": true,
+              "note": "Similar C-E-G pattern, bass C-C. Tonic prolongation.",
+              "chordBasis": "inferred",
+              "confidence": "medium",
+              "notes": [],
+              "writtenNotes": [],
+              "bassNotes": [],
+              "noChord": false,
+              "timeSignature": null,
+              "analysisSource": "meta",
+              "requestId": "e681a722-b626-448e-8ea8-141b1e63d071",
+              "model": "muse-spark-1.3"
+            },
+            {
+              "chords": [
+                "F"
+              ],
+              "sourceLabel": "p2 sys3 m27",
+              "needsReview": true,
+              "note": "RH F-G-A-C-F, bass F-F. Subdominant F.",
+              "chordBasis": "inferred",
+              "confidence": "medium",
+              "notes": [],
+              "writtenNotes": [],
+              "bassNotes": [],
+              "noChord": false,
+              "timeSignature": null,
+              "analysisSource": "meta",
+              "requestId": "e681a722-b626-448e-8ea8-141b1e63d071",
+              "model": "muse-spark-1.3"
+            },
+            {
+              "chords": [
+                "C7/E"
+              ],
+              "sourceLabel": "p2 sys4 m28",
+              "needsReview": true,
+              "note": "Visible Bb bass and G# RH. Bass Bb? then G? RH G#-B-E-G. Diminished / C7 altered leading to F; interpreted as C7.",
+              "chordBasis": "inferred",
+              "confidence": "medium",
+              "notes": [],
+              "writtenNotes": [],
+              "bassNotes": [],
+              "noChord": false,
+              "timeSignature": null,
+              "analysisSource": "meta",
+              "requestId": "e681a722-b626-448e-8ea8-141b1e63d071",
+              "model": "muse-spark-1.3"
+            },
+            {
+              "chords": [
+                "F"
+              ],
+              "sourceLabel": "p2 sys4 m29",
+              "needsReview": true,
+              "note": "Visible natural sign. RH A-Bb-C-F-A, bass F-F. F major.",
+              "chordBasis": "inferred",
+              "confidence": "medium",
+              "notes": [],
+              "writtenNotes": [],
+              "bassNotes": [],
+              "noChord": false,
+              "timeSignature": null,
+              "analysisSource": "meta",
+              "requestId": "e681a722-b626-448e-8ea8-141b1e63d071",
+              "model": "muse-spark-1.3"
+            },
+            {
+              "chords": [
+                "F#dim7"
+              ],
+              "sourceLabel": "p2 sys4 m30",
+              "needsReview": true,
+              "note": "RH A-Bb-C-Eb-F#, bass F then Ab? Diminished passing F# -A-C-Eb.",
+              "chordBasis": "inferred",
+              "confidence": "medium",
+              "notes": [],
+              "writtenNotes": [],
+              "bassNotes": [],
+              "noChord": false,
+              "timeSignature": null,
+              "analysisSource": "meta",
+              "requestId": "e681a722-b626-448e-8ea8-141b1e63d071",
+              "model": "muse-spark-1.3"
+            },
+            {
+              "chords": [
+                "G7"
+              ],
+              "sourceLabel": "p2 sys5 m31",
+              "needsReview": true,
+              "note": "RH G-A-B-F-G, bass G-G. G-B-D-F dominant.",
+              "chordBasis": "inferred",
+              "confidence": "high",
+              "notes": [],
+              "writtenNotes": [],
+              "bassNotes": [],
+              "noChord": false,
+              "timeSignature": null,
+              "analysisSource": "meta",
+              "requestId": "e681a722-b626-448e-8ea8-141b1e63d071",
+              "model": "muse-spark-1.3"
+            },
+            {
+              "chords": [
+                "G7"
+              ],
+              "sourceLabel": "p2 sys5 m32",
+              "needsReview": true,
+              "note": "Visible Bb RH. RH Gb?-Bb-C-E-G, bass Db? pedal G? Dominant pedal G7 with chromatic descent.",
+              "chordBasis": "inferred",
+              "confidence": "high",
+              "notes": [],
+              "writtenNotes": [],
+              "bassNotes": [],
+              "noChord": false,
+              "timeSignature": null,
+              "analysisSource": "meta",
+              "requestId": "e681a722-b626-448e-8ea8-141b1e63d071",
+              "model": "muse-spark-1.3"
+            },
+            {
+              "chords": [
+                "C"
+              ],
+              "sourceLabel": "p2 sys6 m33",
+              "needsReview": true,
+              "note": "Bass C pedal. Arpeggiated C major scale descent to C-E-G. Tonic pedal.",
+              "chordBasis": "inferred",
+              "confidence": "high",
+              "notes": [],
+              "writtenNotes": [],
+              "bassNotes": [],
+              "noChord": false,
+              "timeSignature": null,
+              "analysisSource": "meta",
+              "requestId": "e681a722-b626-448e-8ea8-141b1e63d071",
+              "model": "muse-spark-1.3"
+            },
+            {
+              "chords": [
+                "G7",
+                "C"
+              ],
+              "sourceLabel": "p2 sys6 m34",
+              "needsReview": true,
+              "note": "Bass G pedal. RH D-F-G-B-C-D-E-F then C-D-E. Dominant G7 resolving toward tonic.",
+              "chordBasis": "inferred",
+              "confidence": "high",
+              "notes": [],
+              "writtenNotes": [],
+              "bassNotes": [],
+              "noChord": false,
+              "timeSignature": null,
+              "analysisSource": "meta",
+              "requestId": "e681a722-b626-448e-8ea8-141b1e63d071",
+              "model": "muse-spark-1.3"
+            },
+            {
+              "chords": [
+                "C"
+              ],
+              "sourceLabel": "p2 sys6 m35",
+              "needsReview": true,
+              "note": "Final fermata chord: bass C-G-C, treble C-E-G-C. C major triad in root position.",
+              "chordBasis": "inferred",
+              "confidence": "high",
+              "notes": [],
+              "writtenNotes": [],
+              "bassNotes": [],
+              "noChord": false,
+              "timeSignature": null,
+              "analysisSource": "meta",
+              "requestId": "e681a722-b626-448e-8ea8-141b1e63d071",
+              "model": "muse-spark-1.3"
+            }
+          ],
+          "sections": [
+            {
+              "section": null,
+              "label": "Prelude mm1-35 continuous arpeggiation",
+              "startMeasure": 0,
+              "length": 35,
+              "basis": "inferred",
+              "note": "Single continuous prelude texture of broken chords, no printed headings; tonic to dominant pedal m31-34 and final tonic m35."
+            }
+          ],
+          "warnings": [
+            "Key C major is inferred from no sharps/flats, C-major sonorities and final C-major chord, not printed as text.",
+            "No printed chord symbols in score; all chords are inferred from sounding notes and bass for human review.",
+            "Time signature copied as common-time 4/4; key and harmony are interpretive, not composer intent.",
+            "Harmony analysis is an interpretation, not a transcription of the original chords. Review every inferred chord, its note evidence, and the key before importing.",
+            "The key is inferred from readable notation, not explicitly printed; confirm it before importing.",
+            "PDF reading uses at most the first 50 page images and 100 pages of text. Split longer scores and check the complete written order."
+          ],
+          "model": "muse-spark-1.3",
+          "requestId": "e681a722-b626-448e-8ea8-141b1e63d071",
+          "mode": "infer_harmony",
+          "analysisSource": "meta",
+          "formAnalysis": null
+        },
+        "barCountMatches": true,
+        "keyMatches": true,
+        "meterMatches": true,
+        "chordAccuracyScored": false
+      },
+      "apiUsage": [
+        {
+          "label": "score.import",
+          "provider": "meta",
+          "model": "muse-spark-1.3",
+          "request_id": "e681a722-b626-448e-8ea8-141b1e63d071",
+          "usage": {
+            "prompt_tokens": 6542,
+            "cached_tokens": 0,
+            "completion_tokens": 5833,
+            "reasoning_tokens": 3263
+          },
+          "status": "settled",
+          "settled_usd": 0.03296775,
+          "latency_ms": 37210
+        }
+      ],
+      "noteEvidence": {
+        "method": "Union of proposed chord pitch classes versus reference MIDI note-on pitch classes in each of Bach BWV 846 written bars 1–32. No repeats/pickup; 4 quarter notes per bar. Final three texture-changing bars excluded. Exploratory evidence overlap, not harmonic correctness or note transcription accuracy.",
+        "midiSha256": "874e07d0479542971bfceaf420d6117da8d602d89d26eea4610e7dd1ef58bf26",
+        "bars": [
+          {
+            "writtenBar": 1,
+            "referenceNoteOnPcs": [
+              0,
+              4,
+              7
+            ],
+            "proposedChordPcs": [
+              0,
+              4,
+              7
+            ],
+            "exactPitchSet": true,
+            "precision": 1.0,
+            "recall": 1.0,
+            "jaccard": 1.0,
+            "errorType": null
+          },
+          {
+            "writtenBar": 2,
+            "referenceNoteOnPcs": [
+              0,
+              2,
+              5,
+              9
+            ],
+            "proposedChordPcs": [
+              0,
+              2,
+              5,
+              9
+            ],
+            "exactPitchSet": true,
+            "precision": 1.0,
+            "recall": 1.0,
+            "jaccard": 1.0,
+            "errorType": null
+          },
+          {
+            "writtenBar": 3,
+            "referenceNoteOnPcs": [
+              2,
+              5,
+              7,
+              11
+            ],
+            "proposedChordPcs": [
+              2,
+              5,
+              7,
+              11
+            ],
+            "exactPitchSet": true,
+            "precision": 1.0,
+            "recall": 1.0,
+            "jaccard": 1.0,
+            "errorType": null
+          },
+          {
+            "writtenBar": 4,
+            "referenceNoteOnPcs": [
+              0,
+              4,
+              7
+            ],
+            "proposedChordPcs": [
+              0,
+              4,
+              7
+            ],
+            "exactPitchSet": true,
+            "precision": 1.0,
+            "recall": 1.0,
+            "jaccard": 1.0,
+            "errorType": null
+          },
+          {
+            "writtenBar": 5,
+            "referenceNoteOnPcs": [
+              0,
+              4,
+              9
+            ],
+            "proposedChordPcs": [
+              0,
+              4,
+              5,
+              9
+            ],
+            "exactPitchSet": false,
+            "precision": 0.75,
+            "recall": 1.0,
+            "jaccard": 0.75,
+            "errorType": null
+          },
+          {
+            "writtenBar": 6,
+            "referenceNoteOnPcs": [
+              0,
+              2,
+              6,
+              9
+            ],
+            "proposedChordPcs": [
+              0,
+              2,
+              5,
+              7,
+              9
+            ],
+            "exactPitchSet": false,
+            "precision": 0.6,
+            "recall": 0.75,
+            "jaccard": 0.5,
+            "errorType": null
+          },
+          {
+            "writtenBar": 7,
+            "referenceNoteOnPcs": [
+              2,
+              7,
+              11
+            ],
+            "proposedChordPcs": [
+              2,
+              5,
+              7,
+              11
+            ],
+            "exactPitchSet": false,
+            "precision": 0.75,
+            "recall": 1.0,
+            "jaccard": 0.75,
+            "errorType": null
+          },
+          {
+            "writtenBar": 8,
+            "referenceNoteOnPcs": [
+              0,
+              4,
+              7,
+              11
+            ],
+            "proposedChordPcs": [
+              0,
+              4,
+              7
+            ],
+            "exactPitchSet": false,
+            "precision": 1.0,
+            "recall": 0.75,
+            "jaccard": 0.75,
+            "errorType": null
+          },
+          {
+            "writtenBar": 9,
+            "referenceNoteOnPcs": [
+              0,
+              4,
+              7,
+              9
+            ],
+            "proposedChordPcs": [
+              0,
+              4,
+              7
+            ],
+            "exactPitchSet": false,
+            "precision": 1.0,
+            "recall": 0.75,
+            "jaccard": 0.75,
+            "errorType": null
+          },
+          {
+            "writtenBar": 10,
+            "referenceNoteOnPcs": [
+              0,
+              2,
+              6,
+              9
+            ],
+            "proposedChordPcs": [
+              1,
+              4,
+              7,
+              9
+            ],
+            "exactPitchSet": false,
+            "precision": 0.25,
+            "recall": 0.25,
+            "jaccard": 0.14285714285714285,
+            "errorType": null
+          },
+          {
+            "writtenBar": 11,
+            "referenceNoteOnPcs": [
+              2,
+              7,
+              11
+            ],
+            "proposedChordPcs": [
+              0,
+              2,
+              6,
+              9
+            ],
+            "exactPitchSet": false,
+            "precision": 0.25,
+            "recall": 0.3333333333333333,
+            "jaccard": 0.16666666666666666,
+            "errorType": null
+          },
+          {
+            "writtenBar": 12,
+            "referenceNoteOnPcs": [
+              1,
+              4,
+              7,
+              10
+            ],
+            "proposedChordPcs": [
+              2,
+              7,
+              11
+            ],
+            "exactPitchSet": false,
+            "precision": 0.3333333333333333,
+            "recall": 0.25,
+            "jaccard": 0.16666666666666666,
+            "errorType": null
+          },
+          {
+            "writtenBar": 13,
+            "referenceNoteOnPcs": [
+              2,
+              5,
+              9
+            ],
+            "proposedChordPcs": [
+              0,
+              4,
+              7
+            ],
+            "exactPitchSet": false,
+            "precision": 0.0,
+            "recall": 0.0,
+            "jaccard": 0.0,
+            "errorType": null
+          },
+          {
+            "writtenBar": 14,
+            "referenceNoteOnPcs": [
+              2,
+              5,
+              8,
+              11
+            ],
+            "proposedChordPcs": [
+              0,
+              4,
+              7
+            ],
+            "exactPitchSet": false,
+            "precision": 0.0,
+            "recall": 0.0,
+            "jaccard": 0.0,
+            "errorType": null
+          },
+          {
+            "writtenBar": 15,
+            "referenceNoteOnPcs": [
+              0,
+              4,
+              7
+            ],
+            "proposedChordPcs": [
+              0,
+              5,
+              9
+            ],
+            "exactPitchSet": false,
+            "precision": 0.3333333333333333,
+            "recall": 0.3333333333333333,
+            "jaccard": 0.2,
+            "errorType": null
+          },
+          {
+            "writtenBar": 16,
+            "referenceNoteOnPcs": [
+              0,
+              4,
+              5,
+              9
+            ],
+            "proposedChordPcs": [
+              0,
+              2,
+              5,
+              9
+            ],
+            "exactPitchSet": false,
+            "precision": 0.75,
+            "recall": 0.75,
+            "jaccard": 0.6,
+            "errorType": null
+          },
+          {
+            "writtenBar": 17,
+            "referenceNoteOnPcs": [
+              0,
+              2,
+              5,
+              9
+            ],
+            "proposedChordPcs": [
+              2,
+              5,
+              7,
+              11
+            ],
+            "exactPitchSet": false,
+            "precision": 0.5,
+            "recall": 0.5,
+            "jaccard": 0.3333333333333333,
+            "errorType": null
+          },
+          {
+            "writtenBar": 18,
+            "referenceNoteOnPcs": [
+              2,
+              5,
+              7,
+              11
+            ],
+            "proposedChordPcs": [
+              0,
+              4,
+              7
+            ],
+            "exactPitchSet": false,
+            "precision": 0.3333333333333333,
+            "recall": 0.25,
+            "jaccard": 0.16666666666666666,
+            "errorType": null
+          },
+          {
+            "writtenBar": 19,
+            "referenceNoteOnPcs": [
+              0,
+              4,
+              7
+            ],
+            "proposedChordPcs": [
+              0,
+              4,
+              7
+            ],
+            "exactPitchSet": true,
+            "precision": 1.0,
+            "recall": 1.0,
+            "jaccard": 1.0,
+            "errorType": null
+          },
+          {
+            "writtenBar": 20,
+            "referenceNoteOnPcs": [
+              0,
+              4,
+              7,
+              10
+            ],
+            "proposedChordPcs": [
+              0,
+              5,
+              9
+            ],
+            "exactPitchSet": false,
+            "precision": 0.3333333333333333,
+            "recall": 0.25,
+            "jaccard": 0.16666666666666666,
+            "errorType": null
+          },
+          {
+            "writtenBar": 21,
+            "referenceNoteOnPcs": [
+              0,
+              4,
+              5,
+              9
+            ],
+            "proposedChordPcs": [
+              0,
+              4,
+              7
+            ],
+            "exactPitchSet": false,
+            "precision": 0.6666666666666666,
+            "recall": 0.5,
+            "jaccard": 0.4,
+            "errorType": null
+          },
+          {
+            "writtenBar": 22,
+            "referenceNoteOnPcs": [
+              0,
+              3,
+              6,
+              9
+            ],
+            "proposedChordPcs": [
+              1,
+              4,
+              7,
+              9
+            ],
+            "exactPitchSet": false,
+            "precision": 0.25,
+            "recall": 0.25,
+            "jaccard": 0.14285714285714285,
+            "errorType": null
+          },
+          {
+            "writtenBar": 23,
+            "referenceNoteOnPcs": [
+              0,
+              2,
+              5,
+              8,
+              11
+            ],
+            "proposedChordPcs": [
+              2,
+              5,
+              9
+            ],
+            "exactPitchSet": false,
+            "precision": 0.6666666666666666,
+            "recall": 0.4,
+            "jaccard": 0.3333333333333333,
+            "errorType": null
+          },
+          {
+            "writtenBar": 24,
+            "referenceNoteOnPcs": [
+              2,
+              5,
+              7,
+              11
+            ],
+            "proposedChordPcs": [
+              2,
+              5,
+              7,
+              11
+            ],
+            "exactPitchSet": true,
+            "precision": 1.0,
+            "recall": 1.0,
+            "jaccard": 1.0,
+            "errorType": null
+          },
+          {
+            "writtenBar": 25,
+            "referenceNoteOnPcs": [
+              0,
+              4,
+              7
+            ],
+            "proposedChordPcs": [
+              0,
+              4,
+              7
+            ],
+            "exactPitchSet": true,
+            "precision": 1.0,
+            "recall": 1.0,
+            "jaccard": 1.0,
+            "errorType": null
+          },
+          {
+            "writtenBar": 26,
+            "referenceNoteOnPcs": [
+              0,
+              2,
+              5,
+              7
+            ],
+            "proposedChordPcs": [
+              0,
+              4,
+              7
+            ],
+            "exactPitchSet": false,
+            "precision": 0.6666666666666666,
+            "recall": 0.5,
+            "jaccard": 0.4,
+            "errorType": null
+          },
+          {
+            "writtenBar": 27,
+            "referenceNoteOnPcs": [
+              2,
+              5,
+              7,
+              11
+            ],
+            "proposedChordPcs": [
+              0,
+              5,
+              9
+            ],
+            "exactPitchSet": false,
+            "precision": 0.3333333333333333,
+            "recall": 0.25,
+            "jaccard": 0.16666666666666666,
+            "errorType": null
+          },
+          {
+            "writtenBar": 28,
+            "referenceNoteOnPcs": [
+              0,
+              3,
+              6,
+              7,
+              9
+            ],
+            "proposedChordPcs": [
+              0,
+              4,
+              7,
+              10
+            ],
+            "exactPitchSet": false,
+            "precision": 0.5,
+            "recall": 0.4,
+            "jaccard": 0.2857142857142857,
+            "errorType": null
+          },
+          {
+            "writtenBar": 29,
+            "referenceNoteOnPcs": [
+              0,
+              4,
+              7
+            ],
+            "proposedChordPcs": [
+              0,
+              5,
+              9
+            ],
+            "exactPitchSet": false,
+            "precision": 0.3333333333333333,
+            "recall": 0.3333333333333333,
+            "jaccard": 0.2,
+            "errorType": null
+          },
+          {
+            "writtenBar": 30,
+            "referenceNoteOnPcs": [
+              0,
+              2,
+              5,
+              7
+            ],
+            "proposedChordPcs": [
+              0,
+              3,
+              6,
+              9
+            ],
+            "exactPitchSet": false,
+            "precision": 0.25,
+            "recall": 0.25,
+            "jaccard": 0.14285714285714285,
+            "errorType": null
+          },
+          {
+            "writtenBar": 31,
+            "referenceNoteOnPcs": [
+              2,
+              5,
+              7,
+              11
+            ],
+            "proposedChordPcs": [
+              2,
+              5,
+              7,
+              11
+            ],
+            "exactPitchSet": true,
+            "precision": 1.0,
+            "recall": 1.0,
+            "jaccard": 1.0,
+            "errorType": null
+          },
+          {
+            "writtenBar": 32,
+            "referenceNoteOnPcs": [
+              0,
+              4,
+              7,
+              10
+            ],
+            "proposedChordPcs": [
+              2,
+              5,
+              7,
+              11
+            ],
+            "exactPitchSet": false,
+            "precision": 0.25,
+            "recall": 0.25,
+            "jaccard": 0.14285714285714285,
+            "errorType": null
+          }
+        ],
+        "exactPitchSets": 8,
+        "precision": 0.596875,
+        "recall": 0.571875,
+        "jaccard": 0.48928571428571427
+      }
+    },
+    {
+      "id": "bach-bwv847-prelude",
+      "sourcePage": "https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=550",
+      "license": "Public Domain",
+      "sha256": "772a62602f9dcbae5a79bcdd1120b9568b19b3d23ed49feb95386cdbe25ee444",
+      "local": {
+        "supported": false,
+        "complete": false,
+        "bars": 0,
+        "notes": 0,
+        "key": null,
+        "meter": null,
+        "unresolved": [
+          "systems_without_measure_boundaries: 26"
+        ]
+      }
+    },
+    {
+      "id": "mozart-k2-minuet",
+      "sourcePage": "https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=1770",
+      "license": "Public Domain",
+      "sha256": "921e441748a0b1a6e290508c76e054efc50d53f86611fb7815597d926fa76323",
+      "local": {
+        "supported": false,
+        "complete": false,
+        "bars": 52,
+        "notes": 0,
+        "key": null,
+        "meter": null,
+        "unresolved": [
+          "missing_clef: 1",
+          "missing_meter: 52",
+          "tie_or_slur: 76"
+        ]
+      },
+      "reference": {
+        "key": "F major",
+        "meter": [
+          3,
+          4
+        ],
+        "writtenBars": 24
+      },
+      "meta": {
+        "status": "completed",
+        "response": {
+          "title": "Menuett N°2 fûr das Pianoforte Kôch Verz N°2",
+          "key": "F major",
+          "timeSignature": [
+            3,
+            4
+          ],
+          "measures": [
+            {
+              "chords": [
+                "F"
+              ],
+              "sourceLabel": "p1 sys1 bar1",
+              "needsReview": true,
+              "note": "Melody A-C-A-G over bass F-A. Triad F-A-C supports F major. No printed symbol.",
+              "chordBasis": "inferred",
+              "confidence": "medium",
+              "notes": [],
+              "writtenNotes": [],
+              "bassNotes": [],
+              "noChord": false,
+              "timeSignature": null,
+              "analysisSource": "meta",
+              "requestId": "194552bc-d99d-47a0-9bbf-2d5854e34eb8",
+              "model": "muse-spark-1.3"
+            },
+            {
+              "chords": [
+                "C"
+              ],
+              "sourceLabel": "p1 sys1 bar2",
+              "needsReview": true,
+              "note": "Melody G-A-A-G over bass C-C. Notes G-C-E support C major dominant. No printed symbol.",
+              "chordBasis": "inferred",
+              "confidence": "medium",
+              "notes": [],
+              "writtenNotes": [],
+              "bassNotes": [],
+              "noChord": false,
+              "timeSignature": null,
+              "analysisSource": "meta",
+              "requestId": "194552bc-d99d-47a0-9bbf-2d5854e34eb8",
+              "model": "muse-spark-1.3"
+            },
+            {
+              "chords": [
+                "C"
+              ],
+              "sourceLabel": "p1 sys1 bar3",
+              "needsReview": true,
+              "note": "Melody A-G-F-G over bass C-A. C-E-G supports C major. No printed symbol.",
+              "chordBasis": "inferred",
+              "confidence": "medium",
+              "notes": [],
+              "writtenNotes": [],
+              "bassNotes": [],
+              "noChord": false,
+              "timeSignature": null,
+              "analysisSource": "meta",
+              "requestId": "194552bc-d99d-47a0-9bbf-2d5854e34eb8",
+              "model": "muse-spark-1.3"
+            },
+            {
+              "chords": [
+                "C"
+              ],
+              "sourceLabel": "p1 sys1 bar4",
+              "needsReview": true,
+              "note": "Melody F tied to E over bass F-A-G. Half-cadence on C major E-G-C. No printed symbol.",
+              "chordBasis": "inferred",
+              "confidence": "medium",
+              "notes": [],
+              "writtenNotes": [],
+              "bassNotes": [],
+              "noChord": false,
+              "timeSignature": null,
+              "analysisSource": "meta",
+              "requestId": "194552bc-d99d-47a0-9bbf-2d5854e34eb8",
+              "model": "muse-spark-1.3"
+            },
+            {
+              "chords": [
+                "F"
+              ],
+              "sourceLabel": "p1 sys2 bar5",
+              "needsReview": true,
+              "note": "Melody C-A-A-G over bass F dotted half. F-A-C supports F major. No printed symbol.",
+              "chordBasis": "inferred",
+              "confidence": "medium",
+              "notes": [],
+              "writtenNotes": [],
+              "bassNotes": [],
+              "noChord": false,
+              "timeSignature": null,
+              "analysisSource": "meta",
+              "requestId": "194552bc-d99d-47a0-9bbf-2d5854e34eb8",
+              "model": "muse-spark-1.3"
+            },
+            {
+              "chords": [
+                "F"
+              ],
+              "sourceLabel": "p1 sys2 bar6",
+              "needsReview": true,
+              "note": "Melody C-A-A-G over bass F dotted half. Sustained F-A-C supports F major. No printed symbol.",
+              "chordBasis": "inferred",
+              "confidence": "medium",
+              "notes": [],
+              "writtenNotes": [],
+              "bassNotes": [],
+              "noChord": false,
+              "timeSignature": null,
+              "analysisSource": "meta",
+              "requestId": "194552bc-d99d-47a0-9bbf-2d5854e34eb8",
+              "model": "muse-spark-1.3"
+            },
+            {
+              "chords": [
+                "C"
+              ],
+              "sourceLabel": "p1 sys2 bar7",
+              "needsReview": true,
+              "note": "Melody triplet C-A-G plus A-A over bass C-A-C. C-E-G supports C major. No printed symbol.",
+              "chordBasis": "inferred",
+              "confidence": "medium",
+              "notes": [],
+              "writtenNotes": [],
+              "bassNotes": [],
+              "noChord": false,
+              "timeSignature": null,
+              "analysisSource": "meta",
+              "requestId": "194552bc-d99d-47a0-9bbf-2d5854e34eb8",
+              "model": "muse-spark-1.3"
+            },
+            {
+              "chords": [
+                "F"
+              ],
+              "sourceLabel": "p1 sys2 bar8",
+              "needsReview": true,
+              "note": "Melody F tied to E over bass F-E-D. Authentic cadence to F major F-A-C. No printed symbol.",
+              "chordBasis": "inferred",
+              "confidence": "medium",
+              "notes": [],
+              "writtenNotes": [],
+              "bassNotes": [],
+              "noChord": false,
+              "timeSignature": null,
+              "analysisSource": "meta",
+              "requestId": "194552bc-d99d-47a0-9bbf-2d5854e34eb8",
+              "model": "muse-spark-1.3"
+            },
+            {
+              "chords": [
+                "A7"
+              ],
+              "sourceLabel": "p1 sys3 bar9",
+              "needsReview": true,
+              "note": "Melody D-Bb-A-A over bass C# dotted half. C#-E-G-Bb/A suggests A7 dominant of D minor. No printed symbol.",
+              "chordBasis": "inferred",
+              "confidence": "medium",
+              "notes": [],
+              "writtenNotes": [],
+              "bassNotes": [],
+              "noChord": false,
+              "timeSignature": null,
+              "analysisSource": "meta",
+              "requestId": "194552bc-d99d-47a0-9bbf-2d5854e34eb8",
+              "model": "muse-spark-1.3"
+            },
+            {
+              "chords": [
+                "Dm"
+              ],
+              "sourceLabel": "p1 sys3 bar10",
+              "needsReview": true,
+              "note": "Melody D-C-A-A over bass D dotted half. D-F-A supports D minor. No printed symbol.",
+              "chordBasis": "inferred",
+              "confidence": "medium",
+              "notes": [],
+              "writtenNotes": [],
+              "bassNotes": [],
+              "noChord": false,
+              "timeSignature": null,
+              "analysisSource": "meta",
+              "requestId": "194552bc-d99d-47a0-9bbf-2d5854e34eb8",
+              "model": "muse-spark-1.3"
+            },
+            {
+              "chords": [
+                "A7"
+              ],
+              "sourceLabel": "p1 sys3 bar11",
+              "needsReview": true,
+              "note": "Melody A-G#-A-A over bass A-G#-E with G# accidental. E-G#-A-C suggests A7. No printed symbol.",
+              "chordBasis": "inferred",
+              "confidence": "medium",
+              "notes": [],
+              "writtenNotes": [],
+              "bassNotes": [],
+              "noChord": false,
+              "timeSignature": null,
+              "analysisSource": "meta",
+              "requestId": "194552bc-d99d-47a0-9bbf-2d5854e34eb8",
+              "model": "muse-spark-1.3"
+            },
+            {
+              "chords": [
+                "Dm"
+              ],
+              "sourceLabel": "p1 sys3 bar12",
+              "needsReview": true,
+              "note": "Melody A tied to G over bass A-G-F# with F# accidental. Half-cadence context suggests Dm A-D-F. No printed symbol.",
+              "chordBasis": "inferred",
+              "confidence": "medium",
+              "notes": [],
+              "writtenNotes": [],
+              "bassNotes": [],
+              "noChord": false,
+              "timeSignature": null,
+              "analysisSource": "meta",
+              "requestId": "194552bc-d99d-47a0-9bbf-2d5854e34eb8",
+              "model": "muse-spark-1.3"
+            },
+            {
+              "chords": [
+                "F"
+              ],
+              "sourceLabel": "p1 sys4 bar13",
+              "needsReview": true,
+              "note": "Melody D-C-A-A over bass F dotted half. F-A-C supports F major return. No printed symbol.",
+              "chordBasis": "inferred",
+              "confidence": "medium",
+              "notes": [],
+              "writtenNotes": [],
+              "bassNotes": [],
+              "noChord": false,
+              "timeSignature": null,
+              "analysisSource": "meta",
+              "requestId": "194552bc-d99d-47a0-9bbf-2d5854e34eb8",
+              "model": "muse-spark-1.3"
+            },
+            {
+              "chords": [
+                "Bb"
+              ],
+              "sourceLabel": "p1 sys4 bar14",
+              "needsReview": true,
+              "note": "Melody D-C-A-A over bass Bb dotted half. Bb-D-F supports Bb major IV. No printed symbol.",
+              "chordBasis": "inferred",
+              "confidence": "medium",
+              "notes": [],
+              "writtenNotes": [],
+              "bassNotes": [],
+              "noChord": false,
+              "timeSignature": null,
+              "analysisSource": "meta",
+              "requestId": "194552bc-d99d-47a0-9bbf-2d5854e34eb8",
+              "model": "muse-spark-1.3"
+            },
+            {
+              "chords": [
+                "C"
+              ],
+              "sourceLabel": "p1 sys4 bar15",
+              "needsReview": true,
+              "note": "Melody C-A-A-G over bass C-A-F. C-E-G supports C major. No printed symbol.",
+              "chordBasis": "inferred",
+              "confidence": "medium",
+              "notes": [],
+              "writtenNotes": [],
+              "bassNotes": [],
+              "noChord": false,
+              "timeSignature": null,
+              "analysisSource": "meta",
+              "requestId": "194552bc-d99d-47a0-9bbf-2d5854e34eb8",
+              "model": "muse-spark-1.3"
+            },
+            {
+              "chords": [
+                "F"
+              ],
+              "sourceLabel": "p1 sys4 bar16",
+              "needsReview": true,
+              "note": "Melody F tied to E over bass F-E-D. Cadence to F major F-A-C. No printed symbol.",
+              "chordBasis": "inferred",
+              "confidence": "medium",
+              "notes": [],
+              "writtenNotes": [],
+              "bassNotes": [],
+              "noChord": false,
+              "timeSignature": null,
+              "analysisSource": "meta",
+              "requestId": "194552bc-d99d-47a0-9bbf-2d5854e34eb8",
+              "model": "muse-spark-1.3"
+            },
+            {
+              "chords": [
+                "F"
+              ],
+              "sourceLabel": "p1 sys5 bar17",
+              "needsReview": true,
+              "note": "Melody D-C-A-A over bass F dotted half. F-A-C supports F major. No printed symbol.",
+              "chordBasis": "inferred",
+              "confidence": "medium",
+              "notes": [],
+              "writtenNotes": [],
+              "bassNotes": [],
+              "noChord": false,
+              "timeSignature": null,
+              "analysisSource": "meta",
+              "requestId": "194552bc-d99d-47a0-9bbf-2d5854e34eb8",
+              "model": "muse-spark-1.3"
+            },
+            {
+              "chords": [
+                "Bb"
+              ],
+              "sourceLabel": "p1 sys5 bar18",
+              "needsReview": true,
+              "note": "Melody D-C-A-A over bass Bb dotted half. Bb-D-F supports Bb major. No printed symbol.",
+              "chordBasis": "inferred",
+              "confidence": "medium",
+              "notes": [],
+              "writtenNotes": [],
+              "bassNotes": [],
+              "noChord": false,
+              "timeSignature": null,
+              "analysisSource": "meta",
+              "requestId": "194552bc-d99d-47a0-9bbf-2d5854e34eb8",
+              "model": "muse-spark-1.3"
+            },
+            {
+              "chords": [
+                "C"
+              ],
+              "sourceLabel": "p1 sys5 bar19",
+              "needsReview": true,
+              "note": "Melody C-A-A-G over bass C-F. C-E-G supports C major. No printed symbol.",
+              "chordBasis": "inferred",
+              "confidence": "medium",
+              "notes": [],
+              "writtenNotes": [],
+              "bassNotes": [],
+              "noChord": false,
+              "timeSignature": null,
+              "analysisSource": "meta",
+              "requestId": "194552bc-d99d-47a0-9bbf-2d5854e34eb8",
+              "model": "muse-spark-1.3"
+            },
+            {
+              "chords": [
+                "F"
+              ],
+              "sourceLabel": "p1 sys5 bar20",
+              "needsReview": true,
+              "note": "Melody F tied to E with fermata over bass F dotted with fermata. F-A-C tonic close. No printed symbol.",
+              "chordBasis": "inferred",
+              "confidence": "medium",
+              "notes": [],
+              "writtenNotes": [],
+              "bassNotes": [],
+              "noChord": false,
+              "timeSignature": null,
+              "analysisSource": "meta",
+              "requestId": "194552bc-d99d-47a0-9bbf-2d5854e34eb8",
+              "model": "muse-spark-1.3"
+            },
+            {
+              "chords": [
+                "F"
+              ],
+              "sourceLabel": "p1 sys6 bar21",
+              "needsReview": true,
+              "note": "Melody D-C-A-A over bass F dotted half, da capo reprise. F-A-C supports F major. No printed symbol.",
+              "chordBasis": "inferred",
+              "confidence": "medium",
+              "notes": [],
+              "writtenNotes": [],
+              "bassNotes": [],
+              "noChord": false,
+              "timeSignature": null,
+              "analysisSource": "meta",
+              "requestId": "194552bc-d99d-47a0-9bbf-2d5854e34eb8",
+              "model": "muse-spark-1.3"
+            },
+            {
+              "chords": [
+                "Bb"
+              ],
+              "sourceLabel": "p1 sys6 bar22",
+              "needsReview": true,
+              "note": "Melody D-C-A-A over bass Bb dotted half. Bb-D-F supports Bb major. No printed symbol.",
+              "chordBasis": "inferred",
+              "confidence": "medium",
+              "notes": [],
+              "writtenNotes": [],
+              "bassNotes": [],
+              "noChord": false,
+              "timeSignature": null,
+              "analysisSource": "meta",
+              "requestId": "194552bc-d99d-47a0-9bbf-2d5854e34eb8",
+              "model": "muse-spark-1.3"
+            },
+            {
+              "chords": [
+                "C"
+              ],
+              "sourceLabel": "p1 sys6 bar23",
+              "needsReview": true,
+              "note": "Melody C-A-A-G over bass C-F. C-E-G supports C major dominant preparation. No printed symbol.",
+              "chordBasis": "inferred",
+              "confidence": "medium",
+              "notes": [],
+              "writtenNotes": [],
+              "bassNotes": [],
+              "noChord": false,
+              "timeSignature": null,
+              "analysisSource": "meta",
+              "requestId": "194552bc-d99d-47a0-9bbf-2d5854e34eb8",
+              "model": "muse-spark-1.3"
+            },
+            {
+              "chords": [
+                "F"
+              ],
+              "sourceLabel": "p1 sys6 bar24",
+              "needsReview": true,
+              "note": "Melody F tied to E over bass F-E-D. Final authentic cadence to F major F-A-C. No printed symbol.",
+              "chordBasis": "inferred",
+              "confidence": "high",
+              "notes": [],
+              "writtenNotes": [],
+              "bassNotes": [],
+              "noChord": false,
+              "timeSignature": null,
+              "analysisSource": "meta",
+              "requestId": "194552bc-d99d-47a0-9bbf-2d5854e34eb8",
+              "model": "muse-spark-1.3"
+            }
+          ],
+          "sections": [
+            {
+              "section": "a_section",
+              "label": "A Minuet 1-8",
+              "startMeasure": 0,
+              "length": 8,
+              "basis": "inferred",
+              "note": "Repeated 8-measure F major period ending with repeat bar, tonic to dominant to tonic."
+            },
+            {
+              "section": "b_section",
+              "label": "B Trio-modulating 9-12",
+              "startMeasure": 8,
+              "length": 4,
+              "basis": "inferred",
+              "note": "Contrasting accidentals C#, G#, F# and D-minor/A7 sonorities, no repeat."
+            },
+            {
+              "section": "a_section",
+              "label": "A' Return 13-24",
+              "startMeasure": 12,
+              "length": 12,
+              "basis": "inferred",
+              "note": "Return to F major material with fermata at bar20 and final tonic close, cadential repetition."
+            }
+          ],
+          "warnings": [
+            "Key F major is inferred from one-flat signature and F-C-Dm cadential flow, not printed as text.",
+            "No printed chord symbols observed; all chords inferred from readable treble/bass for review.",
+            "Written repeat at bar8 :|| kept in written order, not expanded; final double bar at bar24; fermata at bar20.",
+            "Harmony analysis is an interpretation, not a transcription of the original chords. Review every inferred chord, its note evidence, and the key before importing.",
+            "The key is inferred from readable notation, not explicitly printed; confirm it before importing.",
+            "Repeat signs and endings remain in written order; repeats have not been expanded.",
+            "PDF reading uses at most the first 50 page images and 100 pages of text. Split longer scores and check the complete written order."
+          ],
+          "model": "muse-spark-1.3",
+          "requestId": "194552bc-d99d-47a0-9bbf-2d5854e34eb8",
+          "mode": "infer_harmony",
+          "analysisSource": "meta",
+          "formAnalysis": null
+        },
+        "barCountMatches": true,
+        "keyMatches": true,
+        "meterMatches": true,
+        "chordAccuracyScored": false
+      },
+      "apiUsage": [
+        {
+          "label": "score.import",
+          "provider": "meta",
+          "model": "muse-spark-1.3",
+          "request_id": "194552bc-d99d-47a0-9bbf-2d5854e34eb8",
+          "usage": {
+            "prompt_tokens": 3917,
+            "cached_tokens": 0,
+            "completion_tokens": 4866,
+            "reasoning_tokens": 2847
+          },
+          "status": "settled",
+          "settled_usd": 0.02557675,
+          "latency_ms": 30050
+        }
+      ]
+    },
+    {
+      "id": "beethoven-op2-1-allegro",
+      "sourcePage": "https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=1211",
+      "license": "Public Domain",
+      "sha256": "c27b92fce9408c552df05e7cdd6bbcd925ce05350d91b43c36442ad171684df4",
+      "local": {
+        "supported": false,
+        "complete": false,
+        "bars": 0,
+        "notes": 0,
+        "key": null,
+        "meter": null,
+        "unresolved": [
+          "systems_without_measure_boundaries: 60"
+        ]
+      }
+    },
+    {
+      "id": "schumann-op68-1",
+      "sourcePage": "https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=647",
+      "license": "Creative Commons Attribution-ShareAlike 2.5",
+      "sha256": "be5fbd28ff8b3abf3c594b1562ef1808d4ef8d01634371d4730ca5f2b32f6f63",
+      "local": {
+        "supported": false,
+        "complete": false,
+        "bars": 0,
+        "notes": 0,
+        "key": null,
+        "meter": null,
+        "unresolved": [
+          "systems_without_measure_boundaries: 10"
+        ]
+      },
+      "reference": {
+        "key": "C major",
+        "meter": [
+          4,
+          4
+        ],
+        "writtenBars": 20
+      },
+      "meta": {
+        "status": "completed",
+        "response": {
+          "title": "Mélodie",
+          "key": "C major",
+          "timeSignature": [
+            4,
+            4
+          ],
+          "measures": [
+            {
+              "chords": [
+                "C"
+              ],
+              "sourceLabel": "sys1 bar1",
+              "needsReview": true,
+              "note": "Upper thirds A-G-A; lower Alberti on C-E-G. Multi-voice texture supports C.",
+              "chordBasis": "inferred",
+              "confidence": "medium",
+              "notes": [],
+              "writtenNotes": [],
+              "bassNotes": [],
+              "noChord": false,
+              "timeSignature": null,
+              "analysisSource": "meta",
+              "requestId": "495d4d87-4047-4e16-8059-3f19c5b7fd6b",
+              "model": "muse-spark-1.3"
+            },
+            {
+              "chords": [
+                "G"
+              ],
+              "sourceLabel": "sys1 bar2",
+              "needsReview": true,
+              "note": "Melody B-C-D; bass D-G-A-B suggests G major. Harmonization from sounding notes.",
+              "chordBasis": "inferred",
+              "confidence": "medium",
+              "notes": [],
+              "writtenNotes": [],
+              "bassNotes": [],
+              "noChord": false,
+              "timeSignature": null,
+              "analysisSource": "meta",
+              "requestId": "495d4d87-4047-4e16-8059-3f19c5b7fd6b",
+              "model": "muse-spark-1.3"
+            },
+            {
+              "chords": [
+                "C"
+              ],
+              "sourceLabel": "sys1 bar3",
+              "needsReview": true,
+              "note": "Upper G-A-G; lower C-E-G Alberti returns to tonic.",
+              "chordBasis": "inferred",
+              "confidence": "medium",
+              "notes": [],
+              "writtenNotes": [],
+              "bassNotes": [],
+              "noChord": false,
+              "timeSignature": null,
+              "analysisSource": "meta",
+              "requestId": "495d4d87-4047-4e16-8059-3f19c5b7fd6b",
+              "model": "muse-spark-1.3"
+            },
+            {
+              "chords": [
+                "G7"
+              ],
+              "sourceLabel": "sys1 bar4",
+              "needsReview": true,
+              "note": "Melody A-G# -A with F# accidental; bass D-G-B implies dominant G/G7 leading to repeat.",
+              "chordBasis": "inferred",
+              "confidence": "medium",
+              "notes": [],
+              "writtenNotes": [],
+              "bassNotes": [],
+              "noChord": false,
+              "timeSignature": null,
+              "analysisSource": "meta",
+              "requestId": "495d4d87-4047-4e16-8059-3f19c5b7fd6b",
+              "model": "muse-spark-1.3"
+            },
+            {
+              "chords": [
+                "Am"
+              ],
+              "sourceLabel": "sys2 bar5",
+              "needsReview": true,
+              "note": "Melody E-D; lower A-C-E with C# accidental suggests A minor / E dominant color.",
+              "chordBasis": "inferred",
+              "confidence": "low",
+              "notes": [],
+              "writtenNotes": [],
+              "bassNotes": [],
+              "noChord": false,
+              "timeSignature": null,
+              "analysisSource": "meta",
+              "requestId": "495d4d87-4047-4e16-8059-3f19c5b7fd6b",
+              "model": "muse-spark-1.3"
+            },
+            {
+              "chords": [
+                "E"
+              ],
+              "sourceLabel": "sys2 bar6",
+              "needsReview": true,
+              "note": "Melody D-C; bass A-E-G# with G# accidental supports E major as V of Am.",
+              "chordBasis": "inferred",
+              "confidence": "low",
+              "notes": [],
+              "writtenNotes": [],
+              "bassNotes": [],
+              "noChord": false,
+              "timeSignature": null,
+              "analysisSource": "meta",
+              "requestId": "495d4d87-4047-4e16-8059-3f19c5b7fd6b",
+              "model": "muse-spark-1.3"
+            },
+            {
+              "chords": [
+                "F",
+                "G"
+              ],
+              "sourceLabel": "sys2 bar7",
+              "needsReview": true,
+              "note": "Melody F-E-D; lower F-A-C to G-B-D suggests IV-V motion.",
+              "chordBasis": "inferred",
+              "confidence": "low",
+              "notes": [],
+              "writtenNotes": [],
+              "bassNotes": [],
+              "noChord": false,
+              "timeSignature": null,
+              "analysisSource": "meta",
+              "requestId": "495d4d87-4047-4e16-8059-3f19c5b7fd6b",
+              "model": "muse-spark-1.3"
+            },
+            {
+              "chords": [
+                "C"
+              ],
+              "sourceLabel": "sys2 bar8",
+              "needsReview": true,
+              "note": "Melody E-F-E-D-C; bass C-G-C-E with F# passing supports return to C.",
+              "chordBasis": "inferred",
+              "confidence": "medium",
+              "notes": [],
+              "writtenNotes": [],
+              "bassNotes": [],
+              "noChord": false,
+              "timeSignature": null,
+              "analysisSource": "meta",
+              "requestId": "495d4d87-4047-4e16-8059-3f19c5b7fd6b",
+              "model": "muse-spark-1.3"
+            },
+            {
+              "chords": [
+                "C"
+              ],
+              "sourceLabel": "sys3 bar9",
+              "needsReview": true,
+              "note": "Repeat of opening material: upper A-G-A, lower C-E-G Alberti.",
+              "chordBasis": "inferred",
+              "confidence": "medium",
+              "notes": [],
+              "writtenNotes": [],
+              "bassNotes": [],
+              "noChord": false,
+              "timeSignature": null,
+              "analysisSource": "meta",
+              "requestId": "495d4d87-4047-4e16-8059-3f19c5b7fd6b",
+              "model": "muse-spark-1.3"
+            },
+            {
+              "chords": [
+                "G"
+              ],
+              "sourceLabel": "sys3 bar10",
+              "needsReview": true,
+              "note": "Same as bar2: B-C-D ascent over G bass.",
+              "chordBasis": "inferred",
+              "confidence": "medium",
+              "notes": [],
+              "writtenNotes": [],
+              "bassNotes": [],
+              "noChord": false,
+              "timeSignature": null,
+              "analysisSource": "meta",
+              "requestId": "495d4d87-4047-4e16-8059-3f19c5b7fd6b",
+              "model": "muse-spark-1.3"
+            },
+            {
+              "chords": [
+                "C"
+              ],
+              "sourceLabel": "sys3 bar11",
+              "needsReview": true,
+              "note": "Melody E-D-E; lower C-E-G tonic Alberti.",
+              "chordBasis": "inferred",
+              "confidence": "medium",
+              "notes": [],
+              "writtenNotes": [],
+              "bassNotes": [],
+              "noChord": false,
+              "timeSignature": null,
+              "analysisSource": "meta",
+              "requestId": "495d4d87-4047-4e16-8059-3f19c5b7fd6b",
+              "model": "muse-spark-1.3"
+            },
+            {
+              "chords": [
+                "G7",
+                "C"
+              ],
+              "sourceLabel": "sys3 bar12",
+              "needsReview": true,
+              "note": "Melody G-A-G-F-E rest; bass G to C cadential V-I close of strain.",
+              "chordBasis": "inferred",
+              "confidence": "low",
+              "notes": [],
+              "writtenNotes": [],
+              "bassNotes": [],
+              "noChord": false,
+              "timeSignature": null,
+              "analysisSource": "meta",
+              "requestId": "495d4d87-4047-4e16-8059-3f19c5b7fd6b",
+              "model": "muse-spark-1.3"
+            },
+            {
+              "chords": [
+                "Am"
+              ],
+              "sourceLabel": "sys4 bar13",
+              "needsReview": true,
+              "note": "As bar5: E-D over A-C-E with C# color.",
+              "chordBasis": "inferred",
+              "confidence": "low",
+              "notes": [],
+              "writtenNotes": [],
+              "bassNotes": [],
+              "noChord": false,
+              "timeSignature": null,
+              "analysisSource": "meta",
+              "requestId": "495d4d87-4047-4e16-8059-3f19c5b7fd6b",
+              "model": "muse-spark-1.3"
+            },
+            {
+              "chords": [
+                "E"
+              ],
+              "sourceLabel": "sys4 bar14",
+              "needsReview": true,
+              "note": "As bar6: D-C over A-E-G# supporting E major.",
+              "chordBasis": "inferred",
+              "confidence": "low",
+              "notes": [],
+              "writtenNotes": [],
+              "bassNotes": [],
+              "noChord": false,
+              "timeSignature": null,
+              "analysisSource": "meta",
+              "requestId": "495d4d87-4047-4e16-8059-3f19c5b7fd6b",
+              "model": "muse-spark-1.3"
+            },
+            {
+              "chords": [
+                "F",
+                "G"
+              ],
+              "sourceLabel": "sys4 bar15",
+              "needsReview": true,
+              "note": "As bar7: F-E-D over F then G bass.",
+              "chordBasis": "inferred",
+              "confidence": "low",
+              "notes": [],
+              "writtenNotes": [],
+              "bassNotes": [],
+              "noChord": false,
+              "timeSignature": null,
+              "analysisSource": "meta",
+              "requestId": "495d4d87-4047-4e16-8059-3f19c5b7fd6b",
+              "model": "muse-spark-1.3"
+            },
+            {
+              "chords": [
+                "C"
+              ],
+              "sourceLabel": "sys4 bar16",
+              "needsReview": true,
+              "note": "As bar8: E-F-E-D-C over C pedal returning to tonic.",
+              "chordBasis": "inferred",
+              "confidence": "medium",
+              "notes": [],
+              "writtenNotes": [],
+              "bassNotes": [],
+              "noChord": false,
+              "timeSignature": null,
+              "analysisSource": "meta",
+              "requestId": "495d4d87-4047-4e16-8059-3f19c5b7fd6b",
+              "model": "muse-spark-1.3"
+            },
+            {
+              "chords": [
+                "C"
+              ],
+              "sourceLabel": "sys5 bar17",
+              "needsReview": true,
+              "note": "Opening motive restated: A-G-A over C-E-G.",
+              "chordBasis": "inferred",
+              "confidence": "medium",
+              "notes": [],
+              "writtenNotes": [],
+              "bassNotes": [],
+              "noChord": false,
+              "timeSignature": null,
+              "analysisSource": "meta",
+              "requestId": "495d4d87-4047-4e16-8059-3f19c5b7fd6b",
+              "model": "muse-spark-1.3"
+            },
+            {
+              "chords": [
+                "G"
+              ],
+              "sourceLabel": "sys5 bar18",
+              "needsReview": true,
+              "note": "B-C-D-A-G over D-G bass, dominant area.",
+              "chordBasis": "inferred",
+              "confidence": "medium",
+              "notes": [],
+              "writtenNotes": [],
+              "bassNotes": [],
+              "noChord": false,
+              "timeSignature": null,
+              "analysisSource": "meta",
+              "requestId": "495d4d87-4047-4e16-8059-3f19c5b7fd6b",
+              "model": "muse-spark-1.3"
+            },
+            {
+              "chords": [
+                "C",
+                "G"
+              ],
+              "sourceLabel": "sys5 bar19",
+              "needsReview": true,
+              "note": "Melody B-C-D-B; lower G-C-E-G suggests tonic with dominant passing.",
+              "chordBasis": "inferred",
+              "confidence": "low",
+              "notes": [],
+              "writtenNotes": [],
+              "bassNotes": [],
+              "noChord": false,
+              "timeSignature": null,
+              "analysisSource": "meta",
+              "requestId": "495d4d87-4047-4e16-8059-3f19c5b7fd6b",
+              "model": "muse-spark-1.3"
+            },
+            {
+              "chords": [
+                "C"
+              ],
+              "sourceLabel": "sys5 bar20",
+              "needsReview": true,
+              "note": "Final A-G-C descent and C-E-G bass with final low C; authentic close on tonic.",
+              "chordBasis": "inferred",
+              "confidence": "medium",
+              "notes": [],
+              "writtenNotes": [],
+              "bassNotes": [],
+              "noChord": false,
+              "timeSignature": null,
+              "analysisSource": "meta",
+              "requestId": "495d4d87-4047-4e16-8059-3f19c5b7fd6b",
+              "model": "muse-spark-1.3"
+            }
+          ],
+          "sections": [
+            {
+              "section": null,
+              "label": "First strain mm.1-4",
+              "startMeasure": 0,
+              "length": 4,
+              "basis": "inferred",
+              "note": "Repeated 4-bar antecedent-consequent closing on dominant; tonic-dominant oscillation."
+            },
+            {
+              "section": null,
+              "label": "Second strain mm.5-20",
+              "startMeasure": 4,
+              "length": 16,
+              "basis": "inferred",
+              "note": "Contrasting middle touching Am/E then F-G-C; da capo-like return of opening in mm.9-12 and 17-20."
+            }
+          ],
+          "warnings": [
+            "No printed chord symbols in score; all chords are inferred interpretations requiring review.",
+            "Key signature is blank (no sharps/flats); key C major is inferred from notation and cadences, not printed.",
+            "Repeat barline with dots after m.4 in written order preserved without expansion; final double bar at m.20. hasRepeats true.",
+            "Both staves use treble clef with small engraving; octave/pitch reading approximate - verify bass notes before use.",
+            "Harmony analysis is an interpretation, not a transcription of the original chords. Review every inferred chord, its note evidence, and the key before importing.",
+            "The key is inferred from readable notation, not explicitly printed; confirm it before importing.",
+            "Repeat signs and endings remain in written order; repeats have not been expanded.",
+            "PDF reading uses at most the first 50 page images and 100 pages of text. Split longer scores and check the complete written order."
+          ],
+          "model": "muse-spark-1.3",
+          "requestId": "495d4d87-4047-4e16-8059-3f19c5b7fd6b",
+          "mode": "infer_harmony",
+          "analysisSource": "meta",
+          "formAnalysis": null
+        },
+        "barCountMatches": true,
+        "keyMatches": true,
+        "meterMatches": true,
+        "chordAccuracyScored": false
+      },
+      "apiUsage": [
+        {
+          "label": "score.import",
+          "provider": "meta",
+          "model": "muse-spark-1.3",
+          "request_id": "495d4d87-4047-4e16-8059-3f19c5b7fd6b",
+          "usage": {
+            "prompt_tokens": 3917,
+            "cached_tokens": 0,
+            "completion_tokens": 2991,
+            "reasoning_tokens": 1489
+          },
+          "status": "settled",
+          "settled_usd": 0.017608,
+          "latency_ms": 22407
+        }
+      ]
+    },
+    {
+      "id": "greensleeves-satb",
+      "sourcePage": "https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=1247",
+      "license": "Public Domain",
+      "sha256": "03316a585f0049d8d9ef2c459969be8698819d667a7521c17107cc2303758630",
+      "local": {
+        "supported": false,
+        "complete": false,
+        "bars": 36,
+        "notes": 0,
+        "key": null,
+        "meter": null,
+        "unresolved": [
+          "missing_clef: 1",
+          "missing_meter: 36",
+          "tie_or_slur: 2"
+        ]
+      }
+    },
+    {
+      "id": "amazing-grace",
+      "sourcePage": "https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=1832",
+      "license": "Creative Commons Attribution-ShareAlike 3.0",
+      "sha256": "0425c71b0338519c38944d4ceaed5c017ae57c5094a4c994de8fe3485ea6ccbb",
+      "local": {
+        "supported": false,
+        "complete": false,
+        "bars": 0,
+        "notes": 0,
+        "key": null,
+        "meter": null,
+        "unresolved": [
+          "systems_without_measure_boundaries: 3"
+        ]
+      }
+    },
+    {
+      "id": "greensleeves-guitar",
+      "sourcePage": "https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=1943",
+      "license": "Creative Commons Attribution-ShareAlike 4.0",
+      "sha256": "1dbf6dee33a90982d0589f9f785d1e2d61766e4aa8a1b7c8817954e724dcff7c",
+      "local": {
+        "supported": false,
+        "complete": false,
+        "bars": 0,
+        "notes": 0,
+        "key": null,
+        "meter": null,
+        "unresolved": [
+          "systems_without_measure_boundaries: 18"
+        ]
+      }
+    }
+  ],
+  "localSupported": 0,
+  "spentUsd": 0.0761525,
+  "outstandingUsd": 0
+}

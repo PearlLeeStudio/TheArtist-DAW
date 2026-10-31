@@ -146,6 +146,14 @@ both successes and failures: the twenty-bar vector case retained 20/20 correct
 chords (sixteen Meta-reviewed, four local) and inferred 8/8/4-bar neutral sections;
 the notes-only PNG matched only 1/4 chords. These fixtures are not an accuracy benchmark.
 
+The [external-score evaluation](experiments/external_eval/README.md) adds eight
+published Mutopia editions: **0/8 supported by the local reader**. Three explicit
+Meta readings matched bar count/key/meter, but Bach note-evidence sets matched only
+8/32 bars. A separate twelve-movement Mozart continuation comparison found F1
+candidate A pitch-set agreement of 13.54%, below hold-last (27.08%) and tonic
+(46.88%) baselines. Reconstruction agreement is not listener preference; these
+results do not establish musical superiority or general score-reading accuracy.
+
 <p align="center">
   <img src="screenshot/01-main-light.png" alt="TheArtist — song-form staff and Play panel with piano, rhythms and mixer (light theme)" width="100%">
 </p>

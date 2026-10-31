@@ -1,0 +1,3690 @@
+{
+  "method": "First eight written bars, sampled twice per bar: four context bars plus four target bars. Candidate A is primary. All three candidates retained. No reference-based reranking; no training.",
+  "limitations": [
+    "Reference continuation agreement is not music quality or listener preference.",
+    "One composer, short excerpts, unknown overlap with pretraining.",
+    "Sampling at two slots discards between-slot changes and durations.",
+    "Context chord types are simplified; reference pitch-class sets retain annotated chord tones.",
+    "Product F1 generation includes existing R1 and voice-leading postprocessing; not a raw neural-model benchmark."
+  ],
+  "corpus": {
+    "version": "v2.3",
+    "license": "CC BY-NC-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-nc-sa/4.0/",
+    "source": "https://dcmlab.github.io/mozart_piano_sonatas/",
+    "citation": "Hentschel, Neuwirth & Rohrmeier. The Annotated Mozart Sonatas: Score, harmony, and cadence. doi:10.5334/tismir.63",
+    "use": "Noncommercial research evaluation only; not added to training, retrieval, or product deployment."
+  },
+  "device": "cpu",
+  "threads": 4,
+  "rag": {
+    "omt": "ready",
+    "berklee": "disabled"
+  },
+  "seeds": [
+    17,
+    18,
+    19
+  ],
+  "excluded": [],
+  "cases": [
+    {
+      "id": "K279-1",
+      "key": "C major",
+      "meter": [
+        4,
+        4
+      ],
+      "sourceSha256": "fe50912d969fb810f314805d4da335b027cdcbae146e0edad1a55528208cb5cd",
+      "context": [
+        "C",
+        "C",
+        "Dm/F",
+        "G7/F",
+        "C",
+        "C",
+        "Dm/F",
+        "G7/F"
+      ],
+      "reference": [
+        {
+          "symbol": "C",
+          "root": 0,
+          "pcs": [
+            0,
+            4,
+            7
+          ]
+        },
+        {
+          "symbol": "G/B",
+          "root": 7,
+          "pcs": [
+            2,
+            7,
+            11
+          ]
+        },
+        {
+          "symbol": "G/B",
+          "root": 7,
+          "pcs": [
+            2,
+            7,
+            11
+          ]
+        },
+        {
+          "symbol": "C",
+          "root": 0,
+          "pcs": [
+            0,
+            4,
+            7
+          ]
+        },
+        {
+          "symbol": "C",
+          "root": 0,
+          "pcs": [
+            0,
+            4,
+            7
+          ]
+        },
+        {
+          "symbol": "F",
+          "root": 5,
+          "pcs": [
+            0,
+            5,
+            9
+          ]
+        },
+        {
+          "symbol": "F",
+          "root": 5,
+          "pcs": [
+            0,
+            5,
+            9
+          ]
+        },
+        {
+          "symbol": "C",
+          "root": 0,
+          "pcs": [
+            0,
+            4,
+            7
+          ]
+        }
+      ],
+      "baselines": {
+        "holdLast": {
+          "valid": 1,
+          "pitchJaccard": 0.3125,
+          "pitchSetExact": 0,
+          "rootExact": 0.25
+        },
+        "tonic": {
+          "valid": 1,
+          "pitchJaccard": 0.6,
+          "pitchSetExact": 0.5,
+          "rootExact": 0.5
+        }
+      },
+      "runs": [
+        {
+          "seed": 17,
+          "source": "ai",
+          "model": "ft_f1",
+          "candidates": [
+            {
+              "label": "Option A — F1 — 10K pop mix (conservative)",
+              "chords": [
+                "Fmaj",
+                "Fmaj",
+                "Fmaj",
+                "Fmaj",
+                "Cmaj/E",
+                "Cmaj/E",
+                "Cmaj/E",
+                "Cmaj/E"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.35,
+                "pitchSetExact": 0.25,
+                "rootExact": 0.25
+              }
+            },
+            {
+              "label": "Option B — F1 — 10K pop mix (balanced)",
+              "chords": [
+                "Dm",
+                "E7",
+                "Am/E",
+                "Am/E",
+                "Am/E",
+                "Am/E",
+                "Cmaj/E",
+                "Cmaj/E"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.3875,
+                "pitchSetExact": 0.125,
+                "rootExact": 0.125
+              }
+            },
+            {
+              "label": "Option C — F1 — 10K pop mix (creative)",
+              "chords": [
+                "E7",
+                "Am/E",
+                "AmMaj7/E",
+                "Am7/E",
+                "D7",
+                "Dm7",
+                "G7/D",
+                "G7/D"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.2708333333333333,
+                "pitchSetExact": 0,
+                "rootExact": 0
+              }
+            }
+          ]
+        },
+        {
+          "seed": 18,
+          "source": "ai",
+          "model": "ft_f1",
+          "candidates": [
+            {
+              "label": "Option A — F1 — 10K pop mix (creative)",
+              "chords": [
+                "Fmaj",
+                "Gmaj",
+                "Fmaj",
+                "Fmaj",
+                "Dm/F",
+                "Dm/F",
+                "Bbmaj/F",
+                "Bbmaj/F"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.2625,
+                "pitchSetExact": 0.125,
+                "rootExact": 0.125
+              }
+            },
+            {
+              "label": "Option B — F1 — 10K pop mix (conservative)",
+              "chords": [
+                "Dm",
+                "Dm",
+                "Dm7",
+                "Dm7",
+                "Cmaj",
+                "Cmaj",
+                "Cmaj",
+                "Cmaj"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.3666666666666667,
+                "pitchSetExact": 0.25,
+                "rootExact": 0.25
+              }
+            },
+            {
+              "label": "Option C — F1 — 10K pop mix (balanced)",
+              "chords": [
+                "E7",
+                "Am/E",
+                "AmMaj7/E",
+                "Am7/E",
+                "D7",
+                "Dm7",
+                "G7/D",
+                "G7/D"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.2708333333333333,
+                "pitchSetExact": 0,
+                "rootExact": 0
+              }
+            }
+          ]
+        },
+        {
+          "seed": 19,
+          "source": "ai",
+          "model": "ft_f1",
+          "candidates": [
+            {
+              "label": "Option A — F1 — 10K pop mix (balanced)",
+              "chords": [
+                "Fmaj",
+                "Gmaj",
+                "Fmaj",
+                "Fmaj",
+                "Dm/F",
+                "Dm/F",
+                "Fmaj",
+                "Fmaj"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.3875,
+                "pitchSetExact": 0.25,
+                "rootExact": 0.25
+              }
+            },
+            {
+              "label": "Option B — F1 — 10K pop mix (conservative)",
+              "chords": [
+                "E7",
+                "E7",
+                "E7",
+                "E7",
+                "Am/E",
+                "Am/E",
+                "Am/E",
+                "Am/E"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.39166666666666666,
+                "pitchSetExact": 0,
+                "rootExact": 0
+              }
+            },
+            {
+              "label": "Option C — F1 — 10K pop mix (creative)",
+              "chords": [
+                "E7",
+                "Am/E",
+                "Am/E",
+                "Fmaj7",
+                "Fm",
+                "Bbmaj/F",
+                "Bb7/F",
+                "Ebmaj"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.16666666666666669,
+                "pitchSetExact": 0,
+                "rootExact": 0
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "K280-1",
+      "key": "F major",
+      "meter": [
+        3,
+        4
+      ],
+      "sourceSha256": "d5d2d346bf5ef23090306dc47bf091964ddf8d5fb492857181d93439dfb82622",
+      "context": [
+        "F",
+        "F",
+        "F",
+        "F",
+        "F",
+        "Edim/G",
+        "Bb",
+        "Bb"
+      ],
+      "reference": [
+        {
+          "symbol": "C7/G",
+          "root": 0,
+          "pcs": [
+            0,
+            4,
+            7,
+            10
+          ]
+        },
+        {
+          "symbol": "C7/G",
+          "root": 0,
+          "pcs": [
+            0,
+            4,
+            7,
+            10
+          ]
+        },
+        {
+          "symbol": "F",
+          "root": 5,
+          "pcs": [
+            0,
+            5,
+            9
+          ]
+        },
+        {
+          "symbol": "F",
+          "root": 5,
+          "pcs": [
+            0,
+            5,
+            9
+          ]
+        },
+        {
+          "symbol": "C7/E",
+          "root": 0,
+          "pcs": [
+            0,
+            4,
+            7,
+            10
+          ]
+        },
+        {
+          "symbol": "C7/E",
+          "root": 0,
+          "pcs": [
+            0,
+            4,
+            7,
+            10
+          ]
+        },
+        {
+          "symbol": "F",
+          "root": 5,
+          "pcs": [
+            0,
+            5,
+            9
+          ]
+        },
+        {
+          "symbol": "C7/G",
+          "root": 0,
+          "pcs": [
+            0,
+            4,
+            7,
+            10
+          ]
+        }
+      ],
+      "baselines": {
+        "holdLast": {
+          "valid": 1,
+          "pitchJaccard": 0.17916666666666667,
+          "pitchSetExact": 0,
+          "rootExact": 0
+        },
+        "tonic": {
+          "valid": 1,
+          "pitchJaccard": 0.4791666666666667,
+          "pitchSetExact": 0.375,
+          "rootExact": 0.375
+        }
+      },
+      "runs": [
+        {
+          "seed": 17,
+          "source": "ai",
+          "model": "ft_f1",
+          "candidates": [
+            {
+              "label": "Option A — F1 — 10K pop mix (creative)",
+              "chords": [
+                "Bbmaj",
+                "Fmaj/A",
+                "Bbmaj",
+                "Bbmaj",
+                "Bb7",
+                "Bb7",
+                "Bbmaj",
+                "Bbmaj"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.1732142857142857,
+                "pitchSetExact": 0,
+                "rootExact": 0
+              }
+            },
+            {
+              "label": "Option B — F1 — 10K pop mix (conservative)",
+              "chords": [
+                "Fmaj",
+                "Fmaj",
+                "Dm/F",
+                "Dm/F",
+                "Cmaj/E",
+                "Cmaj/E",
+                "Fmaj",
+                "Fmaj"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.5,
+                "pitchSetExact": 0.125,
+                "rootExact": 0.375
+              }
+            },
+            {
+              "label": "Option C — F1 — 10K pop mix (balanced)",
+              "chords": [
+                "Dm",
+                "Dm",
+                "Gm/D",
+                "Gm/D",
+                "C7",
+                "C7",
+                "F7/C",
+                "F7/C"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.36160714285714285,
+                "pitchSetExact": 0.25,
+                "rootExact": 0.375
+              }
+            }
+          ]
+        },
+        {
+          "seed": 18,
+          "source": "ai",
+          "model": "ft_f1",
+          "candidates": [
+            {
+              "label": "Option A — F1 — 10K pop mix (balanced)",
+              "chords": [
+                "Bbmaj",
+                "Fmaj/A",
+                "Bbmaj",
+                "Bbmaj",
+                "Fmaj/A",
+                "Fmaj/A",
+                "Cmaj",
+                "Cmaj"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.2520833333333333,
+                "pitchSetExact": 0,
+                "rootExact": 0.125
+              }
+            },
+            {
+              "label": "Option B — F1 — 10K pop mix (conservative)",
+              "chords": [
+                "Dm",
+                "Dm",
+                "Gm/D",
+                "Gm/D",
+                "Cmaj",
+                "Cmaj",
+                "Cmaj",
+                "Cmaj"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.30625,
+                "pitchSetExact": 0,
+                "rootExact": 0.375
+              }
+            },
+            {
+              "label": "Option C — F1 — 10K pop mix (creative)",
+              "chords": [
+                "Cmaj",
+                "Cmaj",
+                "Cmaj",
+                "Cmaj",
+                "Fmaj/C",
+                "Fmaj/C",
+                "G7/B",
+                "G7/B"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.31785714285714284,
+                "pitchSetExact": 0,
+                "rootExact": 0.25
+              }
+            }
+          ]
+        },
+        {
+          "seed": 19,
+          "source": "ai",
+          "model": "ft_f1",
+          "candidates": [
+            {
+              "label": "Option A — F1 — 10K pop mix (conservative)",
+              "chords": [
+                "Bbmaj",
+                "Fmaj/A",
+                "Bbmaj",
+                "Bbmaj",
+                "Fmaj/A",
+                "Fmaj/A",
+                "Cmaj",
+                "Cmaj"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.2520833333333333,
+                "pitchSetExact": 0,
+                "rootExact": 0.125
+              }
+            },
+            {
+              "label": "Option B — F1 — 10K pop mix (balanced)",
+              "chords": [
+                "Cmaj",
+                "Cmaj",
+                "Cmaj",
+                "Cmaj",
+                "Fmaj/C",
+                "Fmaj/C",
+                "G7/B",
+                "G7/B"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.31785714285714284,
+                "pitchSetExact": 0,
+                "rootExact": 0.25
+              }
+            },
+            {
+              "label": "Option C — F1 — 10K pop mix (creative)",
+              "chords": [
+                "Gm",
+                "Gm",
+                "Fmaj",
+                "Fmaj",
+                "Gmaj",
+                "Gmaj",
+                "C7/G",
+                "C7/G"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.5375,
+                "pitchSetExact": 0.375,
+                "rootExact": 0.375
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "K281-1",
+      "key": "Bb major",
+      "meter": [
+        2,
+        4
+      ],
+      "sourceSha256": "a0b6710e62034ca07c4ae47d46510186510fc5849bbf77ad868dd003f5759211",
+      "context": [
+        "Bb",
+        "Adim/C",
+        "Bb/D",
+        "Bb/D",
+        "Eb",
+        "Bb",
+        "F7",
+        "Bb"
+      ],
+      "reference": [
+        {
+          "symbol": "Bb",
+          "root": 10,
+          "pcs": [
+            2,
+            5,
+            10
+          ]
+        },
+        {
+          "symbol": "Adim/C",
+          "root": 9,
+          "pcs": [
+            0,
+            3,
+            9
+          ]
+        },
+        {
+          "symbol": "Bb/D",
+          "root": 10,
+          "pcs": [
+            2,
+            5,
+            10
+          ]
+        },
+        {
+          "symbol": "Bb/D",
+          "root": 10,
+          "pcs": [
+            2,
+            5,
+            10
+          ]
+        },
+        {
+          "symbol": "Cm/Eb",
+          "root": 0,
+          "pcs": [
+            0,
+            3,
+            7
+          ]
+        },
+        {
+          "symbol": "F",
+          "root": 5,
+          "pcs": [
+            2,
+            5,
+            10
+          ]
+        },
+        {
+          "symbol": "Bb",
+          "root": 10,
+          "pcs": [
+            2,
+            5,
+            10
+          ]
+        },
+        {
+          "symbol": "Bb",
+          "root": 10,
+          "pcs": [
+            2,
+            5,
+            10
+          ]
+        }
+      ],
+      "baselines": {
+        "holdLast": {
+          "valid": 1,
+          "pitchJaccard": 0.75,
+          "pitchSetExact": 0.75,
+          "rootExact": 0.625
+        },
+        "tonic": {
+          "valid": 1,
+          "pitchJaccard": 0.75,
+          "pitchSetExact": 0.75,
+          "rootExact": 0.625
+        }
+      },
+      "runs": [
+        {
+          "seed": 17,
+          "source": "ai",
+          "model": "ft_f1",
+          "candidates": [
+            {
+              "label": "Option A — F1 — 10K pop mix (conservative)",
+              "chords": [
+                "Fmaj",
+                "Fmaj",
+                "Bbmaj/F",
+                "Bbmaj/F",
+                "Bbmaj/F",
+                "Bbmaj/F",
+                "Bb7/F",
+                "Bb7/F"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.65,
+                "pitchSetExact": 0.375,
+                "rootExact": 0.5
+              }
+            },
+            {
+              "label": "Option B — F1 — 10K pop mix (balanced)",
+              "chords": [
+                "Adim",
+                "Gm",
+                "Cm7/G",
+                "Cm7/G",
+                "Fsus4",
+                "Fsus4",
+                "Bbmaj/F",
+                "Bbmaj/F"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.37916666666666665,
+                "pitchSetExact": 0.25,
+                "rootExact": 0.375
+              }
+            },
+            {
+              "label": "Option C — F1 — 10K pop mix (creative)",
+              "chords": [
+                "Bbmaj",
+                "Ebmaj/Bb",
+                "Bbmaj",
+                "F7/A",
+                "Bb7",
+                "Bb7",
+                "Ebmaj/Bb",
+                "Ebmaj/Bb"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.4395833333333333,
+                "pitchSetExact": 0.25,
+                "rootExact": 0.25
+              }
+            }
+          ]
+        },
+        {
+          "seed": 18,
+          "source": "ai",
+          "model": "ft_f1",
+          "candidates": [
+            {
+              "label": "Option A — F1 — 10K pop mix (conservative)",
+              "chords": [
+                "Adim",
+                "Bbmaj",
+                "Bbmaj",
+                "Bbmaj",
+                "Bb7",
+                "Bb7",
+                "Bb7",
+                "Bb7"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.53125,
+                "pitchSetExact": 0.25,
+                "rootExact": 0.5
+              }
+            },
+            {
+              "label": "Option B — F1 — 10K pop mix (creative)",
+              "chords": [
+                "Fmaj",
+                "Fmaj",
+                "Bbmaj/F",
+                "Bbmaj/F",
+                "Bbmaj/F",
+                "Bbmaj/F",
+                "Ebmaj7",
+                "Bbmaj/D"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.6375,
+                "pitchSetExact": 0.5,
+                "rootExact": 0.375
+              }
+            },
+            {
+              "label": "Option C — F1 — 10K pop mix (balanced)",
+              "chords": [
+                "Bbmaj",
+                "Bbmaj",
+                "Ebm/Bb",
+                "Ebm/Bb",
+                "F7/A",
+                "F7/A",
+                "Bb7",
+                "Bb7"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.43333333333333335,
+                "pitchSetExact": 0.125,
+                "rootExact": 0.5
+              }
+            }
+          ]
+        },
+        {
+          "seed": 19,
+          "source": "ai",
+          "model": "ft_f1",
+          "candidates": [
+            {
+              "label": "Option A — F1 — 10K pop mix (balanced)",
+              "chords": [
+                "Fmaj",
+                "Fmaj",
+                "Bbmaj/F",
+                "Bbmaj/F",
+                "Bbmaj/F",
+                "Bbmaj/F",
+                "Ebmaj7",
+                "Ebmaj7"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.5625,
+                "pitchSetExact": 0.375,
+                "rootExact": 0.25
+              }
+            },
+            {
+              "label": "Option B — F1 — 10K pop mix (conservative)",
+              "chords": [
+                "Bbmaj",
+                "Bbmaj",
+                "Ebm/Bb",
+                "Ebm/Bb",
+                "F7/A",
+                "F7/A",
+                "Bbmaj",
+                "Bbmaj"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.49583333333333335,
+                "pitchSetExact": 0.375,
+                "rootExact": 0.5
+              }
+            },
+            {
+              "label": "Option C — F1 — 10K pop mix (creative)",
+              "chords": [
+                "Adim",
+                "Bbmaj",
+                "Bbmaj",
+                "Ebmaj/Bb",
+                "Bbmaj",
+                "C7",
+                "F7/C",
+                "F7/C"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.2125,
+                "pitchSetExact": 0.125,
+                "rootExact": 0.125
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "K282-1",
+      "key": "Eb major",
+      "meter": [
+        4,
+        4
+      ],
+      "sourceSha256": "4a3797c2635c202715137c9a1030aa3be21e316221a57603b061872c0112278c",
+      "context": [
+        "Eb",
+        "Bb/D",
+        "Bb",
+        "C7/Bb",
+        "Bb7/Ab",
+        "Fm7",
+        "Eb",
+        "Eb"
+      ],
+      "reference": [
+        {
+          "symbol": "Ddim/F",
+          "root": 2,
+          "pcs": [
+            2,
+            5,
+            8
+          ]
+        },
+        {
+          "symbol": "Ddim/F",
+          "root": 2,
+          "pcs": [
+            2,
+            5,
+            8
+          ]
+        },
+        {
+          "symbol": "Eb/G",
+          "root": 3,
+          "pcs": [
+            3,
+            7,
+            10
+          ]
+        },
+        {
+          "symbol": "Ebm/Gb",
+          "root": 3,
+          "pcs": [
+            3,
+            6,
+            10
+          ]
+        },
+        {
+          "symbol": "F7",
+          "root": 5,
+          "pcs": [
+            0,
+            3,
+            5,
+            9
+          ]
+        },
+        {
+          "symbol": "Edim7",
+          "root": 4,
+          "pcs": [
+            1,
+            4,
+            7,
+            10
+          ]
+        },
+        {
+          "symbol": "F",
+          "root": 5,
+          "pcs": [
+            0,
+            5,
+            9
+          ]
+        },
+        {
+          "symbol": "F",
+          "root": 5,
+          "pcs": [
+            1,
+            5,
+            10
+          ]
+        }
+      ],
+      "baselines": {
+        "holdLast": {
+          "valid": 1,
+          "pitchJaccard": 0.2833333333333333,
+          "pitchSetExact": 0.125,
+          "rootExact": 0.25
+        },
+        "tonic": {
+          "valid": 1,
+          "pitchJaccard": 0.2833333333333333,
+          "pitchSetExact": 0.125,
+          "rootExact": 0.25
+        }
+      },
+      "runs": [
+        {
+          "seed": 17,
+          "source": "ai",
+          "model": "ft_f1",
+          "candidates": [
+            {
+              "label": "Option A — F1 — 10K pop mix (conservative)",
+              "chords": [
+                "Ebmaj",
+                "Ebmaj",
+                "Bb7/D",
+                "Bb7/D",
+                "Bb7/D",
+                "Bb7/D",
+                "Ebmaj",
+                "Ebmaj"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.10238095238095238,
+                "pitchSetExact": 0,
+                "rootExact": 0
+              }
+            },
+            {
+              "label": "Option B — F1 — 10K pop mix (balanced)",
+              "chords": [
+                "Cm",
+                "Gm/D",
+                "Abmaj7/Eb",
+                "Fm",
+                "Bb7/F",
+                "Bb7/F",
+                "Ebmaj",
+                "Ebmaj"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.13571428571428573,
+                "pitchSetExact": 0,
+                "rootExact": 0
+              }
+            },
+            {
+              "label": "Option C — F1 — 10K pop mix (creative)",
+              "chords": [
+                "Bbmaj",
+                "Ebmaj/Bb",
+                "C7",
+                "F7/C",
+                "Bb7",
+                "Ebadd9/Bb",
+                "Bbmaj",
+                "Bb7"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.26785714285714285,
+                "pitchSetExact": 0,
+                "rootExact": 0
+              }
+            }
+          ]
+        },
+        {
+          "seed": 18,
+          "source": "ai",
+          "model": "ft_f1",
+          "candidates": [
+            {
+              "label": "Option A — F1 — 10K pop mix (creative)",
+              "chords": [
+                "Eb7",
+                "Eb7",
+                "Ebmaj",
+                "Ebmaj",
+                "Ebmaj",
+                "Ebmaj",
+                "Bbmaj/D",
+                "Bbmaj/D"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.3458333333333333,
+                "pitchSetExact": 0.125,
+                "rootExact": 0.25
+              }
+            },
+            {
+              "label": "Option B — F1 — 10K pop mix (conservative)",
+              "chords": [
+                "Ebmaj",
+                "Ebmaj7",
+                "Cm7/Eb",
+                "F7",
+                "Bb7/F",
+                "Bb7/F",
+                "Bb7/F",
+                "Bb7/F"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.24196428571428572,
+                "pitchSetExact": 0,
+                "rootExact": 0
+              }
+            },
+            {
+              "label": "Option C — F1 — 10K pop mix (balanced)",
+              "chords": [
+                "Bbmaj",
+                "Ebmaj/Bb",
+                "Gm/Bb",
+                "Gm7/Bb",
+                "Gm13/Bb",
+                "Gm7/Bb",
+                "Ebmaj/Bb",
+                "D7/A"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.234375,
+                "pitchSetExact": 0,
+                "rootExact": 0
+              }
+            }
+          ]
+        },
+        {
+          "seed": 19,
+          "source": "ai",
+          "model": "ft_f1",
+          "candidates": [
+            {
+              "label": "Option A — F1 — 10K pop mix (creative)",
+              "chords": [
+                "Abmaj",
+                "Abmaj",
+                "Abmaj7",
+                "Abmaj7",
+                "Abmaj",
+                "Abmaj",
+                "Bbmaj",
+                "Bbmaj"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.25833333333333336,
+                "pitchSetExact": 0,
+                "rootExact": 0
+              }
+            },
+            {
+              "label": "Option B — F1 — 10K pop mix (balanced)",
+              "chords": [
+                "Eb7",
+                "Eb7",
+                "Ebmaj",
+                "Ebmaj",
+                "Ebmaj",
+                "Ebmaj",
+                "Bbmaj/D",
+                "Bbmaj/D"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.3458333333333333,
+                "pitchSetExact": 0.125,
+                "rootExact": 0.25
+              }
+            },
+            {
+              "label": "Option C — F1 — 10K pop mix (conservative)",
+              "chords": [
+                "Bbmaj",
+                "Ebmaj/Bb",
+                "Gm/Bb",
+                "Gm7/Bb",
+                "Gm13/Bb",
+                "Gm13/Bb",
+                "Abmaj",
+                "Abmaj"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.26458333333333334,
+                "pitchSetExact": 0,
+                "rootExact": 0
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "K283-1",
+      "key": "G major",
+      "meter": [
+        3,
+        4
+      ],
+      "sourceSha256": "83026eca3a662995d2eb342a5f05fd8efec9f565e87b775b78a6ff6e09149ef7",
+      "context": [
+        "G",
+        "G",
+        "G",
+        "D7/A",
+        "D7/A",
+        "D/Gb",
+        "D7/Gb",
+        "G"
+      ],
+      "reference": [
+        {
+          "symbol": "G",
+          "root": 7,
+          "pcs": [
+            2,
+            7,
+            11
+          ]
+        },
+        {
+          "symbol": "C",
+          "root": 0,
+          "pcs": [
+            0,
+            4,
+            7
+          ]
+        },
+        {
+          "symbol": "C",
+          "root": 0,
+          "pcs": [
+            0,
+            4,
+            7
+          ]
+        },
+        {
+          "symbol": "G/B",
+          "root": 7,
+          "pcs": [
+            2,
+            7,
+            11
+          ]
+        },
+        {
+          "symbol": "G/B",
+          "root": 7,
+          "pcs": [
+            2,
+            7,
+            11
+          ]
+        },
+        {
+          "symbol": "D7/A",
+          "root": 2,
+          "pcs": [
+            0,
+            2,
+            6,
+            9
+          ]
+        },
+        {
+          "symbol": "D/Gb",
+          "root": 2,
+          "pcs": [
+            2,
+            6,
+            9
+          ]
+        },
+        {
+          "symbol": "G",
+          "root": 7,
+          "pcs": [
+            2,
+            7,
+            11
+          ]
+        }
+      ],
+      "baselines": {
+        "holdLast": {
+          "valid": 1,
+          "pitchJaccard": 0.5958333333333333,
+          "pitchSetExact": 0.5,
+          "rootExact": 0.5
+        },
+        "tonic": {
+          "valid": 1,
+          "pitchJaccard": 0.5958333333333333,
+          "pitchSetExact": 0.5,
+          "rootExact": 0.5
+        }
+      },
+      "runs": [
+        {
+          "seed": 17,
+          "source": "ai",
+          "model": "ft_f1",
+          "candidates": [
+            {
+              "label": "Option A — F1 — 10K pop mix (balanced)",
+              "chords": [
+                "Cmaj",
+                "Cmaj",
+                "D7",
+                "D7",
+                "Dmaj",
+                "Dmaj",
+                "Gmaj/D",
+                "Gmaj/D"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.4604166666666667,
+                "pitchSetExact": 0.25,
+                "rootExact": 0.375
+              }
+            },
+            {
+              "label": "Option B — F1 — 10K pop mix (conservative)",
+              "chords": [
+                "D7",
+                "D7",
+                "Gmaj/D",
+                "Gmaj/D",
+                "G7/D",
+                "G7/D",
+                "Cmaj",
+                "Cmaj"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.3282738095238095,
+                "pitchSetExact": 0.125,
+                "rootExact": 0.25
+              }
+            },
+            {
+              "label": "Option C — F1 — 10K pop mix (creative)",
+              "chords": [
+                "G7",
+                "G7",
+                "C7/G",
+                "C7/G",
+                "F7",
+                "F7",
+                "Bb7/F",
+                "Bb7/F"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.3125,
+                "pitchSetExact": 0,
+                "rootExact": 0.25
+              }
+            }
+          ]
+        },
+        {
+          "seed": 18,
+          "source": "ai",
+          "model": "ft_f1",
+          "candidates": [
+            {
+              "label": "Option A — F1 — 10K pop mix (balanced)",
+              "chords": [
+                "G7",
+                "G7",
+                "Cmaj/G",
+                "Cmaj/G",
+                "Cmaj/G",
+                "Cmaj/G",
+                "Am",
+                "Am"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.3354166666666667,
+                "pitchSetExact": 0.125,
+                "rootExact": 0.25
+              }
+            },
+            {
+              "label": "Option B — F1 — 10K pop mix (creative)",
+              "chords": [
+                "Cmaj",
+                "Cmaj",
+                "Cmaj",
+                "Cmaj",
+                "Fmaj/C",
+                "Fmaj/C",
+                "G7/B",
+                "G7/B"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.46458333333333335,
+                "pitchSetExact": 0.25,
+                "rootExact": 0.375
+              }
+            },
+            {
+              "label": "Option C — F1 — 10K pop mix (conservative)",
+              "chords": [
+                "Cmaj",
+                "Cmaj",
+                "D7",
+                "D7",
+                "Dmaj",
+                "Dmaj",
+                "Gmaj/D",
+                "Gmaj/D"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.4604166666666667,
+                "pitchSetExact": 0.25,
+                "rootExact": 0.375
+              }
+            }
+          ]
+        },
+        {
+          "seed": 19,
+          "source": "ai",
+          "model": "ft_f1",
+          "candidates": [
+            {
+              "label": "Option A — F1 — 10K pop mix (conservative)",
+              "chords": [
+                "G7",
+                "G7",
+                "Cmaj/G",
+                "Cmaj/G",
+                "Cmaj/G",
+                "Cmaj/G",
+                "Am",
+                "Am"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.3354166666666667,
+                "pitchSetExact": 0.125,
+                "rootExact": 0.25
+              }
+            },
+            {
+              "label": "Option B — F1 — 10K pop mix (balanced)",
+              "chords": [
+                "Cmaj",
+                "Cmaj",
+                "Cmaj",
+                "Cmaj",
+                "Fmaj/C",
+                "Fmaj/C",
+                "G7/B",
+                "G7/B"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.46458333333333335,
+                "pitchSetExact": 0.25,
+                "rootExact": 0.375
+              }
+            },
+            {
+              "label": "Option C — F1 — 10K pop mix (creative)",
+              "chords": [
+                "E7",
+                "E7",
+                "Am/E",
+                "Am/E",
+                "Gmaj",
+                "Gmaj",
+                "D7/F#",
+                "D7/F#"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.39375,
+                "pitchSetExact": 0.125,
+                "rootExact": 0.25
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "K284-1",
+      "key": "D major",
+      "meter": [
+        4,
+        4
+      ],
+      "sourceSha256": "1f00b421ba827e02aafa067f977572b80db48d2def7b374a1a59e4c10d66dac6",
+      "context": [
+        "D",
+        "D",
+        "D",
+        "Bm",
+        "Em",
+        "Bm",
+        "A",
+        "A"
+      ],
+      "reference": [
+        {
+          "symbol": "A",
+          "root": 9,
+          "pcs": [
+            2,
+            6,
+            9
+          ]
+        },
+        {
+          "symbol": "A",
+          "root": 9,
+          "pcs": [
+            1,
+            4,
+            9
+          ]
+        },
+        {
+          "symbol": "A",
+          "root": 9,
+          "pcs": [
+            2,
+            6,
+            9
+          ]
+        },
+        {
+          "symbol": "A",
+          "root": 9,
+          "pcs": [
+            1,
+            4,
+            9
+          ]
+        },
+        {
+          "symbol": "A7",
+          "root": 9,
+          "pcs": [
+            1,
+            4,
+            7,
+            9
+          ]
+        },
+        {
+          "symbol": "A7",
+          "root": 9,
+          "pcs": [
+            1,
+            4,
+            7,
+            9
+          ]
+        },
+        {
+          "symbol": "A7",
+          "root": 9,
+          "pcs": [
+            1,
+            4,
+            7,
+            9
+          ]
+        },
+        {
+          "symbol": "A7",
+          "root": 9,
+          "pcs": [
+            1,
+            4,
+            7,
+            9
+          ]
+        }
+      ],
+      "baselines": {
+        "holdLast": {
+          "valid": 1,
+          "pitchJaccard": 0.675,
+          "pitchSetExact": 0.25,
+          "rootExact": 1
+        },
+        "tonic": {
+          "valid": 1,
+          "pitchJaccard": 0.3833333333333333,
+          "pitchSetExact": 0.25,
+          "rootExact": 0
+        }
+      },
+      "runs": [
+        {
+          "seed": 17,
+          "source": "ai",
+          "model": "ft_f1",
+          "candidates": [
+            {
+              "label": "Option A — F1 — 10K pop mix (conservative)",
+              "chords": [
+                "Amaj",
+                "Amaj",
+                "Dmaj/A",
+                "Dmaj/A",
+                "Em/G",
+                "Em/G",
+                "Gmaj",
+                "Gmaj"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.44166666666666665,
+                "pitchSetExact": 0.25,
+                "rootExact": 0.25
+              }
+            },
+            {
+              "label": "Option B — F1 — 10K pop mix (creative)",
+              "chords": [
+                "Dmaj",
+                "F#maj/Db",
+                "F#7/Db",
+                "F#7/Db",
+                "Bm",
+                "Bm",
+                "Emaj/B",
+                "Emaj/B"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.2625,
+                "pitchSetExact": 0.125,
+                "rootExact": 0
+              }
+            },
+            {
+              "label": "Option C — F1 — 10K pop mix (balanced)",
+              "chords": [
+                "Dmaj",
+                "Amaj/Db",
+                "Gmaj/D",
+                "Dmaj",
+                "Em",
+                "F#7",
+                "Bm/F#",
+                "Em"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.44166666666666665,
+                "pitchSetExact": 0.25,
+                "rootExact": 0.125
+              }
+            }
+          ]
+        },
+        {
+          "seed": 18,
+          "source": "ai",
+          "model": "ft_f1",
+          "candidates": [
+            {
+              "label": "Option A — F1 — 10K pop mix (creative)",
+              "chords": [
+                "A7",
+                "Dmaj/A",
+                "Amaj",
+                "Amaj",
+                "Amaj",
+                "Amaj",
+                "Gmaj",
+                "Gmaj"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.425,
+                "pitchSetExact": 0.125,
+                "rootExact": 0.625
+              }
+            },
+            {
+              "label": "Option B — F1 — 10K pop mix (conservative)",
+              "chords": [
+                "Dmaj",
+                "Amaj/Db",
+                "Gmaj/D",
+                "Dmaj",
+                "Em",
+                "Amaj/E",
+                "F#maj",
+                "F#maj"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.48541666666666666,
+                "pitchSetExact": 0.25,
+                "rootExact": 0.25
+              }
+            },
+            {
+              "label": "Option C — F1 — 10K pop mix (balanced)",
+              "chords": [
+                "Dmaj",
+                "Gmaj/D",
+                "Dmaj",
+                "Amaj/Db",
+                "Bm",
+                "Amaj",
+                "Gmaj7",
+                "F#7"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.5282738095238095,
+                "pitchSetExact": 0.375,
+                "rootExact": 0.25
+              }
+            }
+          ]
+        },
+        {
+          "seed": 19,
+          "source": "ai",
+          "model": "ft_f1",
+          "candidates": [
+            {
+              "label": "Option A — F1 — 10K pop mix (balanced)",
+              "chords": [
+                "A7",
+                "Dmaj/A",
+                "Bm",
+                "Bm",
+                "Gmaj/B",
+                "Gmaj/B",
+                "Gmaj/B",
+                "Gmaj/B"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.19166666666666665,
+                "pitchSetExact": 0,
+                "rootExact": 0.125
+              }
+            },
+            {
+              "label": "Option B — F1 — 10K pop mix (creative)",
+              "chords": [
+                "F#m",
+                "Gmaj",
+                "Amaj",
+                "Gmaj",
+                "Dmaj/F#",
+                "Amaj",
+                "Amaj",
+                "Bm"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.29583333333333334,
+                "pitchSetExact": 0,
+                "rootExact": 0.375
+              }
+            },
+            {
+              "label": "Option C — F1 — 10K pop mix (conservative)",
+              "chords": [
+                "Dmaj",
+                "Gmaj/D",
+                "Dmaj",
+                "Amaj/Db",
+                "Bm",
+                "Amaj",
+                "Gmaj7",
+                "F#7"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.5282738095238095,
+                "pitchSetExact": 0.375,
+                "rootExact": 0.25
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "K309-1",
+      "key": "C major",
+      "meter": [
+        4,
+        4
+      ],
+      "sourceSha256": "9519668b2015cd1e1099c56dfde65745d08db1a0ac15788a7e876b21720f293f",
+      "context": [
+        "C",
+        "C",
+        "C",
+        "C",
+        "C/E",
+        "A7/Db",
+        "G7/D",
+        "G/B"
+      ],
+      "reference": [
+        {
+          "symbol": "C",
+          "root": 0,
+          "pcs": [
+            0,
+            4,
+            7
+          ]
+        },
+        {
+          "symbol": "C/E",
+          "root": 0,
+          "pcs": [
+            0,
+            4,
+            7
+          ]
+        },
+        {
+          "symbol": "Dm/F",
+          "root": 2,
+          "pcs": [
+            2,
+            5,
+            9
+          ]
+        },
+        {
+          "symbol": "Dm/F",
+          "root": 2,
+          "pcs": [
+            2,
+            5,
+            9
+          ]
+        },
+        {
+          "symbol": "Dm/F",
+          "root": 2,
+          "pcs": [
+            2,
+            5,
+            9
+          ]
+        },
+        {
+          "symbol": "G",
+          "root": 7,
+          "pcs": [
+            0,
+            4,
+            7
+          ]
+        },
+        {
+          "symbol": "C",
+          "root": 0,
+          "pcs": [
+            0,
+            4,
+            7
+          ]
+        },
+        {
+          "symbol": "C",
+          "root": 0,
+          "pcs": [
+            0,
+            4,
+            7
+          ]
+        }
+      ],
+      "baselines": {
+        "holdLast": {
+          "valid": 1,
+          "pitchJaccard": 0.2,
+          "pitchSetExact": 0,
+          "rootExact": 0.125
+        },
+        "tonic": {
+          "valid": 1,
+          "pitchJaccard": 0.625,
+          "pitchSetExact": 0.625,
+          "rootExact": 0.5
+        }
+      },
+      "runs": [
+        {
+          "seed": 17,
+          "source": "ai",
+          "model": "ft_f1",
+          "candidates": [
+            {
+              "label": "Option A — F1 — 10K pop mix (conservative)",
+              "chords": [
+                "Fmaj",
+                "Fmaj",
+                "Fmaj",
+                "Fmaj",
+                "Cmaj/E",
+                "Cmaj/E",
+                "G7",
+                "G7"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.3416666666666667,
+                "pitchSetExact": 0.125,
+                "rootExact": 0
+              }
+            },
+            {
+              "label": "Option B — F1 — 10K pop mix (balanced)",
+              "chords": [
+                "Cmaj",
+                "Cmaj",
+                "C7",
+                "C7",
+                "Fmaj/C",
+                "Fmaj/C",
+                "Fm/C",
+                "Fm/C"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.3875,
+                "pitchSetExact": 0.25,
+                "rootExact": 0.25
+              }
+            },
+            {
+              "label": "Option C — F1 — 10K pop mix (creative)",
+              "chords": [
+                "G7",
+                "G7",
+                "C7/G",
+                "C7/G",
+                "Fmaj",
+                "Fmaj",
+                "Cmaj/E",
+                "Cmaj/E"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.37916666666666665,
+                "pitchSetExact": 0.25,
+                "rootExact": 0.25
+              }
+            }
+          ]
+        },
+        {
+          "seed": 18,
+          "source": "ai",
+          "model": "ft_f1",
+          "candidates": [
+            {
+              "label": "Option A — F1 — 10K pop mix (conservative)",
+              "chords": [
+                "Cmaj",
+                "Cmaj",
+                "C7",
+                "C7",
+                "Fmaj/C",
+                "Fmaj/C",
+                "Fm/C",
+                "Fm/C"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.3875,
+                "pitchSetExact": 0.25,
+                "rootExact": 0.25
+              }
+            },
+            {
+              "label": "Option B — F1 — 10K pop mix (creative)",
+              "chords": [
+                "Cmaj",
+                "Cmaj",
+                "C7",
+                "C7",
+                "Fmaj/C",
+                "Fmaj/C",
+                "G7/B",
+                "G7/B"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.37916666666666665,
+                "pitchSetExact": 0.25,
+                "rootExact": 0.25
+              }
+            },
+            {
+              "label": "Option C — F1 — 10K pop mix (balanced)",
+              "chords": [
+                "G7",
+                "G7",
+                "C7/G",
+                "C7/G",
+                "Fmaj",
+                "Fmaj",
+                "Cmaj/E",
+                "Cmaj/E"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.37916666666666665,
+                "pitchSetExact": 0.25,
+                "rootExact": 0.25
+              }
+            }
+          ]
+        },
+        {
+          "seed": 19,
+          "source": "ai",
+          "model": "ft_f1",
+          "candidates": [
+            {
+              "label": "Option A — F1 — 10K pop mix (creative)",
+              "chords": [
+                "Dm7",
+                "Dm7",
+                "Fmaj",
+                "Fmaj",
+                "Gmaj",
+                "Gmaj",
+                "Gmaj",
+                "Gmaj"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.26666666666666666,
+                "pitchSetExact": 0,
+                "rootExact": 0.125
+              }
+            },
+            {
+              "label": "Option B — F1 — 10K pop mix (balanced)",
+              "chords": [
+                "Cmaj",
+                "Cmaj",
+                "C7",
+                "C7",
+                "Fmaj/C",
+                "Fmaj/C",
+                "G7/B",
+                "G7/B"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.37916666666666665,
+                "pitchSetExact": 0.25,
+                "rootExact": 0.25
+              }
+            },
+            {
+              "label": "Option C — F1 — 10K pop mix (conservative)",
+              "chords": [
+                "G7",
+                "G7",
+                "C7/G",
+                "C7/G",
+                "Fmaj",
+                "Fmaj",
+                "Cmaj/E",
+                "Cmaj/E"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.37916666666666665,
+                "pitchSetExact": 0.25,
+                "rootExact": 0.25
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "K310-1",
+      "key": "A minor",
+      "meter": [
+        4,
+        4
+      ],
+      "sourceSha256": "7ce85f8fb8a2ae63a2d313eee89758f4bcfaad80868c0061861a934eed6bae1a",
+      "context": [
+        "Am",
+        "Am",
+        "E7/B",
+        "E7/B",
+        "Am",
+        "Am",
+        "E7/B",
+        "E7/B"
+      ],
+      "reference": [
+        {
+          "symbol": "Am",
+          "root": 9,
+          "pcs": [
+            0,
+            4,
+            9
+          ]
+        },
+        {
+          "symbol": "Am",
+          "root": 9,
+          "pcs": [
+            0,
+            4,
+            9
+          ]
+        },
+        {
+          "symbol": "Dm",
+          "root": 2,
+          "pcs": [
+            2,
+            5,
+            9
+          ]
+        },
+        {
+          "symbol": "G",
+          "root": 7,
+          "pcs": [
+            2,
+            7,
+            11
+          ]
+        },
+        {
+          "symbol": "C",
+          "root": 0,
+          "pcs": [
+            0,
+            3,
+            7
+          ]
+        },
+        {
+          "symbol": "F",
+          "root": 5,
+          "pcs": [
+            0,
+            5,
+            9
+          ]
+        },
+        {
+          "symbol": "F",
+          "root": 5,
+          "pcs": [
+            0,
+            5,
+            9
+          ]
+        },
+        {
+          "symbol": "E",
+          "root": 4,
+          "pcs": [
+            0,
+            4,
+            9
+          ]
+        }
+      ],
+      "baselines": {
+        "holdLast": {
+          "valid": 1,
+          "pitchJaccard": 0.13333333333333333,
+          "pitchSetExact": 0,
+          "rootExact": 0.125
+        },
+        "tonic": {
+          "valid": 1,
+          "pitchJaccard": 0.55,
+          "pitchSetExact": 0.375,
+          "rootExact": 0.25
+        }
+      },
+      "runs": [
+        {
+          "seed": 17,
+          "source": "ai",
+          "model": "ft_f1",
+          "candidates": [
+            {
+              "label": "Option A — F1 — 10K pop mix (conservative)",
+              "chords": [
+                "Amaj",
+                "Amaj",
+                "Amaj",
+                "Amaj",
+                "Dbm/Ab",
+                "Dbm/Ab",
+                "Dbm/Ab",
+                "Dbm/Ab"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.175,
+                "pitchSetExact": 0,
+                "rootExact": 0.25
+              }
+            },
+            {
+              "label": "Option B — F1 — 10K pop mix (balanced)",
+              "chords": [
+                "Dm",
+                "E7",
+                "Fmaj",
+                "E7",
+                "E7",
+                "Am/E",
+                "Am/E",
+                "Dm"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.30833333333333335,
+                "pitchSetExact": 0,
+                "rootExact": 0
+              }
+            },
+            {
+              "label": "Option C — F1 — 10K pop mix (creative)",
+              "chords": [
+                "E7",
+                "Am/E",
+                "Cmaj/E",
+                "Fmaj",
+                "Am/E",
+                "Cmaj/E",
+                "Fmaj",
+                "Am/E"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.44583333333333336,
+                "pitchSetExact": 0.375,
+                "rootExact": 0.25
+              }
+            }
+          ]
+        },
+        {
+          "seed": 18,
+          "source": "ai",
+          "model": "ft_f1",
+          "candidates": [
+            {
+              "label": "Option A — F1 — 10K pop mix (creative)",
+              "chords": [
+                "A7",
+                "A7",
+                "Dmaj/A",
+                "Dmaj/A",
+                "Dmaj/A",
+                "Dmaj/A",
+                "Amaj",
+                "Amaj"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.3,
+                "pitchSetExact": 0,
+                "rootExact": 0.375
+              }
+            },
+            {
+              "label": "Option B — F1 — 10K pop mix (balanced)",
+              "chords": [
+                "Dm",
+                "Am/C",
+                "Cmaj",
+                "Fmaj/C",
+                "Am/C",
+                "E7/B",
+                "E7/B",
+                "Am"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.3,
+                "pitchSetExact": 0.25,
+                "rootExact": 0.125
+              }
+            },
+            {
+              "label": "Option C — F1 — 10K pop mix (conservative)",
+              "chords": [
+                "Dm",
+                "E7",
+                "Fmaj",
+                "E7",
+                "E7",
+                "Am/E",
+                "Am/E",
+                "E7"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.3041666666666667,
+                "pitchSetExact": 0,
+                "rootExact": 0.125
+              }
+            }
+          ]
+        },
+        {
+          "seed": 19,
+          "source": "ai",
+          "model": "ft_f1",
+          "candidates": [
+            {
+              "label": "Option A — F1 — 10K pop mix (balanced)",
+              "chords": [
+                "Fmaj",
+                "Gmaj",
+                "Emaj",
+                "Emaj",
+                "Am/E",
+                "Am/E",
+                "Fmaj",
+                "Fmaj"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.3625,
+                "pitchSetExact": 0.125,
+                "rootExact": 0.125
+              }
+            },
+            {
+              "label": "Option B — F1 — 10K pop mix (creative)",
+              "chords": [
+                "E7",
+                "E7",
+                "Fmaj",
+                "Fmaj",
+                "Gmaj",
+                "Gmaj",
+                "Am",
+                "Am"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.31666666666666665,
+                "pitchSetExact": 0.125,
+                "rootExact": 0
+              }
+            },
+            {
+              "label": "Option C — F1 — 10K pop mix (conservative)",
+              "chords": [
+                "Dm",
+                "Am/C",
+                "Dm",
+                "E7",
+                "E7",
+                "Dm",
+                "Am/C",
+                "E7/B"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.4708333333333333,
+                "pitchSetExact": 0.25,
+                "rootExact": 0.375
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "K311-1",
+      "key": "D major",
+      "meter": [
+        4,
+        4
+      ],
+      "sourceSha256": "8ff319ae55ab6e19851201a7266b40efa31af141b0bc9376d900e8209283af33",
+      "context": [
+        "D",
+        "D",
+        "D/Gb",
+        "D/Gb",
+        "D/Gb",
+        "Em7",
+        "D",
+        "D"
+      ],
+      "reference": [
+        {
+          "symbol": "D/Gb",
+          "root": 2,
+          "pcs": [
+            2,
+            6,
+            9
+          ]
+        },
+        {
+          "symbol": "D/Gb",
+          "root": 2,
+          "pcs": [
+            2,
+            6,
+            9
+          ]
+        },
+        {
+          "symbol": "D/Gb",
+          "root": 2,
+          "pcs": [
+            2,
+            6,
+            9
+          ]
+        },
+        {
+          "symbol": "Em7",
+          "root": 4,
+          "pcs": [
+            2,
+            4,
+            7,
+            11
+          ]
+        },
+        {
+          "symbol": "D",
+          "root": 2,
+          "pcs": [
+            2,
+            6,
+            9
+          ]
+        },
+        {
+          "symbol": "D",
+          "root": 2,
+          "pcs": [
+            2,
+            6,
+            9
+          ]
+        },
+        {
+          "symbol": "A7/E",
+          "root": 9,
+          "pcs": [
+            1,
+            4,
+            7,
+            9
+          ]
+        },
+        {
+          "symbol": "A7/E",
+          "root": 9,
+          "pcs": [
+            1,
+            4,
+            7,
+            9
+          ]
+        }
+      ],
+      "baselines": {
+        "holdLast": {
+          "valid": 1,
+          "pitchJaccard": 0.6875,
+          "pitchSetExact": 0.625,
+          "rootExact": 0.625
+        },
+        "tonic": {
+          "valid": 1,
+          "pitchJaccard": 0.6875,
+          "pitchSetExact": 0.625,
+          "rootExact": 0.625
+        }
+      },
+      "runs": [
+        {
+          "seed": 17,
+          "source": "ai",
+          "model": "ft_f1",
+          "candidates": [
+            {
+              "label": "Option A — F1 — 10K pop mix (conservative)",
+              "chords": [
+                "Amaj",
+                "Amaj",
+                "Amaj",
+                "Amaj",
+                "Dmaj/A",
+                "Dmaj/A",
+                "Dmaj7/A",
+                "Dmaj7/A"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.42916666666666664,
+                "pitchSetExact": 0.25,
+                "rootExact": 0.25
+              }
+            },
+            {
+              "label": "Option B — F1 — 10K pop mix (creative)",
+              "chords": [
+                "Em7",
+                "Dmaj",
+                "F#m7/Db",
+                "F#m7/Db",
+                "Bm7",
+                "Bm7",
+                "Amaj",
+                "Amaj"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.5886904761904762,
+                "pitchSetExact": 0.125,
+                "rootExact": 0.375
+              }
+            },
+            {
+              "label": "Option C — F1 — 10K pop mix (balanced)",
+              "chords": [
+                "Dmaj7",
+                "Bm7/D",
+                "Gmaj7/D",
+                "Gmaj7/D",
+                "Amaj/Db",
+                "Amaj/Db",
+                "Dmaj7",
+                "Em7"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.4458333333333333,
+                "pitchSetExact": 0,
+                "rootExact": 0.125
+              }
+            }
+          ]
+        },
+        {
+          "seed": 18,
+          "source": "ai",
+          "model": "ft_f1",
+          "candidates": [
+            {
+              "label": "Option A — F1 — 10K pop mix (creative)",
+              "chords": [
+                "A7",
+                "A7",
+                "Dmaj/A",
+                "Dmaj/A",
+                "Amaj",
+                "Amaj",
+                "Gmaj",
+                "Gmaj"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.2791666666666667,
+                "pitchSetExact": 0.125,
+                "rootExact": 0.125
+              }
+            },
+            {
+              "label": "Option B — F1 — 10K pop mix (balanced)",
+              "chords": [
+                "Em7",
+                "Dmaj",
+                "F#m7/Db",
+                "F#m7/Db",
+                "Bm7",
+                "Bm7",
+                "Amaj",
+                "Amaj"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.5886904761904762,
+                "pitchSetExact": 0.125,
+                "rootExact": 0.375
+              }
+            },
+            {
+              "label": "Option C — F1 — 10K pop mix (conservative)",
+              "chords": [
+                "Dmaj7",
+                "Bm7/D",
+                "Gmaj7/D",
+                "Gmaj7/D",
+                "Amaj/Db",
+                "Amaj/Db",
+                "Dmaj7",
+                "Dmaj7"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.4458333333333333,
+                "pitchSetExact": 0,
+                "rootExact": 0.125
+              }
+            }
+          ]
+        },
+        {
+          "seed": 19,
+          "source": "ai",
+          "model": "ft_f1",
+          "candidates": [
+            {
+              "label": "Option A — F1 — 10K pop mix (balanced)",
+              "chords": [
+                "A7",
+                "A7",
+                "Dmaj/A",
+                "Dmaj/A",
+                "Amaj",
+                "Amaj",
+                "Gmaj",
+                "Gmaj"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.2791666666666667,
+                "pitchSetExact": 0.125,
+                "rootExact": 0.125
+              }
+            },
+            {
+              "label": "Option B — F1 — 10K pop mix (creative)",
+              "chords": [
+                "Dmaj7",
+                "Dmaj9",
+                "Bm7/D",
+                "Gmaj/D",
+                "Gmaj7/D",
+                "Asus4/D",
+                "Amaj/Db",
+                "Amaj/Db"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.65625,
+                "pitchSetExact": 0,
+                "rootExact": 0.5
+              }
+            },
+            {
+              "label": "Option C — F1 — 10K pop mix (conservative)",
+              "chords": [
+                "Em7",
+                "Dmaj",
+                "F#m7/Db",
+                "F#m7/Db",
+                "Bm7",
+                "Bm7",
+                "Amaj",
+                "Amaj"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.5886904761904762,
+                "pitchSetExact": 0.125,
+                "rootExact": 0.375
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "K330-1",
+      "key": "C major",
+      "meter": [
+        2,
+        4
+      ],
+      "sourceSha256": "4788f97ed8d7a705b59fc16f185e086444fde83520b9e338c4aa2ee10b0f5b35",
+      "context": [
+        "C",
+        "C",
+        "C",
+        "C",
+        "C",
+        "C",
+        "C",
+        "C"
+      ],
+      "reference": [
+        {
+          "symbol": "F",
+          "root": 5,
+          "pcs": [
+            0,
+            5,
+            9
+          ]
+        },
+        {
+          "symbol": "F",
+          "root": 5,
+          "pcs": [
+            0,
+            5,
+            9
+          ]
+        },
+        {
+          "symbol": "C",
+          "root": 0,
+          "pcs": [
+            0,
+            4,
+            7
+          ]
+        },
+        {
+          "symbol": "C",
+          "root": 0,
+          "pcs": [
+            0,
+            4,
+            7
+          ]
+        },
+        {
+          "symbol": "G",
+          "root": 7,
+          "pcs": [
+            0,
+            4,
+            7
+          ]
+        },
+        {
+          "symbol": "G7",
+          "root": 7,
+          "pcs": [
+            2,
+            5,
+            7,
+            11
+          ]
+        },
+        {
+          "symbol": "C",
+          "root": 0,
+          "pcs": [
+            0,
+            3,
+            7
+          ]
+        },
+        {
+          "symbol": "C",
+          "root": 0,
+          "pcs": [
+            0,
+            4,
+            7
+          ]
+        }
+      ],
+      "baselines": {
+        "holdLast": {
+          "valid": 1,
+          "pitchJaccard": 0.6333333333333333,
+          "pitchSetExact": 0.5,
+          "rootExact": 0.5
+        },
+        "tonic": {
+          "valid": 1,
+          "pitchJaccard": 0.6333333333333333,
+          "pitchSetExact": 0.5,
+          "rootExact": 0.5
+        }
+      },
+      "runs": [
+        {
+          "seed": 17,
+          "source": "ai",
+          "model": "ft_f1",
+          "candidates": [
+            {
+              "label": "Option A — F1 — 10K pop mix (conservative)",
+              "chords": [
+                "Fmaj",
+                "Fmaj",
+                "Fmaj",
+                "Fmaj",
+                "Cmaj/E",
+                "Cmaj/E",
+                "Gmaj",
+                "Gmaj"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.49583333333333335,
+                "pitchSetExact": 0.375,
+                "rootExact": 0.25
+              }
+            },
+            {
+              "label": "Option B — F1 — 10K pop mix (balanced)",
+              "chords": [
+                "Dm",
+                "Dm",
+                "Dm7",
+                "Dm7",
+                "Gmaj/D",
+                "Gmaj/D",
+                "Gmaj/D",
+                "Gmaj/D"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.3354166666666667,
+                "pitchSetExact": 0,
+                "rootExact": 0.25
+              }
+            },
+            {
+              "label": "Option C — F1 — 10K pop mix (creative)",
+              "chords": [
+                "Bbmaj",
+                "Fmaj/A",
+                "Bbmaj",
+                "Bbmaj",
+                "Cmaj",
+                "Cmaj",
+                "Gm7/D",
+                "Gm7/D"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.3375,
+                "pitchSetExact": 0.25,
+                "rootExact": 0.125
+              }
+            }
+          ]
+        },
+        {
+          "seed": 18,
+          "source": "ai",
+          "model": "ft_f1",
+          "candidates": [
+            {
+              "label": "Option A — F1 — 10K pop mix (conservative)",
+              "chords": [
+                "Dm",
+                "Dm",
+                "Dm",
+                "Dm",
+                "Gmaj/D",
+                "Gmaj/D",
+                "Gmaj/D",
+                "Gmaj/D"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.29375,
+                "pitchSetExact": 0,
+                "rootExact": 0.25
+              }
+            },
+            {
+              "label": "Option B — F1 — 10K pop mix (balanced)",
+              "chords": [
+                "Am7",
+                "Am7",
+                "Fmaj7/A",
+                "Fmaj7/A",
+                "Gsus4",
+                "Gsus4",
+                "Gmaj",
+                "Gmaj"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.36250000000000004,
+                "pitchSetExact": 0,
+                "rootExact": 0.25
+              }
+            },
+            {
+              "label": "Option C — F1 — 10K pop mix (creative)",
+              "chords": [
+                "Fmaj",
+                "Fmaj",
+                "Fmaj",
+                "Fmaj",
+                "G7",
+                "G7",
+                "G7",
+                "G7"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.4875,
+                "pitchSetExact": 0.375,
+                "rootExact": 0.5
+              }
+            }
+          ]
+        },
+        {
+          "seed": 19,
+          "source": "ai",
+          "model": "ft_f1",
+          "candidates": [
+            {
+              "label": "Option A — F1 — 10K pop mix (creative)",
+              "chords": [
+                "Am",
+                "Am",
+                "Fmaj/A",
+                "Fmaj/A",
+                "Gmaj",
+                "Gmaj",
+                "Am",
+                "Am"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.38125,
+                "pitchSetExact": 0,
+                "rootExact": 0.25
+              }
+            },
+            {
+              "label": "Option B — F1 — 10K pop mix (conservative)",
+              "chords": [
+                "Fmaj",
+                "Fmaj",
+                "Dm/F",
+                "Dm/F",
+                "Fmaj",
+                "Fmaj",
+                "Gmaj",
+                "Gmaj"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.3458333333333333,
+                "pitchSetExact": 0.25,
+                "rootExact": 0.25
+              }
+            },
+            {
+              "label": "Option C — F1 — 10K pop mix (balanced)",
+              "chords": [
+                "Fmaj",
+                "Fmaj",
+                "Fmaj",
+                "Fmaj",
+                "G7",
+                "G7",
+                "G7",
+                "G7"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.4875,
+                "pitchSetExact": 0.375,
+                "rootExact": 0.5
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "K332-1",
+      "key": "F major",
+      "meter": [
+        3,
+        4
+      ],
+      "sourceSha256": "d0ff65a67ad5ecaab7464c7de03a63d05cc4e6a83e57495bc9600fa84793c9cb",
+      "context": [
+        "F",
+        "F",
+        "F7",
+        "F7",
+        "Bb",
+        "Bb",
+        "Edim/G",
+        "Edim/G"
+      ],
+      "reference": [
+        {
+          "symbol": "F",
+          "root": 5,
+          "pcs": [
+            0,
+            5,
+            9
+          ]
+        },
+        {
+          "symbol": "F",
+          "root": 5,
+          "pcs": [
+            0,
+            5,
+            9
+          ]
+        },
+        {
+          "symbol": "Gm",
+          "root": 7,
+          "pcs": [
+            2,
+            7,
+            10
+          ]
+        },
+        {
+          "symbol": "C",
+          "root": 0,
+          "pcs": [
+            0,
+            4,
+            7
+          ]
+        },
+        {
+          "symbol": "F",
+          "root": 5,
+          "pcs": [
+            0,
+            5,
+            9
+          ]
+        },
+        {
+          "symbol": "F/A",
+          "root": 5,
+          "pcs": [
+            0,
+            5,
+            9
+          ]
+        },
+        {
+          "symbol": "Gm7",
+          "root": 7,
+          "pcs": [
+            2,
+            5,
+            7,
+            10
+          ]
+        },
+        {
+          "symbol": "C",
+          "root": 0,
+          "pcs": [
+            0,
+            4,
+            7
+          ]
+        }
+      ],
+      "baselines": {
+        "holdLast": {
+          "valid": 1,
+          "pitchJaccard": 0.2375,
+          "pitchSetExact": 0,
+          "rootExact": 0
+        },
+        "tonic": {
+          "valid": 1,
+          "pitchJaccard": 0.5708333333333333,
+          "pitchSetExact": 0.5,
+          "rootExact": 0.5
+        }
+      },
+      "runs": [
+        {
+          "seed": 17,
+          "source": "ai",
+          "model": "ft_f1",
+          "candidates": [
+            {
+              "label": "Option A — F1 — 10K pop mix (creative)",
+              "chords": [
+                "Bbmaj",
+                "Fmaj/A",
+                "Bbmaj",
+                "Bbmaj",
+                "Bb7",
+                "Bb7",
+                "Ebmaj/Bb",
+                "Ebmaj/Bb"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.32916666666666666,
+                "pitchSetExact": 0.125,
+                "rootExact": 0.125
+              }
+            },
+            {
+              "label": "Option B — F1 — 10K pop mix (balanced)",
+              "chords": [
+                "Dm",
+                "Dm",
+                "Gm/D",
+                "Gm/D",
+                "C7",
+                "C7",
+                "Fsus4/C",
+                "Fsus4/C"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.39166666666666666,
+                "pitchSetExact": 0.125,
+                "rootExact": 0.125
+              }
+            },
+            {
+              "label": "Option C — F1 — 10K pop mix (conservative)",
+              "chords": [
+                "Fmaj",
+                "Fmaj",
+                "Fmaj",
+                "Fmaj",
+                "C7/E",
+                "C7/E",
+                "C7/E",
+                "C7/E"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.45208333333333334,
+                "pitchSetExact": 0.25,
+                "rootExact": 0.375
+              }
+            }
+          ]
+        },
+        {
+          "seed": 18,
+          "source": "ai",
+          "model": "ft_f1",
+          "candidates": [
+            {
+              "label": "Option A — F1 — 10K pop mix (balanced)",
+              "chords": [
+                "Bbmaj",
+                "Bbmaj",
+                "C7",
+                "C7",
+                "Fmaj/C",
+                "Fmaj/C",
+                "Fmaj/C",
+                "Fmaj/C"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.4895833333333333,
+                "pitchSetExact": 0.25,
+                "rootExact": 0.375
+              }
+            },
+            {
+              "label": "Option B — F1 — 10K pop mix (conservative)",
+              "chords": [
+                "Dm",
+                "Dm",
+                "Gm/D",
+                "Gm/D",
+                "C7",
+                "C7",
+                "Fsus4/C",
+                "Fsus4/C"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.39166666666666666,
+                "pitchSetExact": 0.125,
+                "rootExact": 0.125
+              }
+            },
+            {
+              "label": "Option C — F1 — 10K pop mix (creative)",
+              "chords": [
+                "A7",
+                "A7",
+                "Dm/A",
+                "Dm/A",
+                "G7",
+                "G7",
+                "G7",
+                "G7"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.20416666666666666,
+                "pitchSetExact": 0,
+                "rootExact": 0.125
+              }
+            }
+          ]
+        },
+        {
+          "seed": 19,
+          "source": "ai",
+          "model": "ft_f1",
+          "candidates": [
+            {
+              "label": "Option A — F1 — 10K pop mix (conservative)",
+              "chords": [
+                "Bbmaj",
+                "Bbmaj",
+                "C7",
+                "C7",
+                "Fmaj/C",
+                "Fmaj/C",
+                "Fmaj/C",
+                "Fmaj/C"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.4895833333333333,
+                "pitchSetExact": 0.25,
+                "rootExact": 0.375
+              }
+            },
+            {
+              "label": "Option B — F1 — 10K pop mix (balanced)",
+              "chords": [
+                "A7",
+                "A7",
+                "Dm/A",
+                "Dm/A",
+                "G7",
+                "G7",
+                "G7",
+                "G7"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.20416666666666666,
+                "pitchSetExact": 0,
+                "rootExact": 0.125
+              }
+            },
+            {
+              "label": "Option C — F1 — 10K pop mix (creative)",
+              "chords": [
+                "A7",
+                "A7",
+                "D7/A",
+                "D7/A",
+                "Gmaj",
+                "Gmaj",
+                "C7/G",
+                "C7/G"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.21875,
+                "pitchSetExact": 0,
+                "rootExact": 0.125
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "K545-1",
+      "key": "C major",
+      "meter": [
+        4,
+        4
+      ],
+      "sourceSha256": "1dc046fcc155b80ca11aa90d0c27ae6cf8b4fb06814eb81aa1407975300d2706",
+      "context": [
+        "C",
+        "C",
+        "G7/D",
+        "C",
+        "F/C",
+        "C",
+        "G/B",
+        "C"
+      ],
+      "reference": [
+        {
+          "symbol": "F",
+          "root": 5,
+          "pcs": [
+            0,
+            5,
+            9
+          ]
+        },
+        {
+          "symbol": "F",
+          "root": 5,
+          "pcs": [
+            0,
+            5,
+            9
+          ]
+        },
+        {
+          "symbol": "C/E",
+          "root": 0,
+          "pcs": [
+            0,
+            4,
+            7
+          ]
+        },
+        {
+          "symbol": "C/E",
+          "root": 0,
+          "pcs": [
+            0,
+            4,
+            7
+          ]
+        },
+        {
+          "symbol": "Dm7",
+          "root": 2,
+          "pcs": [
+            0,
+            2,
+            5,
+            9
+          ]
+        },
+        {
+          "symbol": "Dm7",
+          "root": 2,
+          "pcs": [
+            0,
+            2,
+            5,
+            9
+          ]
+        },
+        {
+          "symbol": "C",
+          "root": 0,
+          "pcs": [
+            0,
+            4,
+            7
+          ]
+        },
+        {
+          "symbol": "C",
+          "root": 0,
+          "pcs": [
+            0,
+            4,
+            7
+          ]
+        }
+      ],
+      "baselines": {
+        "holdLast": {
+          "valid": 1,
+          "pitchJaccard": 0.5916666666666667,
+          "pitchSetExact": 0.5,
+          "rootExact": 0.5
+        },
+        "tonic": {
+          "valid": 1,
+          "pitchJaccard": 0.5916666666666667,
+          "pitchSetExact": 0.5,
+          "rootExact": 0.5
+        }
+      },
+      "runs": [
+        {
+          "seed": 17,
+          "source": "ai",
+          "model": "ft_f1",
+          "candidates": [
+            {
+              "label": "Option A — F1 — 10K pop mix (balanced)",
+              "chords": [
+                "Dm",
+                "Dm",
+                "Dm7",
+                "Dm7",
+                "Gsus4/D",
+                "Gsus4/D",
+                "Gsus4/D",
+                "Gsus4/D"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.39166666666666666,
+                "pitchSetExact": 0,
+                "rootExact": 0
+              }
+            },
+            {
+              "label": "Option B — F1 — 10K pop mix (creative)",
+              "chords": [
+                "Cmaj",
+                "Fmaj/C",
+                "Cmaj",
+                "Am/C",
+                "Am/C",
+                "Am/C",
+                "Fmaj/C",
+                "Fmaj/C"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.4875,
+                "pitchSetExact": 0.25,
+                "rootExact": 0.25
+              }
+            },
+            {
+              "label": "Option C — F1 — 10K pop mix (conservative)",
+              "chords": [
+                "C7",
+                "C7",
+                "Fmaj/C",
+                "Fmaj/C",
+                "Cmaj",
+                "Cmaj",
+                "Am/C",
+                "Am/C"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.2583333333333333,
+                "pitchSetExact": 0,
+                "rootExact": 0
+              }
+            }
+          ]
+        },
+        {
+          "seed": 18,
+          "source": "ai",
+          "model": "ft_f1",
+          "candidates": [
+            {
+              "label": "Option A — F1 — 10K pop mix (conservative)",
+              "chords": [
+                "Dm",
+                "Dm",
+                "Dm7",
+                "Dm7",
+                "Gsus4/D",
+                "Gsus4/D",
+                "Gsus4/D",
+                "Gsus4/D"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.39166666666666666,
+                "pitchSetExact": 0,
+                "rootExact": 0
+              }
+            },
+            {
+              "label": "Option B — F1 — 10K pop mix (balanced)",
+              "chords": [
+                "Cmaj",
+                "Cmaj",
+                "C7",
+                "C7",
+                "Fmaj/C",
+                "Fmaj/C",
+                "Cmaj",
+                "Cmaj"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.675,
+                "pitchSetExact": 0.25,
+                "rootExact": 0.5
+              }
+            },
+            {
+              "label": "Option C — F1 — 10K pop mix (creative)",
+              "chords": [
+                "Cmaj",
+                "G7/B",
+                "Cmaj",
+                "Cmaj",
+                "C7",
+                "C7",
+                "Fmaj/C",
+                "Fmaj/C"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.381547619047619,
+                "pitchSetExact": 0.25,
+                "rootExact": 0.25
+              }
+            }
+          ]
+        },
+        {
+          "seed": 19,
+          "source": "ai",
+          "model": "ft_f1",
+          "candidates": [
+            {
+              "label": "Option A — F1 — 10K pop mix (conservative)",
+              "chords": [
+                "Cmaj",
+                "Cmaj",
+                "C7",
+                "C7",
+                "Fmaj/C",
+                "Fmaj/C",
+                "Cmaj",
+                "Cmaj"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.675,
+                "pitchSetExact": 0.25,
+                "rootExact": 0.5
+              }
+            },
+            {
+              "label": "Option B — F1 — 10K pop mix (creative)",
+              "chords": [
+                "E7",
+                "Am/E",
+                "Am/E",
+                "Fmaj7",
+                "Dm7/F",
+                "Gsus4",
+                "Gmaj",
+                "Gmaj"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.4,
+                "pitchSetExact": 0.125,
+                "rootExact": 0.125
+              }
+            },
+            {
+              "label": "Option C — F1 — 10K pop mix (balanced)",
+              "chords": [
+                "Cmaj",
+                "G7/B",
+                "Cmaj",
+                "Cmaj",
+                "C7",
+                "C7",
+                "Fmaj/C",
+                "Fmaj/C"
+              ],
+              "metrics": {
+                "valid": 1,
+                "pitchJaccard": 0.381547619047619,
+                "pitchSetExact": 0.25,
+                "rootExact": 0.25
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "candidateA": {
+      "valid": 1,
+      "pitchJaccard": 0.36321097883597886,
+      "pitchSetExact": 0.13541666666666666,
+      "rootExact": 0.2222222222222222
+    },
+    "allCandidates": {
+      "valid": 1,
+      "pitchJaccard": 0.3784350198412698,
+      "pitchSetExact": 0.14699074074074073,
+      "rootExact": 0.22569444444444445
+    },
+    "holdLast": {
+      "valid": 1,
+      "pitchJaccard": 0.43993055555555555,
+      "pitchSetExact": 0.2708333333333333,
+      "rootExact": 0.375
+    },
+    "tonic": {
+      "valid": 1,
+      "pitchJaccard": 0.5625,
+      "pitchSetExact": 0.46875,
+      "rootExact": 0.4270833333333333
+    }
+  },
+  "metricNotation": "Normalize flat roots/slash bass and mMaj7/maj9 into music21 notation; saved predictions unchanged."
+}

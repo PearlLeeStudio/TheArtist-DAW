@@ -1,5 +1,13 @@
 # Evaluation
 
+[External notation and annotated music](../experiments/external_eval/README.md)
+extends the authored fixtures: local support 0/8 published editions; three bounded
+Meta readings ($0.0761525) with correct written-bar/key/meter facts but limited Bach
+note-evidence agreement (8/32 exact pitch sets). Twelve Mozart excerpts × three
+seeds compare actual CPU F1 continuations with hold-last and tonic baselines;
+F1 does not exceed either baseline on reference agreement. These are diagnostic
+results, not listening preference or general musical-quality claims.
+
 What each hackathon addition is measured on, how the "before" and "after" are
 defined, and where the numbers live. Every number in this repository follows the
 same rules:
