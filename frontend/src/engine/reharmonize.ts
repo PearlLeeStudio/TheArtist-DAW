@@ -105,12 +105,20 @@ export async function requestReharmonization(song: Song, slots: SlotAddress[], m
   const problem = reharmSelectionError(song, slots);
   if (problem) throw new Error(problem);
   const targets = reharmTargets(song, slots);
-  const response = await postJson('/api/reharmonize', {
-    key: song.key, timeSignature: song.timeSignature, modelKey, maxChanges, mode,
-    selectedSlots: targets,
-    context: song.measures.map((m, measure) => ({ measure, chords: m.chords.map(c => c ? reharmSymbol(c) : null) })),
-  }, { signal, headers: metaHeaders() });
-  return validateReharmResult(await response.json(), song, targets, maxChanges);
+  const deadline = AbortSignal.timeout(110_000);
+  try {
+    const response = await postJson('/api/reharmonize', {
+      key: song.key, timeSignature: song.timeSignature, modelKey, maxChanges, mode,
+      selectedSlots: targets,
+      context: song.measures.map((m, measure) => ({ measure, chords: m.chords.map(c => c ? reharmSymbol(c) : null) })),
+    }, { signal: AbortSignal.any([signal, deadline]), headers: metaHeaders() });
+    return validateReharmResult(await response.json(), song, targets, maxChanges);
+  } catch (error) {
+    if (deadline.aborted && !signal.aborted) {
+      throw new Error('The reharmonization search exceeded 110 seconds. Your score is unchanged. Please try again.', { cause: error });
+    }
+    throw error;
+  }
 }
 
 /** A/B/C always starts from the captured original, including untouched voicings. */

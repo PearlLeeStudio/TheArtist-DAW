@@ -222,3 +222,24 @@ test('HTTP request omits empty targets while retaining full context and auto mod
   await assert.rejects(requestReharmonization(song, [slots[1]], 1, 'auto', 'ft_f1', new AbortController().signal), /no chord symbols/);
   assert.equal(fetch.mock.callCount(), 1);
 });
+
+test('an unresponsive reharmonization request times out visibly and preserves the score', async t => {
+  const deadline = new AbortController();
+  t.mock.method(AbortSignal, 'timeout', (milliseconds: number) => {
+    assert.equal(milliseconds, 110_000);
+    return deadline.signal;
+  });
+  t.mock.method(globalThis, 'fetch', (_url, init) => new Promise<Response>((_resolve, reject) => {
+    init!.signal!.addEventListener('abort', () => reject(init!.signal!.reason), { once: true });
+  }));
+  const h = harness(requestReharmonization);
+  const original = structuredClone(h.song());
+  const pending = h.actions.run('ft_f1', 1, 'auto');
+  assert.equal(h.state().loading, true);
+  deadline.abort(new DOMException('Timed out', 'TimeoutError'));
+  await pending;
+  assert.equal(h.state().loading, false);
+  assert.match(h.state().error!, /exceeded 110 seconds/);
+  assert.deepEqual(h.song(), original);
+  assert.equal(h.writes(), 0);
+});

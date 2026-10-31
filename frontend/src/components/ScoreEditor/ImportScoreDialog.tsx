@@ -145,17 +145,26 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
   const [status, setStatus] = useState('');
   const [useMeta, setUseMeta] = useState(false);
   const [meta, setMeta] = useState<MetaCapability | null>(null);
+  const [checkingMeta, setCheckingMeta] = useState(true);
+  const [metaConnectionError, setMetaConnectionError] = useState(false);
+  const [metaAttempt, setMetaAttempt] = useState(0);
   const metaAvailable = !!meta?.enabled && !!meta?.configured;
   const readerEngine: ScoreImportEngine = useMeta ? 'verified' : 'local';
   const fullFileAvailable = metaAvailable && meta?.fullFileScoreImport === true;
 
   useEffect(() => {
     const controller = new AbortController();
+    let active = true;
+    const timeout = window.setTimeout(() => controller.abort(), 8000);
     fetchMetaCapability(controller.signal)
-      .then((capability) => setMeta(capability))
-      .catch(() => { /* unknown: the box stays as the user set it */ });
-    return () => controller.abort();
-  }, []);
+      .then((capability) => { if (active) setMeta(capability); })
+      .catch(() => { if (active) setMetaConnectionError(true); })
+      .finally(() => {
+        window.clearTimeout(timeout);
+        if (active) setCheckingMeta(false);
+      });
+    return () => { active = false; window.clearTimeout(timeout); controller.abort(); };
+  }, [metaAttempt]);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -387,6 +396,13 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
                   Use Meta model
                 </label>
               </fieldset>
+              {checkingMeta && <OperationProgress label="Checking score reader availability…" />}
+              {metaConnectionError && <div className="space-y-2 text-xs" role="alert">
+                <p>Could not check Meta availability. Your selected file is kept.</p>
+                <button type="button" disabled={checkingMeta} className="underline" onClick={() => {
+                  setMetaConnectionError(false); setCheckingMeta(true); setMetaAttempt(attempt => attempt + 1);
+                }}>Retry connection</button>
+              </div>}
               {useMeta && <p className="text-xs" style={mutedStyle}>Sends the original file to Meta after local analysis, then compares the readings. May take longer · 1 call / $1.35 max</p>}
               {meta && !metaAvailable && (
                 <p className="text-xs" style={mutedStyle}>

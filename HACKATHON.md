@@ -156,6 +156,8 @@ rows 59 and 64; successful execution alone does not establish musical quality.
 
 | 106 | **Compose a complete song form with Meta alone**: choose Muse Spark only or the existing hybrid composer, validate every section and chord before applying, preserve the sketch, and stream actual planning/composition stages | this commit | Standard `muse-spark-1.3` plans and writes chords within the existing call, time and cost limits | Backend 620 and frontend 260 tests pass, including Meta-only provenance, malformed output rejection, Apply/Undo and stream accounting. Deployed verification remains in progress |
 
+| 107 | **Recover from interrupted server connections**: Import reports capability lookup failures and retries without dropping the selected file; Reharmonize stops an unresponsive request after 110 seconds and preserves the score | this commit | no additional Meta calls | Frontend 261 tests pass, including timeout recovery and score preservation. Capability lookup failure was reproduced during a deployed server transition |
+
 Validation details and unchecked browser/audio/DAW cases are in the
 [manual checklist](docs/manual-checks.md). The README distinguishes application
 screenshots from the pre-existing baseline video. Safari export opened a sixteen-bar,
