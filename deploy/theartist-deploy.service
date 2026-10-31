@@ -1,0 +1,14 @@
+[Unit]
+Description=Deploy the public TheArtist-DAW main branch
+Wants=network-online.target
+After=network-online.target docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /usr/local/lib/theartist/autodeploy.py
+TimeoutStartSec=45min
+UMask=0077
+Environment=GIT_TERMINAL_PROMPT=0
+Environment=PYTHONUNBUFFERED=1
+

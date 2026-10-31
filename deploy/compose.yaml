@@ -1,6 +1,7 @@
 name: theartist-model-server
 services:
   app:
+    image: theartist-model-server-app:latest
     build:
       context: /srv/TheArtist-DAW
       dockerfile: /srv/TheArtist-DAW/deploy/Dockerfile
