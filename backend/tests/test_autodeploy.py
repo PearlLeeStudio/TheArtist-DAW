@@ -62,6 +62,15 @@ class AutoDeployTest(unittest.TestCase):
         self.assertEqual(self.host.start.call_count, 2)
         self.host.smoke.assert_called_once()
 
+    def test_unavailable_diagnostics_do_not_block_rollback(self):
+        self.host.smoke.side_effect = [RuntimeError("wrong model"), None]
+        self.host.diagnostics.side_effect = RuntimeError("logs unavailable")
+        with self.assertRaisesRegex(RuntimeError, "wrong model"):
+            self.run_deploy()
+        self.assertEqual(self.host.start.call_count, 2)
+        self.assertEqual(self.state["deployed_revision"], "a" * 40)
+        self.assertNotIn("pending", self.state)
+
     def test_failed_revision_waits_for_a_new_push(self):
         self.state["failed_revision"] = "b" * 40
         self.assertEqual(self.run_deploy(), "failed-revision-skipped")

@@ -63,15 +63,17 @@ def runtime_changed(paths: list[str]) -> bool:
     ) for path in paths)
 
 
-def command(args: list[str], *, timeout=120, capture=True) -> str:
+def command(args: list[str], *, timeout=120, capture=True, umask=-1) -> str:
     result = subprocess.run(args, check=True, timeout=timeout, text=True,
-                            stdout=subprocess.PIPE if capture else None)
+                            stdout=subprocess.PIPE if capture else None, umask=umask)
     return result.stdout.strip() if capture else ""
 
 
 class Host:
     def git(self, *args) -> str:
-        return command(["git", "-C", REPO, *args])
+        # The controller's private state uses 0077, but this public checkout must
+        # remain readable by the unprivileged container user after each update.
+        return command(["git", "-C", REPO, *args], umask=0o022)
 
     def inspect(self) -> tuple[str, str]:
         if self.git("remote", "get-url", "origin") != ORIGIN:
@@ -108,6 +110,17 @@ class Host:
         command(["docker", "build", "--label", "org.opencontainers.image.revision=" + revision,
                  "--tag", CANDIDATE, "--file", "/srv/TheArtist-DAW/deploy/Dockerfile", REPO],
                 timeout=2400, capture=False)
+        # Import as the image's actual runtime user before stopping the old app.
+        # No network, secrets, paid calls or second in-memory model catalog.
+        command(["docker", "run", "--rm", "--network", "none", "--entrypoint", "python", CANDIDATE,
+                 "-c", "import sys; sys.path.insert(0, '/app/backend'); import app.main; "
+                 "from app.services.contracts import capabilities; "
+                 "assert capabilities().data['rag']['sources'] == {'omt': 'ready', 'berklee': 'disabled'}; "
+                 "print('Candidate runtime import and OMT assets readable')"],
+                timeout=180, capture=False)
+
+    def diagnostics(self):
+        self.compose("logs", "--no-color", "--tail", "60", "app", capture=False)
 
     def compose(self, *args, timeout=360, capture=True):
         return command(["docker", "compose", "--env-file", "/srv/theartist.env",
@@ -186,6 +199,11 @@ def run_once(host, state, save, *, retry=False):
         host.start()
         host.smoke()
     except Exception:
+        if state["pending"]["phase"] == "switching":
+            try:
+                host.diagnostics()
+            except Exception:
+                pass  # Diagnostic collection must never prevent recovery.
         rollback(host, state, save)
         raise
     state.update(deployed_revision=target, observed_revision=target)

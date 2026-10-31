@@ -27,7 +27,7 @@ RUN python /app/backend/scripts/setup_omt.py
 RUN mkdir -p /data /app/backend/.exports \
     && useradd --uid 1000 --create-home artist \
     && chown artist:artist /data /app/backend/.exports
-COPY . /app
+COPY --chown=artist:artist . /app
 COPY --from=frontend /app/frontend/dist /app/frontend/dist
 USER artist
 EXPOSE 7860

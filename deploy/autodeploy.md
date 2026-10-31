@@ -18,14 +18,18 @@ and backend-test-only changes advance the checkout without restarting the API.
 Unknown changed files trigger a build. Dependencies and model downloads occupy
 cached Docker layers, separate from application code.
 
-A candidate builds while the current container continues serving. The controller
+A candidate builds while the current container continues serving. Before replacing
+anything, an offline container imports the application as its actual runtime user
+and checks OMT asset readability. Public Git checkouts use readable source-file
+permissions; private deployment state retains the service's restrictive mask.
+The controller
 then replaces the app, waits up to 240 seconds for health, refreshes Caddy, checks
 all 18 resident model identities, generates three eight-bar F1 candidates, and
 checks public HTTPS. The generation check makes no paid Meta calls. The one-worker
 server has a short API interruption during replacement and model loading; this
 is not a zero-downtime deployment.
 
-Build failure retains the running app. Startup, generation or HTTPS failure
+Build or candidate-import failure retains the running app. Startup, generation or HTTPS failure
 restores the previous checkout and image and checks that service again. A failed
 revision waits for a new push or explicit retry rather than rebuilding forever.
 A persistent transaction also supports recovery after an interrupted controller.
