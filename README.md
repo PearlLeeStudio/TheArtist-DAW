@@ -37,6 +37,14 @@ On the [live workspace](https://artist-daw.pearlleestudio.co), in a desktop brow
 3. **Import Score**, choose a PDF lead sheet, tick **Use Meta model** and press **Analyze and import**. The score opens from the local reading at once; Meta's reading of the original runs in the background (up to 150 seconds), marks the bars where the two readings differ and fills bars the local reader left empty.
 4. **Export ▾ → Download MIDI** for separate Harmony, Bass and Drums tracks, or **PDF · Light (print)** for the score.
 
+No PDF at hand? Set **Key** to G major and **Time** to 3/4 above the staff, click the first bar and paste
+this chart with Ctrl/⌘+V. It is *Amazing Grace* with the traditional harmonization of the CC0
+[Public Domain Song Anthology](https://doi.org/10.32881/book2); then Reharmonize bars 5–8.
+
+```text
+G | G D7 | Em C | G | G | G D7 | G | G | G | G | C | G | Em G/D | D7 | G | G
+```
+
 The local reader handles vector PDFs, reading printed chord symbols or analyzing the notes. It read
 none of eight Mutopia editions, and scans or photos go to Meta only, whose readings need checking
 (a notes-only PNG matched 1/4 chords).
@@ -64,6 +72,18 @@ from a score into an arrangement: reviewing harmony, trying substitutions,
 developing sections, choosing accompaniment and transferring it without retyping.
 TheArtist connects those decisions in one workspace and delivers editable parts
 to the DAW. Its existing chord model supplies a harmonic engine for this workflow.
+
+**Who it is for.** Musicians who already have a song on paper (a lead sheet or a chord chart)
+and want to hear harmonic options and take playable parts into their DAW: arrangers, band
+leaders, accompanists and students. Producers mostly want assistive AI rather than generated
+songs: in Tracklib's 2025 survey of 1,734 producers, 6% used generative tools regularly and 82%
+opposed full-song generation from text prompts
+([MusicTech](https://musictech.com/news/industry/music-producers-are-rejecting-ai-study-reveals-over-80-of-producers-are-against-ai-generated-songs)).
+TheArtist keeps the musician's score and choices and hands over editable MIDI, not finished audio.
+Each piece exists elsewhere: Logic's Session Players follow a chord track, Scaler 3 suggests
+substitutions from MIDI or audio, and Band-in-a-Box has arranged typed chords for decades. What is
+new here is the chain from the printed score to contextual alternatives the musician chooses, a
+completed form and editable parts in the DAW.
 
 | | Pre-existing (tag `baseline`) | Hackathon work (commits after the tag) |
 |---|---|---|
@@ -95,8 +115,8 @@ and every export keep working.
 | Meta capability | Where it does the work | Recorded result |
 |---|---|---|
 | Whole-document reading of a score PDF or image | Import's **Use Meta model** check, compared bar by bar with the local reader; images are read by Meta only | 52-bar PDF on the hosted demo: 51.4 s, $0.053 |
-| Native tool calling over a bounded music search | Reharmonize: up to 4 tool turns drive the substitution search; Meta picks three contrasting patches the Music Transformer has scored in context | hosted median 10.4 s; $0.014–0.021 per search in recorded runs |
-| Strict JSON checked by code, with revision rounds | Complete the form: plan → validate → up to 2 revisions → compose (**Muse Spark only**) or judge (hybrid) | empty score → 32 bars / 6 sections on the hosted demo: 23.7 s, $0.020 |
+| Agentic tool calling over a bounded music search | Reharmonize: up to 4 tool turns drive the substitution search; Meta picks three contrasting patches the Music Transformer has scored in context; **Run details** show the calls | hosted median 10.4 s; $0.014–0.021 per search in recorded runs |
+| Agentic plan → validate → revise loop with strict JSON | Complete the form: code validates each plan and sends errors back for up to 2 revisions, then Meta composes (**Muse Spark only**) or judges (hybrid) | empty score → 32 bars / 6 sections on the hosted demo: 23.7 s, $0.020 |
 | Reasoning held to computed facts | Second ear: each reason cites an analyzer fact and is marked *analyzer confirmed* or *model statement* | 115/115 reasons confirmed in 60 reviews; $0.0041, 2.8 s per review |
 | Reading harmony from notes | The note-interpretation task behind Import assist (API `engine: "auto"`) | exact chords: Muse Spark 89.5%, local analyzer 77.8% (640 slots of real progressions rendered as notes) |
 | Meta open weights | The judge role can run on Muse Spark Open through Baseten (`LLM_JUDGE_*`) | same pick as Muse Spark in 52/60 reviews at $0.0028 per review |
