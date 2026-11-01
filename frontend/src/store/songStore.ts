@@ -3,6 +3,7 @@ import type { Song, Measure, Chord, SlotAddress, SectionType, SongSection } from
 import { captureGenerationComparison } from '../engine/generationComparison';
 import type { GenerationComparison, TargetChord } from '../engine/generationComparison';
 import type { PastePlan } from '../engine/scoreClipboard';
+import type { ImportReviewPlan } from '../engine/importReview';
 import { withoutChordPreview } from '../engine/chordPreview';
 import type { ChordPreview } from '../engine/chordPreview';
 import { calculateRomanNumeral } from '../engine/romanNumeral';
@@ -230,6 +231,10 @@ interface SongState {
   importSong: (song: Song) => void;
   /** Bring back the song the last import replaced, if any. */
   undoImport: () => void;
+  /** A background Meta reading's outcome for the imported song of `songEpoch`
+   *  (engine/importReview.ts): Review marks on disputed bars and chords for
+   *  bars that are still empty. Ignored once the song was replaced. */
+  applyImportReview: (songEpoch: number, plan: ImportReviewPlan) => void;
   /** Replace the section list (kept sorted by start measure). Returns
    *  checkSectionRanges' message, changing nothing, when the sections do
    *  not fit the song; null once applied. */
@@ -491,6 +496,35 @@ export const useSongStore = create<SongState>((set, get) => ({
     const previous = get().previousImportSong;
     if (previous) get().setSong(previous);
   },
+
+  applyImportReview: (songEpoch, plan) => set((state) => {
+    const importSource = state.song.importSource;
+    if (state.songEpoch !== songEpoch || !importSource?.measures) return {};
+    const sources = importSource.measures.map((source) => ({ ...source }));
+    for (const flag of plan.flags) {
+      const source = sources[flag.index];
+      if (!source) continue;
+      source.editorReview = flag.review;
+      source.confidence = flag.confidence;
+    }
+    // Fill only bars that are still empty now, whatever the plan saw earlier.
+    const fills = plan.fills.filter((fill) =>
+      sources[fill.index] && state.song.measures[fill.index]?.chords.every((chord) => chord === null));
+    const measures = fills.length ? state.song.measures.map((m, mi) => {
+      const fill = fills.find((item) => item.index === mi);
+      if (!fill) return m;
+      return { ...m, chords: fill.chords.map((chord) => chord ? analyzeChord(chord, state.song.key) : null) as [Chord | null, Chord | null] };
+    }) : state.song.measures;
+    for (const fill of fills) Object.assign(sources[fill.index], fill.source);
+    const song = {
+      ...state.song,
+      measures,
+      importSource: { ...importSource, measures: sources, ...(fills.length ? { analysisSource: 'mixed' as const } : {}) },
+    };
+    return fills.length
+      ? { ...interruptIfPlaying(state), editHistory: recorded(state), song }
+      : { song };
+  }),
 
   setSections: (sections) => {
     const error = checkSectionRanges(sections, get().song.measures.length);

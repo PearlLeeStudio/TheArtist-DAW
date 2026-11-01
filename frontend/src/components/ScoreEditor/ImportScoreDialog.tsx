@@ -1,13 +1,14 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import OperationProgress from '../OperationProgress';
-import { readSSEFrames } from '../../engine/sseStream';
 import type { CSSProperties, KeyboardEvent } from 'react';
 import type { Song } from '../../models/types';
 import { STANDARD_KEYS } from '../../engine/keySignatures';
-import { metaHeaders } from '../../engine/metaSession';
 import { beginTiming } from '../../engine/experienceTiming.ts';
 import { fetchMetaCapability, type MetaCapability } from '../../engine/planClient';
 import { SECTION_GROUPS, isSectionType, sectionLabel, sectionsInGroup } from '../../engine/songForm';
+import { analyzeScoreFile, ScoreAnalysisError } from '../../engine/scoreImportClient';
+import { useImportReviewStore } from '../../store/importReviewStore';
+import { useSongStore } from '../../store/songStore';
 import {
   buildScoreImportForEditor,
   checkScoreFile,
@@ -15,11 +16,9 @@ import {
   IMPORT_TIME_SIGNATURES,
   MAX_SCORE_IMPORT_BYTES,
   scoreImportReadyStatus,
-  readScoreImportResponse,
-  scoreImportRequestBody,
   validateScoreImportForEditor,
 } from '../../engine/scoreImport';
-import type { ImportSectionDraft, ScoreImportDraft, ScoreImportEngine, ScoreImportValidation, ScoreMime } from '../../engine/scoreImport';
+import type { ImportSectionDraft, ScoreImportDraft, ScoreImportEngine, ScoreImportResponse, ScoreImportValidation, ScoreMime } from '../../engine/scoreImport';
 
 interface ImportScoreDialogProps {
   onClose: () => void;
@@ -43,36 +42,10 @@ const mutedStyle: CSSProperties = { color: 'var(--text-muted)' };
 const IMPORT_MODE = 'infer_harmony';
 /** Leading bytes read for checkScoreFile's file-signature check. */
 const SIGNATURE_BYTES = 16;
-/** Bytes per String.fromCharCode call, so the spread stays within argument limits. */
-const BASE64_CHUNK_BYTES = 0x8000;
 const ANALYSIS_TIMEOUT_MS = 180_000;
 /** Mirrors the private MAX_IMPORT_SECTIONS in engine/scoreImport.ts, the most
  *  sections draft validation accepts; Add section stops there. Keep the two equal. */
 const MAX_IMPORT_SECTIONS = 64;
-
-/** The API's `detail` (a message or a list of validation errors), else a generic failure. */
-function recognitionErrorMessage(body: unknown, status: number): string {
-  if (body && typeof body === 'object' && 'detail' in body) {
-    const detail = body.detail;
-    if (typeof detail === 'string') return detail;
-    if (Array.isArray(detail)) {
-      const items: unknown[] = detail;
-      const messages = items.flatMap((item) =>
-        item && typeof item === 'object' && 'msg' in item && typeof item.msg === 'string' ? [item.msg] : []);
-      if (messages.length) return messages.join('; ');
-    }
-  }
-  return `Score recognition failed (${status}). Please try again.`;
-}
-
-async function fileBase64(file: File): Promise<string> {
-  const bytes = new Uint8Array(await file.arrayBuffer());
-  const chunks: string[] = [];
-  for (let start = 0; start < bytes.length; start += BASE64_CHUNK_BYTES) {
-    chunks.push(String.fromCharCode(...bytes.subarray(start, start + BASE64_CHUNK_BYTES)));
-  }
-  return btoa(chunks.join(''));
-}
 
 /** The meters written in the source, each once, e.g. ['4/4', '3/4']. */
 function distinctSourceMeters(draft: ScoreImportDraft): string[] {
@@ -131,6 +104,8 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
   const dialogRef = useRef<HTMLDialogElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const sourceRef = useRef<SourceFile | null>(null);
+  // The file whose local reading opened (or is about to open): Meta reviews it in the background.
+  const reviewSourceRef = useRef<SourceFile | null>(null);
   const controllerRef = useRef<AbortController | null>(null);
   // Bumped to invalidate pending file checks and analyses: on mount, a new
   // file, cancel, retry and close.
@@ -245,6 +220,7 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
     const controller = new AbortController();
     controllerRef.current = controller;
     runningRef.current = true;
+    reviewSourceRef.current = null;
     setRunning(true);
     setDraft(null);
     setError(null);
@@ -252,29 +228,31 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
     let timedOut = false;
     const timer = window.setTimeout(() => { timedOut = true; controller.abort(); }, ANALYSIS_TIMEOUT_MS);
     const finish = beginTiming('import.review', engine);
+    // With Meta checked, a PDF opens from the local reader in a second or two;
+    // Meta then reads the same file in the background (importReviewStore) and
+    // marks its disagreements on the staff instead of holding this dialog.
+    const localFirst = engine === 'verified' && selected.mimeType === 'application/pdf';
+    const report = (label: string) => { if (isCurrent(sequence)) setStatus(label); };
+    const analyze = (reader: ScoreImportEngine) =>
+      analyzeScoreFile(selected.file, selected.mimeType, reader, IMPORT_MODE, { signal: controller.signal, onStatus: report });
     try {
-      const dataBase64 = await fileBase64(selected.file);
-      if (!isCurrent(sequence)) return;
-      if (controller.signal.aborted) throw new Error('Recognition was interrupted.');
-      setStatus('Uploading the score for analysis…');
-      const response = await fetch('/api/import/score/stream', {
-        method: 'POST',
-        // A server with Meta limits admits an assisted import per browser session
-        headers: { 'Content-Type': 'application/json', ...(engine !== 'local' ? metaHeaders() : {}) },
-        body: JSON.stringify(scoreImportRequestBody(selected.file.name, selected.mimeType, dataBase64, IMPORT_MODE, engine)),
-        signal: controller.signal,
-      });
-      if (!response.ok) throw new Error(recognitionErrorMessage(await response.json().catch(() => null), response.status));
-      let body: unknown;
-      for await (const frame of readSSEFrames<Record<string, unknown>>(response)) {
-        if (!isCurrent(sequence)) return;
-        if (frame.event === 'progress' && typeof frame.data.label === 'string') setStatus(frame.data.label);
-        if (frame.event === 'error') throw new Error(recognitionErrorMessage(frame.data, Number(frame.data.status) || 500));
-        if (frame.event === 'result') { body = frame.data; break; }
+      let recognized: ScoreImportResponse;
+      let usedEngine = engine;
+      if (localFirst) {
+        try {
+          recognized = await analyze('local');
+          usedEngine = 'local';
+          reviewSourceRef.current = selected;
+        } catch (caught) {
+          // Only a PDF the local reader cannot read goes to Meta right away, as before.
+          if (controller.signal.aborted || !(caught instanceof ScoreAnalysisError) || caught.status !== 422) throw caught;
+          report('The local reader cannot read this file. Meta is reading the original score…');
+          recognized = await analyze('verified');
+        }
+      } else {
+        recognized = await analyze(engine);
       }
       if (!isCurrent(sequence)) return;
-      if (!body) throw new Error('The score connection ended before analysis finished. Please try again.');
-      const recognized = readScoreImportResponse(body, IMPORT_MODE, engine);
       const created = createScoreImportDraft(recognized, selected.file.name);
       finish();
       // Open the score as soon as it is read. Reading provenance, unresolved
@@ -282,7 +260,7 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
       // fields stop here for correction.
       if (validateScoreImportForEditor(created).valid && openImported(created)) return;
       setDraft(created);
-      setStatus(`${scoreImportReadyStatus(created, engine)} Correct the highlighted fields to import.`);
+      setStatus(`${scoreImportReadyStatus(created, usedEngine)} Correct the highlighted fields to import.`);
     } catch (caught) {
       if (!isCurrent(sequence)) return;
       setStatus('');
@@ -330,11 +308,14 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
   };
 
   /** Replace the editor's score with the draft and close; false (with the
-   *  error shown) when the editor could not take it. */
+   *  error shown) when the editor could not take it. A local reading that
+   *  stood in for the checked Meta reading starts the background review. */
   const openImported = (ready: ScoreImportDraft): boolean => {
     try {
       const imported = buildScoreImportForEditor(ready);
       onImported(imported);
+      const review = reviewSourceRef.current;
+      if (review) useImportReviewStore.getState().start(review.file, review.mimeType, useSongStore.getState().songEpoch);
       dialogRef.current?.close();
       return true;
     } catch (caught) {
@@ -417,7 +398,7 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
                   setMetaConnectionError(false); setCheckingMeta(true); setMetaAttempt(attempt => attempt + 1);
                 }}>Retry connection</button>
               </div>}
-              {useMeta && <p className="text-xs" style={mutedStyle}>Meta and the local reader read the original together. The score opens as soon as the reading is ready; bars where the two readings differ are marked Review on the staff.</p>}
+              {useMeta && <p className="text-xs" style={mutedStyle}>A PDF opens from the local reader right away; Meta then reads the original in the background, marks bars where the two readings differ with Review and fills bars the local reader left empty. Images are read by Meta directly.</p>}
               {meta && !metaAvailable && (
                 <p className="text-xs" style={mutedStyle}>
                   {meta.enabled ? 'No Meta key is configured on this server: TheArtist only is available.'

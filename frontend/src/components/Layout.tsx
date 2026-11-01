@@ -3,6 +3,7 @@ import './Layout.css';
 import Staff from './ScoreEditor/Staff';
 import SongFormDialog from './ScoreEditor/SongFormDialog';
 import ImportScoreDialog from './ScoreEditor/ImportScoreDialog';
+import ImportReviewBand from './ScoreEditor/ImportReviewBand';
 import SectionsDialog from './ScoreEditor/SectionsDialog';
 import ExportMenu from './ScoreEditor/ExportMenu';
 import PlayPanel from './RightPanel/play/PlayPanel';
@@ -292,6 +293,7 @@ export default function Layout() {
           </div>
 
           {saveMessage && <p role="alert" className="text-xs mb-3" style={{ color: 'var(--text-soft)' }}>{saveMessage}</p>}
+          <ImportReviewBand />
 
           {/* Inline song settings — sits above the staff so the user can
               click straight on BPM / Time / Key / Genre to change them
