@@ -1,8 +1,12 @@
 # TheArtist · Meta hackathon contribution
 
+TheArtist is an AI arrangement tool: bring in a score or chord sketch, develop
+its harmony and form, audition accompaniment and continue with editable DAW
+tracks. Chord generation supplies musical material within that workflow.
+
 The existing TheArtist core supplies the score editor, Music Transformer,
 trained weights, music utilities and research code. The event contribution adds
-Meta score interpretation, context-aware planning and bounded revision,
+Meta score interpretation, context-aware form planning and bounded reharmonization,
 Original/A/B/C editing, arrangement export, source attribution and performance
 improvements. These are development claims; musical preference requires listening.
 
@@ -44,7 +48,7 @@ Run the built application without a paid API:
 uv run --frozen --directory /absolute/theartist-app/backend python /absolute/theartist-app/deploy/serve.py
 ```
 
-Open `http://localhost:7860`. Use **TheArtist only** for a supported vector PDF
+Open `http://localhost:7860`. Leave **Use Meta model** unchecked for a supported vector PDF
 and **Genre template** for full-form creation. The own F1 model and OMT references
 are active; unavailable Meta actions remain explicit. To use Meta, set the
 server-side `MODEL_API_KEY`, `THEARTIST_META_ENABLED=1`, and the persistent budget
@@ -70,5 +74,5 @@ documents are included. The app's README contains full dependency attribution.
 
 Suggested video opening: “The score editor and trained music model predate this
 event; my hackathon contribution connects Meta score understanding, bounded
-composition revision and editable DAW delivery.” The package is not itself a
+harmonic revision, arrangement decisions and editable DAW delivery.” The package is not itself a
 published hosted app or a completed human listening evaluation.

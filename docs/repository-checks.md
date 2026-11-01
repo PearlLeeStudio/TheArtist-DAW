@@ -1,5 +1,10 @@
 # Repository consistency checks
 
+For the product's arrangement scope and user flow, use the
+[documentation index](README.md) and [arrangement guide](arrangement-workflow.md).
+The inventory and test counts below describe the cited repository snapshot;
+they are not a live count of the evolving project.
+
 The audit started from development commit `8fc40e0`: 1,009 tracked files,
 906 text files and 103 binary files, including 46 Markdown documents. Every
 tracked file was read by the scan. Current product documentation was compared

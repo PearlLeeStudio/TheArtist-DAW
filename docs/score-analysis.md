@@ -1,5 +1,9 @@
 # Score import, harmony and form
 
+Import prepares source material for the [arrangement workflow](arrangement-workflow.md).
+Its output is an editable harmonic score and form draft. Note evidence supports
+interpretation; melody notes and durations are not imported as a melody track.
+
 In **Import Score**, choose the file and optionally check **Use Meta model**, then click
 **Analyze score**. File selection validates size/type and prepares a local preview;
 it does not submit analysis. The checkbox remains selectable while checking a file or
@@ -7,9 +11,9 @@ analyzing. Changing it clears the review and aborts an old browser request;
 an earlier result cannot populate the new selection. Start the new analysis explicitly.
 A provider call already in progress may still finish and incur cost.
 
-The checkbox defaults off (`local`). Checked analysis uses `verified`: local
-reading, one original-file Meta reading informed by the provisional local musical
-synopsis, then comparison. Local processing combines vector-score reading,
+The checkbox defaults off (`local`). Checked analysis uses `verified`: one
+original-file Meta reading first, followed by local comparison or local recovery
+if Meta fails. Local processing combines vector-score reading,
 deterministic note analysis and, for unresolved passages with readable notes,
 bounded F1 harmonization proposals. The checkbox accepts PDF, PNG, JPEG and WebP when
 `meta.fullFileScoreImport` is true. File compatibility is checked
@@ -19,31 +23,33 @@ sends `mode: "infer_harmony"` and its selected engine.
 
 ## Local and Meta comparison
 
-Checked analysis uses one Meta call after local reading, not repeated calls until
-the model agrees. The complete provisional musical synopsis accompanies the
-original file; it is explicitly marked as evidence to verify, not ground truth.
+Checked analysis attempts one Meta reading of the original file. It does not
+repeat calls until the readers agree or treat a local hypothesis as ground truth.
 Deterministic comparison then checks counts, key/meter, chord labels and note
 evidence. Aligned printed local symbols and N.C. are preserved. Differences lower
 confidence and mark review; agreement never raises confidence or clears a review
 flag. Different counts retain the complete local result without aligning bars by
 position. If local reading is unsupported, Meta may read the file but the review
-reports that local comparison was unavailable. Failed Meta calls remain failures.
+reports that local comparison was unavailable. A truncated, timed-out or invalid
+Meta response proceeds to the local reader. Its result has `local_fallback`
+provenance and retains unresolved editable bars; it is never labeled Meta-verified.
+If neither reader can provide a review, import reports an error.
 An empty Meta chord hypothesis no longer erases an existing local hypothesis;
 the local result remains attributed and the disagreement remains visible.
 Structured Meta output includes read notes, written notes, bass, meter and N.C.;
 these fields are not reconstructed from the chord label.
 
-A complete local score longer than 128 bars opens normally, up to the local
-512-bar limit. Its `verification.status` is `local_only`, with zero Meta calls
-and zero compared bars. The interface shows that Meta was skipped instead of
-blocking the import. This does not claim that Meta verified a long score.
+Meta reading supports at most 128 written bars. A complete locally readable
+score can contain up to 512 bars. Checked analysis can recover that local score
+after a failed or oversized Meta reading, preserving every local bar and its
+provenance. The unchecked local path makes no Meta call.
 
 The response's `verification` record reports comparison coverage and zero-based
 disputed bars. Reading checks in the existing review show those bars and structural
 differences. This adds a way to expose mistakes; no general accuracy improvement
 or independent second-model judgment has been established.
 
-The hosted `verified` path read the original one-bar C-major fixture in 17.454
+The earlier local-first `verified` path read the original one-bar C-major fixture in 17.454
 seconds with one Meta call costing $0.007548. It returned one bar, C major, 4/4
 and chord C. The comparison flagged that bar because Meta omitted structured note
 evidence even though the local reader had pitches; it remained low-confidence and
@@ -189,16 +195,18 @@ the saved section's origin, so inferred labels remain identifiable.
 An unsupported local image/PDF never silently switches `auto` to a paid whole-file
 request. The checkbox explicitly selects the `verified` full-file path; the
 standalone `meta` API mode also remains available. Each sends one
-attachment request, bounded to 75 seconds, 8192 completion tokens, $1.35 and 128
+attachment request, bounded to 150 seconds, 32,768 completion tokens, a default
+$1.50 reservation cap and 128
 result bars. Harmony and form are returned together, without a second form call.
 `THEARTIST_PUBLIC_HOST=1` requires `THEARTIST_PUBLIC_META_READER=1` for this path;
 without it the route returns 403. The hosted Artist service enables the option.
 Local and bounded assist remain available. Session/daily/total spend limits still
 apply. Missing or false `meta.fullFileScoreImport` keeps it disabled in the UI.
 
-Configuration, budget, provider and validation failures stay errors. There is no
-successful-looking local fallback after an attempted Meta analysis. Disabling
-Meta leaves TheArtist only usable; an `auto` request that needs Meta fails with 503.
+Direct `meta` and bounded `auto` failures remain errors. The checkbox's `verified`
+path can recover a supported local score after Meta fails; it explicitly reports
+`local_fallback`, never successful Meta analysis. Disabling Meta leaves local
+reading usable; an `auto` request that needs Meta fails with 503.
 The ledger records each request ID and usage. Import admission settles only this
 request's actual calls, including failures, without counting another caller's
 concurrent spending. If settlement cannot be established, the admitted estimate

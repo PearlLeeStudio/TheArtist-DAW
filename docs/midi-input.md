@@ -1,4 +1,9 @@
-# MIDI keyboard input
+# MIDI input and arrangement handoff
+
+MIDI connects both ends of the [arrangement workflow](arrangement-workflow.md):
+capture played harmony into the score, then transfer edited accompaniment into
+Logic or another DAW. Keyboard input captures chord decisions, not a recorded
+melody performance; the exported arrangement contains Harmony, Bass and Drums.
 
 Open the editor's **Input** tab and choose **Enable MIDI**. Connection and live
 monitoring work without selecting a score slot. Writing a chord requires exactly

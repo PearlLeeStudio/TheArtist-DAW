@@ -1,4 +1,8 @@
-# Browser, audio and DAW checks
+# Arrangement workflow: browser, audio and DAW checks
+
+Follow the [arrangement guide](arrangement-workflow.md) from source material to
+editable DAW parts. Verify preserved musical decisions across each stage, as
+well as individual model responses.
 
 Checked items below were observed in the named application. Unchecked items remain
 manual coverage to complete; automated tests do not establish audible balance or
@@ -20,9 +24,9 @@ reopen, then inspect PDF/MIDI and the actual DAW result. Full-form planning and
 candidate review are implemented. Generation can attach OMT source excerpts with
 author/editor credit and license links; their browser checks below remain open.
 
-## Composition regression requirements
+## Arrangement regression requirements
 
-Changes to composition controls, selection, chord parsing or shared model scoring
+Changes to arrangement controls, selection, chord parsing or shared model scoring
 must preserve both Generate and Reharmonize. Before publishing, run the frontend
 and backend suites, including the real PEFT-wrapper regression, build and lint.
 For model-call or scoring changes, also exercise the affected base checkpoints and
@@ -42,6 +46,14 @@ passing unit tests alone does not complete this verification.
 - [x] User-confirmed: Logic Pro integration works in the user's own workflow.
   This confirms the DAW handoff; the separate Scripter, hardware and detailed
   meter/controller cases below retain their own verification scope.
+- [x] Hosted Chrome: Reharmonize with **Change up to 4 chords**, using four and
+  eight selected existing slots, returned three candidates with the Folk LoRA.
+  A/B/C changed the score and Original restored the original passage. Chosen
+  candidates changed one or two chords; the setting is an upper bound. The
+  four-change search itself has automated coverage across every family.
+- [x] Hosted Chrome: New from Song Form preserved the imported project, started
+  a fresh 32-bar Meta song, appended an eight-bar own-model section, extended to
+  64 bars with Genre template, then Undo returned to 40 with target 48 selected.
 - [x] Safari: Muse Spark Full form produced a 16-bar song with five sections,
   applied it and closed the dialog. No execution log appeared above the staff.
 - [x] Safari: section selection and real F1 passage generation returned Original
@@ -73,15 +85,15 @@ failures are recorded in [evaluation.md](evaluation.md).
 - [ ] Import Score is immediately left of New from Song Form. Load a chord-symbol
   PDF and compare each measure with the source preview before confirming.
   The original `backend/tests/fixtures/vector-score-c.pdf` and `vector-score-f.pdf`
-  are small notes-only starter cases. Local and Meta assist accept PDFs;
-  the explicit Meta only reader also accepts PNG/JPEG/WebP when available.
+  are small notes-only starter cases. Leave **Use Meta model** unchecked for
+  local vector-PDF reading; check it for PNG/JPEG/WebP when the reader is available.
 - [ ] Verify one-chord expansion, unknown key/meter, unsupported chord names and
   zero or three-plus symbols in a bar. Unknown key/meter still requires correction;
   unfinished chord reading can open in the score view. Missing/unsupported slots
   stay unassigned with the source preserved. Longer bars retain all source symbols
   for placement rather than silently selecting two. Cancel, close and replace files
   while a request is running.
-- [x] Safari desktop: Reader can be selected before a file. Selecting the original
+- [x] Earlier Reader-selector interface, Safari desktop: Reader could be selected before a file. Selecting the original
   vector-score-c.pdf fixture only prepares its preview; changing Reader retains the
   file without analyzing. **Analyze score** with TheArtist only completes the local
   review. Changing Reader then clears the review and disables import until analysis
@@ -89,13 +101,12 @@ failures are recorded in [evaluation.md](evaluation.md).
   Reader when Analyze is clicked, and stays selected when switching to Meta only.
   No Meta analysis was submitted in these checks.
 - [ ] An explicitly started analysis shows an indeterminate progress bar.
-  The default **TheArtist + Meta** reader sends complete
-  score context to at most two eight-bar harmony calls and one form call. Confident
-  local inferences are eligible; printed chords stay unchanged. The status reports
-  reviewed coverage, while request IDs remain in provenance. Switching readers
-  during analysis cancels the old request and waits for **Analyze score**; verify
-  its late response cannot populate the review. TheArtist only makes no Meta call; Meta only
-  is explicit and unavailable on the public host. Failures stay visible.
+  The unchecked **Use Meta model** path stays local. The checked path attempts
+  one original-file Meta reading, then local comparison or labeled local recovery.
+  Printed local chords/N.C. stay preserved and unequal bar counts retain the full
+  local result. Changing the checkbox during analysis cancels the browser request
+  and waits for **Analyze score**; verify its late response cannot populate the
+  review. Provider calls already sent may still finish and incur cost.
   The Review score dialog has no chord-analysis list. After import, select a bar
   to check its chords, Roman numerals and retained source against the original.
   Replace a file during analysis; an earlier result must not populate
@@ -103,7 +114,7 @@ failures are recorded in [evaluation.md](evaluation.md).
 - [ ] Import the original vector-score C/F
   fixtures without a model key: verify read pitches, bass, local source and Roman I.
   An unsupported scan reports that local reading cannot handle it without making
-  an implicit external model request; Meta only is a separate choice.
+  an implicit external model request; checking **Use Meta model** is explicit.
 - [ ] The footer always shows why Import reviewed score
   is disabled. Correct missing key/meter or highlighted project fields using the footer
   links, then click Import reviewed score to confirm. Valid project metadata enables the
@@ -242,6 +253,11 @@ failures are recorded in [evaluation.md](evaluation.md).
   panel collapse, a modal and a new song while notes are held.
 
 ## New from Song Form
+
+Use **Start a new song** to preserve the current score in Projects before making
+a fresh arrangement. Use the existing sketch for an extension. Verify that a
+storage error retains the original score and that Undo leaves a valid target
+length selected. The hosted workflow above covers the normal save/start path.
 
 Safari also exercised the built single-origin server with Meta disabled and
 actual F1/OMT ready. Full form displayed **Keep the theme** selected and

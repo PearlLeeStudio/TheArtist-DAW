@@ -1,4 +1,9 @@
-# Contextual chord alternatives
+# Reharmonize an arrangement in context
+
+Reharmonize is the harmonic-revision step in the
+[arrangement workflow](arrangement-workflow.md). Keep the source passage,
+compare substitutions against neighboring harmony, then audition the result
+with the arrangement's existing sounds, rhythms and mix.
 
 Drag-select existing chords in the score, right-click the passage, and choose
 **Reharmonize**. This opens the matching **Input → Reharmonize** tab while retaining

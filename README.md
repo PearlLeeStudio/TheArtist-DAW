@@ -1,7 +1,7 @@
 <h1 align="center">TheArtist</h1>
 
 <p align="center">
-  <em>Bring in a chord score, develop a selected passage with a custom Music Transformer, compare it with the original, and take the arrangement into your DAW.</em>
+  <em>An AI arrangement tool: bring in a score or chord sketch, shape its harmony, form and accompaniment, and continue in your DAW.</em>
 </p>
 
 <p align="center">
@@ -14,6 +14,33 @@
   <img alt="Stack" src="https://img.shields.io/badge/stack-React%2019%20%C2%B7%20FastAPI%20%C2%B7%20PyTorch-1c1917?style=flat-square">
 </p>
 
+## Arrange with TheArtist
+
+TheArtist helps musicians turn an existing score or chord sketch into an editable
+arrangement. Work on the passage that needs attention, compare harmonic options
+in context, shape the song form, choose the accompaniment and take separate
+Harmony, Bass and Drums tracks into a DAW. Chord generation is one step in that
+workflow; the musician chooses what stays in the score.
+
+**[Open the arrangement workspace](https://artist-daw.pearlleestudio.co)** ·
+[Workflow guide](docs/arrangement-workflow.md) · [Documentation](docs/README.md) ·
+[Run locally](#getting-started)
+
+| Step | Work in the editor | Result |
+|---|---|---|
+| Bring in the material | Import Score, MIDI keyboard, manual chords, or New from Song Form | An editable harmonic score with key, meter and section boundaries |
+| Shape the harmony | Select existing chords and Reharmonize, or Generate a new passage | A/B/C comparisons with exact Original restoration; Reharmonize changes up to 1–4 selected chords |
+| Develop the form | Extend a sketch, add a section or start a new song | A complete harmonic form; starting fresh first saves the existing score in Projects |
+| Arrange and audition | Adjust voicings, sounds, comping rhythm, drums, tempo and part levels in Play | A playable Harmony/Bass/Drums arrangement |
+| Continue production | Save a project, export MIDI or score PDF, or hand off to Logic | Editable material for further instrumental, melodic and production work |
+
+**What the AI contributes.** The author's Music Transformer proposes and scores
+harmony; Meta reads scores, plans form and compares bounded harmonic alternatives.
+Voicings, accompaniment patterns, mixer controls and MIDI rendering use application
+code. The current arrangement is a harmonic score with three accompaniment parts.
+Imported melody notes and durations are not transferred as an editable melody
+track, and the app does not generate vocals or a finished audio master.
+
 ## Web projects
 
 On narrow or portrait screens, header controls sit above the title and the side
@@ -22,7 +49,7 @@ fits within the screen. The editor remains primarily a desktop workspace.
 
 | Project | Website | Role |
 |---|---|---|
-| **TheArtist-DAW — hackathon demo** | [artist-daw.pearlleestudio.co](https://artist-daw.pearlleestudio.co) | Score → composition → arrangement → DAW workflow developed in this repository |
+| **TheArtist-DAW — hackathon demo** | [artist-daw.pearlleestudio.co](https://artist-daw.pearlleestudio.co) | AI arrangement workspace: score/sketch → harmony and form → accompaniment → DAW |
 | TheArtist — public release | [artist.pearlleestudio.co](https://artist.pearlleestudio.co) | Separately deployed release editor |
 | **TheVoyager — project extension** | [voyager.pearlleestudio.co](https://voyager.pearlleestudio.co) | Travel globe, stories and photographs accompanied by generated music |
 
@@ -60,7 +87,7 @@ Both Artist websites → /api/* → the shared model API above
 
 Docker packages the server code, libraries and all 18 model choices. The API key
 and persistent cost ledger stay outside the image. The server checks Git about
-once a minute; documentation-only pushes do not restart it. Runtime replacement
+once a minute; documentation-only and frontend-only pushes do not restart it. Runtime replacement
 briefly interrupts the API while models load. The release frontend follows its
 own reviewed public snapshot; hackathon code is not automatically merged into it.
 
@@ -70,10 +97,11 @@ distinguishes the existing adapter from the remaining hosted integration.
 
 ## Hackathon workflow
 
-**Build for Your World.** The author's own problem: a chord sketch stops at eight
-bars, and getting it from a score into an arrangement a DAW can play means
-retyping everything. TheArtist takes a chord score in, lets a musician develop a
-passage with the author's Music Transformer, and hands the arrangement to the DAW.
+**Build for Your World.** The author's own problem is carrying musical material
+from a score into an arrangement: reviewing harmony, trying substitutions,
+developing sections, choosing accompaniment and transferring it without retyping.
+TheArtist connects those decisions in one workspace and delivers editable parts
+to the DAW. Its existing chord model supplies a harmonic engine for this workflow.
 
 | | Pre-existing (tag `baseline`) | Hackathon work (commits after the tag) |
 |---|---|---|
@@ -149,6 +177,12 @@ file, contract and test coverage, fixes, and remaining verification limits.
 - **Sections** preserves explicit versus inferred labels, lets you edit boundaries,
   and selects a region by its staff label. **Original/A/B/C** changes only the chosen
   slots and can restore the exact original voicings.
+- **Reharmonize** develops existing harmony while considering the chords before
+  and after the selected passage. **Change up to** offers 1, 2, 3 or 4 changed
+  chords per alternative; this is a maximum, so a candidate may change fewer.
+  Meta compares bounded searches scored by the selected Music Transformer and
+  returns three choices. Preview A/B/C on the score or return to **Original**.
+  Empty slots stay unchanged; use Generate to create a new passage.
 - **Second ear** under a three-candidate list asks the judge model which candidate
   fits, on facts code computed (chords outside the key, changed slots, repetition of
   the previous section, roughness). Each reason shows its fact marked *analyzer
@@ -165,6 +199,9 @@ file, contract and test coverage, fixes, and remaining verification limits.
   result must have the planned section lengths and playable chord symbols before
   it can be applied. **Music Transformer + Meta review** keeps the hybrid path;
   **Genre template** uses the Music Transformer without a Meta call.
+  For a fresh arrangement, choose **Start a new song**: the existing score is
+  saved in Projects before the new song starts, with key, genre, tempo and meter
+  carried over. After Undo, the dialog selects an available target length.
   A successful run is applied from the dialog; the staff stays free of execution
   logs. Reopen the dialog's collapsed **Run details** for Undo and the trace.
   Ctrl+A or ⌘A selects every bar in the editor; text inputs retain native selection.
@@ -254,14 +291,17 @@ Current Safari interface: section labels, chord staff, Play controls and the alw
 
 | | |
 |---|---|
-| **Compose on a staff** | VexFlow notation, click to select measures, drag-select ranges, slash-chord support |
-| **Generate with a paper-trained model** | F1 default (10K pop mix); the released F1 base is weight-identical to the Phase 0 pop baseline (~84.2% pop / 72.9% jazz top-1 — a checkpoint-selection artifact), and the selection-corrected `ft_f1_v2` retrain (83.7% pop / 80.3% jazz) restores the jazz adaptation; F1–F5 + F1 v2 + Phase 0 baseline + 11 LoRA adapters (13-genre vocabulary) selectable |
+| **Arrange on a staff** | Import or enter harmonic material, edit section boundaries, select measures or slot ranges, and preserve slash chords |
+| **Compare harmonic alternatives** | Reharmonize existing chords with a 1–4 change limit, or Generate new material; persistent A/B/C previews and Original restoration |
+| **Develop a complete form** | Add sections or extend a sketch with Meta-only, hybrid or genre-template generation; preserve the current project before starting fresh |
+| **Choose the harmonic engine** | F1–F5, F1 v2, Phase 0 and 11 genre LoRAs serve a 13-genre vocabulary. Model training, the F1 checkpoint-selection caveat and evaluation limits are documented under [AI Model](#ai-model) |
 | **Live progress streaming** | `/api/generate/stream` SSE pipeline shows each phase (Read → Load → Compose → Rank → Voice → Done) as the model thinks; a Theory phase retrieves attributed source excerpts when an enabled corpus is ready; OMT is enabled by default after its setup step |
 | **Candidate ranking** | R1 — Sethares sensory roughness, plus local OMT text relevance when its corpus is ready. Berklee is disabled by default. Retrieval relevance is not a musical-quality score. |
 | **Voice-leading inversions** | Post-process injects slash-chord inversions (e.g. `Am7/C`) where they smooth the bass line — the LM only emits root-position chords, voice leading is added on top |
 | **MIDI input with confirm flow** | Hold a chord ≥3 s → auto-commit · release early → Confirm card with root-cycling chips, slash-chord inversion detection, and a 3-chord transition view (prev → curr → next + voice-leading arrows) |
 | **Audio playback** | Tone.js + smplr — sampled piano, GM guitars / keys / strings, and 15 drum pattern presets. Switch instruments live mid-playback. |
 | **Controller mixer** | Always at the bottom of Play: separate BPM, Master, Harmony, Bass and Drums faders. Live output gains are saved with each session; the lowest volume position mutes the part, Master mutes the whole mix. |
+| **Editable DAW delivery** | Three-part MIDI carries tempo, meter, section markers and levels; score PDF and Logic Scripter exports provide additional handoff formats |
 | **Dark + light theme** | Classical staff with an editorial dark/light palette; a tactile Play panel with compact text keys, flat status cells and slim vertical faders. |
 | **Resizable right panel** | Drag the boundary 300–640 px wide; collapse with a short tab-aligned toggle. |
 | **Generation provenance** | Backend fallback results are explicitly labeled `rules`; transport failures stay errors. Model results retain `source: ai`, `modelUsed`, and the slots changed by song-form rules. |
@@ -278,7 +318,13 @@ receives the complete musical synopsis even when its harmony review covers only 
 bounded range. Form suggestions can use neutral **Section** labels when a specific
 Intro, Verse or Chorus function is uncertain.
 
-### AI generation with live progress
+### Develop harmony with Generate and Reharmonize
+
+Use **Reharmonize** for substitutions within an existing passage. Choose up to
+1–4 changed chords, compare the three returned versions on the staff, and use
+**Original** to restore the exact passage. [Search behavior and limits](docs/reharmonization.md)
+explain the role of neighboring chords, mode constraints and the trained scorer.
+Use **Generate** when the arrangement needs new harmonic material:
 
 <img src="screenshot/03-generate.png" alt="Generate tab — model selector, slot selected, three suggestions returned">
 
@@ -365,7 +411,7 @@ classical styling.
 
 ## Architecture
 
-### Shared hackathon service
+### Shared arrangement workflow
 
 ```mermaid
 flowchart LR
@@ -375,12 +421,14 @@ flowchart LR
   Local --> Review["Review chords and song form"]
   Meta --> Review
   Review --> Editor["Staff · selection · Original/A/B/C"]
-  Editor --> Planner["Muse plans · validator checks · own model + form rules generate · Muse judges"]
+  Editor --> Planner["Full form: Meta-only, hybrid or genre template"]
+  Editor --> Reharm["Reharmonize: Meta searches · Music Transformer scores · musician chooses"]
   Editor --> Rest["REST / streaming"]
   Voyager["TheVoyager thin client"] --> MCP["MCP /mcp/"]
   Rest --> Music["Shared inference and arrangement services"]
   MCP --> Music
   Planner --> Music
+  Reharm --> Music
   Music --> MT["Own Music Transformer"]
   Music --> MIDI["Editable MIDI · local DAW handoff"]
   Music --> Scripter["Exported Logic Scripter MIDI FX script"]
@@ -450,7 +498,11 @@ flowchart LR
   class Store,CKPT store
 ```
 
-### `/api/generate/stream` — default runtime
+### `/api/generate/stream` — passage-generation path
+
+This is the Generate subflow within the arrangement workspace. Import, full-form
+planning and [Reharmonize](docs/reharmonization.md) have their own bounded paths;
+playback and export consume the musician's selected score and arrangement settings.
 
 ```mermaid
 sequenceDiagram
@@ -515,10 +567,11 @@ TheArtist-DAW/
 ├── frontend/src/
 │   ├── components/
 │   │   ├── ScoreEditor/                  # Staff, Import, Song Form and full Export menu
-│   │   ├── RightPanel/                   # Input/Generate, MIDI capture and Play controls
+│   │   ├── RightPanel/                   # Generate/Reharmonize, MIDI capture and Play controls
 │   │   └── MyPage/                       # Projects and first-row score previews
 │   ├── engine/
 │   │   ├── chordGenerator.ts             # Chord/section generation clients
+│   │   ├── reharmonize.ts · reharmonizeSession.ts # Bounded patch requests and A/B/C/Original
 │   │   ├── planClient.ts · sseStream.ts   # Full-form runs and SSE transport
 │   │   ├── scoreImport.ts                # Import requests and source provenance
 │   │   ├── exportSpec.ts · pdf.ts        # Shared export snapshot and PDF rendering
@@ -772,6 +825,7 @@ follow the endpoint schemas.
 | `/api/plan/song` · `/api/plan/song/stream` | POST | `plan_song` (**planning stage only**) | REST plans, generates and judges; MCP returns a validated plan without chords |
 | — | — | `validate_plan` | Validate a plan against its request without a model call |
 | `/api/review/candidates` | POST | — | Meta Second-ear review of three candidates |
+| `/api/reharmonize` | POST | — | Three contextual substitution patches, each changing at most 1–4 selected chords |
 | `/api/import/score` | POST | `import_score` | Local vector-score reading or explicit bounded/full-file Meta analysis |
 | `/api/export/midi` | POST | `render_midi` | Render the shared `ExportSpec`; MCP returns base64 file data |
 | `/api/export/scripter` | POST | — | Export a Logic Scripter MIDI FX script |

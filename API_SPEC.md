@@ -1,6 +1,12 @@
 # TheArtist — API Specification
 
-> Shared contracts for the editor, TheVoyager, and future plugin clients
+> Shared arrangement contracts for the editor, TheVoyager, and future plugin clients
+
+The API supports an [arrangement workflow](docs/arrangement-workflow.md): import
+harmonic material, develop form, compare substitutions and render editable
+accompaniment. Chord-generation endpoints supply one part of that workflow.
+Harmony proposals use the Music Transformer and Meta; accompaniment patterns,
+voicings and MIDI rendering use application code.
 
 ---
 
@@ -11,6 +17,7 @@ flowchart LR
     FE["React editor"] --> VP["Vite /api proxy"]
     VP --> GEN["Chord and section routes"]
     VP --> PLAN["Plan and candidate-review routes"]
+    VP --> REHARM["Contextual reharmonization"]
     VP --> IMP["Score-import route"]
     VP --> EXP["MIDI / Scripter / DAW routes"]
     MCP["Local MCP /mcp/"] --> MUSIC["Shared music services"]
@@ -21,6 +28,8 @@ flowchart LR
     MUSIC --> R2["Local OMT relevance + attributed source excerpts"]
     MUSIC --> RULES["Explicit rule fallback when model unavailable"]
     PLAN --> META["Bounded Meta client + ledger"]
+    REHARM --> META
+    REHARM --> MUSIC
     IMP --> LOCAL["Local vector-score reader + harmony analysis"]
     IMP --> META
     EXP --> RENDER["Arrangement / MIDI / Scripter rendering"]
@@ -32,7 +41,8 @@ Score import, planning, review, export and MCP use the same backend services. Lo
 
 ```
 Development: http://localhost:8000/api
-Production:  TBD
+Hosted editor: https://artist-daw.pearlleestudio.co/api
+Shared model API: https://music-api.pearlleestudio.co/api
 ```
 
 Vite dev server proxies `/api` → `http://localhost:8000/api` (configured in `vite.config.ts`).
@@ -44,6 +54,7 @@ Vite dev server proxies `/api` → `http://localhost:8000/api` (configured in `v
 | Endpoint | Contract |
 |---|---|
 | `POST /api/import/score` | Attached score → local, Meta-assisted, or full-file harmony/form draft for review |
+| `POST /api/reharmonize` | Existing selected harmony → three bounded substitution patches, up to 1–4 changed chords each |
 | `POST /api/review/candidates` | A Generate's A/B/C → the judge's choice, its reasons checked against analyzer facts |
 | `POST /api/export/midi` | Edited `ExportSpec` → `audio/midi` bytes |
 | `GET /api/daw/targets` | Installed Logic/Ableton availability on the backend machine |
@@ -385,6 +396,61 @@ for retained requests, traces and evaluation limits.
 
 ---
 
+### POST `/api/reharmonize` — Contextual harmonic alternatives
+
+Return three substitution candidates for existing selected chords. The request
+is read-only; only a subsequent editor action applies a candidate. Each patch
+proposes bounded edits within the selection and leaves empty slots untouched.
+
+```json
+{
+  "key": "C major",
+  "timeSignature": [4, 4],
+  "context": [
+    {"measure": 0, "chords": ["Cmaj7", "Am7"]},
+    {"measure": 1, "chords": ["Dm7", "G7"]},
+    {"measure": 2, "chords": ["Cmaj7", null]}
+  ],
+  "selectedSlots": [
+    {"measureIndex": 0, "slotIndex": 0},
+    {"measureIndex": 0, "slotIndex": 1},
+    {"measureIndex": 1, "slotIndex": 0},
+    {"measureIndex": 1, "slotIndex": 1}
+  ],
+  "maxChanges": 4,
+  "mode": "auto",
+  "modelKey": "ft_f1"
+}
+```
+
+Context contains 1–256 consecutive, unique, zero-based measures, each with exactly
+two chord slots. `selectedSlots` contains 1–16 unique occupied slots spanning at
+most eight measures. The browser omits empty slots from its selection request.
+`maxChanges` is `1 | 2 | 3 | 4` (default 1), an upper bound per candidate; it does
+not request four alternatives or require exactly four edits. Supported meters
+are 4/4, 3/4, 6/8, 2/4 and 5/4. `mode` defaults to `auto`; explicit `ionian`,
+`dorian`, `phrygian`, `lydian`, `mixolydian`, `aeolian` or `locrian` constrains
+each proposed chord to the corresponding parallel scale.
+
+`ReharmResponse` contains three `candidates`, `modelUsed`, `contextMeasures`,
+`metaModel`, `requestIds`, `costUsd`, `toolCalls` and `modelApproximations`.
+Each candidate has an `id`, search `family`, and `changes` containing an address,
+`before`/`after` symbols, shared-tone count, compatible modes and verified
+convention labels. Candidate metrics include pitch distance, bass motion,
+mathematical score, convention score and learned `modelScore`. These metrics
+are not probabilities of musical quality. Model-vocabulary approximations are
+reported separately and never applied as score edits.
+
+The search uses Standard Muse Spark and an available Music Transformer, with
+at most four Meta turns, six tool calls, six scored candidates per family,
+low reasoning effort and 4,096 output tokens per call. The per-call timeout is
+30 seconds and the loop deadline is 100 seconds. The normal request reservation
+cap is $0.15; configured development overrides and public session/day controls
+follow the existing spend policy. Failures are visible: invalid input 422,
+budget/rate limits 429, configuration/disabled 503, timeout 504, other Meta
+failures 502. No success-shaped fallback substitutes for a failed search.
+See [search and comparison behavior](docs/reharmonization.md).
+
 ### POST `/api/review/candidates` — Second ear
 
 The judge role picks one of a Generate's two or three candidates on facts code computed, and code checks every reason it gives against those facts. Nothing is applied: adopting a candidate stays the user's click.
@@ -723,18 +789,20 @@ Printed symbols and N.C.
 are preserved. Browser cancellation suppresses stale results but does not undo
 an external call already sent or its cost.
 
-`verified` first tries local analysis, then sends the original attachment and any
-complete local musical synopsis (at most 40 KiB) to one Meta request. It retains
-the 75-second, 8192-token, $1.35 and 128-written-bar bounds. Complete local outputs
-above 128 bars return all local bars (up to 512) with `verification.status: local_only`,
-zero Meta calls and zero compared bars, instead of blocking import. It compares bar counts, key, meter, chord readings
+`verified` first sends the original attachment to one Meta request, with a
+150-second timeout, 32,768 output tokens, low reasoning effort, a default $1.50
+request reservation cap and at most 128 written result bars. Local reading then
+compares bar counts, key, meter, chord readings
 and note evidence. Aligned printed local symbols/N.C. are retained; discrepancies
 become review flags and low confidence. Unequal counts retain the whole local
 reading without merging or truncating bars. Agreement never increases confidence
-or clears an existing review flag. Meta errors remain errors, without local fallback.
+or clears an existing review flag. A failed Meta reading instead runs the local
+reader and returns an explicitly attributed `local_fallback` result when possible,
+including locally readable scores up to 512 bars. Unresolved bars remain editable.
+If neither reader can recover a score, the request fails.
 
 Responses have optional `verification`: `status` (`compared`, `local_unavailable`,
-`unaligned`, `local_only`), `localMeasures`, `metaMeasures`, `comparedMeasures`, zero-based
+`unaligned`, `local_fallback`; legacy records may contain `local_only`), `localMeasures`, `metaMeasures`, `comparedMeasures`, zero-based
 `disputedMeasures`, and explanatory `notes`. An unsupported local file may be read
 by Meta because the checkbox explicitly authorizes that path; it reports zero
 compared bars and marks the result for review. This is not a measured accuracy score.
@@ -767,8 +835,8 @@ The initial complete synopsis is checked before spending: at most 512 bars and
 three calls / $0.30**. `auto` with `chord_symbols` remains local transcription.
 
 Unsupported local input fails without a Meta request; `auto` never silently sends
-the whole file. Explicit `meta` sends the attachment in one 75-second, 8192-token
-request, capped at $1.35 and 128 result bars. It returns harmony/form together,
+the whole file. Explicit `meta` sends the attachment in one 150-second, 32,768-token
+request with low reasoning effort, a default $1.50 cap and 128 result bars. It returns harmony/form together,
 without the separate form step. On a public host, `meta` and `verified` both
 require `THEARTIST_PUBLIC_META_READER=1` and usable Meta configuration.
 
@@ -882,19 +950,24 @@ In Logic: MIDI FX ▸ Scripter ▸ Open Script in Editor, paste the file, Run Sc
 
 On non-macOS both targets are unavailable. `POST /api/daw/open` takes `{"target":"logic"|"ableton","spec":<ExportSpec>}` and returns `{"action":"open"|"reveal","path":"<saved MIDI path>"}`. It writes a uniquely named MIDI under `backend/.exports/`, then opens it in Logic or reveals it in Finder for dragging into Ableton. It does not insert tracks directly into an existing DAW project.
 
-This is an explicit side effect on the **backend computer**. The browser enables automatic handoff only from a loopback hostname; hosted users download `.mid` instead. Keep this local backend bound to loopback. Errors are 409 for a missing application, 501 on non-macOS, and 500 for file/open failures (an already saved file remains available). Export validation/size errors remain 422/413.
+This is an explicit side effect on the **backend computer**. Keep this local
+backend bound to loopback. Hosted clients can download `.mid` or use the separate
+[local Mac bridge](docs/midi-input.md#open-a-hosted-score-in-logic-pro) for Logic;
+the cloud server never launches desktop applications. Errors are 409 for a missing
+application, 501 on non-macOS, and 500 for file/open failures (an already saved
+file remains available). Export validation/size errors remain 422/413.
 
 ### Judge-server lockdown and Meta spend limits
 
-Off by default. `THEARTIST_PUBLIC_HOST=1`: `GET /api/daw/targets`, `POST /api/daw/open` and `POST /api/models/warmup` answer 403 with a reason, and `/mcp/` is not mounted. `POST /api/import/score` refuses the whole-file `engine: "meta"` read (403) unless `THEARTIST_PUBLIC_META_READER=1`; `"auto"` and `"local"` stay. Enabling the reader does not disable Meta's master switch, Standard model requirement or spend limits. A session allowance must accommodate the $1.35 full-file reservation. The Meta-calling routes — planner runs with `planner: "meta"`, Second-ear reviews, and a score import that is about to call Meta — are then admitted against limits (also available alone with `THEARTIST_META_LIMITS=1`):
+Off by default. `THEARTIST_PUBLIC_HOST=1`: `GET /api/daw/targets`, `POST /api/daw/open` and `POST /api/models/warmup` answer 403 with a reason, and `/mcp/` is not mounted. `POST /api/import/score` refuses the whole-file `engine: "meta"` read (403) unless `THEARTIST_PUBLIC_META_READER=1`; `"auto"` and `"local"` stay. Enabling the reader does not disable Meta's master switch, Standard model requirement or spend limits. A session allowance must accommodate the $1.50 full-file reservation. The Meta-calling routes — planner runs with `planner: "meta"`, Second-ear reviews, Reharmonize, and a score import that is about to call Meta — are then admitted against limits (also available alone with `THEARTIST_META_LIMITS=1`):
 
 | Header | Meaning |
 |---|---|
 | `X-TheArtist-Session` | Required; a stable per-browser id (≤ 128 characters). Its pool allows `THEARTIST_META_SESSION_LIMIT_USD` per UTC day (default 1.00). |
 | `X-TheArtist-Judge-Code` | Optional; equal to `THEARTIST_JUDGE_CODE`, it draws from one shared judge pool of `THEARTIST_JUDGE_CODE_DAILY_USD` (default 5.00). |
 
-A request is admitted at its worst case: planner $0.10, review $0.03, full-file
-score reading $1.35, or combined harmony/form assist $0.30. An auto import requiring
+A request is admitted at its worst case: planner $0.10, review $0.03,
+Reharmonize $0.15, full-file score reading $1.50, or combined harmony/form assist $0.30. An auto import requiring
 no Meta call is not charged. Settlement counts only the request's own calls,
 including retries and failures; it never subtracts global ledger snapshots that
 could include other callers. Import collects its multiple calls inside the

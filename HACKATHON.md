@@ -3,6 +3,12 @@
 Meta Global AI Developer Hackathon — building period Oct 27 – Nov 4, 2026 (ET);
 project submissions due Nov 4, 9:00 PM ET.
 
+The product is an AI arrangement tool: source score or chord sketch → harmonic
+revision and form → accompaniment → editable DAW delivery. Chord generation is
+one component. The [workflow guide](docs/arrangement-workflow.md) describes the
+implemented scope; the event record below preserves each contribution's original
+evidence and separates it from the pre-existing research and trained models.
+
 ## Baseline (not hackathon work)
 
 This is the ongoing development repository. The final submission will use a separate fresh public

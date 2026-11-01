@@ -1,6 +1,12 @@
-# Shared music API and MCP
+# Shared arrangement API and MCP
 
-The editor, TheVoyager, and future plugin clients use one TheArtist backend. Music Transformer inference, Meta score reading, arrangement rules, MIDI rendering, and the Meta spend ledger stay on that backend. A client sends music state and receives music state or a MIDI file; it does not copy models or music-generation rules.
+The editor, TheVoyager, and future plugin clients use one TheArtist backend for
+the [arrangement workflow](arrangement-workflow.md). Music Transformer inference,
+Meta score reading and planning, accompaniment rules, MIDI rendering, and the Meta
+spend ledger stay on that backend. A client sends music state and receives music
+state or an editable arrangement; it does not copy models or rendering rules.
+The editor's contextual Reharmonize endpoint is REST-only; the eleven MCP tools
+below do not expose it.
 
 The Streamable HTTP endpoint is `http://127.0.0.1:8000/mcp/`. FastAPI starts and stops the official MCP SDK session manager in its lifespan. The transport is stateless: each tool request carries its complete input. The endpoint is intended for a local backend, with the SDK's localhost Host/Origin checks enabled. Bind it to loopback. `THEARTIST_PUBLIC_HOST=1` does not mount MCP; authenticated remote MCP deployment is not implemented.
 
@@ -84,15 +90,18 @@ The full synopsis is limited to 512 bars and 40 KiB, with no truncation. Each
 assist/form call allows 64 KiB serialized input, 45 seconds, 4096 completion
 tokens and $0.10; the combined import has at most three calls and a $0.30 admission.
 Unsupported local files fail with no Meta request; `auto` never silently sends the
-whole attachment. Full-file `meta` is a separate selection with one 75-second,
-8192-token, $1.35 call, returning harmony and form together.
+whole attachment. Full-file `meta` is a separate selection with one 150-second,
+32,768-token call at low reasoning effort and a default $1.50 cap, returning harmony
+and form together. `verified` attempts that reading first, then compares locally
+or returns explicitly labeled local recovery after a failed Meta reading.
 
 `meta.fullFileScoreImport` reports whether that explicit full-file option is
 available: enabled, configured, Standard `muse-spark-1.3`, and either a non-public
 host or explicit `THEARTIST_PUBLIC_META_READER=1`.
 Clients should treat an absent field as unavailable. The public REST server
 rejects full-file imports with 403 unless opted in, while retaining local and bounded assist.
-Configuration, budget and provider errors do not become local-looking successes.
+Direct `meta` and bounded `auto` failures remain errors. A `verified` recovery
+retains local provenance and the failed Meta outcome rather than claiming Meta success.
 Request IDs, usage and costs are ledgered; per-request settlement excludes other
 callers' concurrent costs. A guarded open-weight JSON retry counts both attempts
 in its calling operation's cost; Standard Meta does not retry malformed output.

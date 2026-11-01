@@ -1,5 +1,12 @@
 # agent/ — planner evaluation
 
+These tools evaluate the form-development component of TheArtist's
+[AI arrangement workflow](../docs/arrangement-workflow.md). Their outputs are
+harmonic sections for the editor and accompaniment engine. Chord coverage and
+form validity do not measure the quality of the complete rendered arrangement.
+The paired runs below exercise the hybrid planner; they do not evaluate the
+editor's Meta-only full-form option or its Reharmonize search.
+
 `run_fixed_seed_plans.py` runs controlled rules/Muse Spark pairs on the fixed requests in
 [`experiments/agent_eval/requests/`](../experiments/agent_eval/requests/) through
 the real service (`app.services.planner.complete_form`, the code behind

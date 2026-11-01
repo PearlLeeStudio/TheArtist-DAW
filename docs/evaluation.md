@@ -1,4 +1,26 @@
-# Evaluation
+# Evaluating the arrangement workflow
+
+The product outcome is an editable arrangement carried from source material to
+a DAW. Evaluate the [complete workflow](arrangement-workflow.md) as well as each
+AI component. Existing chord-prediction, reconstruction and planner scores retain
+their original meaning; they do not become arrangement-quality scores.
+
+| Arrangement stage | Functional evidence to inspect | Musical question still requiring listening or expert judgment |
+|---|---|---|
+| Import and review | Source coverage, preserved symbols, uncertainty, editable unresolved bars | Is the proposed harmony an appropriate interpretation of the source? |
+| Harmonic revision | Selection boundaries, 1–4 change limits, valid candidates, A/B/C/Original restoration | Do the alternatives support the passage and its surrounding sections? |
+| Form development | Preserved sketch, section lengths, recurring material, valid chords and Undo | Does the form develop the intended musical idea? |
+| Accompaniment | Rhythm, voicing, instrument and mixer controls produce the requested parts | Do groove, register, density and balance serve the arrangement? |
+| DAW delivery | MIDI parts, tempo, meter, markers and saved settings survive handoff | How much further editing does a musician need for the intended result? |
+
+The [manual checklist](manual-checks.md) records browser and DAW observations.
+The Reharmonize limit has automated coverage through four edits and hosted
+requests with the four-edit maximum, plus visible candidate switching and
+Original restoration. Those hosted choices used fewer than four edits; they do
+not establish that four edits are preferable. Listening preference and complete
+arrangement quality have not been evaluated by these functional checks.
+
+## Component measurements
 
 [External notation and annotated music](../experiments/external_eval/README.md)
 extends the authored fixtures: local support 0/8 published editions; three bounded

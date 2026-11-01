@@ -93,11 +93,14 @@ $10, daily global spend at $2 and daily session spend at $2. These are applicati
 limits, not the provider's balance or an automatic credit-expiry detector.
 
 The hosted **Use Meta model** checkbox and direct full-file PDF/image API are enabled with
-`THEARTIST_PUBLIC_META_READER=1`. It uses one Standard Meta call, at most 75 seconds,
-8192 completion tokens and $1.35. The checkbox first runs the local reader and
-compares its result with Meta, preserving printed symbols and flagging disagreements.
-Unavailable local reading is reported explicitly. The session allowance accommodates that worst-case
-reservation; the server's $2 daily and $10 total caps remain in place. The separate
+`THEARTIST_PUBLIC_META_READER=1`. It uses one Standard Meta call, at most 150 seconds,
+32,768 completion tokens, low reasoning effort and a default $1.50 request cap.
+The checkbox attempts Meta first, then compares locally or recovers an explicitly
+labeled local result after Meta failure. Printed local symbols and disagreements
+are preserved. Unavailable local reading is reported explicitly. The session
+allowance must accommodate the worst-case reservation when dollar limits are
+enabled; the amounts above are template defaults, not a claim about a host with
+the explicit development budget override enabled. The separate
 flag does not open DAW launch, manual model warmup or MCP. To disable just this
 reader, set its flag to `0` and recreate the app; local and bounded assist remain.
 

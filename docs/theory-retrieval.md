@@ -1,5 +1,10 @@
 # Theory retrieval
 
+Theory excerpts accompany harmonic choices in the
+[arrangement workflow](arrangement-workflow.md). They give the musician related
+source material to consult while comparing a passage; they do not select the
+arrangement or establish that one candidate sounds better.
+
 The product enables Open Music Theory (OMT) by default and disables Berklee.
 Source switches are independent; disabling a source prevents even opening or
 checking its corpus file. Changes to source settings or corpus files select a
