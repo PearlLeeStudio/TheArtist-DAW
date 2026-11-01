@@ -1,0 +1,155 @@
+{
+  "reference_source_sha256": "a07c84d8dcf38a5ebf230ffc27f54c709df41589c7f9362d4ac8118186405f38",
+  "models": 18,
+  "all_models_retained": true,
+  "cross_model_mutation": false,
+  "torch": "2.13.0+cpu",
+  "device": "cpu",
+  "threads": 2,
+  "cases": [
+    {
+      "model": "phase0",
+      "weights_equal": true,
+      "logits_sha256": "528f1979fc4a9051daaf2ba72fd4d2e08b869d6b264a9a2cfe04c05ad7a1454a",
+      "seeded_generations_equal": 2,
+      "candidate_order_equal": true,
+      "maximum_score_difference": 2.384185791015625e-07
+    },
+    {
+      "model": "ft_f1",
+      "weights_equal": true,
+      "logits_sha256": "528f1979fc4a9051daaf2ba72fd4d2e08b869d6b264a9a2cfe04c05ad7a1454a",
+      "seeded_generations_equal": 2,
+      "candidate_order_equal": true,
+      "maximum_score_difference": 2.384185791015625e-07
+    },
+    {
+      "model": "ft_f1_v2",
+      "weights_equal": true,
+      "logits_sha256": "77de9be27c8545e8156e923a483541f15edadebbac871e77825f57cd777e6b8a",
+      "seeded_generations_equal": 2,
+      "candidate_order_equal": true,
+      "maximum_score_difference": 4.76837158203125e-07
+    },
+    {
+      "model": "ft_f2",
+      "weights_equal": true,
+      "logits_sha256": "5e103dddd527cb57f26b9b48d857ab0e632dbb468136e0d8e65f4b7f1f197ad0",
+      "seeded_generations_equal": 2,
+      "candidate_order_equal": true,
+      "maximum_score_difference": 7.152557373046875e-07
+    },
+    {
+      "model": "ft_f3",
+      "weights_equal": true,
+      "logits_sha256": "8ace0561833686877e08dbe6cae3acf3a12e053a9c6538714543f431f0ca5a27",
+      "seeded_generations_equal": 2,
+      "candidate_order_equal": true,
+      "maximum_score_difference": 0.0
+    },
+    {
+      "model": "ft_f4",
+      "weights_equal": true,
+      "logits_sha256": "812d6e913871630b5500837b88342e42a65b9c4d7180b10836498254c371fa47",
+      "seeded_generations_equal": 2,
+      "candidate_order_equal": true,
+      "maximum_score_difference": 0.0
+    },
+    {
+      "model": "ft_f5",
+      "weights_equal": true,
+      "logits_sha256": "5eb7ab7ecba6922c3a00b7d1dd86bdfdb8e58dbba0f6f1699ffb5e92d1a18d63",
+      "seeded_generations_equal": 2,
+      "candidate_order_equal": true,
+      "maximum_score_difference": 4.76837158203125e-07
+    },
+    {
+      "model": "ft_f1_lora_country",
+      "weights_equal": true,
+      "logits_sha256": "32c0199a0bdba433ecf2897f01bf5f401054308482dc5c15cb9b169c397e58e3",
+      "seeded_generations_equal": 2,
+      "candidate_order_equal": true,
+      "maximum_score_difference": 9.5367431640625e-07
+    },
+    {
+      "model": "ft_f1_lora_funk",
+      "weights_equal": true,
+      "logits_sha256": "7094d9c6c77f10f69cca6e0c18468288da1b55ccfcbe43edf0f469afe4179344",
+      "seeded_generations_equal": 2,
+      "candidate_order_equal": true,
+      "maximum_score_difference": 7.152557373046875e-07
+    },
+    {
+      "model": "ft_f1_lora_gospel",
+      "weights_equal": true,
+      "logits_sha256": "edc6c62f79162d0fe9cda50630ccbb6a4cdc3787ec6cb7feefc01a9e97911b66",
+      "seeded_generations_equal": 2,
+      "candidate_order_equal": true,
+      "maximum_score_difference": 4.76837158203125e-07
+    },
+    {
+      "model": "ft_f1_lora_rnb_soul",
+      "weights_equal": true,
+      "logits_sha256": "f21d0446ab44dcea52cbcf0abe0068e72160f54fe4ad99af70b9eb8f22b571bd",
+      "seeded_generations_equal": 2,
+      "candidate_order_equal": true,
+      "maximum_score_difference": 4.76837158203125e-07
+    },
+    {
+      "model": "ft_f1_lora_hip_hop",
+      "weights_equal": true,
+      "logits_sha256": "f12e3cf03e0822bb6d0473b2725c71680f1470641e68a69f0f7e7223b9599f8a",
+      "seeded_generations_equal": 2,
+      "candidate_order_equal": true,
+      "maximum_score_difference": 7.152557373046875e-07
+    },
+    {
+      "model": "ft_f1_lora_electronic",
+      "weights_equal": true,
+      "logits_sha256": "c059af163dda56ae320429ee155b12d7ec8806782d0917c9e8864085d298136e",
+      "seeded_generations_equal": 2,
+      "candidate_order_equal": true,
+      "maximum_score_difference": 4.76837158203125e-07
+    },
+    {
+      "model": "ft_f1_lora_folk",
+      "weights_equal": true,
+      "logits_sha256": "ae791d2617fa834da9094f4a262b055a44fa84bf67cd93726ff8bc1b901bcbff",
+      "seeded_generations_equal": 2,
+      "candidate_order_equal": true,
+      "maximum_score_difference": 1.430511474609375e-06
+    },
+    {
+      "model": "ft_f1_lora_classical",
+      "weights_equal": true,
+      "logits_sha256": "783fd3c738d086d6a9b7e08d581edf1ce81ab5333d2c4397320c4c3c0c97ac39",
+      "seeded_generations_equal": 2,
+      "candidate_order_equal": true,
+      "maximum_score_difference": 4.76837158203125e-07
+    },
+    {
+      "model": "ft_f1_lora_rock",
+      "weights_equal": true,
+      "logits_sha256": "53494b2ce2f07b46ef506f787def03f71e24755d1aa987c806b9dce96ec31e7d",
+      "seeded_generations_equal": 2,
+      "candidate_order_equal": true,
+      "maximum_score_difference": 4.76837158203125e-07
+    },
+    {
+      "model": "ft_f1_lora_blues",
+      "weights_equal": true,
+      "logits_sha256": "3889a5b051db03e265d8462be1d719a0163654552f520af1b8b76d74dc69f72b",
+      "seeded_generations_equal": 2,
+      "candidate_order_equal": true,
+      "maximum_score_difference": 4.76837158203125e-07
+    },
+    {
+      "model": "ft_f1_lora_bossa",
+      "weights_equal": true,
+      "logits_sha256": "c35fec8647b65070a0df666c3d9a717b37998973e671021ba1cef1a315ab16d8",
+      "seeded_generations_equal": 2,
+      "candidate_order_equal": true,
+      "maximum_score_difference": 4.76837158203125e-07
+    }
+  ]
+}

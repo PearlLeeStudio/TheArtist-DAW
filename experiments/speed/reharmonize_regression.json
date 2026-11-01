@@ -1,0 +1,50 @@
+[
+  {
+    "case": "gospel_one_change",
+    "seconds": 12.417,
+    "model": "F1 + LoRA: gospel",
+    "request_ids": [
+      "fb6e7071-b2bf-4d18-880a-57091b145c41",
+      "c5b8661a-e80e-48c5-82db-c0d119917e02",
+      "9ece9b13-8da1-4bea-8ed8-c2e0feb60a8d"
+    ],
+    "changed_slots": [
+      1,
+      1,
+      1
+    ],
+    "selection_and_mode_preserved": true
+  },
+  {
+    "case": "folk_four_changes",
+    "seconds": 11.239,
+    "model": "F1 + LoRA: folk",
+    "request_ids": [
+      "f3675dbe-9f8f-47b0-a8d5-502b492d8b9b",
+      "6016c45d-580c-48fc-b792-9523a18d4b0d",
+      "dc195b9d-fbd8-45f1-b3e9-9f66e1eeef79"
+    ],
+    "changed_slots": [
+      1,
+      2,
+      1
+    ],
+    "selection_and_mode_preserved": true
+  },
+  {
+    "case": "sparse_dorian",
+    "seconds": 7.577,
+    "model": "F1 \u2014 10K pop mix",
+    "request_ids": [
+      "e48141f2-22cd-40d4-80e1-c70cd09b5688",
+      "b8bc3dc4-26e7-4923-b1ad-62f5bf3e36f9",
+      "59f189e2-3435-435b-9bc7-856f255e784e"
+    ],
+    "changed_slots": [
+      1,
+      1,
+      1
+    ],
+    "selection_and_mode_preserved": true
+  }
+]

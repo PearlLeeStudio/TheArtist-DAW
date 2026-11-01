@@ -107,6 +107,24 @@ checks. Frontend build and lint also pass.
 
 ### Autoregressive attention cache
 
+The [18-model regression probe](model_regression.json) compares the pre-speed
+loader from `80ce239` with the serving runtime using the same released assets.
+Every state tensor and forward-logit hash matches; two seeded generations per
+model (36 comparisons) match exactly. Serial and batched contextual scoring keep
+the same candidate order, with a maximum floating-point difference of 1.431e-6.
+All earlier models retain their logits after the remaining adapters load.
+The [probe source](model_regression_probe.py) takes the reference loader on stdin
+and performs no downloads, checkpoint writes or paid calls.
+
+[Checked Import replay](score_regression.json) sends each of the two public
+fixtures to Meta once, then replays that same response through old and concurrent
+reader orchestration. Request bodies/options and full import results match. Meta
+returned no chords for either fixture; one also failed measure validation. Both
+versions return explicit local recovery. This isolates the observed rejection
+from the scheduling change; it does not establish transcription accuracy.
+[Live Reharmonize variations](reharmonize_regression.json) also preserve selection
+boundaries, change caps and explicit Dorian constraints across Gospel, Folk and F1.
+
 CPU, Darwin arm64, four Torch threads. Medians of three paired runs with seeds
 17–19, after one warmup per mode. Each chord request generates all three
 candidates and includes ranking and voicing. Checkpoint loading, HTTP/browser

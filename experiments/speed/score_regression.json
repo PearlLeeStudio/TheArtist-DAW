@@ -1,0 +1,34 @@
+[
+  {
+    "fixture": "vector-score-c.pdf",
+    "real_meta_calls": 1,
+    "request_id": "102188e2-3f75-4bd3-8a86-f3219644db09",
+    "request_and_options_identical": true,
+    "import_result_identical": true,
+    "verification": "local_fallback",
+    "measures": 1,
+    "meta_complete": true,
+    "meta_measures": 1,
+    "meta_bars_with_chords": 0,
+    "rejection": {
+      "kind": "ScoreInputError",
+      "message": "No supported harmony could be proposed from readable notation. Choose a clearer score with visible notes and bass, or enter the chords manually."
+    }
+  },
+  {
+    "fixture": "vector-score-f.pdf",
+    "real_meta_calls": 1,
+    "request_id": "104ca5d3-e628-49aa-a883-6588619c6423",
+    "request_and_options_identical": true,
+    "import_result_identical": true,
+    "verification": "local_fallback",
+    "measures": 1,
+    "meta_complete": true,
+    "meta_measures": 2,
+    "meta_bars_with_chords": 0,
+    "rejection": {
+      "kind": "score_validation",
+      "message": "The score transcription is invalid at measures.0; try a clearer or shorter score. (request_id 104ca5d3-e628-49aa-a883-6588619c6423)"
+    }
+  }
+]
