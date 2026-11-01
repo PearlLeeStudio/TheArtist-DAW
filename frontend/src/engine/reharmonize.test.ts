@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import type { Song, SlotAddress } from '../models/types.ts';
 import { parseChordName } from './chordParser.ts';
-import { reharmSymbol, reharmSelectionError, requestReharmonization, validateReharmResult } from './reharmonize.ts';
+import { reharmRunDetails, reharmSymbol, reharmSelectionError, requestReharmonization, validateReharmResult } from './reharmonize.ts';
 import type { ReharmCandidate, ReharmResult } from './reharmonize.ts';
 import { emptyReharmState, hasPendingReharmSelection, reharmActions } from './reharmonizeSession.ts';
 import type { ReharmState } from './reharmonizeSession.ts';
@@ -267,6 +267,29 @@ test('reject malformed, duplicate, excess, out-of-selection and mismatched-origi
     (r: ReharmResult) => { r.candidates[0].changes.push(r.candidates[1].changes[0]); },
     (r: ReharmResult) => { r.candidates[1] = structuredClone(r.candidates[0]); },
     (r: ReharmResult) => { r.candidates[0].modelScore = NaN; },
+  ]) {
+    const r = result(); mutate(r);
+    assert.throws(() => validateReharmResult(r, score(), slots, 1), /invalid reharmonization/);
+  }
+});
+
+test('the Meta call record is validated and listed for Run details', () => {
+  const recorded = { ...result(), requestIds: ['req-1', 'req-2'], costUsd: 0.01894,
+    toolCalls: ['search_substitutions', 'offer_candidates'] };
+  assert.deepEqual(reharmRunDetails(validateReharmResult(recorded, score(), slots, 1), 10_340), [
+    'Meta muse-spark-1.3 · search_substitutions → offer_candidates',
+    'Scored against the surrounding bars by Music Transformer',
+    'req-1, req-2 · $0.0189 · 10.3 s',
+  ]);
+  assert.deepEqual(reharmRunDetails(result(), null), [
+    'Meta muse-spark-1.3 · tool calls not reported',
+    'Scored against the surrounding bars by Music Transformer',
+  ]);
+  for (const mutate of [
+    (r: ReharmResult) => { r.requestIds = [7] as unknown as string[]; },
+    (r: ReharmResult) => { r.toolCalls = 'search_substitutions' as unknown as string[]; },
+    (r: ReharmResult) => { r.costUsd = -0.01; },
+    (r: ReharmResult) => { r.costUsd = NaN; },
   ]) {
     const r = result(); mutate(r);
     assert.throws(() => validateReharmResult(r, score(), slots, 1), /invalid reharmonization/);

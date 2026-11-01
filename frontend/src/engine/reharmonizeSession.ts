@@ -18,6 +18,8 @@ export interface ReharmState {
   expectedFingerprint: string | null;
   /** What the last Apply kept, shown in the controls after the cards close. */
   notice: string | null;
+  /** Wall time of the last successful search, for Run details. */
+  elapsedMs: number | null;
   run: (modelKey: string, maxChanges: ReharmChangeLimit, mode: ReharmMode) => Promise<void>;
   preview: (index: number | null) => void;
   apply: () => void;
@@ -26,7 +28,7 @@ export interface ReharmState {
 export const emptyReharmState = {
   loading: false, error: null, result: null, comparison: null, applied: null,
   selected: [], committed: null, committedSelection: [], originalKey: null, expectedFingerprint: null,
-  notice: null,
+  notice: null, elapsedMs: null,
 };
 interface Host {
   read: () => { song: Song; songEpoch: number; selectedSlots: SlotAddress[] };
@@ -95,6 +97,7 @@ export function reharmActions(host: Host, get: () => ReharmState, set: (patch: P
       host.clearGeneration();
       set({ ...emptyReharmState, loading: true, comparison, applied: comparison, committed: comparison,
         originalKey: song.key, expectedFingerprint: fingerprint });
+      const started = performance.now();
       try {
         const result = await requestCandidates(song, targets, maxChanges, mode, modelKey, controller.signal);
         if (request !== controller) return;
@@ -102,7 +105,7 @@ export function reharmActions(host: Host, get: () => ReharmState, set: (patch: P
         if (current.songEpoch !== songEpoch || reharmFingerprint(current.song) !== fingerprint) {
           throw new Error('The score changed during the search. Generate fresh candidates for this passage.');
         }
-        set({ result, loading: false });
+        set({ result, loading: false, elapsedMs: Math.round(performance.now() - started) });
       } catch (error) {
         if (request === controller) set({ loading: false, error: error instanceof Error ? error.message : 'Reharmonization failed.' });
       }

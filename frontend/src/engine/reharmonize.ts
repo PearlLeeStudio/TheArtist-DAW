@@ -29,6 +29,10 @@ export interface ReharmResult {
   contextMeasures: number[];
   metaModel: string;
   modelApproximations?: { address: SlotAddress; original: string; scoredAs: string }[];
+  /** The Meta call record of this search, listed under Run details. */
+  requestIds?: string[];
+  costUsd?: number;
+  toolCalls?: string[];
 }
 
 /** Include manually added tensions; unsupported combinations must fail rather than disappear. */
@@ -71,6 +75,10 @@ export function validateReharmResult(value: unknown, song: Song, slots: SlotAddr
   if (result.modelApproximations !== undefined && (!Array.isArray(result.modelApproximations) ||
       !result.modelApproximations.every(a => a && typeof a.original === 'string' && typeof a.scoredAs === 'string' &&
         Number.isInteger(a.address?.measureIndex) && [0, 1].includes(a.address?.slotIndex)))) return fail();
+  const strings = (list: unknown) => Array.isArray(list) && list.every(item => typeof item === 'string');
+  if ((result.requestIds !== undefined && !strings(result.requestIds)) ||
+      (result.toolCalls !== undefined && !strings(result.toolCalls)) ||
+      (result.costUsd !== undefined && !(Number.isFinite(result.costUsd) && result.costUsd >= 0))) return fail();
   const allowed = new Set(slots.map(slotKey));
   const ids = new Set<string>();
   const signatures = new Set<string>();
@@ -100,6 +108,21 @@ export function validateReharmResult(value: unknown, song: Song, slots: SlotAddr
     signatures.add(signature);
   }
   return result;
+}
+
+/** Run details for a finished search: Meta's tool calls, the scoring model, then request ids, cost and time. */
+export function reharmRunDetails(result: ReharmResult, elapsedMs: number | null): string[] {
+  const calls = result.toolCalls?.length ? result.toolCalls.join(' → ') : 'tool calls not reported';
+  const record = [
+    result.requestIds?.length ? result.requestIds.join(', ') : null,
+    result.costUsd === undefined ? null : `$${result.costUsd.toFixed(4)}`,
+    elapsedMs === null ? null : `${(elapsedMs / 1000).toFixed(1)} s`,
+  ].filter((part): part is string => part !== null);
+  return [
+    `Meta ${result.metaModel} · ${calls}`,
+    `Scored against the surrounding bars by ${result.modelUsed}`,
+    ...(record.length ? [record.join(' · ')] : []),
+  ];
 }
 
 /** Bars sent on each side of the passage: the search and the model read at most

@@ -148,3 +148,20 @@ test('replacing a song clears previews without reentrant rollback into the repla
   assert.deepEqual(symbols(editor().song), ['Dm7', 'G7']);
   assert.deepEqual(symbols(saved()), ['Dm7', 'G7']);
 });
+
+test('Run details list the Meta call record while the alternatives are shown', async t => {
+  t.mock.method(globalThis, 'fetch', async () => Response.json({ ...response, requestIds: ['req-1'], costUsd: 0.0189,
+    toolCalls: ['search_substitutions', 'offer_candidates'] }));
+  editor().setSong(fixture);
+  editor().selectSlotRange({ measureIndex: 0, slotIndex: 0 }, { measureIndex: 0, slotIndex: 1 });
+  await reharm().run('ft_f1', 1, 'auto');
+  assert.equal(typeof reharm().elapsedMs, 'number');
+  const details = nodes(ReharmControls({ modelKey: 'ft_f1' })).find(node => node.type === 'details');
+  const text = nodes(details).map(node => node.props?.children).filter(child => typeof child === 'string').join('\n');
+  assert.match(text, /^Run details$/m);
+  assert.match(text, /^Meta muse-spark-1\.3 · search_substitutions → offer_candidates$/m);
+  assert.match(text, /^Scored against the surrounding bars by Music Transformer$/m);
+  assert.match(text, /^req-1 · \$0\.0189 · \d+\.\d s$/m);
+  reharm().close();
+  assert.equal(nodes(ReharmControls({ modelKey: 'ft_f1' })).some(node => node.type === 'details'), false);
+});
