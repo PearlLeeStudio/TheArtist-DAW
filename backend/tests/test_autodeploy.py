@@ -44,6 +44,28 @@ class AutoDeployTest(unittest.TestCase):
         self.assertEqual(self.state["failed_revision"], "b" * 40)
         self.assertNotIn("pending", self.state)
 
+    def test_pages_frontend_change_does_not_interrupt_model_requests(self):
+        self.host.changes.return_value = [
+            "frontend/src/components/ScoreEditor/SongFormDialog.tsx",
+            "frontend/src/store/newSong.ts", "frontend/package-lock.json",
+        ]
+        self.assertEqual(self.run_deploy(), "documentation-only")
+        self.host.checkout.assert_called_once_with("b" * 40)
+        self.host.build.assert_not_called()
+        self.host.start.assert_not_called()
+        self.host.current_image.assert_not_called()
+        self.assertEqual(self.state["deployed_revision"], "a" * 40)
+        self.assertEqual(self.state["observed_revision"], "b" * 40)
+
+    def test_mixed_frontend_backend_change_still_deploys(self):
+        self.host.changes.return_value = [
+            "frontend/src/engine/planClient.ts", "backend/app/routes/plan.py",
+        ]
+        self.assertEqual(self.run_deploy(), "deployed")
+        self.host.build.assert_called_once_with("b" * 40)
+        self.host.start.assert_called_once()
+        self.host.smoke.assert_called_once()
+
     def test_bad_generation_rolls_back_and_verifies_previous_service(self):
         self.host.smoke.side_effect = [RuntimeError("wrong model"), None]
         with self.assertRaisesRegex(RuntimeError, "wrong model"):

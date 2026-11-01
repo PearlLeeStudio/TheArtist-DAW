@@ -55,11 +55,11 @@ print("18 models resident; F1 generation passed; no paid Meta calls")
 
 
 def runtime_changed(paths: list[str]) -> bool:
-    """Default to deploying unknown files; skip only documentation/test changes."""
+    """Pages deploys the frontend separately; only model-server changes restart it."""
     return any(not (
         path.endswith((".md", ".rst"))
         or path in {"LICENSE", "AGENTS.md", ".gitignore"}
-        or path.startswith(("docs/", "backend/tests/", "frontend/tests/", ".github/"))
+        or path.startswith(("docs/", "backend/tests/", "frontend/", ".github/"))
     ) for path in paths)
 
 
@@ -184,7 +184,7 @@ def run_once(host, state, save, *, retry=False):
         state["observed_revision"] = target
         state.pop("failed_revision", None)
         save(state)
-        print("Documentation-only push: " + target + "; service unchanged", flush=True)
+        print("No model-server runtime changes: " + target + "; service unchanged", flush=True)
         return "documentation-only"
     old_image = host.current_image()
     host.tag(old_image, PREVIOUS)
