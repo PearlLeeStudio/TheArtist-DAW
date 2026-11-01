@@ -280,6 +280,7 @@ class NativeToolsTests(LLMTestCase):
         self.assertEqual(len(result.candidates), 3)
         self.assertEqual(result.toolCalls, ['search_substitutions', 'search_substitutions', 'offer_candidates'])
         self.assertTrue(all(call['max_completion_tokens'] == 4096 for call in calls))
+        self.assertTrue(all(call['reasoning_effort'] == 'low' for call in calls))
         self.assertEqual(result.requestIds, ['req-1', 'req-2', 'req-3'])
         self.assertAlmostEqual(result.costUsd, costs.cost_usd)
         self.assertEqual(calls[1]['messages'][-2]['role'], 'assistant')

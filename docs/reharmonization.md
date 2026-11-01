@@ -109,7 +109,9 @@ Only Meta Standard `muse-spark-1.3` is used. Native calls follow the
 including `tool_choice: auto` and paired assistant/tool messages. Each search is
 bounded by four API turns, six function calls, three distinct family searches,
 six shortlisted candidates per family, a 30-second per-call timeout, a 100-second
-loop deadline, 4,096 output tokens per call (including reasoning), and a $0.15 request reservation cap.
+loop deadline, low reasoning effort, 4,096 output tokens per call (including reasoning),
+and a $0.15 request reservation cap. Explicit low effort leaves room for the final
+candidate IDs; the provider default exhausted the allowance on a four-slot hosted search.
 The existing persistent ledger records request IDs, tokens and costs, including
 failures; public session and daily limits also apply. Missing models, invalid tool
 output, timeout, and budget exhaustion return errors with no success fallback.

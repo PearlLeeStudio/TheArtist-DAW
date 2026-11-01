@@ -966,7 +966,9 @@ class LLMClient:
         prepared = self.prepare(messages, {"type": "object", "properties": {}}, name="tool_turn",
                                 input_token_upper_bound=bound, timeout_s=timeout_s,
                                 max_completion_tokens=max_completion_tokens,
-                                max_request_usd=max_request_usd, reasoning_effort="none")
+                                # Leaving effort unset uses Meta's default, which can
+                                # exhaust the allowance before emitting a candidate ID.
+                                max_request_usd=max_request_usd, reasoning_effort="low")
         body = dict(prepared.body)
         body.pop("response_format")
         body.update(tools=tools, tool_choice="auto")
