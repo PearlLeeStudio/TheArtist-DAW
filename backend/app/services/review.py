@@ -28,6 +28,7 @@ from app.models.review import (
 )
 from app.services import inference
 from app.services.llm import LLMClient, LLMError, LLMResult, get_client
+from app.services.env_flags import meta_budget_unlimited
 from app.services.planner import DIATONIC_GENRES, _in_key, _key_collection, _kind, _message, _symbol
 from app.services.song_form import rule_slots
 
@@ -227,7 +228,7 @@ def _call(client: LLMClient, messages: list[dict[str, str]], schema: dict[str, A
                             model=cfg.model) from None
     # The limiter admitted REVIEW_MAX_USD; an open-weight provider may reserve twice (its one JSON-guard retry)
     worst_case = prepared.reserve_usd * (1 if cfg.provider == "meta" else 2)
-    if worst_case > REVIEW_MAX_USD + 1e-9:
+    if not meta_budget_unlimited() and worst_case > REVIEW_MAX_USD + 1e-9:
         raise ReviewFailure("budget", f"the review's worst case ${worst_case:.4f} would pass its "
                                       f"${REVIEW_MAX_USD:.2f} cap", provider=cfg.provider, model=cfg.model)
     started = time.perf_counter()

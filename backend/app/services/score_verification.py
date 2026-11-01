@@ -1,17 +1,20 @@
-"""Local reading, one explicit full-file Meta check, and deterministic comparison.
+"""Meta-first reading, local recovery, and deterministic comparison.
 
 Agreement is not accuracy proof. Printed local symbols are preserved, conflicts
-are review flags, and a failed Meta request never becomes a successful local result.
+are review flags. A failed Meta request returns an explicitly attributed local reading.
 """
 from __future__ import annotations
 
 from collections.abc import Callable
+import logging
+from fastapi import HTTPException
 
 from app.models.score_import import ScoreImportRequest, ScoreImportResponse, ScoreVerification
 from app.services.score_analysis import LocalScoreUnsupported, analyze_local_score
 from app.services.score_context import ScoreContextError, score_context
+from app.services.llm import LLMError
 from app.services.score_import import (
-    MAX_META_SCORE_MEASURES, SCORE_MAX_REQUEST_USD, ScoreInputError, _import_meta_score,
+    SCORE_MAX_REQUEST_USD, ScoreInputError, _import_meta_score,
 )
 
 
@@ -100,28 +103,42 @@ def import_verified_score(req: ScoreImportRequest, attachment: dict, *,
                           before_meta: Callable[[float], None] | None = None,
                           on_progress: Callable[[str], None] | None = None) -> ScoreImportResponse:
     progress = on_progress or (lambda _label: None)
-    local = None
-    try:
+    def read_local():
         progress("Reading the score's notes, chord symbols and bar lines…")
         local = analyze_local_score(req)
         if req.mode == "infer_harmony":
             from app.services.score_completion import complete_sparse_harmony
             progress("Analyzing harmony where printed chord symbols are missing…")
             local = complete_sparse_harmony(local)
-    except LocalScoreUnsupported:
-        pass  # The checked box explicitly authorizes original-file reading.
-    if local is not None and len(local.measures) > MAX_META_SCORE_MEASURES:
-        local.verification = ScoreVerification(
-            status="local_only", localMeasures=len(local.measures), metaMeasures=0,
-            comparedMeasures=0, disputedMeasures=[],
-            notes=["The complete local reading is ready. Meta comparison was skipped for this long score; no Meta request was made."])
         return local
+
     try:
-        context = score_context(local) if local is not None else None
         if before_meta is not None:
             before_meta(SCORE_MAX_REQUEST_USD)
-        progress("Meta is checking the original score against the local reading…")
-        checked = _import_meta_score(req, attachment, local_context=context)
+        progress("Meta is reading the original score…")
+        checked = _import_meta_score(req, attachment)
+    except (LLMError, ScoreInputError, HTTPException) as failure:
+        logging.getLogger(__name__).warning("Meta score reading failed; using local reader: kind=%s request_id=%s",
+                                            getattr(failure, "kind", type(failure).__name__),
+                                            getattr(failure, "request_id", None))
+        progress("Meta reading was unavailable. Continuing with the local score reader…")
+        try:
+            local = read_local()
+        except (LocalScoreUnsupported, ScoreInputError) as local_failure:
+            raise ScoreInputError("Neither reader could recover an editable score from this file. "
+                                  "Use a PDF with readable notation or a clearer image.", 422) from local_failure
+        local.verification = ScoreVerification(
+            status="local_fallback", localMeasures=len(local.measures), metaMeasures=0,
+            comparedMeasures=0, disputedMeasures=[],
+            notes=["Meta reading was unavailable. The local reader recovered this score; unresolved bars remain editable."])
+        progress("Local analysis is ready. You can import the reviewed score.")
+        return local
+
+    try:
+        local = read_local()
+    except (LocalScoreUnsupported, ScoreInputError):
+        local = None
+    try:
         progress("Comparing both readings and marking unresolved bars for review…")
         return compare_readings(local, checked)
     except ScoreContextError as exc:

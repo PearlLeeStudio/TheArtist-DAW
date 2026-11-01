@@ -34,3 +34,8 @@ META_ENABLED_VAR = "THEARTIST_META_ENABLED"
 
 def meta_enabled(env: Mapping[str, str] | None = None) -> bool:
     return env_bool(META_ENABLED_VAR, True, env)
+
+
+def meta_budget_unlimited(env: Mapping[str, str] | None = None) -> bool:
+    """Explicit development opt-in: account for usage without refusing on dollar caps."""
+    return env_bool("THEARTIST_META_UNLIMITED", False, env)

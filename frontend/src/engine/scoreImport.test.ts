@@ -56,6 +56,22 @@ test('unavailable local comparison is never described as cross-checked', () => {
   assert.doesNotMatch(status, /compared 2/);
 });
 
+test('Meta failure opens the local reading with unresolved bars ready for editor generation', () => {
+  const raw = response({ analysisSource: 'local', model: null, requestId: null, sections: [],
+    verification: { status: 'local_fallback', localMeasures: 2, metaMeasures: 0, comparedMeasures: 0,
+      disputedMeasures: [], notes: ['Meta unavailable; local analysis recovered the score.'] },
+    measures: [{ chords: ['C'], sourceLabel: '1', needsReview: false, note: '' },
+      { chords: [], sourceLabel: '2', needsReview: true, note: 'Unreadable source' }],
+  });
+  const draft = createScoreImportDraft(readScoreImportResponse(raw, 'chord_symbols', 'verified'), 'score.pdf');
+  assert.equal(validateScoreImportForEditor(draft).valid, true);
+  const song = buildScoreImportForEditor(draft);
+  assert.equal(song.measures.length, 2);
+  assert.deepEqual(song.measures[1].chords, [null, null]);
+  assert.match(scoreImportReadyStatus(draft, 'verified'), /Meta was unavailable. Ready to import/);
+  assert.throws(() => readScoreImportResponse({ ...raw, analysisSource: 'meta' }, 'chord_symbols', 'verified'));
+});
+
 test('file validation matches extension, MIME, magic bytes and the 8 MiB limit', () => {
   const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
   assert.deepEqual(checkScoreFile({ name: 'score.PNG', type: 'image/png', size: MAX_SCORE_IMPORT_BYTES }, png), { ok: true, mimeType: 'image/png' });

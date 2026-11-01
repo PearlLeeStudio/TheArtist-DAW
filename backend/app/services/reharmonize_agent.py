@@ -6,6 +6,7 @@ import time
 
 from app.models.reharmonize import ReharmRequest, ReharmResponse
 from app.services import llm
+from app.services.env_flags import meta_budget_unlimited
 from app.services.reharmonize import ContextScorer, context_window, model_approximations, search, validate_context
 
 MAX_USD = .15
@@ -74,7 +75,7 @@ def propose(req: ReharmRequest, *, client=None, scorer=None) -> ReharmResponse:
         remaining = MAX_SECONDS - (time.monotonic() - started)
         if remaining <= 0:
             raise llm.LLMTimeout("The reharmonization search reached its time limit.")
-        if cost >= MAX_USD:
+        if not meta_budget_unlimited() and cost >= MAX_USD:
             raise llm.BudgetExceeded("The reharmonization search reached its cost limit.",
                                      spent_usd=cost, outstanding_usd=0, request_usd=0, cap_usd=MAX_USD)
         reply = client.chat_tools(messages, TOOLS, label=f"reharmonize:turn-{turn + 1}",

@@ -24,7 +24,7 @@ from datetime import datetime, timedelta, timezone
 
 from fastapi import HTTPException, Request
 
-from app.services.env_flags import env_bool
+from app.services.env_flags import env_bool, meta_budget_unlimited
 from app.services.llm import Ledger, LLMError, _round_usd
 
 PUBLIC_HOST_VAR = "THEARTIST_PUBLIC_HOST"
@@ -61,7 +61,7 @@ def full_file_score_import_allowed(env: Mapping[str, str] | None = None) -> bool
 
 def limits_enabled(env: Mapping[str, str] | None = None) -> bool:
     """The limiter runs on a public host, or wherever THEARTIST_META_LIMITS opts in."""
-    return public_host(env) or env_bool(LIMITS_VAR, False, env)
+    return not meta_budget_unlimited(env) and (public_host(env) or env_bool(LIMITS_VAR, False, env))
 
 
 def refuse_on_public_host(reason: str) -> Callable[[], None]:

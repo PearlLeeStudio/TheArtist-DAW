@@ -127,7 +127,7 @@ class FormAnalysis(StrictModel):
 
 
 class ScoreVerification(StrictModel):
-    status: Literal["compared", "local_unavailable", "unaligned", "local_only"]
+    status: Literal["compared", "local_unavailable", "unaligned", "local_only", "local_fallback"]
     localMeasures: int = Field(ge=0, le=MAX_SCORE_MEASURES)
     metaMeasures: int = Field(ge=0, le=128)
     comparedMeasures: int = Field(ge=0, le=128)

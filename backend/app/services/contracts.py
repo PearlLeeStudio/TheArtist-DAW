@@ -10,7 +10,7 @@ from pydantic import BaseModel, ConfigDict
 from app.models.export import MAX_EXPORT_BYTES, MAX_EXPORT_MEASURES, MIN_MIDI_BYTES
 from app.models.plan import MAX_PLAN_SECTION_BARS, MIN_PLAN_SECTION_BARS, TARGET_BARS
 from app.models.score_import import MAX_SCORE_BYTES, MAX_SCORE_MEASURES
-from app.services.env_flags import meta_enabled
+from app.services.env_flags import meta_enabled, meta_budget_unlimited
 from app.services.llm import LLMConfig
 from app.services.planner import MAX_META_CALLS, MAX_RUN_USD, RUN_BUDGET_S
 from app.services import theory_rag
@@ -105,10 +105,10 @@ def capabilities() -> ContractEnvelope:
             "jsonStateBytes": MAX_JSON_STATE_BYTES, "midiBytes": MAX_EXPORT_BYTES,
             "toolResultBytes": MAX_MCP_RESULT_BYTES, "requestBytes": MAX_MCP_REQUEST_BYTES,
             "scoreFileBytes": MAX_SCORE_BYTES, "scoreMeasures": MAX_SCORE_MEASURES, "metaScoreMeasures": 128,
-            "scoreAssistHarmonyBars": 16, "scoreAssistCalls": 3, "scoreAssistRunUsd": .30,
+            "scoreAssistHarmonyBars": 16, "scoreAssistCalls": 3, "scoreAssistRunUsd": None if meta_budget_unlimited() else .30,
             "exportMeasures": MAX_EXPORT_MEASURES, "generatedBars": 64,
             "planTargetBars": list(TARGET_BARS), "planSectionBars": [MIN_PLAN_SECTION_BARS, MAX_PLAN_SECTION_BARS],
-            "planLlmCalls": MAX_META_CALLS, "planRunUsd": MAX_RUN_USD, "planRunSeconds": RUN_BUDGET_S,
+            "planLlmCalls": MAX_META_CALLS, "planRunUsd": None if meta_budget_unlimited() else MAX_RUN_USD, "planRunSeconds": RUN_BUDGET_S,
         },
         "sourceFields": {
             "generate_section": ["source", "modelUsed"],
@@ -122,14 +122,15 @@ def capabilities() -> ContractEnvelope:
         },
         "limitations": ["build_song returns one arrangement; candidate fan-out is not implemented.",
                         "Score import and the editor default to local vector-PDF reading. The editor's Use Meta model checkbox "
-                        "selects verified: local reading, one full-file Meta request, then a comparison that flags disagreements "
+                        "selects verified: one full-file Meta request first, then local recovery on failure or comparison on success. "
+                        "Comparison flags disagreements "
                         "without treating agreement as accuracy proof. Unsupported local files are marked local_unavailable. "
                         "Meta/auto/verified requires explicit selection and may incur API cost. Auto reviews up to 16 harmony "
                         "bars with whole-score context and infers uncovered song-form sections, at most three calls/$0.30. "
                         "It never switches an unsupported local file to a whole-file request. A public host requires "
-                        "THEARTIST_PUBLIC_META_READER=1 for meta, with session and daily spend limits still enforced; "
+                        "THEARTIST_PUBLIC_META_READER=1 for meta; THEARTIST_META_UNLIMITED explicitly disables dollar caps for development. "
                         "meta.fullFileScoreImport controls that explicit PDF/image option. With THEARTIST_META_ENABLED=0 "
-                        "(meta.enabled false), attempted Meta calls return HTTP 503 and the local reader remains available.",
+                        "(meta.enabled false), direct Meta calls return HTTP 503; verified Import recovers with the local reader.",
                         "Note-based harmony analysis is opt-in and returns reviewable interpretations, not verified original chords or imported melody notes.",
                         "export_daw requires a loopback request, server opt-in, and explicit per-call confirmation.",
                         "plan_song plans only: section chords come from generate_section, and the observe-then-act judgment runs "

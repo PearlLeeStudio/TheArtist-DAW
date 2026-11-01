@@ -282,7 +282,7 @@ class ScoreImportLimitsTest(LimitsCase):
         self.assertEqual(res.status_code, 400, res.text)
         res = CLIENT.post(IMPORT, json=score_body(), headers=SESSION)  # the $1.00 default cannot hold a $1.35 reading
         self.assertEqual(res.status_code, 429, res.text)
-        self.assertIn("worst case $1.35 would pass $1.00", res.json()["detail"])
+        self.assertIn("worst case $1.50 would pass $1.00", res.json()["detail"])
         self.assertEqual(self.requests, [])
         self.env(THEARTIST_META_SESSION_LIMIT_USD="3.00")
         for engine in ("meta", "meta", "meta"):  # settled at $0.0034 each; at their worst case only two would fit
@@ -343,7 +343,11 @@ class ScoreImportLimitsTest(LimitsCase):
         self.assertEqual(CLIENT.post(IMPORT, json=request, headers=SESSION).status_code, 403)
         self.assertEqual(self.requests, [])
         self.env(THEARTIST_PUBLIC_META_READER="1", THEARTIST_META_SESSION_LIMIT_USD="1")
-        self.assertEqual(CLIENT.post(IMPORT, json=request, headers=SESSION).status_code, 429)
+        from tests.test_score_verification import reading
+        with mock.patch("app.services.score_verification.analyze_local_score", return_value=reading()):
+            fallback = CLIENT.post(IMPORT, json=request, headers=SESSION)
+        self.assertEqual(fallback.status_code, 200, fallback.text)
+        self.assertEqual(fallback.json()["verification"]["status"], "local_fallback")
         self.assertEqual(self.requests, [])
         self.env(THEARTIST_META_SESSION_LIMIT_USD="2")
         result = CLIENT.post(IMPORT, json=request, headers=SESSION)

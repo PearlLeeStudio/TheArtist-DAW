@@ -3,7 +3,8 @@ from unittest.mock import Mock, patch
 
 from app.models.score_import import ImportedMeasure, ScoreImportRequest, ScoreImportResponse
 from app.services import score_verification as verify
-from app.services.llm import LLMTimeout
+from app.services.llm import LLMTimeout, LLMResponseError
+from fastapi import HTTPException
 from app.services.score_analysis import LocalScoreUnsupported
 from app.services.score_import import ScoreInputError
 
@@ -36,26 +37,22 @@ class ScoreVerificationTest(unittest.TestCase):
         self.request = ScoreImportRequest(filename="private-name.pdf", mimeType="application/pdf",
                                           dataBase64="", engine="verified", mode="infer_harmony")
 
-    def test_local_precedes_one_bounded_meta_call_with_complete_musical_context(self):
+    def test_meta_is_attempted_first_then_compared_with_local_reading(self):
         order = []
         def local(_):
             order.append("local")
             return reading(count=2)
         def meta(*args, **kwargs):
             order.append("meta")
-            context = kwargs["local_context"]
-            self.assertEqual(len(context["measures"]), 2)
-            self.assertNotIn("title", context)
-            self.assertNotIn("filename", context)
-            self.assertEqual(context["measures"][0]["pitchClasses"], [0, 4, 7])
+            self.assertNotIn("local_context", kwargs)
             return reading("meta", count=2)
         admit = Mock(side_effect=lambda _: order.append("admit"))
         with patch.object(verify, "analyze_local_score", side_effect=local), \
              patch.object(verify, "_import_meta_score", side_effect=meta) as call:
             result = verify.import_verified_score(self.request, {"type": "file"}, before_meta=admit)
-        self.assertEqual(order, ["local", "admit", "meta"])
+        self.assertEqual(order, ["admit", "meta", "local"])
         call.assert_called_once()
-        admit.assert_called_once_with(1.35)
+        admit.assert_called_once_with(1.50)
         self.assertEqual(result.verification.status, "compared")
 
     def test_printed_symbols_and_no_chord_are_preserved_with_disagreements_flagged(self):
@@ -95,28 +92,49 @@ class ScoreVerificationTest(unittest.TestCase):
         with patch.object(verify, "analyze_local_score", side_effect=LocalScoreUnsupported("unsupported")), \
              patch.object(verify, "_import_meta_score", return_value=reading("meta")) as meta:
             result = verify.import_verified_score(self.request, {})
-        meta.assert_called_once_with(self.request, {}, local_context=None)
+        meta.assert_called_once_with(self.request, {})
         self.assertEqual(result.verification.status, "local_unavailable")
         self.assertEqual(result.verification.comparedMeasures, 0)
         self.assertTrue(result.measures[0].needsReview)
 
-    def test_failed_meta_call_does_not_fall_back_to_successful_local_result(self):
+    def test_failed_meta_call_opens_local_score_without_claiming_meta_success(self):
+        for failure in (LLMTimeout("timed out"), LLMResponseError("truncated", kind="length"),
+                        LLMResponseError("bad JSON", kind="json"), ScoreInputError("Incomplete score", 422)):
+            with self.subTest(kind=type(failure).__name__), \
+                 patch.object(verify, "analyze_local_score", return_value=reading(count=3)), \
+                 patch.object(verify, "_import_meta_score", side_effect=failure):
+                events = []
+                result = verify.import_verified_score(self.request, {}, on_progress=events.append)
+                self.assertEqual(result.verification.status, "local_fallback")
+                self.assertEqual(result.analysisSource, "local")
+                self.assertIsNone(result.requestId)
+                self.assertEqual(len(result.measures), 3)
+                self.assertTrue(any("Continuing with the local" in e for e in events))
+
+    def test_refused_meta_admission_still_opens_local_score(self):
         with patch.object(verify, "analyze_local_score", return_value=reading()), \
+             patch.object(verify, "_import_meta_score") as meta:
+            result = verify.import_verified_score(self.request, {}, before_meta=Mock(side_effect=HTTPException(429)))
+        meta.assert_not_called()
+        self.assertEqual(result.verification.status, "local_fallback")
+
+    def test_both_readers_failing_never_returns_an_empty_success(self):
+        with patch.object(verify, "analyze_local_score", side_effect=LocalScoreUnsupported("image")), \
              patch.object(verify, "_import_meta_score", side_effect=LLMTimeout("timed out")):
-            with self.assertRaises(LLMTimeout):
+            with self.assertRaisesRegex(ScoreInputError, "Neither reader"):
                 verify.import_verified_score(self.request, {})
 
-    def test_large_local_score_opens_all_bars_without_spending_or_comparison_claim(self):
+    def test_large_meta_failure_retains_all_local_bars(self):
         admit = Mock()
         with patch.object(verify, "analyze_local_score", return_value=reading(count=129)), \
-             patch.object(verify, "_import_meta_score") as meta:
+             patch.object(verify, "_import_meta_score", side_effect=ScoreInputError("Too many bars", 422)) as meta:
             result = verify.import_verified_score(self.request, {}, before_meta=admit)
         self.assertEqual(len(result.measures), 129)
         self.assertEqual(result.analysisSource, "local")
-        self.assertEqual(result.verification.status, "local_only")
+        self.assertEqual(result.verification.status, "local_fallback")
         self.assertEqual(result.verification.comparedMeasures, 0)
-        admit.assert_not_called()
-        meta.assert_not_called()
+        admit.assert_called_once_with(1.50)
+        meta.assert_called_once()
 
     def test_agreement_does_not_upgrade_confidence_or_remove_review_flags(self):
         local, meta = reading(basis="printed"), reading("meta", basis="printed")

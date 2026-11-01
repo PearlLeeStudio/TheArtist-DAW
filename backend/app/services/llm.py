@@ -30,6 +30,7 @@ Environment (names in deploy/env.example):
                         USD per 1M tokens; unknown models use the Spark prices,
                         and ollama is free only on a loopback host
   THEARTIST_META_BUDGET_USD   spend cap in USD (default 25)
+  THEARTIST_META_UNLIMITED    explicit development opt-in to record spend without dollar caps
   THEARTIST_META_LEDGER       ledger path (default backend/.ledger/meta_ledger.json)
   LLM_JUDGE_PROVIDER, LLM_JUDGE_BASE_URL, LLM_JUDGE_MODEL, LLM_JUDGE_API_KEY,
   LLM_JUDGE_TIMEOUT_S, LLM_JUDGE_REASONING_EFFORT, LLM_JUDGE_PRICE_*_PER_M
@@ -66,7 +67,7 @@ from urllib.parse import urlsplit
 
 import openai
 
-from app.services.env_flags import meta_enabled
+from app.services.env_flags import meta_enabled, meta_budget_unlimited
 
 log = logging.getLogger(__name__)
 
@@ -554,9 +555,11 @@ class Ledger:
     A reservation left open by a crashed worker stays counted (safe over-count).
     """
 
-    def __init__(self, path: str | os.PathLike[str] | None = None, cap_usd: float | None = None) -> None:
+    def __init__(self, path: str | os.PathLike[str] | None = None, cap_usd: float | None = None,
+                 *, unlimited: bool = False) -> None:
         self.path = Path(path).expanduser().resolve() if path is not None else DEFAULT_LEDGER_PATH
         self.cap_usd = DEFAULT_BUDGET_USD if cap_usd is None else float(cap_usd)
+        self.unlimited = unlimited
         if not (math.isfinite(self.cap_usd) and self.cap_usd >= 0):
             raise LLMConfigError(f"the budget cap must be a non-negative number, got {cap_usd!r}")
         self._lock_path = self.path.with_name(self.path.name + ".lock")
@@ -570,12 +573,13 @@ class Ledger:
             return cls.from_env(env)
         path_var, cap_var, default_path, default_cap = _LEDGER_ENV[role]
         cap = _env_float(env, cap_var)
-        return cls(_env_str(env, path_var) or default_path, default_cap if cap is None else cap)
+        return cls(_env_str(env, path_var) or default_path, default_cap if cap is None else cap,
+                   unlimited=meta_budget_unlimited(env))
 
     def snapshot(self) -> dict[str, Any]:
         """Current totals, read without locking or creating anything (writes replace the file whole)."""
         state = self._load()
-        return {"path": str(self.path), "cap_usd": self.cap_usd, "spent_usd": state["spent_usd"],
+        return {"path": str(self.path), "cap_usd": None if self.unlimited else self.cap_usd, "spent_usd": state["spent_usd"],
                 "outstanding_usd": _outstanding(state), "entries": len(state["entries"])}
 
     def reserve(self, *, label: str, provider: str, model: str, reserved_usd: float) -> str:
@@ -583,7 +587,7 @@ class Ledger:
         reserved_usd = _round_usd(reserved_usd)
         with self._transaction() as state:
             spent, outstanding = state["spent_usd"], _outstanding(state)
-            if spent + outstanding + reserved_usd > self.cap_usd + _CAP_TOLERANCE_USD:
+            if not self.unlimited and spent + outstanding + reserved_usd > self.cap_usd + _CAP_TOLERANCE_USD:
                 raise BudgetExceeded(
                     f"LLM budget cap reached: spent ${spent:.4f} + outstanding ${outstanding:.4f} "
                     f"+ this request ${reserved_usd:.4f} > cap ${self.cap_usd:.2f} (ledger {self.path})",
@@ -616,7 +620,7 @@ class Ledger:
         return spent
 
     def _warn_if_high(self, spent: float) -> None:
-        if self.cap_usd <= 0 or spent < WARN_FRACTION * self.cap_usd:
+        if self.unlimited or self.cap_usd <= 0 or spent < WARN_FRACTION * self.cap_usd:
             return
         with _warned_lock:
             if str(self.path) in _warned_ledgers:
@@ -661,7 +665,7 @@ class Ledger:
         return state
 
     def _write(self, state: dict[str, Any]) -> None:
-        state["cap_usd"] = self.cap_usd
+        state["cap_usd"] = None if self.unlimited else self.cap_usd
         try:
             fd, tmp = tempfile.mkstemp(prefix=f".{self.path.name}.", suffix=".tmp", dir=self.path.parent)
         except OSError as exc:  # e.g. a read-only or full volume
@@ -918,7 +922,7 @@ class LLMClient:
         # (reasoning tokens bill as output and count toward max_completion_tokens)
         reserve = _round_usd((input_tokens * self.config.price_input_per_m
                               + max_completion_tokens * self.config.price_output_per_m) / 1_000_000)
-        if max_request_usd is not None:
+        if max_request_usd is not None and not meta_budget_unlimited():
             if isinstance(max_request_usd, bool) or not math.isfinite(max_request_usd) or max_request_usd <= 0:
                 raise ValueError("max_request_usd must be a positive finite number")
             if reserve > max_request_usd:
@@ -1243,8 +1247,9 @@ class LLMClient:
                   "reasoning=%(reasoning_tokens)d" % usage) if usage else "unknown"
         log.log(logging.INFO if status == "settled" else logging.WARNING,
                 "llm %s provider=%s model=%s label=%s request_id=%s tokens %s cost=$%.6f latency=%dms "
-                "ledger=$%.4f/$%.2f%s", "ok" if status == "settled" else "failed", cfg.provider, cfg.model,
-                label, request_id or "-", tokens, cost, latency_ms, spent, self.ledger.cap_usd,
+                "ledger=$%.4f/%s%s", "ok" if status == "settled" else "failed", cfg.provider, cfg.model,
+                label, request_id or "-", tokens, cost, latency_ms, spent,
+                "unlimited" if getattr(self.ledger, "unlimited", False) else f"${self.ledger.cap_usd:.2f}",
                 f" error={note}" if note else "")
         return spent
 

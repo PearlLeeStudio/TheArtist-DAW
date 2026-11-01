@@ -79,18 +79,43 @@ class ScoreImportTest(unittest.TestCase):
         self.assertEqual(len(self.requests), 1)
         request = self.requests[0]
         self.assertEqual(request["model"], "muse-spark-1.3")
-        self.assertEqual(request["max_completion_tokens"], 8192)
-        self.assertEqual(request["timeout"], 75.0)
+        self.assertEqual(request["max_completion_tokens"], 32768)
+        self.assertEqual(request["timeout"], 150.0)
+        self.assertEqual(request["reasoning_effort"], "low")
         media = request["messages"][-1]["content"][-1]
         self.assertEqual(media, {"type": "file", "file": {"filename": "score.pdf",
                          "file_data": "data:application/pdf;base64," + body()["dataBase64"]}})
         self.ledger.reserve.assert_called_once_with(label="score.import", provider="meta", model="muse-spark-1.3",
-                                                   reserved_usd=1.345536)
+                                                   reserved_usd=1.449984)
         settled = self.ledger.settle.call_args.kwargs
         self.assertEqual(settled["request_id"], "req-score")
         self.assertEqual(settled["usage"]["prompt_tokens"], 1000)
         self.assertEqual(settled["usage"]["completion_tokens"], 500)
         self.assertAlmostEqual(settled["settled_usd"], 0.003375)
+
+    def test_checked_meta_stream_recovers_truncation_locally_and_records_the_failed_call(self):
+        from app.services import score_verification
+        from tests.test_score_verification import reading
+        def truncated(_request):
+            return {"id": "cut-score", "model": "muse-spark-1.3",
+                    "choices": [{"finish_reason": "length", "message": {"content": "{"}}],
+                    "usage": {"prompt_tokens": 15118, "completion_tokens": 8192}}, {"x-request-id": "req-cut"}
+        self.client._transport = truncated
+        with mock.patch.object(score_verification, "analyze_local_score", return_value=reading(count=52)), \
+             mock.patch("app.services.limits.full_file_score_import_allowed", return_value=True):
+            response = CLIENT.post(ROUTE + "/stream", json=body(engine="verified", mode="infer_harmony"))
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn("event: error", response.text)
+        self.assertIn("Continuing with the local", response.text)
+        result_frame = next(frame for frame in response.text.split("\n\n") if frame.startswith("event: result"))
+        result = json.loads(result_frame.split("data: ", 1)[1])
+        self.assertEqual(result["verification"]["status"], "local_fallback")
+        self.assertEqual(result["analysisSource"], "local")
+        self.assertEqual(len(result["measures"]), 52)
+        settled = self.ledger.settle.call_args.kwargs
+        self.assertEqual(settled["status"], "failed")
+        self.assertEqual(settled["request_id"], "req-cut")
+        self.assertAlmostEqual(settled["settled_usd"], 0.0537135)
 
     def test_meta_structured_note_evidence_and_explicit_nc_survive_the_api(self):
         self.draft["measures"][0].update(notes=["C4", "E4", "G4"], writtenNotes=["C4", "E4", "G4"],
@@ -137,15 +162,15 @@ class ScoreImportTest(unittest.TestCase):
                     self.assertIn("Do not guess a time signature", system)
                     self.assertIn("clef and staff line or space", system)
                     self.assertIn("preserve visible sevenths and extensions", system)
-                self.assertEqual(request["timeout"], 75.0)
-                self.assertEqual(request["max_completion_tokens"], 8192)
+                self.assertEqual(request["timeout"], 150.0)
+                self.assertEqual(request["max_completion_tokens"], 32768)
                 schema = request["response_format"]["json_schema"]
                 self.assertTrue(schema["strict"])
                 fields = schema["schema"]["properties"]["measures"]["items"]
                 self.assertIn("chordBasis", fields["required"])
                 self.assertIn("confidence", fields["required"])
         self.assertEqual(len(self.requests), 2)
-        self.assertTrue(all(call.kwargs["reserved_usd"] == 1.345536
+        self.assertTrue(all(call.kwargs["reserved_usd"] == 1.449984
                             for call in self.ledger.reserve.call_args_list))
 
     def test_note_only_harmony_is_a_reviewable_proposal_with_evidence(self):
@@ -424,11 +449,11 @@ class ScoreImportTest(unittest.TestCase):
         response = CLIENT.post(ROUTE, json=body())
         self.assertEqual(response.status_code, 504)
         self.assertEqual(len(self.requests), 1)
-        self.assertEqual(self.ledger.settle.call_args.kwargs["settled_usd"], 1.345536)
+        self.assertEqual(self.ledger.settle.call_args.kwargs["settled_usd"], 1.449984)
         self.transport_error = RuntimeError("provider unavailable")
         self.assertEqual(CLIENT.post(ROUTE, json=body()).status_code, 502)
         self.ledger.reserve.side_effect = BudgetExceeded("budget full", spent_usd=25, outstanding_usd=0,
-                                                        request_usd=1.345536, cap_usd=25)
+                                                        request_usd=1.449984, cap_usd=25)
         self.assertEqual(CLIENT.post(ROUTE, json=body()).status_code, 429)
         self.assertEqual(len(self.requests), 2)
         self.get_client.side_effect = LLMConfigError("missing key")

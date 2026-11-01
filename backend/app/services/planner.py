@@ -52,6 +52,7 @@ from app.models.plan import (
 from app.models.schemas import CADENCE_TYPES, ContextMeasure, SectionGenerateRequest, Suggestion
 from app.models.sections import CHORDS_PER_BAR, SECTION_INFO, SECTION_TYPES, section_title
 from app.routes.generate import compose_section
+from app.services.env_flags import meta_budget_unlimited
 from app.services.key_anchor import _chord_pcs
 from app.services.chorus_memory import reuse_chorus
 from app.services.llm import (
@@ -523,7 +524,7 @@ class _Run:
         # for its one JSON-guard retry); each call settles at or below its reservation, so the run's
         # spend never passes the cap, while unspent reservations no longer crowd out later calls
         worst_case = prepared.reserve_usd * (1 if client.config.provider == "meta" else 2)
-        if self.spend_usd + worst_case > MAX_RUN_USD + 1e-9:
+        if not meta_budget_unlimited() and self.spend_usd + worst_case > MAX_RUN_USD + 1e-9:
             raise PlanFailure("budget", f"reserving ${worst_case:.4f} for {step} could take the run past its "
                                         f"${MAX_RUN_USD:.2f} cap (${self.spend_usd:.4f} spent so far)")
         started = time.perf_counter()

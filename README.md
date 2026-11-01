@@ -81,12 +81,12 @@ passage with the author's Music Transformer, and hands the arrangement to the DA
 | Editor | staff, voicings, Roman numerals, MIDI input, playback | Import Score, Original/A/B/C, Second ear, Complete the form, Projects, the Play panel and mixer |
 | Service | `/api/generate*` | local vector-PDF reader and harmony analyzer, MIDI/PDF/DAW export, Logic Scripter script, REST + MCP contract, Meta client with ledger, planner, Second-ear review |
 
-**Where Meta is used** (every call: Standard model id, timeout, cost reservation, request id and token count in the ledger; a failure is shown as a failure):
+**Where Meta is used** (every call: Standard model id, timeout, request id, token count and cost in the ledger; Import labels a recovered local result as local):
 
 | Path | File | Calls per use | Switch |
 |---|---|---|---|
-| **Use Meta model** checkbox, `engine: "verified"`: local analysis, original-file Meta check, then comparison | `score_verification.py`, `score_import.py` | 1 PDF/image request, ≤ $1.35; no automatic retry | `THEARTIST_META_ENABLED`; public hosts also require `THEARTIST_PUBLIC_META_READER=1` |
-| Direct full-file API reading, `engine: "meta"` | `score_import.py` | 1 request, ≤ $1.35 | same |
+| **Use Meta model** checkbox, `engine: "verified"`: Meta first, local recovery on failure, comparison when both readings succeed | `score_verification.py`, `score_import.py` | 1 PDF/image request, default ≤ $1.50; no automatic Meta retry | `THEARTIST_META_ENABLED`; public hosts also require `THEARTIST_PUBLIC_META_READER=1` |
+| Direct full-file API reading, `engine: "meta"` | `score_import.py` | 1 request, default ≤ $1.50 | same |
 | Bounded API assist, `engine: "auto"` | `score_assistance.py`, `harmony_meta.py`, `score_form.py` | ≤ 2 × 8-bar harmony reviews + 1 form analysis, ≤ $0.30 total | same; leave the editor checkbox off for no Meta calls |
 | Complete the form planner (plan, validate, revise, judge) | `backend/app/services/planner.py`, `routes/plan.py` | ≤ 5 calls per run (1 plan, ≤ 2 revisions, ≤ 2 judgments) | same; judge role via `LLM_JUDGE_*` |
 | Second ear: pick one of a Generate's A/B/C on analyzer facts, each reason checked | `backend/app/services/review.py`, `routes/review.py` | 1 judge call | same; judge role via `LLM_JUDGE_*` |
@@ -101,9 +101,10 @@ the author's model and every export keep working.
 notation and proposes note-based harmony; the author's Music Transformer generates
 chord variations and bounded contextual suggestions for sparse read-note passages.
 Fixed following chords now affect candidate ranking as well as preceding harmony.
-The **Use Meta model** checkbox adds one original-file reading
-with the local musical synopsis and a comparison of bar counts, key, meter, chords
-and note evidence. Differences remain review flags; model agreement is not proof
+The **Use Meta model** checkbox first attempts one original-file reading. If Meta
+fails, the local reader prepares an editable result and enables Import reviewed score.
+When both readers succeed, bar counts, key, meter, chords and note evidence are compared.
+Differences remain review flags; model agreement is not proof
 of correctness. If local reading is unsupported, the result clearly states that
 local cross-checking was unavailable. The unchecked path never calls Meta.
 The musician corrects the import, chooses the passage and keeps the version they want.
@@ -130,11 +131,11 @@ file, contract and test coverage, fixes, and remaining verification limits.
   without blocking import; their original symbols and evidence are retained.
   Correct highlighted project fields, then click
   **Import reviewed score** to confirm. The footer explains any blocker.
-  The checkbox is off by default. Checked analysis tries the local reader first,
-  then sends the original and a bounded 40-KiB musical synopsis to Meta once.
-  It checks up to 128 written bars; uncertain or conflicting results are flagged.
-  Longer scores that the local reader reads completely open with all local bars
-  (up to 512), with a visible Meta-skipped status and no Meta charge.
+  The checkbox is off by default. Checked analysis sends the original to Meta first,
+  then compares it with the local reading. A truncated, timed-out or invalid Meta
+  response proceeds to local reading automatically; unresolved bars remain editable.
+  Meta supports up to 128 written bars. A larger or failed Meta reading can still
+  open all locally readable bars (up to 512), labeled as local recovery.
   Unequal bar counts retain the complete local reading instead of merging misaligned
   bars. Printed local chords and N.C. are preserved. Images and unsupported PDFs
   require the checkbox; their Meta result states when no local comparison was possible.
@@ -639,9 +640,12 @@ For a public judge server, `THEARTIST_PUBLIC_HOST=1` turns off DAW handoff, the 
 route and MCP, and puts Meta calls behind per-session and daily spend limits.
 Whole-file reading (`engine: "meta"` or the checkbox's `verified`) also needs
 `THEARTIST_PUBLIC_META_READER=1`; the hosted Artist service enables that option.
-It retains the 75-second, one-call, $1.35 request bound. The hosted session and
-global daily limits are both $2, with a $10 total ledger cap. Local reading and
-bounded import assist (`engine: "auto"`) remain available; see `deploy/env.example`.
+The file reader has a 150-second timeout, one Meta call, low reasoning effort and
+32,768 output tokens so a complete score can fit beside reasoning tokens.
+`THEARTIST_META_UNLIMITED=1` explicitly disables session, daily, ledger, per-request
+and per-run dollar caps for development; the hosted development service enables it.
+Request IDs, token usage, costs, timeouts and finite call counts remain recorded.
+Without that opt-in, the configured dollar caps apply; see `deploy/env.example`.
 
 ## AI Model
 

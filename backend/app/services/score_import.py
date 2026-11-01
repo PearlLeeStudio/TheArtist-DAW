@@ -30,12 +30,13 @@ from app.services.llm import LLMConfig, LLMConfigError, LLMResponseError, LLMRes
 from app.services.score_context import ScoreContextError
 
 SCORE_MODEL = "muse-spark-1.3"
-SCORE_TIMEOUT_S = 75.0
-SCORE_MAX_OUTPUT_TOKENS = 8192
+SCORE_TIMEOUT_S = 150.0
+# Complete multi-page notation needs room for both reasoning and every bar's evidence.
+SCORE_MAX_OUTPUT_TOKENS = 32768
 # Model context is the upper bound on accepted input after PDF text/image expansion.
 # https://dev.meta.ai/docs/cookbook/long-context
 SCORE_INPUT_TOKEN_BOUND = 1_048_576
-SCORE_MAX_REQUEST_USD = 1.35
+SCORE_MAX_REQUEST_USD = 1.50
 MAX_META_SCORE_MEASURES = 128
 MAX_AUTO_REQUEST_USD = .30  # Two note batches plus one whole-context form analysis.
 # _review_warnings appends at most this many warnings after the model's own.
@@ -399,6 +400,7 @@ def _import_meta_score(req: ScoreImportRequest, attachment: dict[str, Any], *,
         SCORE_SCHEMA, name="score_import", label="score.import", timeout_s=SCORE_TIMEOUT_S,
         max_completion_tokens=SCORE_MAX_OUTPUT_TOKENS,
         input_token_upper_bound=SCORE_INPUT_TOKEN_BOUND, max_request_usd=SCORE_MAX_REQUEST_USD,
+        reasoning_effort="low",
     )
     draft = _validated_draft(result)
     _check_provenance(req.mode, result, draft)

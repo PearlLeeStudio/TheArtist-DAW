@@ -45,7 +45,7 @@ const IMPORT_MODE = 'infer_harmony';
 const SIGNATURE_BYTES = 16;
 /** Bytes per String.fromCharCode call, so the spread stays within argument limits. */
 const BASE64_CHUNK_BYTES = 0x8000;
-const ANALYSIS_TIMEOUT_MS = 160_000;
+const ANALYSIS_TIMEOUT_MS = 180_000;
 /** Mirrors the private MAX_IMPORT_SECTIONS in engine/scoreImport.ts, the most
  *  sections draft validation accepts; Add section stops there. Keep the two equal. */
 const MAX_IMPORT_SECTIONS = 64;
@@ -403,7 +403,7 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
                   setMetaConnectionError(false); setCheckingMeta(true); setMetaAttempt(attempt => attempt + 1);
                 }}>Retry connection</button>
               </div>}
-              {useMeta && <p className="text-xs" style={mutedStyle}>Sends the original file to Meta after local analysis, then compares the readings. May take longer · 1 call / $1.35 max</p>}
+              {useMeta && <p className="text-xs" style={mutedStyle}>Meta reads the original score first. If it cannot finish, the local reader prepares the score for import.</p>}
               {meta && !metaAvailable && (
                 <p className="text-xs" style={mutedStyle}>
                   {meta.enabled ? 'No Meta key is configured on this server: TheArtist only is available.'
@@ -433,7 +433,7 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
         <footer className="flex shrink-0 flex-col items-stretch gap-3 px-5 py-3 sm:flex-row sm:items-end" style={{ borderTop: '1px solid var(--border)', background: 'var(--bg-surface)' }}>
           <div className="min-w-0 flex-1 text-xs" style={mutedStyle}>
             <p>Import replaces the current score. You can undo the import in the editor.</p>
-            {blockReason && <p id={`${id}-import-block`} role="status" className="mt-1">{blockReason}</p>}
+            {blockReason && !error && <p id={`${id}-import-block`} role="status" className="mt-1">{blockReason}</p>}
             {(!!error || invalid) && <div className="mt-1 max-h-20 overflow-y-auto pr-1">
               {error && <p role="alert" className="border-l-2 px-2 py-1" style={{ background: 'var(--btn-bg)', borderColor: 'var(--brand-yellow)', color: 'var(--text-primary)' }}>{error}</p>}
               {invalid && <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
@@ -494,7 +494,9 @@ function ScoreReview({ idPrefix, draft, validation, onEdit }: ScoreReviewProps) 
         {changesMeter && <p className="text-xs" style={mutedStyle}>The original uses {meters.join(', ')}. The editor uses {draft.timeSignature || 'one chosen meter'} throughout.</p>}
         {draft.verification && <details open={draft.verification.status !== 'compared' || draft.verification.disputedMeasures.length > 0}
           className="text-xs" style={mutedStyle}>
-          <summary className="cursor-pointer">{draft.verification.status === 'local_only'
+          <summary className="cursor-pointer">{draft.verification.status === 'local_fallback'
+            ? 'Local reading · Ready to import'
+            : draft.verification.status === 'local_only'
             ? 'Local reading · Meta comparison skipped'
             : `Reading checks · ${draft.verification.disputedMeasures.length} differences flagged`}</summary>
           <div className="mt-1 space-y-1">

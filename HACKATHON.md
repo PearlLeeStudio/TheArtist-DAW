@@ -158,6 +158,8 @@ rows 59 and 64; successful execution alone does not establish musical quality.
 
 | 107 | **Recover from interrupted server connections**: Import reports capability lookup failures and retries without dropping the selected file; Reharmonize stops an unresponsive request after 110 seconds and preserves the score | [`b55587f`](https://github.com/PearlLeeStudio/TheArtist-DAW/commit/b55587f) | no additional Meta calls | Frontend 261 tests, build and lint pass, including timeout recovery and score preservation. Deployed Chrome: injected capability 503 produces a visible Retry connection button; restoring the real API and retrying re-enables Meta while retaining the selected PDF |
 
+| 108 | **Finish checked Imports through local recovery**: attempt Meta first, recover truncated/timed-out/invalid readings locally, preserve unresolved editable bars, and enable reviewed import with explicit local provenance. Give full-file output room for 32,768 tokens with low reasoning; add an operator-only unlimited-dollar development setting while retaining costs and request IDs | this commit | Standard `muse-spark-1.3`, one 150-second file call; configured dollar caps apply unless explicitly disabled | Regression reproduces truncated completion with real cost accounting and a 52-bar local result; frontend accepts the recovery and retains empty slots. Deployed verification in progress |
+
 Validation details and unchecked browser/audio/DAW cases are in the
 [manual checklist](docs/manual-checks.md). The README distinguishes application
 screenshots from the pre-existing baseline video. Safari export opened a sixteen-bar,
