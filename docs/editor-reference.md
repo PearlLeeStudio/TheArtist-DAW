@@ -55,7 +55,8 @@ The musician corrects the import, chooses the passage and keeps the version they
   Meta compares bounded searches scored by the selected Music Transformer and
   returns three choices. **Origin / Alter 1 / Alter 2 / Alter 3** share one row.
   Select alternatives together; overlapping choices replace each other. **Apply**
-  keeps the preview; **×** discards changes since the last Apply.
+  keeps the preview and closes the cards (Ctrl/⌘+Z undoes it); **×** discards
+  changes since the last Apply.
   Empty slots stay unchanged; use Generate to create a new passage.
 - **Second ear** under a three-candidate list asks the judge model which candidate
   fits, on facts code computed (chords outside the key, changed slots, repetition of

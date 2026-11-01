@@ -57,9 +57,9 @@ slots; empty slots stay unchanged. The surrounding harmony informs the search.
 
 In Reharmonize, the **Origin / Alter 1 / Alter 2 / Alter 3** cards share one row.
 Select alternatives together, then use **Play** to audition the result. A new
-overlapping choice replaces the conflicting card. **Apply** keeps the selection;
-**×** discards changes since the last Apply. **Origin** previews the original
-symbols and voicings. Generate retains its separate **Original/A/B/C** controls. Compare a passage
+overlapping choice replaces the conflicting card. **Apply** keeps the selection and
+closes the cards (Ctrl/⌘+Z undoes it); **×** discards changes since the last Apply.
+**Origin** previews the original symbols and voicings. Generate retains its separate **Original/A/B/C** controls. Compare a passage
 in the context of the arrangement, including how it leads into the next section.
 An explicit mode constrains substitutions; Auto lets the search consider
 contextual harmonic colors. The [Reharmonize guide](reharmonization.md) explains

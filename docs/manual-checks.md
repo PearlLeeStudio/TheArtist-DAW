@@ -313,6 +313,11 @@ verified. Existing unchecked audio/DAW cases below remain unchecked.
   prevent an obsolete plan from being applied.
 - [ ] Ctrl+A / ⌘A selects every editor bar. In a title input or dialog it retains
   native text selection. Projects does not intercept the shortcut.
+- [ ] Reharmonize: Find 3 alternatives, select Alter 1 + Alter 2, Apply → the cards
+  close, the chords stay, the controls read "Alter 1 + Alter 2 applied to M…", and
+  ⌘Z restores the passage; × before Apply discards the preview. The status line
+  above the staff after an import with Use Meta model is one quiet sentence and
+  clears itself after about twelve seconds.
 - [ ] Clipboard editing in Chrome and Safari: drag two bars, ⌘C, select eight bars,
   ⌘V repeats the pattern; click either half of a bar and ⌘V places copied whole bars
   from that bar's start (no half-bar straddles a bar line); a half-bar copy keeps its

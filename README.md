@@ -80,6 +80,23 @@ separated in the [manual checklist](docs/manual-checks.md).
 The [repository consistency report](docs/repository-checks.md) records the
 file, contract and test coverage, fixes, and remaining verification limits.
 
+### Where Meta appears in the editor
+
+The editor does not advertise the model: Meta's work shows up as ordinary editor
+state. Two places call it during normal use.
+
+| Place | What the musician does | What Meta does | What appears |
+|---|---|---|---|
+| **Import Score → Use Meta model** | Picks a PDF, ticks the checkbox, clicks **Analyze and import** | Reads the original file once (≤ $1.50, 150 s) after the local reading has already opened the score | A one-line status above the staff while the check runs, then **Review** marks on bars where the two readings differ and chords filled into bars the local reader left empty, each with its request id in the bar's source details |
+| **Input → Reharmonize → Find 3 alternatives** | Selects written chords, sets *Change up to* and a mode | Explores the mathematical substitution search with native tool calls (≤ 4 turns, ≤ $0.15) and picks three contrasting candidates scored by the Music Transformer | **Origin / Alter 1 / Alter 2 / Alter 3** cards under the passage; **Apply** keeps a combination and closes them |
+
+<!-- Screenshots of these two states go here as screenshot/12-import-use-meta.png and
+     screenshot/13-reharmonize-alternatives.png once captured in a browser. -->
+
+Complete the form (Muse Spark only / Music Transformer + Meta review) and Second ear
+are the other two paths; all four are listed with their files, call counts and
+switches in the table above.
+
 ## Live sites
 
 | Project | Website | Role |
@@ -116,7 +133,8 @@ contents, Voyager's adapter status and the limits:
   plus local theory relevance when the OMT corpus is prepared.
 - **Reharmonize** — Meta searches bounded substitutions of 1–4 selected chords with
   the surrounding harmony in view; the Music Transformer scores them in context;
-  **Origin / Alter 1–3** cards combine on the staff before **Apply**.
+  **Origin / Alter 1–3** cards combine on the staff, and **Apply** keeps the
+  choice and closes them (undo with Ctrl/⌘+Z).
 - **Second ear** — a bounded Meta judge picks among A/B/C on facts the analyzer
   computed, each reason marked *analyzer confirmed* or *model statement*.
 - **New from Song Form** — add a section or complete the form with **Muse Spark

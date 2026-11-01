@@ -33,17 +33,18 @@ remain. Each preview combines the selected patches over the captured original.
 The change limit applies to each alternative; a combination can change more slots.
 Combining cards makes no additional Meta call and does not rescore the combination.
 
-**Apply**, directly below **Find 3 alternatives**, keeps the preview and leaves all
-cards available. A new combination enables the yellow **Apply** button. After applying,
-the button reads **Applied ✓** and the status names the saved combination; returning
-to that same combination also shows **Applied ✓**. Choose a different combination
-to enable Apply again. Before any alternative is selected, the status explains what
-to select. **Origin** previews the exact original symbols and voicings and can
-also be applied. The **×** closes the comparison and discards changes made since the
-last Apply, preserving later manual edits. A fresh search also discards pending
-previews. Autosave retains the last Apply and unrelated edits; reloading clears the
-comparison without keeping unconfirmed previews. This is an editor session, not a
-saved-project version history.
+**Apply**, directly below **Find 3 alternatives**, keeps the previewed combination
+and closes the cards: the chosen chords stay on the staff, the comparison ends,
+and the controls name what was applied to which bars. The passage as it stood
+before Apply goes to the editor's undo, so Ctrl/⌘+Z (or the right-click menu's
+Undo edit) brings it back without a new search. A new combination enables the
+yellow **Apply** button; before any alternative is selected, the status explains
+what to select. **Origin** previews the exact original symbols and voicings and
+can also be applied, which likewise closes the cards. The **×** closes the
+comparison and discards changes made since the last Apply, preserving later manual
+edits. A fresh search also discards pending previews. Autosave retains the last
+Apply and unrelated edits; reloading clears the comparison without keeping
+unconfirmed previews. This is an editor session, not a saved-project version history.
 The controls also show search errors and a **View 3 alternatives on the score**
 link, so the comparison remains findable when it is below the visible score rows.
 
