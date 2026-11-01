@@ -105,9 +105,9 @@ to the DAW. Its existing chord model supplies a harmonic engine for this workflo
 
 | | Pre-existing (tag `baseline`) | Hackathon work (commits after the tag) |
 |---|---|---|
-| Models | 25M-parameter Music Transformer, 11 genre LoRAs, R1 rerank | no new weights; Meta Muse Spark as planner / judge / reader; cached own-model inference and source-isolated OMT retrieval |
-| Editor | staff, voicings, Roman numerals, MIDI input, playback | Import Score, Original/A/B/C, Second ear, Complete the form, Projects, the Play panel and mixer |
-| Service | `/api/generate*` | local vector-PDF reader and harmony analyzer, MIDI/PDF/DAW export, Logic Scripter script, REST + MCP contract, Meta client with ledger, planner, Second-ear review |
+| Models | 25M-parameter Music Transformer, 11 genre LoRAs, R1 rerank, R2 theory retrieval (Berklee + OMT) | no new weights; Meta Muse Spark as reader, planner, composer, tool-driven reharmonizer and judge; cached own-model inference; source-isolated OMT retrieval (OMT on by default, Berklee off, local TF-IDF, attributed excerpts) |
+| Editor | staff, voicings, Roman numerals, MIDI input, playback, saved-sessions page | Import Score, Original/A/B/C, Reharmonize (Origin / Alter 1–3), Second ear, Complete the form, Projects rework (first-row previews, full Export menu, bulk delete, preserve current work), the Play panel and mixer, Safari MIDI bridge and Logic handoff |
+| Service | `/api/generate*`, basic `midi_b64` render | local vector-PDF reader and harmony analyzer, editable three-part MIDI export (`/api/export/midi`, replacing the baseline's basic MIDI download), score PDF, DAW handoff, Logic Scripter script, REST + MCP contract, Meta client with ledger, planner, Second-ear review, Reharmonize |
 
 **Where Meta is used** (every call: Standard model id, timeout, request id, token count and cost in the ledger; Import labels a recovered local result as local):
 
@@ -115,9 +115,9 @@ to the DAW. Its existing chord model supplies a harmonic engine for this workflo
 |---|---|---|---|
 | **Use Meta model** checkbox, `engine: "verified"`: concurrent Meta/local reading, explicit local recovery on failure, comparison when both succeed | `score_verification.py`, `score_import.py` | 1 PDF/image request, default ≤ $1.50; no automatic Meta retry | `THEARTIST_META_ENABLED`; public hosts also require `THEARTIST_PUBLIC_META_READER=1` |
 | Direct full-file API reading, `engine: "meta"` | `score_import.py` | 1 request, default ≤ $1.50 | same |
-| Bounded API assist, `engine: "auto"` | `score_assistance.py`, `harmony_meta.py`, `score_form.py` | ≤ 2 × 8-bar harmony reviews + 1 form analysis, ≤ $0.30 total | same; leave the editor checkbox off for no Meta calls |
-| Complete the form planner (plan, validate, revise, judge) | `backend/app/services/planner.py`, `routes/plan.py` | ≤ 5 calls per run (1 plan, ≤ 2 revisions, ≤ 2 judgments) | same; judge role via `LLM_JUDGE_*` |
-| Second ear: pick one of a Generate's A/B/C on analyzer facts, each reason checked | `backend/app/services/review.py`, `routes/review.py` | 1 judge call | same; judge role via `LLM_JUDGE_*` |
+| Bounded API assist, `engine: "auto"` | `score_assistance.py`, `harmony_meta.py`, `score_form.py` | ≤ 2 × 8-bar harmony reviews + 1 form analysis, ≤ $0.30 total | `THEARTIST_META_ENABLED` only (public hosts do not require the reader flag); leave the editor checkbox off for no Meta calls |
+| Complete the form planner (plan, validate, revise, judge) | `backend/app/services/planner.py`, `routes/plan.py` | ≤ 5 calls per run (1 plan, ≤ 2 revisions, then either 1 Muse Spark composition call in **Muse Spark only** mode or ≤ 2 judgments in the hybrid mode) | `THEARTIST_META_ENABLED` only; judge role via `LLM_JUDGE_*` |
+| Second ear: pick one of a Generate's A/B/C on analyzer facts, each reason checked | `backend/app/services/review.py`, `routes/review.py` | 1 judge call | `THEARTIST_META_ENABLED` only; judge role via `LLM_JUDGE_*` |
 | [Reharmonize](docs/reharmonization.md): search sparse substitutions, compare learned context scores, offer three persistent score previews | `backend/app/services/reharmonize_agent.py`, `reharmonize.py` | ≤ 4 native tool turns, ≤ $0.15 per search | `THEARTIST_META_ENABLED`; selected Music Transformer must be available |
 
 With `THEARTIST_META_ENABLED=0` any attempted Meta call answers HTTP 503 "disabled".
@@ -225,8 +225,10 @@ file, contract and test coverage, fixes, and remaining verification limits.
   sound can still take time to download. See [measured performance](experiments/speed/runtime-performance.md)
   for generation/import improvements and the limits of the audio checks.
 - **Export** downloads editable, three-part MIDI with tempo, meter, section markers
-  and mixer levels, or an A4 score PDF. Local Logic opening and Ableton file reveal
-  use the local backend; hosted clients can download MIDI.
+  and mixer levels, or an A4 score PDF. On the local backend, Logic opens the MIDI
+  and Ableton reveals it in Finder; on the hosted site the same actions go through the
+  [local Mac bridge](docs/midi-input.md#open-a-hosted-score-in-logic-pro), and
+  Download MIDI works everywhere without it.
 - **Logic Scripter script**: the same arrangement as a Logic Pro Scripter MIDI FX
   script that plays the harmony and bass inside Logic, following its transport,
   locate and cycle ([plugin/logic-scripter](plugin/logic-scripter/README.md)).
@@ -345,7 +347,7 @@ capture uses R1 alone; current builds also use OMT relevance when prepared.
 This capture predates the local MIDI bridge and shows Safari's missing native Web
 MIDI support. Chrome now connects directly; Safari on Mac uses the
 [local MIDI bridge](docs/midi-input.md). Connection/monitoring needs no selected
-slot, while writing always requires exactly one selected slot in the Input tab.
+slot, while writing always requires exactly one selected slot with the Input tab's MIDI tool in front.
 The bridge's native input and local event stream were checked with three available
 ports; physical keypress confirmation in both browsers remains a manual check.
 
@@ -407,7 +409,8 @@ export also offers dark and current-theme variants.
 </table>
 
 Both modes use `--brand-yellow` (#facc15) for active Play/Input tabs, the panel
-toggle, focus rings and voicing highlights. The header's 8 px theme emoji retains
+toggle, focus rings and the Input-tab keyboard highlight; inside the Play panel the
+token is re-scoped to amber (#ec7737) for its selection keys and voicing highlights. The header's 8 px theme emoji retains
 its 32×28 px button area and accessible label. The Play panel combines subtle inset
 key grooves, flat black/green step cells and slim faders while the staff keeps its
 classical styling.
@@ -418,9 +421,10 @@ classical styling.
 
 ```mermaid
 flowchart LR
-  Score["PDF / image"] --> Local["Local vector-PDF reader · harmony analyzer"]
+  Score["Vector PDF"] --> Local["Local vector-PDF reader · harmony analyzer"]
   Local -. "auto: whole-score synopsis" .-> Meta["Meta Muse Spark · harmony + form"]
   Score -. "explicit full-file Meta read" .-> Meta
+  Image["Image (PNG / JPEG / WebP)"] -. "Meta read only (Use Meta model)" .-> Meta
   Local --> Review["Review chords and song form"]
   Meta --> Review
   Review --> Editor["Staff · selection · Original/A/B/C"]
@@ -556,7 +560,7 @@ stateDiagram-v2
   Idle --> Holding: NoteOn (≥3 keys)
   Holding --> Holding: any NoteOn / NoteOff (peak tracked)
   Holding --> AutoCommitted: hold ≥ 3 s
-  AutoCommitted --> Idle: notes drop to 0 / new chord
+  AutoCommitted --> Idle: all notes released (a new chord before full release is ignored)
   Holding --> Confirming: notes drop to 0 (release < 3 s)
   Confirming --> Confirming: chip click (root cycle)
   Confirming --> Idle: Confirm (commit) / Cancel
@@ -623,8 +627,10 @@ text relevance to ranking and adds attributed source excerpts after voice leadin
 Berklee is disabled by default; retrieval makes no LLM or external API calls.
 
 Full-form planning wraps the section generator: Muse Spark proposes form and
-cadences, code validates them, the author's model generates the chords, and a
-bounded judge can request regeneration. Import uses a separate local score reader
+cadences and code validates them; in the hybrid mode the author's model generates
+the chords and a bounded judge can request regeneration, while the default
+**Muse Spark only** mode lets one bounded Muse Spark call write every planned
+section with no Transformer pass, cadence rewrite or judge. Import uses a separate local score reader
 and harmony analyzer, with optional Meta harmony/form reasoning. Both preserve
 their source and cost records; neither substitutes an AI success for a failed call.
 
@@ -657,7 +663,7 @@ npm --prefix /absolute/path/TheArtist-DAW/frontend ci
 
 # Backend
 uv sync --frozen --directory /absolute/path/TheArtist-DAW/backend
-# Prepare the default OMT corpus once (network required for this step only).
+# Prepare the default OMT corpus once (downloads the reviewed Open Music Theory pages; retrieval itself runs offline afterwards).
 uv run --frozen --directory /absolute/path/TheArtist-DAW/backend python /absolute/path/TheArtist-DAW/backend/scripts/setup_omt.py
 
 # Model checkpoints — download trained weights from HuggingFace so the backend
@@ -699,7 +705,9 @@ Whole-file reading (`engine: "meta"` or the checkbox's `verified`) also needs
 The file reader has a 150-second timeout, one Meta call, low reasoning effort and
 32,768 output tokens so a complete score can fit beside reasoning tokens.
 `THEARTIST_META_UNLIMITED=1` explicitly disables session, daily, ledger, per-request
-and per-run dollar caps for development; the hosted development service enables it.
+and per-run dollar caps for development; the shared hosted demo server
+(`music-api.pearlleestudio.co`) currently runs with it, so its dollar caps are off
+while call counts, timeouts and the ledger stay on.
 Request IDs, token usage, costs, timeouts and finite call counts remain recorded.
 Without that opt-in, the configured dollar caps apply; see `deploy/env.example`.
 
@@ -766,7 +774,7 @@ The training and evaluation pipeline is included under `ai/training/` (preproces
 
 Raw datasets are **not redistributed** in this repo. Chordonomicon is CC BY-NC; the others have their own per-source terms. Acquire each from the upstream link above.
 
-For the LoRA expansion, the 11 target genres draw from Chordonomicon's genre-labeled subsets; see paper §4 for selection-bias notes (e.g., the "electronic" slice is biased toward synthwave / melodic house, "hip-hop" toward jazz-rap / neo-soul).
+For the LoRA expansion, 10 of the 11 target genres draw from Chordonomicon's genre-labeled subsets (classical uses the Bach chorales above, since Chordonomicon has no classical slice); see paper §4 for selection-bias notes (e.g., the "electronic" slice is biased toward synthwave / melodic house, "hip-hop" toward jazz-rap / neo-soul).
 
 ### Theory retrieval
 
@@ -801,6 +809,9 @@ TheArtist-DAW/
 │   ├── runtime/           # Frozen CPU serving dependencies
 │   └── vps.md             # Live hosting, CPU measurements, updates and remaining limits
 ├── model/_download.py     # Fetch released checkpoints into ai/checkpoints/
+├── plugin/logic-scripter/ # Logic Pro Scripter MIDI FX script, example and mock-host tests
+├── tools/midi-bridge/     # macOS CoreMIDI bridge for Safari MIDI input and hosted Logic handoff
+├── scripts/               # Submission extraction, bootstrap and reconstruction checks
 ├── screenshot/            # Application and export captures
 ├── API_SPEC.md            # REST request/response contract
 ├── HACKATHON.md           # Baseline distinction and event-work commit history
@@ -829,7 +840,7 @@ follow the endpoint schemas.
 | — | — | `validate_plan` | Validate a plan against its request without a model call |
 | `/api/review/candidates` | POST | — | Meta Second-ear review of three candidates |
 | `/api/reharmonize` | POST | — | Three contextual substitution patches, each changing at most 1–4 selected chords |
-| `/api/import/score` | POST | `import_score` | Local vector-score reading or explicit bounded/full-file Meta analysis |
+| `/api/import/score` · `/api/import/score/stream` | POST | `import_score` | Local vector-score reading or explicit bounded/full-file Meta analysis; the stream variant adds SSE progress |
 | `/api/export/midi` | POST | `render_midi` | Render the shared `ExportSpec`; MCP returns base64 file data |
 | `/api/export/scripter` | POST | — | Export a Logic Scripter MIDI FX script |
 | `/api/daw/targets` | GET | — | Discover available local DAW targets |

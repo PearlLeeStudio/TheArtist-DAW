@@ -25,7 +25,10 @@ are mounted using [FastAPI StaticFiles](https://fastapi.tiangolo.com/tutorial/st
 There is no server-side project storage: the browser still owns saved projects.
 Public-host mode blocks DAW launch, model warmup and MCP. Whole-file Meta reading
 also requires `THEARTIST_PUBLIC_META_READER=1`; the hosted Artist service enables
-it while preserving the one-call timeout and all spend limits.
+it while keeping the one-call timeout, call counts and cost accounting. The shared
+hosted demo server currently runs with `THEARTIST_META_UNLIMITED=1`, so its dollar
+caps are off (see the README's Running Locally notes); the dollar limits in
+`vps.env.example` apply only without that override.
 Hosted users download MIDI for their own DAW.
 
 ## Optional Meta service

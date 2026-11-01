@@ -9,9 +9,9 @@ manual coverage to complete; automated tests do not establish audible balance or
 hardware compatibility.
 
 Refresh the frontend, then check `/api/health` and `/api/capabilities`. Version
-`1.0` with eleven tools confirms the running backend includes import/export/MCP;
+`1.0` with eleven tools confirms the contract version and tool list (`/mcp/` itself is mounted only on non-public hosts);
 restart it only if unreachable or missing those routes, or after further backend
-changes. Safari can exercise the score and audio workflow; use Chrome for Web MIDI.
+changes. Safari can exercise the score and audio workflow; Chrome uses native Web MIDI, Safari needs the running local MIDI bridge ([MIDI input](midi-input.md)).
 An HTTP response establishes availability, not successful generation, audio or
 DAW execution. Check `meta.fullFileScoreImport` before expecting full-file import,
 and `rag.sources` before expecting OMT references (`omt: ready`, `berklee: disabled`).
@@ -54,7 +54,8 @@ passing unit tests alone does not complete this verification.
   meter/controller cases below retain their own verification scope.
 - [x] Hosted Chrome: Reharmonize with **Change up to 4 chords**, using four and
   eight selected existing slots, returned three candidates with the Folk LoRA.
-  A/B/C changed the score and Original restored the original passage. Chosen
+  (Earlier A/B/C card interface; the current cards are Origin / Alter 1–3.) A/B/C
+  changed the score and Original restored the original passage. Chosen
   candidates changed one or two chords; the setting is an upper bound. The
   four-change search itself has automated coverage across every family.
 - [x] Hosted Chrome: New from Song Form preserved the imported project, started
@@ -77,8 +78,9 @@ passing unit tests alone does not complete this verification.
 - [x] Logic: Open in Logic produced three editable MIDI regions from bars 1–17,
   80 BPM, 4/4, C major and Intro/Verse/Pre-Chorus/Chorus/Outro markers. This does
   not establish DAW sound equivalence, controller interpretation or Scripter execution.
-- [x] Safari: Enable MIDI explicitly reported unsupported Web MIDI.
-  Chrome with an actual MIDI device remains untested.
+- [x] Safari (build before the MIDI bridge, 2026-10-30): Enable MIDI reported unsupported Web MIDI.
+  Current builds open the local bridge window instead ([MIDI input](midi-input.md)).
+  Physical keypresses in Chrome and in Safari through the bridge remain untested.
 
 Screenshots: [Projects export](../screenshot/08-projects-export.png),
 [Logic handoff](../screenshot/09-logic-handoff.png),
@@ -334,7 +336,7 @@ and verification after the fixes:
    [`fd2b5d8`](https://github.com/PearlLeeStudio/TheArtist-DAW/commit/fd2b5d8) and
    [`bc0f817`](https://github.com/PearlLeeStudio/TheArtist-DAW/commit/bc0f817),
    with focused regressions for both.
-3. The final full pass completed **479 backend tests** and the app import check,
+3. The final full pass of that review round (snapshot `bc0f817`; current counts are in HACKATHON.md) completed **479 backend tests** and the app import check,
    plus **215 frontend tests**, lint and build. The build retains the existing
    large-chunk warning. Safari reproduced the corrected Set Chord flow by
    selecting C in bar 1, F in bar 9 and applying F to the selected bar.

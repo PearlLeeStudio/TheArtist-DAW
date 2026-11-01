@@ -22,7 +22,7 @@ user data and separate repositories are outside this inventory.
 
 | Area | Documentation or configuration correction |
 | --- | --- |
-| Import | Current Reader names and independent file/Reader selection; explicit **Analyze score**; stale review clearing and cancellation limits |
+| Import | Reader names at that snapshot (since replaced by the **Use Meta model** checkbox in `6214c04`) and independent file/Reader selection; explicit **Analyze score**; stale review clearing and cancellation limits |
 | Theory retrieval | OMT defaults on after setup, Berklee off; local text relevance and attributed excerpts; old embedding/LLM research is separate |
 | Performance | Saved speed measurements explicitly use retrieval off; they do not measure the new default end-to-end experience or cold audio latency |
 | Models | All 18 runtime choices have released model directories; base vocabulary 351 versus served vocabulary 359 |
@@ -35,7 +35,7 @@ user data and separate repositories are outside this inventory.
 
 | Contract | Implementation evidence |
 | --- | --- |
-| HTTP | All 20 OpenAPI paths are documented in [API_SPEC](../API_SPEC.md) |
+| HTTP | All 22 OpenAPI paths are documented in [API_SPEC](../API_SPEC.md) (20 at the audited snapshot, plus `/api/reharmonize` and `/api/import/score/stream` since) |
 | MCP | Eleven registered tools match the [MCP contract](mcp.md) |
 | Models | Eighteen checkpoint/adapter keys; tokenizer length 359 |
 | Source readiness | A fresh local app with prepared corpus reports OMT ready and Berklee disabled |
@@ -51,7 +51,7 @@ ranking/notes pipeline. Import does not use RAG. See [the source guide](theory-r
 
 The chorus/measurement/submission changes expanded the scan to 1,038 tracked
 files (935 text, 103 binary, 51 Markdown), with no syntax/JSON/TOML parsing,
-local-link, heading-anchor or credential-pattern findings. Backend **529** tests
+local-link, heading-anchor or credential-pattern findings. At snapshot `1be8009`, backend **529** tests
 and frontend **235** tests passed, as did backend import, frontend build and lint.
 The 500 kB bundle warning remains (main JS 1,822.76 kB, gzip 892.96 kB).
 These counts extend the historical checks below; they do not imply additional
@@ -92,7 +92,7 @@ host or a real browser/DAW audition.
 The full suites do not replace a clean-checkout installation, external hosted
 walkthrough, listening comparison, real Scripter transport/GM/CC checks, physical
 MIDI-device testing or wider score-reading evaluation. The new OMT citation cards
-and changing Reader during an active request still require manual browser checks.
+and changing the **Use Meta model** checkbox during an active request still require manual browser checks.
 See the [manual checklist](manual-checks.md) and [evaluation limits](evaluation.md).
 
 No new paid Meta evaluation was run for this documentation audit. Prior failures,

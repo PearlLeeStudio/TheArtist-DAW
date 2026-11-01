@@ -32,14 +32,16 @@ product retrieval or deployment assets.
 The local failures include missing measure boundaries, clefs and meters. Detected
 regions without notes are not successful measures. These findings narrow the
 previous self-authored-fixture results; they do not support general LilyPond PDF import.
-The default local-plus-Meta mode requires readable local notes and therefore cannot
-rescue these files. Explicit whole-file Meta reading is a separate option. Public
-hosts require `THEARTIST_PUBLIC_META_READER=1`; the hosted Artist service enables
-it under the same per-request, session, daily and total spend limits.
+The unchecked local reader cannot read these files. The **Use Meta model** checkbox
+(`verified`) sends the original to Meta and reports `local_unavailable` because no
+local cross-check is possible; explicit `engine: "meta"` remains the API-only
+alternative. Public hosts require `THEARTIST_PUBLIC_META_READER=1` for both; the
+hosted Artist service enables it (its dollar caps are currently off, see the README).
 
 The three fixed Meta cases use Standard `muse-spark-1.3`, one request per score,
 75-second request timeout, 8,192 output-token ceiling, a $1.35 per-request admission
-bound and a $5 persistent batch ledger. Actual total: **3 calls, $0.0761525**, zero
+bound (the service limits at that commit; the current reader uses 150 s, 32,768 output
+tokens and $1.50 and was not re-measured) and a $5 persistent batch ledger. Actual total: **3 calls, $0.0761525**, zero
 outstanding reservations. Responses, request IDs and token usage are in
 [import-results.json](import-results.json). There was no automatic retry or fallback.
 

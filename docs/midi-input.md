@@ -5,9 +5,9 @@ capture played harmony into the score, then transfer edited accompaniment into
 Logic or another DAW. Keyboard input captures chord decisions, not a recorded
 melody performance; the exported arrangement contains Harmony, Bass and Drums.
 
-Open the editor's **Input** tab and choose **Enable MIDI**. Connection and live
+Open the editor's **Input** tab, choose its **MIDI** tool, then **Enable MIDI**. Connection and live
 monitoring work without selecting a score slot. Writing a chord requires exactly
-one selected slot and the Input tab to be active. No selection, multiple selected
+one selected slot, the Input tab's MIDI tool in front and no open dialog. No selection, multiple selected
 slots, another tab, or a replaced song cannot receive a pending capture. Holding
 three or more notes for three seconds commits once and advances the selection;
 releasing early opens the existing review/confirm flow.
@@ -40,7 +40,7 @@ support is documented in [MDN's compatibility table](https://developer.mozilla.o
    `python3 /absolute/path/to/TheArtist-DAW/tools/midi-bridge/run.py`.
    The launcher builds its helper and module cache inside `tools/midi-bridge/.build/`,
    which Git ignores. Keep the process running while using MIDI.
-3. In Safari, open TheArtist-DAW's **Input → Enable MIDI**. Automatic chooses the
+3. In Safari, open TheArtist-DAW's **Input → MIDI → Enable MIDI**. Automatic chooses the
    local bridge when Web MIDI is unavailable. Allow the connection window to open
    and keep that small window open while playing.
 4. Select one score slot to enter chords. Without a target, the connection only
@@ -55,12 +55,14 @@ The HTTPS app does not fetch an insecure HTTP resource. A top-level local page
 receives a same-origin event stream, then uses `postMessage` to its exact app
 origin. The app checks the local origin, opened window and fresh connection nonce.
 The helper binds loopback only, checks the Host header, grants no cross-origin
-event access, and exposes no command execution endpoint. It opens no MIDI output
+event access, and runs no caller-supplied commands: the only process it starts is the
+fixed `/usr/bin/open` call of the Logic Pro handoff described below. It opens no MIDI output
 port. Notes are not uploaded, written to disk, or recorded; the live queue is bounded.
 
 Native input-port enumeration and the actual local HTTP/SSE connection were checked
-on a Mac with three available input ports. Native parsing tests cover note-on/off,
-running status, interleaved realtime events, SysEx exclusion and all-notes-off.
+on a Mac with three available input ports. The helper's `--self-test` mode prints the decoded messages for note-on/off,
+running status, interleaved realtime events, SysEx exclusion and all-notes-off for
+manual inspection; it has no automated assertion.
 Frontend tests cover stale connections, message provenance and target-only capture.
 These checks do not replace playing the physical keyboard in both browsers;
 physical keypress/browser confirmation remains a manual check.

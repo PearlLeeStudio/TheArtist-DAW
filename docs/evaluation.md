@@ -8,7 +8,7 @@ their original meaning; they do not become arrangement-quality scores.
 | Arrangement stage | Functional evidence to inspect | Musical question still requiring listening or expert judgment |
 |---|---|---|
 | Import and review | Source coverage, preserved symbols, uncertainty, editable unresolved bars | Is the proposed harmony an appropriate interpretation of the source? |
-| Harmonic revision | Selection boundaries, 1–4 change limits, valid candidates, A/B/C/Original restoration | Do the alternatives support the passage and its surrounding sections? |
+| Harmonic revision | Selection boundaries, 1–4 change limits, valid candidates, Original/A/B/C restoration (Generate) and Origin/Alter 1–3 combination and restoration (Reharmonize) | Do the alternatives support the passage and its surrounding sections? |
 | Form development | Preserved sketch, section lengths, recurring material, valid chords and Undo | Does the form develop the intended musical idea? |
 | Accompaniment | Rhythm, voicing, instrument and mixer controls produce the requested parts | Do groove, register, density and balance serve the arrangement? |
 | DAW delivery | MIDI parts, tempo, meter, markers and saved settings survive handoff | How much further editing does a musician need for the intended result? |

@@ -53,7 +53,8 @@ Vite dev server proxies `/api` → `http://localhost:8000/api` (configured in `v
 
 | Endpoint | Contract |
 |---|---|
-| `POST /api/import/score` | Attached score → local, Meta-assisted, or full-file harmony/form draft for review |
+| `POST /api/import/score` | Attached score → local, bounded Meta-assisted (`auto`), compared (`verified`) or full-file (`meta`) harmony/form draft for review |
+| `POST /api/import/score/stream` | Same body; SSE `progress` frames, then exactly one `result` (the import JSON) or `error` `{detail, status}` |
 | `POST /api/reharmonize` | Existing selected harmony → three bounded substitution patches, up to 1–4 changed chords each |
 | `POST /api/review/candidates` | A Generate's A/B/C → the judge's choice, its reasons checked against analyzer facts |
 | `POST /api/export/midi` | Edited `ExportSpec` → `audio/midi` bytes |
@@ -111,7 +112,7 @@ Generate chord suggestions for selected measures. Used by the frontend chord edi
 {
   "suggestions": [
     {
-      "label": "Option A — Diatonic — ii-V voice leading",
+      "label": "Option A — F4 — 1K pop mix (conservative)",
       "chords": {
         "2": ["Bm7", "E7"],
         "3": ["Am7", "D7"]
@@ -119,7 +120,7 @@ Generate chord suggestions for selected measures. Used by the frontend chord edi
       "explanations": null
     },
     {
-      "label": "Option B — Tritone substitution",
+      "label": "Option B — F4 — 1K pop mix (balanced)",
       "chords": {
         "2": ["Bm7", "Ab7"],
         "3": ["Am7", "Ab7"]
@@ -127,7 +128,7 @@ Generate chord suggestions for selected measures. Used by the frontend chord edi
       "explanations": null
     },
     {
-      "label": "Option C — Modal interchange",
+      "label": "Option C — F4 — 1K pop mix (creative)",
       "chords": {
         "2": ["Bbmaj7", "Eb7"],
         "3": ["Am7", "Dm7"]
@@ -141,7 +142,7 @@ Generate chord suggestions for selected measures. Used by the frontend chord edi
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `suggestions` | `Suggestion[]` | 1-5 chord progression options |
+| `suggestions` | `Suggestion[]` | 1-3 chord progression options (one per temperature pass; the rule fallback always returns 3) |
 | `suggestions[].label` | `string` | Human-readable description of harmonic approach |
 | `suggestions[].chords` | `Record<string, [string, string]>` | Measure index → 2 chord names (slot 0, slot 1) |
 | `suggestions[].explanations` | `TheoryExplanation[] \| null` | Up to 16 distinct transition references per candidate from enabled, ready sources; `null` when unavailable/disabled. Each: `{chord_a, chord_b, concept, explanation, chapter, section, page_start, page_end, kind, citation}`. Product `kind` is `source_excerpt`; `explanation` is a source excerpt of at most 400 characters, not generated analysis. `citation` contains source, title, URL, authors, editors, license, license URL, copyright, changes and passage ID. Web sources have page numbers 0. |
@@ -172,7 +173,7 @@ Streaming variant of `/api/generate` — **the frontend's primary generate path*
 
 **Request:** identical to `/api/generate`.
 
-**SSE frames** (event name = inference pipeline phase; one frame per event — see `backend/app/routes/generate.py` + `app/services/inference.py`):
+**SSE frames** (event name = inference pipeline phase; one frame per event, except that `ranking` can appear twice — see `backend/app/routes/generate.py` + `app/services/inference.py`):
 
 | Event | Payload | When |
 |-------|---------|------|
@@ -180,6 +181,7 @@ Streaming variant of `/api/generate` — **the frontend's primary generate path*
 | `composing` | `{"label", "step", "total", "creativity"}` | ×3 — one per temperature pass; `step` 1-3, `total` 3, `creativity` ∈ `conservative` (0.7) / `balanced` (0.9) / `creative` (1.1). |
 | `ranking` | `{"label": "Scoring consonance and theory relevance"}` | R1 roughness + ready-source text relevance; label is `Scoring consonance` when no source is ready. |
 | `voicing` | `{"label": "Picking inversions for smooth bass motion"}` | Unless disabled via `THEARTIST_DISABLE_VOICE_LEADING`. |
+| `ranking` (second frame) | `{"label": "Compared candidates with preceding and following chords"}` or `{"label": "<reason> Whole-score comparison was skipped."}` | Only when `context` holds chords in unselected measures after the selection: the candidates are re-ordered (and re-lettered A/B/C) by their whole-score likelihood under the checkpoint (`app/services/chord_context.py`). |
 | `explaining` | `{"label": "Retrieving related theory references"}` | Only when an enabled corpus is ready and explanation output is enabled; all genres may retrieve related references. |
 | `complete` | `{"label": "Done"}` | Right before `result`. |
 | `result` | Same payload shape as `/api/generate`'s 200 JSON (`{suggestions, source}`) plus `elapsed_ms` | Final frame, then the stream closes. |
@@ -348,12 +350,13 @@ Request (`PlanRequest`, strict):
 | `wantOutro`, `contrast` | Chips: an outro is required or forbidden; `low`/`medium`/`high` contrast |
 | `planner` | `meta` (default, Muse Spark) or `rules` (the genre-default form, no Meta call; labelled `rules`) |
 | `modelKey` | Checkpoint for every section, as `SectionGenerateRequest.modelKey` |
+| `chordSource` | `own` (API default: the Music Transformer writes every section; Muse Spark plans and judges) or `meta` (Muse Spark writes every chord in one extra `compose` call; no song-form rule rewrites, no judge). Requires `planner: meta`, otherwise 422. The Full-form dialog defaults to **Muse Spark only** (`meta`) |
 | `seed` | Optional strict integer `0..4294967295`, default null. Controls chord sampling, not Meta planning or judgment |
 | `chorusMode` | `new` (API default) or `reuse`. The form UI defaults to **Keep the theme** (`reuse`) and also offers **New progression** |
 
 Plan output (strict JSON from the model): `{sections: [{type, bars, cadence, reason, cites: [{bar, roman}]}]}` with `cadence` in `authentic`, `plagal`, `half`, `half_iv_v`, `turnaround`, `none`. `validate_plan` rules: section vocabulary; 2–32 bars per section; sketch bars plus planned bars equal `targetBars`; intro only first (empty sketch) and outro only last; the last cadence authentic or plagal; `wantOutro` honoured; every cite's bar exists in the sketch with that Roman numeral; `reason` ≤ 120 characters.
 
-Response (`PlanTrace`): `status`, `plan`, `validation: [{attempt, ok, errors: [{code, section, message}]}]`, `sections` (each a `SectionGenerateResponse` plus `cadence`, `rulesSlots` — section-relative chord slots the song-form rules decided, never counted as the model's —, `reason`, `cites`, `regenerated`), `judge: [{decision, targets, report, provider, model, requestId, costUsd, latencyMs}]`, `calls: [{step, attempt, provider, model, requestId, costUsd, latencyMs, effort, ok}]`, `spendUsd`, `elapsedMs`, and on failure `error: {kind, message, requestId}`. Limits per run: 5 Meta calls (1 plan, ≤ 2 revisions, ≤ 2 judgments), 45 s per call, $0.05 reserved per call, and a run never spends more than $0.10 (its settled spend plus the next call's worst case is checked before every call), 120 s wall clock (75 s Meta, 45 s own model). Output budgets, reasoning included: 8192 tokens for a plan or revision, 4096 for a judgment. Effort: plan `medium`, revisions and judgments `low`.
+Response (`PlanTrace`): `status`, `plan`, `validation: [{attempt, ok, errors: [{code, section, message}]}]`, `sections` (each a `SectionGenerateResponse` plus `cadence`, `rulesSlots` — section-relative chord slots the song-form rules decided, never counted as the model's —, `reason`, `cites`, `regenerated`), `judge: [{decision, targets, report, provider, model, requestId, costUsd, latencyMs}]`, `calls: [{step, attempt, provider, model, requestId, costUsd, latencyMs, effort, ok}]`, `planner`, `chordSource`, `genre`, `key`, `bpm`, `timeSignature`, `spendUsd`, `reservedUsd`, `elapsedMs`, `metaMs`, `generationMs`, and on failure `error: {kind, message, requestId}`. Limits per run: 5 Meta calls (1 plan, ≤ 2 revisions, ≤ 2 judgments), 45 s per call, $0.05 reserved per call, and a run never spends more than $0.10 (its settled spend plus the next call's worst case is checked before every call), 120 s wall clock (75 s Meta, 45 s own model). Output budgets, reasoning included: 8192 tokens for a plan or revision, 4096 for a judgment. Effort: plan `medium`, revisions and judgments `low`. With `chordSource: meta` there is no judgment: after validation one `compose` call (step `compose`, effort `low`, 8192 output tokens, the same $0.05 / 45 s per-call caps) writes every section's chords; those sections return `source: ai`, `modelUsed` = the Meta model id, the suggestion label `Muse Spark` and `rulesSlots: []`, and an invalid reply (wrong section count or length, incomplete bar, unsupported chord symbol) fails the run as `invalid` (502). `calls[].step` is `plan_song`, `compose` or `judge`.
 
 With `chorusMode: reuse`, the first complete same-length chorus in the locked sketch
 is preferred, otherwise the first generated chorus. Incomplete/unsupported chords
@@ -367,7 +370,7 @@ count zero new `modelSlots`. A regenerated original refreshes its dependent
 choruses. A judge request aimed only at reused sections is preserved but cannot
 override the reuse choice or locked sketch; it is not relabelled as acceptance.
 
-The stream variant sends SSE events `plan`, `validate`, `revise`, `generate_section`, `judge` with `t_ms`, then one `complete` or `error` frame carrying the whole trace while the client remains connected. A dependent chorus refresh emits another `generate_section` for that index. Statuses: 503 `THEARTIST_META_ENABLED=0` ("disabled") or missing configuration; 429 budget; 504 Meta timeout; 502 invalid Meta reply; 500 generation failure. The failed trace still carries request ids and the spend so far. The MCP tools `plan_song` (plan + validate + revise, no generation) and `validate_plan` share this service.
+The stream variant sends SSE events `progress` (`{label}`), `plan`, `validate`, `revise`, `generate_section`, `judge`, each with `t_ms`, plus a comment keep-alive line (`: composing song form`) every 5 s while the worker is busy, then one `complete` or `error` frame carrying the whole trace while the client remains connected. A dependent chorus refresh emits another `generate_section` for that index. Statuses: 503 `THEARTIST_META_ENABLED=0` ("disabled") or missing configuration; 429 budget; 504 Meta timeout; 502 invalid Meta reply; 500 generation failure. The failed trace still carries request ids and the spend so far. The MCP tools `plan_song` (plan + validate + revise, no generation) and `validate_plan` share this service.
 
 On a stream disconnect, the worker cooperatively stops before another model call
 or section begins. An in-flight bounded call finishes and records its charge;
@@ -476,7 +479,7 @@ Limits: one judge call (`LLM_JUDGE_*`, Muse Spark by default), effort `low`, 30 
 
 Simplified chord-generation endpoint for **programmatic callers** (TheVoyager and similar). Returns a flat list of bars instead of measure-keyed suggestions.
 
-**Status:** Implemented — same AI inference path as `/api/generate` with rule-based fallback.
+**Status:** Implemented — same Music Transformer checkpoints and tokenizer as `/api/generate`, but raw sampling only (no genre dispatch, key anchoring, R1/R2 rerank, song-form rules or voice leading); rule-based fallback.
 
 **Request:**
 
@@ -537,7 +540,7 @@ Simplified chord-generation endpoint for **programmatic callers** (TheVoyager an
 }
 ```
 
-`model_used` echoes the actual checkpoint name (or `"rules"` if AI fallback fired). `bpm` echoes the request value (`null` if not provided). `temperature` per candidate is the actual temperature used for sampling (spread around `req.temperature` for diversity). `seed` is `null` (reserved for deterministic sampling).
+`model_used` echoes the checkpoint that actually generated the chords (`ft_f1` when a LoRA adapter directory is missing and the F1 base served the request; `"rules"` if the AI fallback fired). `bpm` echoes the request value (`null` if not provided). `temperature` per candidate is the actual temperature used for sampling (spread around `req.temperature` for diversity); when `model_used` is `"rules"` it is only the planned spread value, and the rules path yields at most three distinct candidates and repeats the first beyond that. `seed` is `null` (reserved for deterministic sampling).
 
 **Errors:**
 
@@ -561,7 +564,7 @@ Simplified chord-generation endpoint for **programmatic callers** (TheVoyager an
 | `ft_f4` | `ft_jazz_pop29` | F4 — 1K pop mix (jazziest, TheVoyager default for jazz) |
 | `ft_f5` | `ft_jazz_only` | F5 — jazz only |
 
-If `modelKey` is `null` or unknown and `genre` is provided, the backend uses `dispatch_model_for_genre(genre)` to pick the LoRA adapter (or fall back to `ft_f1` if the adapter isn't trained yet). If both are null/unknown, falls back to `DEFAULT_MODEL` = `ft_f1`. Authoritative source: `app/services/inference.py:CHECKPOINTS` + `GENRE_MODEL_DISPATCH`.
+For `/api/generate`, `/api/generate/stream` and `/api/generate/section`, a `null` `modelKey` with a `genre` routes through `dispatch_model_for_genre(genre)` to the LoRA adapter (or `ft_f1` while the adapter is absent); with neither, `DEFAULT_MODEL` = `ft_f1`; a `modelKey` outside the 18 keys is rejected with 400. `/api/generate/chords` uses `model` literally (default `ft_f1`): an unknown `model` is not dispatched by genre and falls back to rule-based generation (`model_used: "rules"`). Authoritative source: `app/services/inference.py:CHECKPOINTS` + `GENRE_MODEL_DISPATCH`.
 
 **LoRA adapter keys (R4)**: `ft_f1_lora_country`, `ft_f1_lora_funk`, `ft_f1_lora_gospel`, `ft_f1_lora_rnb_soul`, `ft_f1_lora_hip_hop`, `ft_f1_lora_electronic`, `ft_f1_lora_folk`, `ft_f1_lora_classical`, `ft_f1_lora_rock`, `ft_f1_lora_blues`, `ft_f1_lora_bossa`. Each is F1 base + LoRA adapter (adapter file 0.4–6 MB depending on rank). Available when adapter dir exists at `ai/checkpoints/<key>/adapter/`. Until trained, requests fall through to F1 base via `dispatch_model_for_genre`.
 
@@ -715,7 +718,7 @@ A strike at beat `p` plays the chord of the slot `p` falls in (slot 0 = beats `[
       "source": "rule"
     }
   },
-  "midi_b64": "TVRoZAAAAAYAAQAEAeBNVHJrAAAAEgD/UQMHQUkA/1gEBAIYCAD/LwBNVHJrAA...",
+  "midi_b64": "<base64 standard MIDI file: format 1, four tracks>",
   "model_used": "ft_f4",
   "seed": null
 }
@@ -814,7 +817,7 @@ unresolved note-bearing bars in a score of at most 128 bars. These suggestions
 keep `analysisSource: local`, `model: ft_f1`, `requestId: null`, low confidence
 and their original note evidence. Deterministic bars keep `model: null`.
 The model receives known harmony; candidates are compared against fixed later
-chords in written order, within its 512-token window. No mask-trained infilling
+chords in written order, within the checkpoint's token window (`max_seq_len`, 256 for the served checkpoints; the comparison refuses longer contexts instead of clipping). No mask-trained infilling
 or original-chord recovery is claimed. Unread notation and explicit N.C. are
 never targets. Unknown vocabulary or unavailable weights leave an explicit warning.
 
@@ -866,7 +869,7 @@ The JSON response is a **review draft**, not a ready-to-replace editor song:
 | `sections` | `[{section, label, startMeasure, length, basis, note}]`; `section` is a supported section id or `null`, indices are zero based, `basis` is `explicit` or `inferred` |
 | `formAnalysis` | Null when the separate form step did not run; otherwise `{model, requestId, sectionsProposed}`, including zero proposals. A full-file response may contain sections while this field is null |
 | `warnings` | Review notes, including any repeat/ending limitations |
-| `model`, `requestId` | `null` for local reading; actual provider metadata when Meta is used. Mixed responses retain request/model metadata per affected measure |
+| `model`, `requestId` | `null` for local reading, except that `model` is `ft_f1` (top level and on each completed measure, `requestId` still `null`) when own-model harmonization filled unresolved bars; actual provider metadata when Meta is used. Mixed responses retain request/model metadata per affected measure |
 
 Raw measure chord counts are preserved. The Import reviewed score button opens an
 editable song once key, meter and section metadata are valid; unresolved harmony
@@ -881,6 +884,10 @@ Inferred chords require nonempty visible-note/bass evidence or an explicit melod
 See [score analysis](docs/score-analysis.md) for algorithms, encoding and confidence limits, and the [real import evaluation](experiments/import_eval/README.md) for exact requests/results, including the PNG reading failure. Source meter changes remain evidence while the editor plays/exports one global meter. Successful transport and high model confidence do not establish optical or song-form accuracy.
 
 Service errors use `{"detail": "..."}`; request-schema errors use FastAPI's validation-error list. Statuses are 400 for invalid filename/base64; 403 full-file reading on a public host; 413 attachment too large; 415 unsupported/mismatched format; 422 unsupported local reading, oversized complete synopsis or invalid/incomplete extraction; 429 API budget limit; 502 invalid provider response; 503 missing/invalid configuration or ledger, or `THEARTIST_META_ENABLED=0` (auto fails when a Meta call is needed, with no silent local fallback); 504 Meta timeout. Provider-output validation errors do not echo extracted score text.
+
+#### POST `/api/import/score/stream`
+
+Same body as `/api/import/score`; the response is `text/event-stream` (`Cache-Control: no-cache, no-transform`, `X-Accel-Buffering: no`). Frames: `progress` `{"label": "..."}` for each reader stage (file check, local reading, Meta reading, comparison), a comment keep-alive line (`: reading score`) every 5 s while a reader is busy, then exactly one terminal frame: `result` carrying the JSON response described above, or `error` `{"detail": "...", "status": <one of the HTTP statuses listed above>}`. The editor's **Analyze score** uses this variant. Closing the stream does not cancel a Meta call already sent; its cost still settles.
 
 ### POST `/api/export/midi` — Edited arrangement to MIDI
 
@@ -960,12 +967,12 @@ file remains available). Export validation/size errors remain 422/413.
 
 ### Judge-server lockdown and Meta spend limits
 
-Off by default. `THEARTIST_PUBLIC_HOST=1`: `GET /api/daw/targets`, `POST /api/daw/open` and `POST /api/models/warmup` answer 403 with a reason, and `/mcp/` is not mounted. `POST /api/import/score` refuses the whole-file `engine: "meta"` read (403) unless `THEARTIST_PUBLIC_META_READER=1`; `"auto"` and `"local"` stay. Enabling the reader does not disable Meta's master switch, Standard model requirement or spend limits. A session allowance must accommodate the $1.50 full-file reservation. The Meta-calling routes — planner runs with `planner: "meta"`, Second-ear reviews, Reharmonize, and a score import that is about to call Meta — are then admitted against limits (also available alone with `THEARTIST_META_LIMITS=1`):
+Off by default. `THEARTIST_PUBLIC_HOST=1`: `GET /api/daw/targets`, `POST /api/daw/open` and `POST /api/models/warmup` answer 403 with a reason, and `/mcp/` is not mounted. `POST /api/import/score` (and `/stream`) refuses both whole-file reads, `engine: "meta"` and `engine: "verified"` (the editor's Use Meta model checkbox), with 403 unless `THEARTIST_PUBLIC_META_READER=1`; `"auto"` and `"local"` stay. Enabling the reader does not disable Meta's master switch, Standard model requirement or spend limits. A session allowance must accommodate the $1.50 full-file reservation. The Meta-calling routes — planner runs with `planner: "meta"`, Second-ear reviews, Reharmonize, and a score import that is about to call Meta — are then admitted against limits (also available alone with `THEARTIST_META_LIMITS=1`):
 
 | Header | Meaning |
 |---|---|
-| `X-TheArtist-Session` | Required; a stable per-browser id (≤ 128 characters). Its pool allows `THEARTIST_META_SESSION_LIMIT_USD` per UTC day (default 1.00). |
-| `X-TheArtist-Judge-Code` | Optional; equal to `THEARTIST_JUDGE_CODE`, it draws from one shared judge pool of `THEARTIST_JUDGE_CODE_DAILY_USD` (default 5.00). |
+| `X-TheArtist-Session` | Required unless a valid `X-TheArtist-Judge-Code` is sent; a stable per-browser id (≤ 128 characters). Its pool allows `THEARTIST_META_SESSION_LIMIT_USD` per UTC day (default 1.00). |
+| `X-TheArtist-Judge-Code` | Optional; equal to `THEARTIST_JUDGE_CODE`, it draws from one shared judge pool of `THEARTIST_JUDGE_CODE_DAILY_USD` (default 5.00). The Pages proxy forwards only `Accept`, `Content-Type` and `X-TheArtist-Session`, so the judge code is honoured only against the model API origin. |
 
 A request is admitted at its worst case: planner $0.10, review $0.03,
 Reharmonize $0.15, full-file score reading $1.50, or combined harmony/form assist $0.30. An auto import requiring
@@ -991,7 +998,7 @@ false. Import limits advertise `scoreMeasures: 512`, `metaScoreMeasures: 128`,
 `scoreAssistHarmonyBars: 16`, `scoreAssistCalls: 3`, `scoreAssistRunUsd: 0.30`, and
 source fields include `sections.*.basis` and `formAnalysis`.
 
-The Streamable HTTP endpoint is `/mcp/` on the backend, outside the `/api` prefix. It exposes 11 tools: `capabilities`, `list_models`, `list_genres`, `get_genre_preset`, `generate_section`, `plan_song`, `validate_plan`, `build_song`, `render_midi`, `import_score` and `export_daw`. REST and MCP call the same generation, planning, import and export implementations. There is no theory explanation tool, and the Second-ear review is REST only.
+The Streamable HTTP endpoint is `/mcp/` on the backend, outside the `/api` prefix. It exposes 11 tools: `capabilities`, `list_models`, `list_genres`, `get_genre_preset`, `generate_section`, `plan_song`, `validate_plan`, `build_song`, `render_midi`, `import_score` and `export_daw`. REST and MCP call the same generation, planning, import and export implementations. There is no theory explanation tool, and the Second-ear review and Reharmonize (`POST /api/reharmonize`) are REST only.
 
 Successful MCP results put the versioned envelope in `structuredContent`. Clients must check `isError`, `schemaVersion` and documented size limits, and preserve `source`/`model_used` fields. `import_score` additionally requires explicit attachment confirmation. MCP DAW handoff requires a direct loopback request, server opt-in and explicit per-call confirmation. See [the MCP contract and thin-client example](docs/mcp.md) for exact arguments, safeguards and transport setup.
 
@@ -1026,17 +1033,9 @@ The backend returns chord **names** (strings). The frontend parses them into `Ch
 
 ### Supported Qualities
 
-Base: `maj`, `min`, `dim`, `aug`, `5` (power chord)
+The voicing engine voices the qualities of its interval table: `maj`, `min`, `dim`, `aug`, `sus2`, `sus4`, `6`, `m6`, `7`, `maj7`, `m7`, `aug7`, `dim7`, `m7b5`, `mMaj7`, `add9`, `9`, `m9`, `maj9`, `11`, `m11`, `13`, `m13`, `7b9`, `7#9`, `7#11`, `7b13`.
 
-Extensions: `6`, `7`, `maj7`, `9`, `maj9`, `11`, `13`
-
-Add: `add2`, `add4`, `add9`, `add11`
-
-Sus: `sus2`, `sus4`
-
-Alterations: `b5`, `#5`, `b9`, `#9`, `#11`, `b13`
-
-Compound: `m7`, `m9`, `m11`, `m13`, `m6`, `mMaj7`, `dim7`, `m7b5`, `7b9`, `7#9`, `7#11`, `7b13`
+The manual chord builder can also spell `5` (power chord), `add2`, `add4`, `add11` and parenthesised alterations (`b5`, `#5`, `b9`, `#9`, `#11`, `b13`). Those are kept as text on the staff but voiced, played and exported as the base major triad, and the model vocabulary encodes them coarsely (`5`, `add4`, `add11` → `maj`; `add2` → `add9`).
 
 ---
 
@@ -1083,7 +1082,7 @@ sequenceDiagram
 ```text
 backend/
 ├── app/
-│   ├── main.py                 # Eight REST routers, health/capabilities, local MCP, startup warmup
+│   ├── main.py                 # Nine REST routers, health/capabilities, local MCP, startup warmup
 │   ├── mcp_server.py           # Eleven tools over shared application services
 │   ├── routes/
 │   │   ├── generate.py         # Chord and section generation, JSON/SSE
@@ -1092,21 +1091,26 @@ backend/
 │   │   ├── models.py           # Model/genre discovery and warmup
 │   │   ├── plan.py             # Complete-form planning, generation, judgment and cancellation
 │   │   ├── review.py           # Second-ear candidate review
+│   │   ├── reharmonize.py      # Contextual reharmonization: Meta tool calls over Music-Transformer-scored searches
 │   │   ├── score_import.py     # Score reading, harmony/form analysis and request-cost settlement
 │   │   └── export.py           # MIDI, Scripter and local DAW handoff
 │   ├── services/
 │   │   ├── inference.py        # Checkpoints, cached sampling, composite rank, form rules and voice leading
 │   │   ├── theory_rag.py       # OMT default on / Berklee off, local retrieval and actual-hit citations
-│   │   ├── planner.py · review.py · llm.py · limits.py
-│   │   ├── score_import.py · score_pdf.py · score_analysis.py
+│   │   ├── planner.py · review.py · llm.py · limits.py · env_flags.py
+│   │   ├── reharmonize.py · reharmonize_agent.py · chord_context.py · chorus_memory.py
+│   │   ├── score_import.py · score_pdf.py · score_analysis.py · score_verification.py
+│   │   ├── score_cache.py · score_completion.py · serving_readiness.py · chord_generator.py
 │   │   ├── score_context.py · score_assistance.py · score_form.py
 │   │   ├── harmony_analysis.py · harmony_meta.py
 │   │   ├── genre_tables.py · key_anchor.py · song_form.py · voice_leading.py
-│   │   ├── song_builder.py · smf_export.py · scripter_export.py · daw_launcher.py
+│   │   ├── song_builder.py · smf_export.py · scripter_export.py · scripter_template.js · daw_launcher.py
 │   │   └── contracts.py        # Versioned discovery, bounds and MCP result envelope
-│   └── models/                # Generation, section, plan, review and import/export schemas
+│   └── models/                # Generation, section, plan, review, reharmonize and import/export schemas
+├── scripts/                    # setup_omt.py plus evaluation and smoke scripts
 ├── theartist_client/           # Async MCP client
 ├── tests/                      # Service/API/contract regressions
+├── README.md
 ├── pyproject.toml
 └── uv.lock
 ```

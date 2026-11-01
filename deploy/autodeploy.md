@@ -107,9 +107,11 @@ public HTTPS was healthy. The persistent storage marker survived and the Meta
 ledger checksum was unchanged. An earlier documentation-only push advanced the
 observed revision without replacing the app.
 
-Eleven automated deployment tests cover failed builds, unhealthy startup, generation
+Fifteen automated deployment tests cover failed builds, unhealthy startup, generation
 failure, rollback failure, interrupted-switch recovery, retry suppression,
-documentation-only changes, unavailable diagnostics and dirty checkout refusal.
+documentation-only, Pages-only and mixed frontend/backend changes, performance-record
+and operator-probe changes, build-time script changes, unavailable diagnostics and
+dirty checkout refusal.
 During the Meta reader rollout, restrictive checkout permissions caused a real
 candidate startup failure and automatic restoration of the previous healthy app.
 Git checkout permissions, Docker source ownership and the offline import check

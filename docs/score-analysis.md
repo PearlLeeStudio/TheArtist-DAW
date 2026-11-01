@@ -30,8 +30,11 @@ evidence. Aligned printed local symbols and N.C. are preserved. Differences lowe
 confidence and mark review; agreement never raises confidence or clears a review
 flag. Different counts retain the complete local result without aligning bars by
 position. If local reading is unsupported, Meta may read the file but the review
-reports that local comparison was unavailable. A truncated, timed-out or invalid
-Meta response reuses the local reading. Its result has `local_fallback`
+reports that local comparison was unavailable. A refused spend admission (session, daily or judge allowance, ledger cap), a disabled
+or unconfigured Meta service, or a truncated, timed-out or invalid Meta response
+reuses the local reading; the verification note says only that Meta was unavailable
+and the reason is logged on the server, so a session allowance below the $1.50
+reservation keeps every checked import local. Its result has `local_fallback`
 provenance and retains unresolved editable bars; it is never labeled Meta-verified.
 If neither reader can provide a review, import reports an error.
 An empty Meta chord hypothesis no longer erases an existing local hypothesis;
@@ -81,7 +84,7 @@ mask/suffix protocol. Candidate sampling uses preceding chords. When fixed later
 chords exist, each completed candidate is scored in written order with all supplied
 known bars, including later chords. Target and later-chord mean log likelihood orders
 the candidates. This is candidate reranking, not a newly trained bidirectional model.
-The model's 512-token limit and unsupported chord vocabulary stop that comparison
+The model's token window (256 tokens for the served checkpoints) and unsupported chord vocabulary stop that comparison
 explicitly; they are never hidden by truncating the suffix. Slash-bass distinctions
 remain in the source but are normalized by the trained chord tokenizer.
 

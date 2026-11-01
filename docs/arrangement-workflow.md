@@ -95,7 +95,7 @@ settings. Browser storage is local; there is no account-based cloud sync.
 meter, section markers and mixer information. Continue editing instrumental
 parts, melody and production in the DAW. **Open in Logic Pro** from a hosted
 editor uses the [local Mac bridge](midi-input.md#open-a-hosted-score-in-logic-pro);
-MIDI download works without it. Local Ableton handoff reveals the MIDI file.
+MIDI download works without it. Ableton handoff reveals the MIDI file in Finder (local backend or the bridge).
 
 **Score PDF** shares the harmonic score. The separate
 [Logic Scripter export](../plugin/logic-scripter/README.md) supplies a MIDI FX

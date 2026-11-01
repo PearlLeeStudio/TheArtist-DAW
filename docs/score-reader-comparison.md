@@ -75,7 +75,8 @@ Bach의 35마디는 원 MIDI에서 추출한 음고집합 기준이 있지만, �
   검증이 아니며 오판을 반복하거나 새로운 오판을 만들 수 있다.
 - **출력 한도:** Bach의 Meta only와 첫 Hybrid는 각각 출력 토큰 8192개를
   모두 사용했다. reasoning 토큰도 이 한도에 포함된다. JSON 완결에 실패한
-  출력을 성공으로 열지 않았다. 현재 원본 전체 읽기 경로의 명확한 제한이다.
+  출력을 성공으로 열지 않았다. 당시(`1571197`) 원본 전체 읽기 경로의 8192 토큰 한도였고,
+  현재 경로는 150초·32,768 출력 토큰·$1.50 상한(`e17b1d5`)이며 이 설정으로는 재측정하지 않았다.
 - **구조와 조성:** 기준이 있는 3개 입력의 조성 일치는 네 조건 모두 1/3이다.
   단순 자작 C 화음의 조성을 유일하게 확정할 수 있다는 뜻은 아니다.
   마디 수/박자 일치는 각 조건의 반환 완료 수와 같았으며, 이것만으로 화성이
@@ -84,7 +85,7 @@ Bach의 35마디는 원 MIDI에서 추출한 음고집합 기준이 있지만, �
 현재 결과는 **기본 로컬 + 선택적 Hybrid 1회**를 유지하고, 2회는 평가용으로
 남겨 둘 근거다. 긴 재즈 악보의 일반 정확도나 청음 품질은 이 표로 입증되지
 않는다. 128마디 초과 로컬 결과의 정상 열기와 문맥 보완 코드는
-[분석 계약](score-analysis.md#why-a-passage-can-remain-unresolved)에 별도로 설명했다.
+[분석 계약](score-analysis.md#local-and-meta-comparison)과 [문맥 보완 설명](score-analysis.md#why-a-passage-can-remain-unresolved)에 별도로 설명했다.
 
 ## 재현과 제한
 
@@ -93,9 +94,9 @@ Bach의 35마디는 원 MIDI에서 추출한 음고집합 기준이 있지만, �
 함께 보존한다. `MODEL_API_KEY`가 설정된 백엔드 환경에서 실행기의 `--backend`,
 `--sources`, `--output`, `--ledger`에 각각 절대경로를 지정한다. sources는 기존
 외부 평가의 해시가 맞는 PDF/MIDI와 `sources.json`을 담은 폴더다. 기존 결과는
-덮어쓰지 않는다. 로컬 워크스페이스에서는 `scripts/dev.sh py` 래퍼로 실행한다.
+덮어쓰지 않는다. 예: `uv run --frozen --directory /absolute/TheArtist-DAW/backend python /absolute/TheArtist-DAW/agent/compare_score_readers.py --backend /absolute/TheArtist-DAW/backend --sources /absolute/eval-data --output /absolute/new/four-reader-results.json --ledger /absolute/private/ledger.json`.
 
-Standard `muse-spark-1.3`, 호출당 75초·8192 출력 토큰·$1.35 상한,
+Standard `muse-spark-1.3`, 호출당 75초·8192 출력 토큰·$1.35 상한(당시 서비스 상수; 지금 다시 실행하면 150초·32,768 토큰·$1.50이 적용된다),
 최대 15회·별도 영속 장부 $5 한도·자동 재시도 없음으로 실행했다. 로컬 F1
 샘플링 seed는 1380이며 Meta는 확률적 단일 실행이다. 조건당 반복 측정이나
 유의성 검정은 하지 않았다. API/캐시 지연 때문에 시간 차이를 모델 고유의
