@@ -30,6 +30,8 @@ TOOLS = [
 ]
 SYSTEM = """You are the harmonic search partner inside a score editor. Preserve the composition.
 The user selected existing chords and wants THREE sparse alternatives, not a rewritten passage.
+maxChangedSlots is the upper bound, from one to four. For a three- or four-chord limit,
+compare the wider patches as well as the sparser choices returned by the tools.
 First search two DIFFERENT families (these searches may share one turn), inspecting the metrics and learned
 context scores. You may search the remaining family if needed. Then call offer_candidates with three
 distinct returned IDs, preferably spanning different roots and harmonic approaches. Maximum four turns.

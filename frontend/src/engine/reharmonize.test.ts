@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import type { Song } from '../models/types.ts';
+import type { Song, SlotAddress } from '../models/types.ts';
 import { parseChordName } from './chordParser.ts';
 import { reharmSymbol, reharmSelectionError, requestReharmonization, validateReharmResult } from './reharmonize.ts';
 import type { ReharmCandidate, ReharmResult } from './reharmonize.ts';
@@ -23,14 +23,14 @@ function result(): ReharmResult {
   return { candidates: [candidate('a', 1, 'Db7'), candidate('b', 0, 'Fm7'), candidate('c', 1, 'G9')],
     modelUsed: 'Music Transformer', metaModel: 'muse-spark-1.3', contextMeasures: [0, 1, 2] };
 }
-function harness(requester: typeof requestReharmonization = async () => result()) {
+function harness(requester: typeof requestReharmonization = async () => result(), selectedSlots: SlotAddress[] = slots) {
   let song = score();
   let epoch = 1;
   let writes = 0;
   let stops = 0;
   let state: ReharmState;
   const actions = reharmActions({
-    read: () => ({ song, songEpoch: epoch, selectedSlots: slots }),
+    read: () => ({ song, songEpoch: epoch, selectedSlots }),
     stop: () => { stops++; },
     clearGeneration: () => undefined,
     write: updates => {
@@ -77,6 +77,40 @@ test('closing comparison keeps the chosen score, with no automatic disappearance
   h.actions.close();
   assert.equal(h.state().result, null);
   assert.deepEqual(h.song(), chosen);
+});
+
+test('four-change requests carry the cap, preview whole alternatives and restore the exact original', async t => {
+  const selected: SlotAddress[] = [0, 1].flatMap(measureIndex =>
+    ([0, 1] as const).map(slotIndex => ({ measureIndex, slotIndex })));
+  const original = score();
+  const replacements = [['C6', 'Am9', 'Dm9', 'Db7'], ['Em7', 'C6', 'Fm7'], ['C6', 'Am9']];
+  const choices: ReharmResult = { ...result(), candidates: replacements.map((after, i) => ({
+    ...candidate(String(i), 0, 'Fm7'),
+    changes: after.map((symbol, j) => ({ address: selected[j],
+      before: reharmSymbol(original.measures[selected[j].measureIndex].chords[selected[j].slotIndex]!),
+      after: symbol, commonTones: 2, modes: [] })),
+  })) };
+  t.mock.method(globalThis, 'fetch', async (_url, init) => {
+    const body = JSON.parse(String(init?.body));
+    assert.equal(body.maxChanges, 4);
+    assert.deepEqual(body.selectedSlots, selected);
+    return Response.json(choices);
+  });
+  const h = harness(requestReharmonization, selected);
+  await h.actions.run('ft_f1', 4, 'auto');
+  assert.equal(h.state().error, null);
+  assert.equal(h.writes(), 0);
+  for (const index of [0, 1, 2, 0]) {
+    h.actions.preview(index);
+    for (const [j, address] of selected.entries()) {
+      assert.equal(reharmSymbol(h.song().measures[address.measureIndex].chords[address.slotIndex]!),
+        replacements[index][j] ?? reharmSymbol(original.measures[address.measureIndex].chords[address.slotIndex]!));
+    }
+    assert.deepEqual(h.song().measures[2], original.measures[2]);
+  }
+  h.actions.preview(null);
+  assert.deepEqual(h.song(), original);
+  assert.throws(() => validateReharmResult(choices, original, selected, 3), /invalid reharmonization/);
 });
 
 test('outside edits block stale candidates but original restores without touching the outside edit', async () => {

@@ -7,7 +7,8 @@ and **Reharmonize** are separate primary tabs; **MIDI** and **Set manually** are
 compact additional tools below them. The context menu only opens the controls.
 
 Choose **Find 3 alternatives** to start the search. Each candidate changes at most one chord by default;
-the optional limit permits two. Empty slots and unselected chords stay untouched.
+**Change up to** also permits two, three, or four. This is a maximum per candidate;
+a candidate can change fewer chords. Empty slots and unselected chords stay untouched.
 Dragging across empty half-bars is supported: the browser submits and captures
 only the written chords. A selection containing no chord symbols remains disabled
 and explains that chords must be added or generated first.
@@ -39,6 +40,10 @@ link, so the comparison remains findable when it is below the visible score rows
    A small convention prior also favors context-supported borrowed predominants,
    familiar flat-root mixture, and resolving dominant substitutes. Root diversity
    is retained before the per-slot shortlist is trimmed.
+   Three- and four-chord searches extend a beam of at most twelve patches with
+   two alternatives per selected slot, recomputing the combined context metrics.
+   The six-candidate shortlist retains available edit counts so wider changes
+   reach the model and Meta instead of being pruned only for changing more chords.
 3. The selected Music Transformer scores the shortlists in written order, retaining
    up to eight preceding and eight following measures. Its score includes target
    chords and known later chords. This is causal sequence reranking, not a new
@@ -86,7 +91,7 @@ compare them with already written following chords.
 ## API and limits
 
 `POST /api/reharmonize` accepts `key`, `timeSignature`, consecutive `context` bars
-with two chord slots, `selectedSlots`, `modelKey`, `maxChanges` (1 or 2), and `mode`
+with two chord slots, `selectedSlots`, `modelKey`, `maxChanges` (1, 2, 3, or 4), and `mode`
 (`auto` or one of the seven diatonic modes). A selection may span eight measures
 and contain sixteen occupied slots; input context is limited to 256 measures.
 API targets must be occupied; the editor filters gaps from a mixed drag selection

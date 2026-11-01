@@ -2,7 +2,7 @@ import type { Song, SlotAddress } from '../models/types.ts';
 import { captureGenerationComparison, matchesCapturedRange } from './generationComparison.ts';
 import type { GenerationComparison, TargetChord } from './generationComparison.ts';
 import { reharmFingerprint, reharmSelectionError, reharmTargets, reharmUpdates, requestReharmonization } from './reharmonize.ts';
-import type { ReharmMode, ReharmResult } from './reharmonize.ts';
+import type { ReharmChangeLimit, ReharmMode, ReharmResult } from './reharmonize.ts';
 
 export interface ReharmState {
   loading: boolean;
@@ -13,7 +13,7 @@ export interface ReharmState {
   active: number | null;
   originalKey: string | null;
   expectedFingerprint: string | null;
-  run: (modelKey: string, maxChanges: 1 | 2, mode: ReharmMode) => Promise<void>;
+  run: (modelKey: string, maxChanges: ReharmChangeLimit, mode: ReharmMode) => Promise<void>;
   preview: (index: number | null) => void;
   close: () => void;
 }

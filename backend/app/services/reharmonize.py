@@ -243,7 +243,7 @@ def _diverse_roots(candidates, limit):
 
 
 def search(req: ReharmRequest, family: str, *, limit: int = 6) -> list[ReharmCandidate]:
-    """Enumerate only selected occupied slots; every result changes at most 1–2 symbols."""
+    """Enumerate selected occupied slots within the requested one-to-four change cap."""
     if family not in ("common_tones", "modal", "dominant"):
         raise ValueError("Unknown substitution family.")
     symbols = [symbol for bar in req.context for symbol in bar.chords]
@@ -320,13 +320,54 @@ def search(req: ReharmRequest, family: str, *, limit: int = 6) -> list[ReharmCan
                 options.append(make([(i, after)]))
         singles.extend(_diverse_roots(options, 6))
     candidates = list(singles)
-    if req.maxChanges == 2:
+    if req.maxChanges >= 2:
         # Bounded beam: pair only the best single changes, then recompute shared boundaries.
         for a, b in combinations(sorted(singles, key=lambda c: -c.mathScore)[:12], 2):
             ca, cb = a.changes[0], b.changes[0]
             ia, ib = ca.address.measureIndex * 2 + ca.address.slotIndex, cb.address.measureIndex * 2 + cb.address.slotIndex
             if ia != ib:
                 candidates.append(make([(ia, ca.after), (ib, cb.after)]))
+    if req.maxChanges >= 3:
+        # Extend only 12 retained patches per depth with at most two options
+        # per selected slot (at most 32). Re-score each complete patch so its
+        # shared boundaries and convention evidence reflect all its changes.
+        extensions = []
+        for i in selected:
+            extensions.extend(_diverse_roots([
+                c for c in singles
+                if c.changes[0].address.measureIndex * 2 + c.changes[0].address.slotIndex == i
+            ], 2))
+        beam = _diverse_roots([c for c in candidates if len(c.changes) == 2], 12)
+        for size in range(3, min(req.maxChanges, len(selected)) + 1):
+            expanded = {}
+            for partial in beam:
+                replacements = [(c.address.measureIndex * 2 + c.address.slotIndex, c.after)
+                                for c in partial.changes]
+                occupied = {i for i, _ in replacements}
+                for single in extensions:
+                    change = single.changes[0]
+                    i = change.address.measureIndex * 2 + change.address.slotIndex
+                    if i not in occupied:
+                        patch = make([*replacements, (i, change.after)])
+                        expanded[patch.id] = patch
+            beam = _diverse_roots(list(expanded.values()), 12)
+            candidates.extend(beam)
+        # Keep wider edits in the six-candidate neural/Meta shortlist instead
+        # of letting the sparsity penalty prune every three/four-chord option.
+        diverse = _diverse_roots(candidates, len(candidates))
+        shortlist = []
+        for size in range(min(req.maxChanges, len(selected)), 0, -1):
+            best = next((c for c in diverse if len(c.changes) == size), None)
+            if best is not None and len(shortlist) < limit:
+                shortlist.append(best)
+        seen = {c.id for c in shortlist}
+        for item in diverse:
+            if len(shortlist) >= limit:
+                break
+            if item.id not in seen:
+                shortlist.append(item)
+                seen.add(item.id)
+        return shortlist
     # Avoid presenting only extensions of one root as the entire shortlist.
     return _diverse_roots(candidates, limit)
 

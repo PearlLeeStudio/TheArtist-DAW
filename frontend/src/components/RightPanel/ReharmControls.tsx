@@ -3,8 +3,8 @@ import OperationProgress from '../OperationProgress';
 import { useSongStore } from '../../store/songStore';
 import { useReharmonizeStore } from '../../store/reharmonizeStore';
 import { useGenerationStore } from '../../store/generationStore';
-import { REHARM_MODES, reharmSelectionError, reharmTargets } from '../../engine/reharmonize';
-import type { ReharmMode } from '../../engine/reharmonize';
+import { REHARM_CHANGE_LIMITS, REHARM_MODES, reharmSelectionError, reharmTargets } from '../../engine/reharmonize';
+import type { ReharmChangeLimit, ReharmMode } from '../../engine/reharmonize';
 
 export default function ReharmControls({ modelKey }: { modelKey: string }) {
   const song = useSongStore(s => s.song);
@@ -15,7 +15,7 @@ export default function ReharmControls({ modelKey }: { modelKey: string }) {
   const result = useReharmonizeStore(s => s.result);
   const generating = useGenerationStore(s => s.loading);
   const run = useReharmonizeStore(s => s.run);
-  const [maxChanges, setMaxChanges] = useState<1 | 2>(1);
+  const [maxChanges, setMaxChanges] = useState<ReharmChangeLimit>(1);
   const [mode, setMode] = useState<ReharmMode>('auto');
   const problem = reharmSelectionError(song, slots);
   const targetCount = reharmTargets(song, slots).length;
@@ -28,8 +28,13 @@ export default function ReharmControls({ modelKey }: { modelKey: string }) {
     <label className="flex items-center justify-between gap-2 text-xs">
       Change up to
       <select aria-label="Maximum changed chords per candidate" value={maxChanges}
-        onChange={e => setMaxChanges(e.target.value === '2' ? 2 : 1)} className="px-2 py-1" style={selectStyle}>
-        <option value={1}>1 chord</option><option value={2}>2 chords</option>
+        onChange={e => {
+          const value = REHARM_CHANGE_LIMITS.find(limit => limit === Number(e.target.value));
+          if (value) setMaxChanges(value);
+        }} className="px-2 py-1" style={selectStyle}>
+        {REHARM_CHANGE_LIMITS.map(limit => <option key={limit} value={limit}>
+          {limit} {limit === 1 ? 'chord' : 'chords'}
+        </option>)}
       </select>
     </label>
     <label className="flex items-center justify-between gap-2 text-xs">

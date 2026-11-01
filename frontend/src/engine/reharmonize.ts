@@ -9,6 +9,8 @@ import { metaHeaders } from './metaSession.ts';
 
 export const REHARM_MODES = ['auto', 'ionian', 'dorian', 'phrygian', 'lydian', 'mixolydian', 'aeolian', 'locrian'] as const;
 export type ReharmMode = typeof REHARM_MODES[number];
+export const REHARM_CHANGE_LIMITS = [1, 2, 3, 4] as const;
+export type ReharmChangeLimit = typeof REHARM_CHANGE_LIMITS[number];
 export interface ReharmCandidate {
   id: string;
   family: 'common_tones' | 'modal' | 'dominant';
@@ -100,7 +102,7 @@ export function validateReharmResult(value: unknown, song: Song, slots: SlotAddr
   return result;
 }
 
-export async function requestReharmonization(song: Song, slots: SlotAddress[], maxChanges: 1 | 2,
+export async function requestReharmonization(song: Song, slots: SlotAddress[], maxChanges: ReharmChangeLimit,
   mode: ReharmMode, modelKey: string, signal: AbortSignal): Promise<ReharmResult> {
   const problem = reharmSelectionError(song, slots);
   if (problem) throw new Error(problem);

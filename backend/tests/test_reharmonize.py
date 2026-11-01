@@ -80,7 +80,7 @@ class SearchTests(unittest.TestCase):
                                 for c in candidates))
 
     def test_sparse_unique_and_original_immutable(self):
-        for maximum in (1, 2):
+        for maximum in (1, 2, 3, 4):
             req = request(maxChanges=maximum)
             original = req.model_dump_json()
             for family in ("common_tones", "modal", "dominant"):
@@ -94,6 +94,40 @@ class SearchTests(unittest.TestCase):
                         self.assertEqual(change.before, req.context[1].chords[change.address.slotIndex])
                         self.assertNotEqual(change.before, change.after)
             self.assertEqual(req.model_dump_json(), original)
+
+    def test_wider_search_reaches_four_changes_without_exceeding_six_candidates(self):
+        slots = [{"measureIndex": m, "slotIndex": s} for m in range(2) for s in range(2)]
+        addresses = {(s['measureIndex'], s['slotIndex']) for s in slots}
+        for maximum in (3, 4):
+            req = request(maxChanges=maximum, selectedSlots=slots)
+            original = req.model_dump_json()
+            for family in ('common_tones', 'modal', 'dominant'):
+                with self.subTest(maximum=maximum, family=family):
+                    candidates = search(req, family)
+                    self.assertEqual(len(candidates), 6)
+                    self.assertIn(maximum, {len(c.changes) for c in candidates})
+                    self.assertEqual(len({c.id for c in candidates}), len(candidates))
+                    for candidate in candidates:
+                        changed = {(c.address.measureIndex, c.address.slotIndex) for c in candidate.changes}
+                        self.assertEqual(len(changed), len(candidate.changes))
+                        self.assertTrue(changed <= addresses)
+                        self.assertLessEqual(len(changed), maximum)
+                        for change in candidate.changes:
+                            self.assertEqual(change.before, req.context[change.address.measureIndex].chords[change.address.slotIndex])
+                            self.assertNotEqual(change.before, change.after)
+            self.assertEqual(req.model_dump_json(), original)
+
+    def test_four_change_search_keeps_mode_constraints_and_small_selections(self):
+        req = request(maxChanges=4, mode='dorian',
+                      selectedSlots=[{'measureIndex': m, 'slotIndex': s} for m in range(2) for s in range(2)])
+        self.assertTrue(all('dorian' in change.modes for c in search(req, 'modal') for change in c.changes))
+        one = request(maxChanges=4, selectedSlots=[{'measureIndex': 1, 'slotIndex': 0}])
+        candidates = search(one, 'common_tones')
+        self.assertTrue(candidates)
+        self.assertTrue(all(len(c.changes) == 1 for c in candidates))
+        for maximum in (0, 5, 16):
+            with self.assertRaises(ValidationError):
+                request(maxChanges=maximum)
 
     def test_extension_and_slash_pitch_classes_are_not_lost(self):
         self.assertEqual(chord("C7(b9)/Db")[1], {0, 1, 4, 7, 10})

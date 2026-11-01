@@ -26,7 +26,7 @@ class ReharmRequest(BaseModel):
     timeSignature: tuple[int, int] = (4, 4)
     context: list[ReharmBar] = Field(min_length=1, max_length=256)
     selectedSlots: list[Slot] = Field(min_length=1, max_length=16)
-    maxChanges: Literal[1, 2] = 1
+    maxChanges: Literal[1, 2, 3, 4] = 1
     mode: Mode = "auto"
     modelKey: str | None = Field(default=None, max_length=80)
 
