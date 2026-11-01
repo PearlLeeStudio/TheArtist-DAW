@@ -119,6 +119,12 @@ failures are recorded in [evaluation.md](evaluation.md).
   to check its chords, Roman numerals and retained source against the original.
   Replace a file during analysis; an earlier result must not populate
   the replacement. Cancel and retry without choosing the file again.
+- [ ] With **Use Meta model** on a readable PDF the score opens within seconds and
+  the **Meta review** band shows the reader stages, then the flagged/filled counts
+  with the request id; **Show bar** selects the first flagged bar; **Cancel** during
+  the run and **Dismiss** afterwards work; Initialize or loading a project removes
+  the band; a bar edited before the review finishes keeps the edit; a filled bar
+  shows Meta provenance in its source details and ⌘Z removes the fill.
 - [ ] A 465-bar PDF (e.g. a long jazz lead sheet) with **Use Meta model** checked
   opens from the local reader within seconds with no Meta call (ledger unchanged),
   and Reharmonize on bars deep inside it returns three candidates with addresses in

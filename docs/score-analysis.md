@@ -50,6 +50,16 @@ with it; a slower long reading still recovers after Meta's bar-limit failure as
 `local_fallback`. Every local bar and its provenance is preserved in both cases.
 The unchecked local path makes no Meta call.
 
+In the editor the checked path is two requests. The local reading (`engine:
+"local"`) opens the score at once; the same file is then sent as `engine:
+"verified"` in the background and its result is applied without replacing
+anything visible: disputed bars receive a Review mark carrying the comparison's
+reason, bars that are still empty and not N.C. take Meta's one- or two-symbol
+proposal with Meta provenance as a single undo step, and `unaligned`,
+`local_only` or failed readings only report a summary. The band above the staff
+shows the stage, the outcome and the request id; replacing the song discards the
+review.
+
 The response's `verification` record reports comparison coverage and zero-based
 disputed bars. Reading checks in the existing review show those bars and structural
 differences. This adds a way to expose mistakes; no general accuracy improvement

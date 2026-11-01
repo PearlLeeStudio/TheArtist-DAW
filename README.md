@@ -59,7 +59,7 @@ to the DAW. Its existing chord model supplies a harmonic engine for this workflo
 
 | Path | File | Calls per use | Switch |
 |---|---|---|---|
-| **Use Meta model** checkbox, `engine: "verified"`: concurrent Meta/local reading, explicit local recovery on failure, comparison when both succeed; a score over Meta's 128-bar limit opens from the local reader without a Meta call | `score_verification.py`, `score_import.py` | 1 PDF/image request, default ≤ $1.50; no automatic Meta retry | `THEARTIST_META_ENABLED`; public hosts also require `THEARTIST_PUBLIC_META_READER=1` |
+| **Use Meta model** checkbox, `engine: "verified"`, run in the background after the local reading has opened the PDF: concurrent Meta/local reading, explicit local recovery on failure, comparison when both succeed; disputed bars are marked and still-empty bars filled on the staff; a score over Meta's 128-bar limit opens from the local reader without a Meta call | `score_verification.py`, `score_import.py` | 1 PDF/image request, default ≤ $1.50; no automatic Meta retry | `THEARTIST_META_ENABLED`; public hosts also require `THEARTIST_PUBLIC_META_READER=1` |
 | Direct full-file API reading, `engine: "meta"` | `score_import.py` | 1 request, default ≤ $1.50 | same |
 | Bounded API assist, `engine: "auto"` | `score_assistance.py`, `harmony_meta.py`, `score_form.py` | ≤ 2 × 8-bar harmony reviews + 1 form analysis, ≤ $0.30 total | `THEARTIST_META_ENABLED` only (public hosts do not require the reader flag); leave the editor checkbox off for no Meta calls |
 | Complete the form planner (plan, validate, revise, judge) | `backend/app/services/planner.py`, `routes/plan.py` | ≤ 5 calls per run (1 plan, ≤ 2 revisions, then either 1 Muse Spark composition call in **Muse Spark only** mode or ≤ 2 judgments in the hybrid mode) | `THEARTIST_META_ENABLED` only; judge role via `LLM_JUDGE_*` |
@@ -101,9 +101,11 @@ contents, Voyager's adapter status and the limits:
 ## What the editor does
 
 - **Import Score** — one PDF or image becomes an editable score with key, meter,
-  sections and per-bar source evidence. The score opens as soon as it is read;
-  **Review** and **Unresolved** marks stay on the staff. The local vector-PDF reader
-  is the default; **Use Meta model** adds a Meta reading compared with the local one.
+  sections and per-bar source evidence. A PDF opens from the local reader in a
+  second or two; **Review** and **Unresolved** marks stay on the staff. With
+  **Use Meta model**, Meta then reads the original in the background and a band
+  above the staff reports the bars it flagged or filled where the local reader
+  had no chord, without replacing anything already visible.
 - **Select and edit on the staff** — drag to select slots, Ctrl/⌘+A for the whole
   score, Ctrl/⌘+X·C·V to cut, copy and paste (a copied passage that divides the
   selection repeats over it; otherwise it is written forward and bars are added),
