@@ -56,7 +56,9 @@ systemctl enable --now theartist-deploy.timer
 
 The installed controller and unit files deliberately do not replace themselves
 from a push. Reinstall those three reviewed files explicitly when changing the
-deployment mechanism. Runtime files, Dockerfile, Compose and Caddy configuration
+deployment mechanism. In particular, the Pages-only no-restart filter requires
+installing the updated controller; pushing its source alone does not activate it.
+Runtime files, Dockerfile, Compose and Caddy configuration
 are picked up automatically. The deployment source is fixed to the public DAW
 repository; do not point the second Artist repository at the same server checkout.
 
