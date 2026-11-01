@@ -136,6 +136,10 @@ class AutoDeployTest(unittest.TestCase):
         self.assertTrue(deploy.runtime_changed([".dockerignore"]))
         self.assertTrue(deploy.runtime_changed(["deploy/runtime/uv.lock"]))
         self.assertFalse(deploy.runtime_changed(["HACKATHON.md"]))
+        self.assertFalse(deploy.runtime_changed([
+            "deploy/autodeploy.py", "deploy/theartist-deploy.service", "deploy/theartist-deploy.timer",
+        ]))
+        self.assertTrue(deploy.runtime_changed(["deploy/autodeploy.py", "deploy/compose.yaml"]))
 
 
 if __name__ == "__main__":

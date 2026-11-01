@@ -58,7 +58,10 @@ def runtime_changed(paths: list[str]) -> bool:
     """Pages deploys the frontend separately; only model-server changes restart it."""
     return any(not (
         path.endswith((".md", ".rst"))
-        or path in {"LICENSE", "AGENTS.md", ".gitignore"}
+        or path in {"LICENSE", "AGENTS.md", ".gitignore",
+                    # Installed independently, never loaded by the app container.
+                    "deploy/autodeploy.py", "deploy/theartist-deploy.service",
+                    "deploy/theartist-deploy.timer"}
         or path.startswith(("docs/", "backend/tests/", "frontend/", ".github/"))
     ) for path in paths)
 
