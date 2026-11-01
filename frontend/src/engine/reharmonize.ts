@@ -102,6 +102,20 @@ export function validateReharmResult(value: unknown, song: Song, slots: SlotAddr
   return result;
 }
 
+/** Bars sent on each side of the passage: the search and the model read at most
+ *  eight, so this covers them with a margin while a 512-bar score stays small. */
+export const REHARM_CONTEXT_REACH = 16;
+
+/** The bars around the selected passage, with their score measure numbers, so a
+ *  long imported score is not sent whole; the backend accepts any consecutive window. */
+export function reharmContext(song: Song, slots: SlotAddress[]) {
+  const measures = slots.map(s => s.measureIndex);
+  const first = Math.max(0, Math.min(...measures) - REHARM_CONTEXT_REACH);
+  const last = Math.min(song.measures.length - 1, Math.max(...measures) + REHARM_CONTEXT_REACH);
+  return song.measures.slice(first, last + 1).map((m, offset) =>
+    ({ measure: first + offset, chords: m.chords.map(c => c ? reharmSymbol(c) : null) }));
+}
+
 export async function requestReharmonization(song: Song, slots: SlotAddress[], maxChanges: ReharmChangeLimit,
   mode: ReharmMode, modelKey: string, signal: AbortSignal): Promise<ReharmResult> {
   const problem = reharmSelectionError(song, slots);
@@ -112,7 +126,7 @@ export async function requestReharmonization(song: Song, slots: SlotAddress[], m
     const response = await postJson('/api/reharmonize', {
       key: song.key, timeSignature: song.timeSignature, modelKey, maxChanges, mode,
       selectedSlots: targets,
-      context: song.measures.map((m, measure) => ({ measure, chords: m.chords.map(c => c ? reharmSymbol(c) : null) })),
+      context: reharmContext(song, targets),
     }, { signal: AbortSignal.any([signal, deadline]), headers: metaHeaders() });
     return validateReharmResult(await response.json(), song, targets, maxChanges);
   } catch (error) {
