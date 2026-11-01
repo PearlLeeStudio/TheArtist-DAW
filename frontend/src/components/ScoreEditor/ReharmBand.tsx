@@ -19,7 +19,7 @@ export default function ReharmBand() {
         <span aria-hidden="true">×</span>
       </button>
     </div>
-    {loading && <p role="status" className="text-xs">Exploring substitutions with Meta and the Music Transformer…</p>}
+    {loading && <p role="status" className="text-xs">Exploring substitutions…</p>}
     {error && <p role="alert" className="text-xs">{error}</p>}
     {result && <>
       <div className="grid grid-cols-4 items-stretch gap-2">
@@ -51,7 +51,7 @@ export default function ReharmBand() {
       </div>
       {!!result.modelApproximations?.length && <details className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
         <summary className="cursor-pointer">Some chord colors have limited model scoring</summary>
-        <p>Full chord tones are used for substitution matching and Meta comparison. The music model uses these simpler symbols for scoring only:</p>
+        <p>Full chord tones are used for substitution matching and comparison. The music model uses these simpler symbols for scoring only:</p>
         <ul>{result.modelApproximations.map(a => <li key={`${a.address.measureIndex}.${a.address.slotIndex}`}>
           M{a.address.measureIndex + 1}.{a.address.slotIndex + 1}: {a.original} → {a.scoredAs}
         </li>)}</ul>

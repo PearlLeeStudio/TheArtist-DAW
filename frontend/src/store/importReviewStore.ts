@@ -47,7 +47,7 @@ export function createImportReviewStore(analyze: ScoreAnalyzer = analyzeScoreFil
       controller?.abort();
       const own = new AbortController();
       controller = own;
-      set({ ...idle, phase: 'running', songEpoch, filename: file.name, label: 'Meta is checking the imported score against the original…' });
+      set({ ...idle, phase: 'running', songEpoch, filename: file.name, label: 'Checking the imported score against the original…' });
       const finish = beginTiming('import.review', 'verified-background');
       analyze(file, mimeType, 'verified', 'infer_harmony', {
         signal: own.signal,
@@ -68,7 +68,7 @@ export function createImportReviewStore(analyze: ScoreAnalyzer = analyzeScoreFil
         if (own.signal.aborted) { finish('cancelled'); set({ ...idle }); return; }
         finish('error');
         set({ phase: 'failed', label: '',
-          summary: `Meta review unavailable: ${error instanceof Error ? error.message : 'the request failed'}` });
+          summary: `The check against the original did not finish: ${error instanceof Error ? error.message : 'the request failed'}` });
       });
     },
     cancel: () => {

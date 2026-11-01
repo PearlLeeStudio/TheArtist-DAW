@@ -246,7 +246,7 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
         } catch (caught) {
           // Only a PDF the local reader cannot read goes to Meta right away, as before.
           if (controller.signal.aborted || !(caught instanceof ScoreAnalysisError) || caught.status !== 422) throw caught;
-          report('The local reader cannot read this file. Meta is reading the original score…');
+          report('The local reader cannot read this file. Reading the original score…');
           recognized = await analyze('verified');
         }
       } else {
@@ -398,7 +398,7 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
                   setMetaConnectionError(false); setCheckingMeta(true); setMetaAttempt(attempt => attempt + 1);
                 }}>Retry connection</button>
               </div>}
-              {useMeta && <p className="text-xs" style={mutedStyle}>A PDF opens from the local reader right away; Meta then reads the original in the background, marks bars where the two readings differ with Review and fills bars the local reader left empty. Images are read by Meta directly.</p>}
+              {useMeta && <p className="text-xs" style={mutedStyle}>The score opens right away; the original is then checked in the background, differing bars are marked for review and empty bars filled.</p>}
               {meta && !metaAvailable && (
                 <p className="text-xs" style={mutedStyle}>
                   {meta.enabled ? 'No Meta key is configured on this server: TheArtist only is available.'

@@ -32,12 +32,14 @@ function harness(requester: typeof requestReharmonization = async () => result()
   let writes = 0;
   let stops = 0;
   let pendingPreview: ChordPreview | null = null;
+  const remembered: Song[] = [];
   let state: ReharmState;
   const actions = reharmActions({
     read: () => ({ song, songEpoch: epoch, selectedSlots }),
     stop: () => { stops++; },
     clearGeneration: () => undefined,
     commit: () => { pendingPreview = null; },
+    remember: (snapshot) => { remembered.push(snapshot); },
     write: (updates, previewOriginal) => {
       writes++;
       song = { ...song, measures: song.measures.map((m, index) => {
@@ -50,7 +52,7 @@ function harness(requester: typeof requestReharmonization = async () => result()
     },
   }, () => state, patch => { state = { ...state, ...patch }; }, requester);
   state = { ...emptyReharmState, ...actions };
-  return { actions, state: () => state, song: () => song, writes: () => writes, stops: () => stops,
+  return { actions, state: () => state, song: () => song, writes: () => writes, stops: () => stops, remembered,
     saved: () => withoutChordPreview(song, epoch, pendingPreview),
     edit: (edit: (s: Song) => void) => { song = structuredClone(song); edit(song); },
     replace: () => { song = score(); epoch++; actions.close(); } };
@@ -92,7 +94,7 @@ test('the latest overlapping alternative replaces only conflicting candidates', 
   assert.deepEqual(h.song().measures[1].chords.map(c => reharmSymbol(c!)), ['Fm7', 'Db7']);
 });
 
-test('X discards pending previews; Apply keeps combined choices and leaves all cards available', async () => {
+test('X discards pending previews; Apply keeps combined choices, closes the cards and leaves an undo step', async () => {
   const h = harness();
   const original = structuredClone(h.song());
   await h.actions.run('ft_f1', 1, 'auto');
@@ -108,28 +110,35 @@ test('X discards pending previews; Apply keeps combined choices and leaves all c
   assert.equal(hasPendingReharmSelection(h.state()), true);
   const chosen = structuredClone(h.song());
   h.actions.apply();
-  assert.equal(hasPendingReharmSelection(h.state()), false);
-  assert.equal(h.state().result?.candidates.length, 3);
-  assert.deepEqual(h.saved(), chosen);
-  h.actions.preview(2);
-  assert.deepEqual(h.saved(), chosen);
-  h.actions.close();
-  assert.equal(h.state().result, null);
+  assert.equal(h.state().result, null, 'the comparison closes on Apply');
+  assert.equal(h.state().comparison, null);
   assert.deepEqual(h.song(), chosen);
+  assert.deepEqual(h.saved(), chosen);
+  assert.match(h.state().notice!, /^Alter 1 \+ Alter 2 applied to M2\./);
+  assert.deepEqual(h.remembered, [original], 'the passage before Apply is kept for undo');
+  // Nothing is open any more: previews and a second Apply are no-ops.
+  h.actions.preview(2);
+  h.actions.apply();
+  assert.deepEqual(h.song(), chosen);
+  await h.actions.run('ft_f1', 1, 'auto');
+  assert.equal(h.state().notice, null, 'a new search clears the notice');
 });
 
-test('Origin can be previewed and applied after keeping an alternative', async () => {
+test('applying Origin after keeping an alternative restores the passage and also closes', async () => {
   const h = harness();
   const original = structuredClone(h.song());
   await h.actions.run('ft_f1', 1, 'auto');
   h.actions.preview(0);
   h.actions.apply();
+  const kept = structuredClone(h.song());
+  assert.notDeepEqual(kept, original);
+  await h.actions.run('ft_f1', 1, 'auto');
+  h.actions.preview(1);
   h.actions.preview(null);
-  assert.equal(hasPendingReharmSelection(h.state()), true);
-  h.actions.apply();
+  assert.equal(hasPendingReharmSelection(h.state()), false, 'Origin of the new search is the kept passage');
   h.actions.close();
-  assert.deepEqual(h.song(), original);
-  assert.deepEqual(h.saved(), original);
+  assert.deepEqual(h.song(), kept);
+  assert.deepEqual(h.remembered, [original]);
 });
 
 test('a new search discards a pending preview before building its request', async () => {

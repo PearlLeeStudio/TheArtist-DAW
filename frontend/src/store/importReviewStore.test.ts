@@ -85,10 +85,10 @@ test('a finished review marks disputed bars, fills the untouched empty bar and r
   assert.equal(song.measures[1].chords[0]?.root, 'G');
   assert.equal(song.measures[1].chords[0]?.romanNumeral, 'V7');
   assert.equal(song.importSource?.measures?.[1].analysisSource, 'meta');
-  assert.equal(song.importSource?.measures?.[2].editorReview, 'Meta review: chord readings differ.');
+  assert.equal(song.importSource?.measures?.[2].editorReview, 'Check against the original: chord readings differ.');
   assert.equal(song.importSource?.analysisSource, 'mixed');
   assert.equal(useSongStore.getState().editHistory.length, 1, 'a fill is one undo step');
-  assert.ok(statuses.includes('running:Meta is reading…'));
+  assert.ok(statuses.includes('running:Meta is reading…'), 'server stage labels are relayed as sent');
   store.getState().dismiss();
   assert.equal(store.getState().phase, 'idle');
 });
@@ -123,7 +123,7 @@ test('failures and cancellation are visible without touching the score', async (
   failing.getState().start(file, 'application/pdf', epoch);
   await settle();
   assert.equal(failing.getState().phase, 'failed');
-  assert.match(failing.getState().summary, /Meta review unavailable: Meta did not finish/);
+  assert.match(failing.getState().summary, /did not finish: Meta did not finish/);
   assert.equal(useSongStore.getState().song.measures[1].chords[0], null);
   const cancelled = createImportReviewStore((_f, _m, _e, _mode, options) => new Promise((_resolve, reject) => {
     options?.signal?.addEventListener('abort', () => reject(new DOMException('aborted', 'AbortError')));

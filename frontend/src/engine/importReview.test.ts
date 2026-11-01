@@ -49,14 +49,14 @@ function verified(patch: Partial<ScoreImportResponse> = {}): ScoreImportResponse
 
 test('a compared reading flags disputed bars and fills only untouched empty bars that are not N.C.', () => {
   const plan = planImportReview(importedSong(), verified());
-  assert.deepEqual(plan.flags, [{ index: 2, review: 'Meta review: chord readings differ.', confidence: 'low' }]);
+  assert.deepEqual(plan.flags, [{ index: 2, review: 'Check against the original: chord readings differ.', confidence: 'low' }]);
   assert.equal(plan.fills.length, 1);
   assert.equal(plan.fills[0].index, 1);
   assert.deepEqual(plan.fills[0].chords.map((c) => c?.root + c?.quality), ['G7', 'G7']);
   assert.equal(plan.fills[0].source.analysisSource, 'meta');
   assert.equal(plan.fills[0].source.requestId, 'req-9');
-  assert.match(plan.fills[0].source.editorReview ?? '', /Meta proposed/);
-  assert.equal(plan.summary, 'Meta review: 1 bar flagged for review, 1 bar filled where the local reader had no chord.');
+  assert.match(plan.fills[0].source.editorReview ?? '', /Proposed from the original/);
+  assert.equal(plan.summary, 'Checked against the original: 1 bar flagged for review, 1 bar filled where the local reader had no chord.');
 });
 
 test('unparseable, long or missing Meta proposals leave a bar empty, and agreement says so', () => {
@@ -71,7 +71,7 @@ test('unparseable, long or missing Meta proposals leave a bar empty, and agreeme
   agree.measures[1] = { ...agree.measures[1], chords: [] };
   const plan = planImportReview(song, agree);
   assert.deepEqual(plan.flags, []);
-  assert.equal(plan.summary, 'Meta review: both readings agree.');
+  assert.equal(plan.summary, 'Checked against the original: both readings agree.');
 });
 
 test('skipped, unaligned and local-only outcomes change nothing on the staff', () => {

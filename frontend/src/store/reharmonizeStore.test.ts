@@ -91,7 +91,7 @@ function controls() {
   };
 }
 
-test('Apply enables for combined previews and distinguishes an already applied combination', async t => {
+test('Apply enables for combined previews, then closes the cards, keeps the chords and can be undone', async t => {
   t.mock.method(globalThis, 'fetch', async () => Response.json(response));
   editor().setSong(fixture);
   editor().selectSlotRange({ measureIndex: 0, slotIndex: 0 }, { measureIndex: 0, slotIndex: 1 });
@@ -104,24 +104,15 @@ test('Apply enables for combined previews and distinguishes an already applied c
   assert.match(String(controls().status), /Alter 1 \+ Alter 2 selected/);
   controls().apply.onClick!();
   assert.deepEqual(symbols(saved()), ['Fm7', 'Db7']);
+  assert.equal(reharm().comparison, null, 'the cards close');
+  assert.equal(editor().chordPreview, null);
   assert.equal(controls().apply.disabled, true);
-  assert.equal(controls().apply.children, 'Applied ✓');
-  assert.match(String(controls().status), /Alter 1 \+ Alter 2 applied/);
-
-  reharm().preview(2);
-  assert.equal(controls().apply.disabled, false);
   assert.equal(controls().apply.children, 'Apply');
-  assert.match(String(controls().status), /Alter 2 \+ Alter 3 selected/);
-  reharm().preview(0);
-  assert.equal(controls().apply.children, 'Applied ✓', 'returning to the saved combination explains why Apply is disabled');
-  reharm().preview(null);
-  assert.equal(controls().apply.disabled, false);
-  assert.match(String(controls().status), /Origin selected/);
-  controls().apply.onClick!();
-  assert.equal(controls().apply.children, 'Applied ✓');
-  assert.match(String(controls().status), /Origin applied/);
+  assert.match(String(controls().status), /Alter 1 \+ Alter 2 applied to M1\. Undo/);
+  assert.equal(editor().editHistory.length, 1);
+  assert.equal(editor().undoEdit(), true);
+  assert.deepEqual(symbols(editor().song), ['Dm7', 'G7']);
   assert.deepEqual(symbols(saved()), ['Dm7', 'G7']);
-  reharm().close();
 });
 
 test('real stores autosave the last Apply, retain manual edits, and cancel only pending previews', async t => {

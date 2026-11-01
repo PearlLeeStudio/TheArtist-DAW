@@ -16,6 +16,8 @@ export interface ReharmState {
   committedSelection: number[];
   originalKey: string | null;
   expectedFingerprint: string | null;
+  /** What the last Apply kept, shown in the controls after the cards close. */
+  notice: string | null;
   run: (modelKey: string, maxChanges: ReharmChangeLimit, mode: ReharmMode) => Promise<void>;
   preview: (index: number | null) => void;
   apply: () => void;
@@ -24,6 +26,7 @@ export interface ReharmState {
 export const emptyReharmState = {
   loading: false, error: null, result: null, comparison: null, applied: null,
   selected: [], committed: null, committedSelection: [], originalKey: null, expectedFingerprint: null,
+  notice: null,
 };
 interface Host {
   read: () => { song: Song; songEpoch: number; selectedSlots: SlotAddress[] };
@@ -31,6 +34,27 @@ interface Host {
   write: (updates: TargetChord[], previewOriginal?: GenerationComparison) => void;
   commit: () => void;
   clearGeneration: () => void;
+  /** Keep a song for the editor's undo (Ctrl/Cmd+Z) before Apply changes it for good. */
+  remember?: (song: Song) => void;
+}
+
+/** The song with the given slots replaced; chords are copied. */
+export function withUpdates(song: Song, updates: TargetChord[]): Song {
+  const byAddress = new Map(updates.map(u => [`${u.address.measureIndex}-${u.address.slotIndex}`, u.chord]));
+  return { ...song, measures: song.measures.map((measure, measureIndex) => ({ ...measure,
+    chords: measure.chords.map((chord, slotIndex) => {
+      const key = `${measureIndex}-${slotIndex}`;
+      return byAddress.has(key) ? structuredClone(byAddress.get(key)!) : chord;
+    }) as typeof measure.chords,
+  })) };
+}
+
+/** 'M3' or 'M3–M4' for the compared passage. */
+function passageLabel(comparison: GenerationComparison): string {
+  const measures = comparison.original.map(c => c.address.measureIndex + 1);
+  const first = Math.min(...measures);
+  const last = Math.max(...measures);
+  return first === last ? `M${first}` : `M${first}–M${last}`;
 }
 
 export function hasPendingReharmSelection(state: Pick<ReharmState, 'selected' | 'committedSelection'>): boolean {
@@ -112,14 +136,22 @@ export function reharmActions(host: Host, get: () => ReharmState, set: (patch: P
     apply: () => {
       const state = get();
       const { song, songEpoch } = host.read();
-      if (!state.result || !state.applied || state.loading || !hasPendingReharmSelection(state)) return;
+      if (!state.result || !state.applied || !state.committed || !state.comparison || state.loading || !hasPendingReharmSelection(state)) return;
       if (song.key !== state.originalKey || !matchesCapturedRange(state.applied, song, songEpoch) ||
           reharmFingerprint(song) !== state.expectedFingerprint) {
         set({ error: 'The score changed. Close this comparison and search again to keep your edits.' });
         return;
       }
+      // The passage as it stood before this Apply goes to the editor's undo.
+      const before = previewRollback(song, songEpoch, { original: state.committed, shown: state.applied, key: state.originalKey! });
+      if (before.length) host.remember?.(withUpdates(song, before));
+      const kept = state.selected.length ? state.selected.map(i => `Alter ${i + 1}`).join(' + ') : 'Origin';
+      const notice = `${kept} applied to ${passageLabel(state.comparison)}. Undo with ⌘Z / Ctrl+Z.`;
       host.commit();
       set({ committed: state.applied, committedSelection: [...state.selected], error: null });
+      // Applying is the end of the comparison: the cards close and the chords stay.
+      close();
+      set({ notice });
     },
     close,
   };

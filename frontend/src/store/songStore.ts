@@ -209,6 +209,8 @@ interface SongState {
   /** Restore the song before the latest cut, paste or clear. False when
    *  there is nothing to undo. */
   undoEdit: () => boolean;
+  /** Add a song state (e.g. a passage before a Reharmonize Apply) to what undoEdit restores. */
+  rememberSong: (song: Song) => void;
   addMeasures: (count?: number) => void;
   /** Record a song-form section of `bars` measures right after the last
    *  used measure (see sectionPlacement), appending measures only as
@@ -395,6 +397,8 @@ export const useSongStore = create<SongState>((set, get) => ({
       selectedSlots: buildSlotRange(plan.select[0], plan.select[1]),
     };
   }),
+
+  rememberSong: (song) => set((state) => ({ editHistory: recorded({ song, editHistory: state.editHistory }) })),
 
   undoEdit: () => {
     const previous = get().editHistory.at(-1);

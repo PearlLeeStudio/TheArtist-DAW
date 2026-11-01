@@ -13,6 +13,7 @@ export const useReharmonizeStore = create<ReharmState>((set, get) => ({
       { preserveAnalysis: true, previewOriginal: previewOriginal ?? null }),
     commit: () => useSongStore.getState().commitChordPreview(),
     clearGeneration: () => useGenerationStore.getState().clearSuggestions(),
+    remember: (song) => useSongStore.getState().rememberSong(song),
   }, get, set),
 }));
 

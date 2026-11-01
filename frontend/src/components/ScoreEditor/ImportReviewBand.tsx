@@ -1,34 +1,37 @@
+import { useEffect } from 'react';
 import { useImportReviewStore } from '../../store/importReviewStore';
 import { useSongStore } from '../../store/songStore';
 
-const buttonStyle: React.CSSProperties = {
-  background: 'var(--btn-bg)', color: 'var(--text-primary)', border: '1px solid var(--border)',
-};
+/** How long a finished check stays on screen before it clears itself. */
+const LINGER_MS = 12_000;
 
-/** Above the staff while a background Meta reading checks an imported score,
- *  then its outcome: how many bars were flagged or filled, with the request id. */
+/** One quiet line above the staff while an imported score is checked against
+ *  its original, then the outcome until it clears itself or is dismissed. */
 export default function ImportReviewBand() {
   const review = useImportReviewStore();
   const songEpoch = useSongStore((s) => s.songEpoch);
   const selectSlot = useSongStore((s) => s.selectSlot);
-  if (review.phase === 'idle' || review.songEpoch !== songEpoch) return null;
   const running = review.phase === 'running';
+  const shown = review.phase !== 'idle' && review.songEpoch === songEpoch;
+  useEffect(() => {
+    if (!shown || running) return;
+    const timer = window.setTimeout(() => useImportReviewStore.getState().dismiss(), LINGER_MS);
+    return () => window.clearTimeout(timer);
+  }, [shown, running, review.summary]);
+  if (!shown) return null;
   const first = review.flagged[0];
   return (
-    <div role="status" aria-live="polite" className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2 text-xs"
-      style={{ border: '1px solid var(--border)', borderLeft: '3px solid var(--brand-yellow)', background: 'var(--bg-surface)', color: 'var(--text-muted)' }}>
-      <span className="font-semibold" style={{ color: 'var(--text-heading)' }}>Meta review</span>
+    <p role="status" aria-live="polite" className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs" style={{ color: 'var(--text-soft)' }}>
       <span className="min-w-0 flex-1">{running ? review.label : review.summary}</span>
-      {!running && review.requestId && <span>Request {review.requestId}</span>}
       {!running && first !== undefined && (
-        <button type="button" className="px-2 py-1 btn-hover" style={buttonStyle}
-          onClick={() => selectSlot({ measureIndex: first, slotIndex: 0 })}>
+        <button type="button" className="underline" onClick={() => selectSlot({ measureIndex: first, slotIndex: 0 })}>
           Show bar {first + 1}
         </button>
       )}
-      <button type="button" className="px-2 py-1 btn-hover" style={buttonStyle} onClick={running ? review.cancel : review.dismiss}>
-        {running ? 'Cancel' : 'Dismiss'}
+      <button type="button" className="underline" onClick={running ? review.cancel : review.dismiss}
+        aria-label={running ? 'Cancel the check' : 'Dismiss'}>
+        {running ? 'Cancel' : '×'}
       </button>
-    </div>
+    </p>
   );
 }

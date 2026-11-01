@@ -20,6 +20,7 @@ export default function ReharmControls({ modelKey }: { modelKey: string }) {
   const pending = useReharmonizeStore(hasPendingReharmSelection);
   const selected = useReharmonizeStore(s => s.selected);
   const hasApplied = useReharmonizeStore(s => s.committed !== s.comparison);
+  const notice = useReharmonizeStore(s => s.notice);
   const [maxChanges, setMaxChanges] = useState<ReharmChangeLimit>(1);
   const [mode, setMode] = useState<ReharmMode>('auto');
   const problem = reharmSelectionError(song, slots);
@@ -31,7 +32,7 @@ export default function ReharmControls({ modelKey }: { modelKey: string }) {
   const selectStyle = { background: 'var(--btn-bg)', color: 'var(--text-primary)', border: '1px solid var(--border)' };
   return <div className="space-y-3">
     <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-      Select alternatives together and use Play to compare. Overlapping choices replace each other. Apply to keep your selection.
+      Select alternatives together and use Play to compare. Overlapping choices replace each other. Apply keeps your selection and closes the cards.
     </p>
     <label className="flex items-center justify-between gap-2 text-xs">
       Change up to
@@ -74,6 +75,7 @@ export default function ReharmControls({ modelKey }: { modelKey: string }) {
         : pending ? `${selectionLabel} selected. Apply to keep ${selected.length ? 'these changes' : 'the original chords'}.`
           : 'Choose an alternative on the score to enable Apply.'}
     </p>}
+    {!result && !loading && notice && <p role="status" className="text-xs" style={{ color: 'var(--text-muted)' }}>{notice}</p>}
     {problem && <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{problem}</p>}
     {loading && <OperationProgress label="Comparing substitutions against the surrounding chords…" />}
     {error && <p role="alert" className="text-xs">{error}</p>}

@@ -482,7 +482,7 @@ function SecondEar({ suggestions, disabled }: { suggestions: Suggestion[]; disab
         style={{ background: 'var(--btn-bg)', color: 'var(--text-primary)', opacity: blocked ? 0.5 : 1 }}
         title={metaOff
           ? 'THEARTIST_META_ENABLED=0 on the server'
-          : "Ask the judge model which candidate fits best; its reasons are checked against the analyzer's facts (one Meta call)"}
+          : "Ask the judge model which candidate fits best; its reasons are checked against the analyzer's facts (one model call)"}
       >
         {metaOff ? 'Second ear: Meta features are disabled on this server' : loading ? 'Second ear: listening…' : 'Second ear'}
       </button>
@@ -510,7 +510,7 @@ function SecondEar({ suggestions, disabled }: { suggestions: Suggestion[]; disab
           </p>
         </div>
       )}
-      {loading && <OperationProgress label="Meta is reviewing the selected harmony…" />}
+      {loading && <OperationProgress label="Reviewing the selected harmony…" />}
       {error && (
         <p
           role="alert"

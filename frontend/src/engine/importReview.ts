@@ -31,7 +31,7 @@ export interface ImportReviewPlan {
 /** The comparison's own reason, from the note the backend prefixes to a disputed bar. */
 function reviewText(note: string | undefined): string {
   const reason = /^Local\/Meta comparison: ([^.]+)\./.exec(note ?? '');
-  return reason ? `Meta review: ${reason[1]}.` : 'Meta review: the readings differ; compare with the source.';
+  return reason ? `Check against the original: ${reason[1]}.` : 'Check against the original: the readings differ; compare with the source.';
 }
 
 const bars = (count: number) => `${count} ${count === 1 ? 'bar' : 'bars'}`;
@@ -39,15 +39,15 @@ const bars = (count: number) => `${count} ${count === 1 ? 'bar' : 'bars'}`;
 export function planImportReview(song: Song, verified: ScoreImportResponse): ImportReviewPlan {
   const check = verified.verification;
   const sources = song.importSource?.measures ?? [];
-  if (!check) return { flags: [], fills: [], summary: 'Meta review returned no comparison.' };
+  if (!check) return { flags: [], fills: [], summary: 'The check returned no comparison.' };
   if (check.status === 'local_only' || check.status === 'local_fallback') {
-    return { flags: [], fills: [], summary: check.notes[0] ?? 'Meta review was skipped; the local reading stands.' };
+    return { flags: [], fills: [], summary: check.notes[0] ?? 'The check was skipped; the local reading stands.' };
   }
   if (check.status === 'unaligned') {
-    return { flags: [], fills: [], summary: `Meta read ${bars(check.metaMeasures)} where the score has ${bars(check.localMeasures)}; nothing was flagged.` };
+    return { flags: [], fills: [], summary: `The second reading found ${bars(check.metaMeasures)} where the score has ${bars(check.localMeasures)}; nothing was flagged.` };
   }
   if (check.status === 'local_unavailable') {
-    return { flags: [], fills: [], summary: 'Meta read the file but no local comparison was possible; review every bar against the source.' };
+    return { flags: [], fills: [], summary: 'No local comparison was possible; review every bar against the source.' };
   }
   const flags: ImportReviewFlag[] = [];
   for (const index of check.disputedMeasures) {
@@ -75,12 +75,12 @@ export function planImportReview(song: Song, verified: ScoreImportResponse): Imp
         evidence: proposed.note, originalChords: [...proposed.chords], analysisSource: 'meta',
         model: proposed.model ?? verified.model, requestId: proposed.requestId ?? verified.requestId,
         notes: [...(proposed.notes ?? [])], writtenNotes: [...(proposed.writtenNotes ?? [])], bassNotes: [...(proposed.bassNotes ?? [])],
-        editorReview: 'Meta proposed this harmony after import; the local reader had none.',
+        editorReview: 'Proposed from the original after import; the local reader had none.',
       },
     });
   }
   const parts = [];
   if (flags.length) parts.push(`${bars(flags.length)} flagged for review`);
   if (fills.length) parts.push(`${bars(fills.length)} filled where the local reader had no chord`);
-  return { flags, fills, summary: parts.length ? `Meta review: ${parts.join(', ')}.` : 'Meta review: both readings agree.' };
+  return { flags, fills, summary: parts.length ? `Checked against the original: ${parts.join(', ')}.` : 'Checked against the original: both readings agree.' };
 }
