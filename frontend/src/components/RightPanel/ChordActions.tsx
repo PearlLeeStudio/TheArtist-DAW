@@ -123,10 +123,12 @@ interface ModelSelectProps {
   models: ModelOption[];
   value: string;
   onChange: (modelKey: string) => void;
+  /** What the chosen model does in this tool, and which other model works beside it. */
+  note?: string;
 }
 
 /** One dropdown for the paper F-series and the LoRA adapters together. */
-function ModelSelect({ models, value, onChange }: ModelSelectProps) {
+function ModelSelect({ models, value, onChange, note }: ModelSelectProps) {
   return (
     <div className="space-y-1">
       <label className="text-[10px] uppercase tracking-wide font-semibold" style={{ color: 'var(--text-muted)' }}>
@@ -142,9 +144,13 @@ function ModelSelect({ models, value, onChange }: ModelSelectProps) {
           <option key={m.key} value={m.key}>{m.label}</option>
         ))}
       </select>
+      {note && <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{note}</p>}
     </div>
   );
 }
+
+/** Reharmonize is a two-model tool: the dropdown picks the scorer, Meta runs the search. */
+const REHARM_MODEL_NOTE = 'Scores each candidate in the context of the surrounding chords. The Meta model (Muse Spark) explores the substitution search with tool calls and picks the three alternatives.';
 
 interface SectionSelectProps {
   id: string;
@@ -709,7 +715,8 @@ export default function ChordActions({ view = 'all' }: ChordActionsProps) {
         {view === 'reharmonize' ? 'Reharmonize' : 'Chords'} <span className="font-normal normal-case">— {selectionLabel(selectedSlots)}</span>
       </h3>
 
-      {view !== 'manual' && modelList.length > 0 && <ModelSelect models={modelList} value={modelKey} onChange={pickModel} />}
+      {view !== 'manual' && modelList.length > 0 && <ModelSelect models={modelList} value={modelKey} onChange={pickModel}
+        note={view === 'reharmonize' ? REHARM_MODEL_NOTE : undefined} />}
       {view === 'reharmonize' && <ReharmControls modelKey={modelKey} />}
 
       {/* ---------- Generate (model) UI ---------- */}

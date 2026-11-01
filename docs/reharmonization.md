@@ -45,6 +45,9 @@ comparison and discards changes made since the last Apply, preserving later manu
 edits. A fresh search also discards pending previews. Autosave retains the last
 Apply and unrelated edits; reloading clears the comparison without keeping
 unconfirmed previews. This is an editor session, not a saved-project version history.
+The **Model** dropdown above the controls picks the scorer and says so: the chosen
+Music Transformer scores each candidate in context, while the Meta model (Muse Spark)
+explores the search with tool calls and picks the three alternatives.
 The controls also show search errors and a **View 3 alternatives on the score**
 link, so the comparison remains findable when it is below the visible score rows.
 
