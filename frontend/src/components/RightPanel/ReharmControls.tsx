@@ -18,12 +18,16 @@ export default function ReharmControls({ modelKey }: { modelKey: string }) {
   const run = useReharmonizeStore(s => s.run);
   const apply = useReharmonizeStore(s => s.apply);
   const pending = useReharmonizeStore(hasPendingReharmSelection);
+  const selected = useReharmonizeStore(s => s.selected);
+  const hasApplied = useReharmonizeStore(s => s.committed !== s.comparison);
   const [maxChanges, setMaxChanges] = useState<ReharmChangeLimit>(1);
   const [mode, setMode] = useState<ReharmMode>('auto');
   const problem = reharmSelectionError(song, slots);
   const targetCount = reharmTargets(song, slots).length;
   const disabled = loading || generating || !!problem;
   const applyDisabled = loading || generating || !result || !pending || !!error;
+  const applied = !!result && hasApplied && !pending && !error;
+  const selectionLabel = selected.length ? selected.map(index => `Alter ${index + 1}`).join(' + ') : 'Origin';
   const selectStyle = { background: 'var(--btn-bg)', color: 'var(--text-primary)', border: '1px solid var(--border)' };
   return <div className="space-y-3">
     <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
@@ -61,9 +65,15 @@ export default function ReharmControls({ modelKey }: { modelKey: string }) {
       {loading ? 'Exploring substitutes…' : 'Find 3 alternatives'}
     </button>
     <button disabled={applyDisabled} onClick={apply} className="w-full px-3 py-2 text-sm font-bold"
-      style={{ background: 'var(--text-heading)', color: 'var(--bg-primary)', opacity: applyDisabled ? .45 : 1 }}>
-      Apply
+      style={{ background: applyDisabled ? 'var(--btn-bg)' : 'var(--brand-yellow)',
+        color: applyDisabled ? 'var(--text-muted)' : '#1a1a1a', border: '1px solid var(--border)' }}>
+      {applied ? 'Applied ✓' : 'Apply'}
     </button>
+    {result && !loading && !error && <p role="status" className="text-xs" style={{ color: 'var(--text-muted)' }}>
+      {applied ? `${selectionLabel} applied. Choose a different combination to apply again.`
+        : pending ? `${selectionLabel} selected. Apply to keep ${selected.length ? 'these changes' : 'the original chords'}.`
+          : 'Choose an alternative on the score to enable Apply.'}
+    </p>}
     {problem && <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{problem}</p>}
     {loading && <OperationProgress label="Comparing substitutions against the surrounding chords…" />}
     {error && <p role="alert" className="text-xs">{error}</p>}

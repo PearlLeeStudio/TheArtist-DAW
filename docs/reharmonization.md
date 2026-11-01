@@ -34,7 +34,11 @@ The change limit applies to each alternative; a combination can change more slot
 Combining cards makes no additional Meta call and does not rescore the combination.
 
 **Apply**, directly below **Find 3 alternatives**, keeps the preview and leaves all
-cards available. **Origin** previews the exact original symbols and voicings and can
+cards available. A new combination enables the yellow **Apply** button. After applying,
+the button reads **Applied ✓** and the status names the saved combination; returning
+to that same combination also shows **Applied ✓**. Choose a different combination
+to enable Apply again. Before any alternative is selected, the status explains what
+to select. **Origin** previews the exact original symbols and voicings and can
 also be applied. The **×** closes the comparison and discards changes made since the
 last Apply, preserving later manual edits. A fresh search also discards pending
 previews. Autosave retains the last Apply and unrelated edits; reloading clears the

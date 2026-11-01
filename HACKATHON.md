@@ -174,6 +174,8 @@ rows 59 and 64; successful execution alone does not establish musical quality.
 
 | 112 | **Combine reharmonization alternatives before Apply**: equal Origin / Alter 1 / Alter 2 / Alter 3 cards in one row; toggle disjoint alternatives together, replace conflicting whole cards with the newest choice, keep the preview with Apply below Find 3 alternatives, and discard pending changes with ×. Autosave keeps the last Apply and later manual edits | this commit; [behavior](docs/reharmonization.md) | Same three returned Music Transformer + Meta candidates; selection and Apply make no new model calls | Frontend transition, store/autosave and render tests pass. Chrome with the production API and an isolated local score: real F1 section generation, simultaneous Alter 1 + 2, Alter 3 replacing only overlapping Alter 2, Apply, Origin preview, × returning to the applied combination, and reload preservation. Build/lint/import pass; existing bundle-size warning remains |
 
+| 113 | **Distinguish pending and applied reharmonization choices**: yellow Apply for a changed combination, Applied ✓ with the saved combination, and an explanation before any alternative is selected | this commit; [behavior](docs/reharmonization.md) | No model calls | Actual controls against real stores cover multi-selection, Apply/autosave, conflicting replacements, returning to the saved combination, and applying Origin. Frontend 274 tests, build/lint and backend import pass; existing bundle-size warning remains |
+
 Validation details and unchecked browser/audio/DAW cases are in the
 [manual checklist](docs/manual-checks.md). The README distinguishes application
 screenshots from the pre-existing baseline video. Safari export opened a sixteen-bar,
