@@ -48,6 +48,10 @@ unconfirmed previews. This is an editor session, not a saved-project version his
 The **Model** dropdown above the controls picks the scorer and says so: the chosen
 Music Transformer scores each candidate in context, while the Meta model (Muse Spark)
 explores the search with tool calls and picks the three alternatives.
+While the cards are open, a collapsed **Run details** under the controls lists that
+search's record from the response: the Meta model id and its tool calls in order
+(for example `search_substitutions → offer_candidates`), the scoring Music Transformer,
+the request ids, the cost and the wall time the editor measured. It closes with the cards.
 The controls also show search errors and a **View 3 alternatives on the score**
 link, so the comparison remains findable when it is below the visible score rows.
 

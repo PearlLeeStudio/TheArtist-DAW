@@ -33,7 +33,7 @@ workflow; the musician chooses what stays in the score.
 On the [live workspace](https://artist-daw.pearlleestudio.co), in a desktop browser (no sign-in; projects stay in the browser):
 
 1. **New from Song Form → Full form**, Length 32 bars, press **Muse Spark only**. Muse Spark plans the sections and writes every chord; the form lands on the staff in about 25 seconds. Press Play.
-2. Drag across two to four chords, right-click → **Reharmonize** → **Find 3 alternatives** (about 10 seconds). Switch **Alter 1–3** on the staff, listen, then **Apply**; Ctrl/⌘+Z undoes it.
+2. Drag across two to four chords, right-click → **Reharmonize** → **Find 3 alternatives** (about 10 seconds). Switch **Alter 1–3** on the staff, listen, then **Apply**; Ctrl/⌘+Z undoes it. Before applying, open **Run details** under the controls to see Muse Spark's tool calls, request ids, cost and time.
 3. **Import Score**, choose a PDF lead sheet, tick **Use Meta model** and press **Analyze and import**. The score opens from the local reading at once; Meta's reading of the original runs in the background (up to 150 seconds), marks the bars where the two readings differ and fills bars the local reader left empty.
 4. **Export ▾ → Download MIDI** for separate Harmony, Bass and Drums tracks, or **PDF · Light (print)** for the score.
 
@@ -71,7 +71,7 @@ to the DAW. Its existing chord model supplies a harmonic engine for this workflo
 | Editor | staff, voicings, Roman numerals, MIDI input, playback, saved-sessions page | Import Score, Original/A/B/C, Reharmonize (Origin / Alter 1–3), Second ear, Complete the form, Projects rework (first-row previews, full Export menu, bulk delete, preserve current work), the Play panel and mixer, Safari MIDI bridge and Logic handoff |
 | Service | `/api/generate*`, basic `midi_b64` render | local vector-PDF reader and harmony analyzer, editable three-part MIDI export (`/api/export/midi`, replacing the baseline's basic MIDI download), score PDF, DAW handoff, Logic Scripter script, REST + MCP contract, Meta client with ledger, planner, Second-ear review, Reharmonize |
 
-Since the `baseline` tag: more than 250 commits and 120 entries in the [work log](HACKATHON.md),
+Since the `baseline` tag: more than 250 commits and more than 120 entries in the [work log](HACKATHON.md),
 each with its tests and limits.
 
 **Where Meta is used.** These six paths are the only Meta calls in the product; voicings, accompaniment, MIDI rendering and the local score reader are application code, and Generate's chord candidates come from the author's Music Transformer. Every call uses the Standard model `muse-spark-1.3` through the Meta Model API and records its timeout, request id, token count and cost in the ledger; Import labels a recovered local result as local.
@@ -122,7 +122,7 @@ musician meets it most often:
 | Place | What the musician does | What Meta does | What appears |
 |---|---|---|---|
 | **Import Score → Use Meta model** | Picks a PDF, ticks the checkbox, clicks **Analyze and import** | Reads the original file once (≤ $1.50, 150 s) after the local reading has already opened the score | A one-line status above the staff while the check runs, then **Review** marks on bars where the two readings differ and chords filled into bars the local reader left empty, each with its request id in the bar's source details |
-| **Input → Reharmonize → Find 3 alternatives** | Selects written chords, sets *Change up to* and a mode | Explores the mathematical substitution search with native tool calls (≤ 4 turns, ≤ $0.15) and picks three contrasting candidates scored by the Music Transformer | **Origin / Alter 1 / Alter 2 / Alter 3** cards under the passage; **Apply** keeps a combination and closes them |
+| **Input → Reharmonize → Find 3 alternatives** | Selects written chords, sets *Change up to* and a mode | Explores the mathematical substitution search with native tool calls (≤ 4 turns, ≤ $0.15) and picks three contrasting candidates scored by the Music Transformer | **Origin / Alter 1 / Alter 2 / Alter 3** cards under the passage; **Run details** under the controls list the tool calls, request ids, cost and time; **Apply** keeps a combination and closes them |
 
 <!-- Screenshots of these two states go here as screenshot/12-import-use-meta.png and
      screenshot/13-reharmonize-alternatives.png once captured in a browser. -->
