@@ -58,7 +58,9 @@ class ScoreVerificationTest(unittest.TestCase):
             self.assertNotIn("local_context", kwargs)
             return reading("meta", count=2)
         admit = Mock(side_effect=lambda _: order.append("admit"))
-        with patch.object(verify, "analyze_local_score", side_effect=local), \
+        # No head start here: this local reader deliberately outlasts Meta's start.
+        with patch.object(verify, "LOCAL_HEAD_START_S", 0.0), \
+             patch.object(verify, "analyze_local_score", side_effect=local), \
              patch.object(verify, "_import_meta_score", side_effect=meta) as call:
             result = verify.import_verified_score(self.request, {"type": "file"}, before_meta=admit)
         self.assertEqual(order[0], "admit")
@@ -136,17 +138,49 @@ class ScoreVerificationTest(unittest.TestCase):
             with self.assertRaisesRegex(ScoreInputError, "Neither reader"):
                 verify.import_verified_score(self.request, {})
 
-    def test_large_meta_failure_retains_all_local_bars(self):
+    def test_long_local_reading_opens_local_only_without_a_meta_call(self):
+        # Meta reads at most 128 bars, so a quick 129-bar local reading makes the paid
+        # call pointless: no request, no unaligned comparison, every local bar kept.
         admit = Mock()
+        events = []
         with patch.object(verify, "analyze_local_score", return_value=reading(count=129)), \
              patch.object(verify, "_import_meta_score", side_effect=ScoreInputError("Too many bars", 422)) as meta:
-            result = verify.import_verified_score(self.request, {}, before_meta=admit)
+            result = verify.import_verified_score(self.request, {}, before_meta=admit, on_progress=events.append)
         self.assertEqual(len(result.measures), 129)
         self.assertEqual(result.analysisSource, "local")
-        self.assertEqual(result.verification.status, "local_fallback")
+        self.assertEqual(result.verification.status, "local_only")
         self.assertEqual(result.verification.comparedMeasures, 0)
+        self.assertIn("128", result.verification.notes[0])
         admit.assert_called_once_with(1.50)
+        meta.assert_not_called()
+        self.assertTrue(any("comparison was skipped" in e for e in events))
+
+    def test_slow_long_local_reading_still_recovers_after_a_large_meta_failure(self):
+        # When the local reader has not finished within the head start, Meta is tried
+        # and its bar-limit failure falls back to the complete local reading.
+        meta_called = Event()
+        def slow_local(_):
+            self.assertTrue(meta_called.wait(2), "the local reader must outlast the head start")
+            return reading(count=129)
+        def failing_meta(*_args, **_kwargs):
+            meta_called.set()
+            raise ScoreInputError("Too many bars", 422)
+        with patch.object(verify, "LOCAL_HEAD_START_S", 0.0), \
+             patch.object(verify, "analyze_local_score", side_effect=slow_local), \
+             patch.object(verify, "_import_meta_score", side_effect=failing_meta) as meta:
+            result = verify.import_verified_score(self.request, {})
+        self.assertEqual(len(result.measures), 129)
+        self.assertEqual(result.verification.status, "local_fallback")
         meta.assert_called_once()
+
+    def test_unaligned_long_readings_stay_within_the_verification_contract(self):
+        # Before the limits followed the import's 512-bar bound, a 300-bar local reading
+        # against a 128-bar Meta reading failed validation and surfaced as HTTP 500.
+        result = verify.compare_readings(reading(count=300, basis="printed"), reading("meta", count=128))
+        self.assertEqual(result.verification.status, "unaligned")
+        self.assertEqual(result.verification.metaMeasures, 128)
+        self.assertEqual(len(result.verification.disputedMeasures), 300)
+        self.assertEqual(len(result.measures), 300)
 
     def test_agreement_does_not_upgrade_confidence_or_remove_review_flags(self):
         local, meta = reading(basis="printed"), reading("meta", basis="printed")

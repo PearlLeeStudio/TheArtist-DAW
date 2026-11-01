@@ -5,18 +5,20 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 Family = Literal["common_tones", "modal", "dominant"]
+# The editor opens scores of up to 512 bars; a request carries the bars around the passage.
+MAX_REHARM_MEASURES = 512
 Mode = Literal["auto", "ionian", "dorian", "phrygian", "lydian", "mixolydian", "aeolian", "locrian"]
 
 
 class Slot(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
-    measureIndex: int = Field(ge=0, le=255)
+    measureIndex: int = Field(ge=0, le=MAX_REHARM_MEASURES - 1)
     slotIndex: Literal[0, 1]
 
 
 class ReharmBar(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    measure: int = Field(ge=0, le=255)
+    measure: int = Field(ge=0, le=MAX_REHARM_MEASURES - 1)
     chords: list[str | None] = Field(min_length=2, max_length=2)
 
 
@@ -24,7 +26,7 @@ class ReharmRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
     key: str = Field(pattern=r"^[A-G][#b]? (major|minor)$")
     timeSignature: tuple[int, int] = (4, 4)
-    context: list[ReharmBar] = Field(min_length=1, max_length=256)
+    context: list[ReharmBar] = Field(min_length=1, max_length=MAX_REHARM_MEASURES)
     selectedSlots: list[Slot] = Field(min_length=1, max_length=16)
     maxChanges: Literal[1, 2, 3, 4] = 1
     mode: Mode = "auto"
@@ -33,11 +35,15 @@ class ReharmRequest(BaseModel):
     @model_validator(mode="after")
     def valid_passage(self):
         bars = {bar.measure: bar.chords for bar in self.context}
-        if len(bars) != len(self.context) or sorted(bars) != list(range(len(bars))):
-            raise ValueError("Context must contain consecutive unique measures starting at zero.")
+        first = min(bars)
+        # Any consecutive run of bars is a valid window; addresses stay absolute.
+        if len(bars) != len(self.context) or sorted(bars) != list(range(first, first + len(bars))):
+            raise ValueError("Context must contain consecutive unique measures.")
         addresses = {(s.measureIndex, s.slotIndex) for s in self.selectedSlots}
         if len(addresses) != len(self.selectedSlots):
             raise ValueError("Selected slots must be unique.")
+        if any(m not in bars for m, _ in addresses):
+            raise ValueError("Selected slots must lie within the context measures.")
         if max(m for m, _ in addresses) - min(m for m, _ in addresses) >= 8:
             raise ValueError("Select a passage spanning at most eight measures.")
         if any(not bars.get(m, [None, None])[s] for m, s in addresses):

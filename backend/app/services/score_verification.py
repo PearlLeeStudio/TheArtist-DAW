@@ -6,7 +6,7 @@ are review flags. A failed Meta request returns an explicitly attributed local r
 from __future__ import annotations
 
 from collections.abc import Callable
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeout
 from contextvars import copy_context
 import logging
 from fastapi import HTTPException
@@ -16,8 +16,12 @@ from app.services.score_analysis import LocalScoreUnsupported, analyze_local_sco
 from app.services.score_context import ScoreContextError, score_context
 from app.services.llm import LLMError
 from app.services.score_import import (
-    SCORE_MAX_REQUEST_USD, ScoreInputError, _import_meta_score,
+    MAX_META_SCORE_MEASURES, SCORE_MAX_REQUEST_USD, ScoreInputError, _import_meta_score,
 )
+
+# How long the Meta call waits for a quick local reading, so a score longer than
+# Meta's bar limit opens locally without a paid request that cannot align with it.
+LOCAL_HEAD_START_S = 2.0
 
 
 def _review(bar, fields):
@@ -116,27 +120,39 @@ def import_verified_score(req: ScoreImportRequest, attachment: dict, *,
             return None
 
     local = None
-    local_finished = False
+    local_future = None
+    # Both readers consume the original, never each other's hypotheses. Keep
+    # Meta's attribution and fallback rules while overlapping independent work.
+    executor = ThreadPoolExecutor(max_workers=1)
     try:
+        # Admission first: no reader starts for a request the limiter refuses.
         if before_meta is not None:
             before_meta(SCORE_MAX_REQUEST_USD)
+        local_future = executor.submit(copy_context().run, read_local)
+        try:
+            local = local_future.result(timeout=LOCAL_HEAD_START_S)
+        except FutureTimeout:
+            pass
+        if local is not None and len(local.measures) > MAX_META_SCORE_MEASURES:
+            # Meta reads at most MAX_META_SCORE_MEASURES bars, so its reading could
+            # never align with this score; the complete local reading opens instead.
+            progress(f"Local analysis is ready for all {len(local.measures)} bars. Meta reads at most "
+                     f"{MAX_META_SCORE_MEASURES} bars, so the comparison was skipped.")
+            local.verification = ScoreVerification(
+                status="local_only", localMeasures=len(local.measures), metaMeasures=0,
+                comparedMeasures=0, disputedMeasures=[],
+                notes=[f"Meta reads at most {MAX_META_SCORE_MEASURES} bars; this {len(local.measures)}-bar score "
+                       "opened from the local reader without a Meta comparison."])
+            return local
         progress("Meta is reading the original score while the local reader checks its notation…")
-        # Both readers consume the original, never each other's hypotheses. Keep
-        # Meta's attribution and fallback rules while overlapping independent work.
-        with ThreadPoolExecutor(max_workers=1) as executor:
-            local_future = executor.submit(copy_context().run, read_local)
-            try:
-                checked = _import_meta_score(req, attachment)
-            finally:
-                local = local_future.result()
-                local_finished = True
+        checked = _import_meta_score(req, attachment)
+        local = local_future.result()
     except (LLMError, ScoreInputError, HTTPException) as failure:
         logging.getLogger(__name__).warning("Meta score reading failed; using local reader: kind=%s request_id=%s",
                                             getattr(failure, "kind", type(failure).__name__),
                                             getattr(failure, "request_id", None))
         progress("Meta reading was unavailable. Continuing with the local score reader…")
-        if not local_finished:
-            local = read_local()
+        local = local_future.result() if local_future is not None else read_local()
         if local is None:
             raise ScoreInputError("Neither reader could recover an editable score from this file. "
                                   "Use a PDF with readable notation or a clearer image.", 422) from failure
@@ -146,6 +162,8 @@ def import_verified_score(req: ScoreImportRequest, attachment: dict, *,
             notes=["Meta reading was unavailable. The local reader recovered this score; unresolved bars remain editable."])
         progress("Local analysis is ready. You can import the reviewed score.")
         return local
+    finally:
+        executor.shutdown(wait=True)
 
     try:
         progress("Comparing both readings and marking unresolved bars for review…")

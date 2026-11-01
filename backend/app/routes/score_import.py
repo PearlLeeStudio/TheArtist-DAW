@@ -6,6 +6,7 @@ from collections.abc import Callable
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
+from pydantic import ValidationError
 
 from app.models.score_import import ScoreImportRequest, ScoreImportResponse
 from app.services import limits
@@ -47,6 +48,14 @@ def _run_import(req: ScoreImportRequest, caller: Caller | None,
             return import_score(req, before_meta=admit if req.engine != "local" else None, **kwargs)
     except ScoreInputError as exc:
         raise HTTPException(status_code=exc.status_code, detail=str(exc)) from None
+    except ValidationError as exc:
+        # A reading that violates the import contract is reported with its first
+        # violation instead of surfacing as an anonymous server error.
+        first = exc.errors()[0] if exc.errors() else {}
+        where = ".".join(str(part) for part in first.get("loc", ())) or "result"
+        logging.getLogger(__name__).warning("Score reading violated the import contract at %s: %s", where, first.get("msg"))
+        raise HTTPException(status_code=502, detail=f"The score reader returned a result outside the import contract "
+                            f"({where}: {first.get('msg', 'invalid')}). Try again or select local analysis.") from None
     except BudgetExceeded:
         raise HTTPException(status_code=429, detail="Score import would exceed the Meta API cost limit. "
                             "Check the request limit and remaining API budget.") from None

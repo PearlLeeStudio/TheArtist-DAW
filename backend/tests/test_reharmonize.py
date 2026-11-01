@@ -165,6 +165,34 @@ class SearchTests(unittest.TestCase):
         with self.assertRaises(ValidationError):
             request(context=[{"measure": 3, "chords": ["C", "G"]}])
 
+    def test_windowed_context_of_a_long_score_keeps_absolute_addresses(self):
+        # The editor sends the bars around the passage of a 465-bar score; every
+        # reported address refers to the score, not to the window.
+        req = request(context=[{"measure": i, "chords": ["Cmaj7", "Am7"] if i % 2 else ["Dm7", "G7"]}
+                               for i in range(300, 340)],
+                      selectedSlots=[{"measureIndex": 321, "slotIndex": 0}, {"measureIndex": 321, "slotIndex": 1}],
+                      maxChanges=2)
+        candidates = search(req, "common_tones")
+        self.assertTrue(candidates)
+        for candidate in candidates:
+            for change in candidate.changes:
+                self.assertEqual(change.address.measureIndex, 321)
+                self.assertIn(change.before, ("Cmaj7", "Am7"))
+        self.assertTrue(any(len(c.changes) == 2 for c in candidates))
+        self.assertEqual([bar.measure for bar in context_window(req)], list(range(313, 330)))
+
+    def test_scores_up_to_512_bars_are_accepted_and_windows_need_not_start_at_zero(self):
+        request(context=[{"measure": i, "chords": ["C", "G"]} for i in range(512)],
+                selectedSlots=[{"measureIndex": 511, "slotIndex": 0}])
+        request(context=[{"measure": i, "chords": ["C", "G"]} for i in range(100, 110)],
+                selectedSlots=[{"measureIndex": 105, "slotIndex": 0}])
+        with self.assertRaisesRegex(ValidationError, "within the context"):
+            request(context=[{"measure": i, "chords": ["C", "G"]} for i in range(100, 110)],
+                    selectedSlots=[{"measureIndex": 5, "slotIndex": 0}])
+        with self.assertRaisesRegex(ValidationError, "consecutive"):
+            request(context=[{"measure": 3, "chords": ["C", "G"]}, {"measure": 5, "chords": ["C", "G"]}],
+                    selectedSlots=[{"measureIndex": 3, "slotIndex": 0}])
+
     def test_context_window_preserves_known_bars_on_both_sides(self):
         req = request(context=[{"measure": i, "chords": ["C", "G"]} for i in range(64)],
                       selectedSlots=[{"measureIndex": 30, "slotIndex": 0}])
@@ -318,3 +346,12 @@ class NativeToolsTests(LLMTestCase):
                 reharmonize_route(request())
             self.assertEqual(caught.exception.status_code, 502)
             self.assertGreater(limiter.settle.call_args.args[1], 0)
+
+
+class ManualSpellingTests(unittest.TestCase):
+    def test_manual_builder_spellings_are_scored_by_their_tones(self):
+        for symbol, tones, projected in (("Dm(add9)", {2, 4, 5, 9}, "Dm"), ("Dmadd9", {2, 4, 5, 9}, "Dm"),
+                                         ("G7(no3)", {7, 2, 5}, "G7"), ("Am(add4)", {9, 0, 2, 4}, "Am")):
+            with self.subTest(symbol=symbol):
+                self.assertEqual(set(chord(symbol)[1]), tones)
+                self.assertEqual(model_symbol(symbol), projected)

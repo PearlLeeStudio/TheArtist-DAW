@@ -129,9 +129,10 @@ class FormAnalysis(StrictModel):
 class ScoreVerification(StrictModel):
     status: Literal["compared", "local_unavailable", "unaligned", "local_only", "local_fallback"]
     localMeasures: int = Field(ge=0, le=MAX_SCORE_MEASURES)
-    metaMeasures: int = Field(ge=0, le=128)
-    comparedMeasures: int = Field(ge=0, le=128)
-    disputedMeasures: list[int] = Field(max_length=128)
+    metaMeasures: int = Field(ge=0, le=MAX_SCORE_MEASURES)
+    comparedMeasures: int = Field(ge=0, le=MAX_SCORE_MEASURES)
+    # An unaligned comparison lists every local bar, so the local limit applies.
+    disputedMeasures: list[int] = Field(max_length=MAX_SCORE_MEASURES)
     notes: list[Note] = Field(max_length=4)
 
 

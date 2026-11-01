@@ -43,6 +43,11 @@ INPUT_INTERVALS = {**INTERVALS,
     "9sus4": (0, 2, 5, 7, 10), "13sus4": (0, 2, 5, 7, 9, 10),
     "add2": (0, 2, 4, 7), "add4": (0, 4, 5, 7), "add6": (0, 4, 7, 9),
     "add11": (0, 4, 5, 7), "add13": (0, 4, 7, 9),
+    # The editor's manual builder spells minor added tones as m(add9) and a
+    # third-less seventh as 7(no3); they are scored by their actual tones.
+    "madd9": (0, 2, 3, 7), "m(add9)": (0, 2, 3, 7), "madd2": (0, 2, 3, 7), "m(add2)": (0, 2, 3, 7),
+    "madd4": (0, 3, 5, 7), "m(add4)": (0, 3, 5, 7), "madd11": (0, 3, 5, 7), "m(add11)": (0, 3, 5, 7),
+    "7(no3)": (0, 7, 10),
 }
 # Explicit coarse model encodings, disclosed to Meta and the caller. Never let
 # the tokenizer silently turn an unfamiliar quality (e.g. aug7) into major.
@@ -51,6 +56,8 @@ MODEL_QUALITIES = {**{q: q for q in INTERVALS},
     "mMaj9": "mMaj7", "6/9": "6", "m6/9": "m6", "7sus2": "7", "7sus4": "7",
     "9sus4": "9", "13sus4": "13", "add2": "add9", "add4": "maj", "add6": "6",
     "add11": "maj", "add13": "6",
+    "madd9": "m", "m(add9)": "m", "madd2": "m", "m(add2)": "m",
+    "madd4": "m", "m(add4)": "m", "madd11": "m", "m(add11)": "m", "7(no3)": "7",
 }
 _ALTERATION = re.compile(r"(?:b5|#5|b9|#9|#11|b13)")
 _QUALITY = re.compile(
@@ -246,13 +253,21 @@ def search(req: ReharmRequest, family: str, *, limit: int = 6) -> list[ReharmCan
     """Enumerate selected occupied slots within the requested one-to-four change cap."""
     if family not in ("common_tones", "modal", "dominant"):
         raise ValueError("Unknown substitution family.")
-    symbols = [symbol for bar in req.context for symbol in bar.chords]
+    bars = sorted(req.context, key=lambda bar: bar.measure)
+    # The context may be a window of a longer score: positions are relative to
+    # its first bar, while every reported address stays absolute.
+    base = bars[0].measure
+    symbols = [symbol for bar in bars for symbol in bar.chords]
     # Validate precisely the same local context that the model will score.
     validate_context(req)
     tonic = pitch(req.key.split()[0])
     scales = {name: {(tonic + p) % 12 for p in scale} for name, scale in MODES.items()}
     home = scales["aeolian" if req.key.endswith("minor") else "ionian"]
-    selected = sorted(s.measureIndex * 2 + s.slotIndex for s in req.selectedSlots)
+
+    def position(address) -> int:
+        return (address.measureIndex - base) * 2 + address.slotIndex
+
+    selected = sorted(position(s) for s in req.selectedSlots)
 
     def make(replacements):
         version = list(symbols)
@@ -267,7 +282,7 @@ def search(req: ReharmRequest, family: str, *, limit: int = 6) -> list[ReharmCan
             preference, conventions = convention_preference(req.key, before, after,
                 version[left] if left is not None else None, version[right] if right is not None else None)
             preferences.append(preference)
-            changes.append(Change(address=Slot(measureIndex=i // 2, slotIndex=i % 2), before=before, after=after,
+            changes.append(Change(address=Slot(measureIndex=i // 2 + base, slotIndex=i % 2), before=before, after=after,
                                   commonTones=len(before_pcs & after_pcs),
                                   conventions=conventions,
                                   modes=[name for name, scale in scales.items() if after_pcs <= scale]))
@@ -324,7 +339,7 @@ def search(req: ReharmRequest, family: str, *, limit: int = 6) -> list[ReharmCan
         # Bounded beam: pair only the best single changes, then recompute shared boundaries.
         for a, b in combinations(sorted(singles, key=lambda c: -c.mathScore)[:12], 2):
             ca, cb = a.changes[0], b.changes[0]
-            ia, ib = ca.address.measureIndex * 2 + ca.address.slotIndex, cb.address.measureIndex * 2 + cb.address.slotIndex
+            ia, ib = position(ca.address), position(cb.address)
             if ia != ib:
                 candidates.append(make([(ia, ca.after), (ib, cb.after)]))
     if req.maxChanges >= 3:
@@ -333,20 +348,16 @@ def search(req: ReharmRequest, family: str, *, limit: int = 6) -> list[ReharmCan
         # shared boundaries and convention evidence reflect all its changes.
         extensions = []
         for i in selected:
-            extensions.extend(_diverse_roots([
-                c for c in singles
-                if c.changes[0].address.measureIndex * 2 + c.changes[0].address.slotIndex == i
-            ], 2))
+            extensions.extend(_diverse_roots([c for c in singles if position(c.changes[0].address) == i], 2))
         beam = _diverse_roots([c for c in candidates if len(c.changes) == 2], 12)
         for size in range(3, min(req.maxChanges, len(selected)) + 1):
             expanded = {}
             for partial in beam:
-                replacements = [(c.address.measureIndex * 2 + c.address.slotIndex, c.after)
-                                for c in partial.changes]
+                replacements = [(position(c.address), c.after) for c in partial.changes]
                 occupied = {i for i, _ in replacements}
                 for single in extensions:
                     change = single.changes[0]
-                    i = change.address.measureIndex * 2 + change.address.slotIndex
+                    i = position(change.address)
                     if i not in occupied:
                         patch = make([*replacements, (i, change.after)])
                         expanded[patch.id] = patch
