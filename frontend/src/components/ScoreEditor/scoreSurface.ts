@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { RefObject } from 'react';
-import { Renderer, Stave } from 'vexflow';
+import { Renderer, Stave } from 'vexflow/bravura';
 import { keySignatureFor } from '../../engine/keySignatures';
 import type { ScoreStaveLayout } from '../../engine/scoreStaveLayout';
 

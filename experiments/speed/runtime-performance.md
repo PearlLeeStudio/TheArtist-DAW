@@ -203,6 +203,29 @@ on selection; a first uncached network load can still take time. Browser network
 latency and audible switching were not measured, so zero-delay playback is not
 claimed.
 
+## Frontend bundle
+
+Measured from `vite build` output sizes (Vite 8.3.5 / rolldown) before and after
+two changes: the notation, audio and React libraries get their own chunks
+(`build.rolldownOptions.output.advancedChunks`), and the editor imports VexFlow
+through its `vexflow/bravura` entry, which ships only the Bravura music font and
+Academico text font that the full entry already selected as defaults, instead
+of also bundling Gonville, Petaluma and Petaluma Script. Rendering code and
+font defaults are unchanged; the notation and key-signature tests pass on the
+new entry. The PDF export chunks (`jspdf`, `html2canvas`, `purify`) were already
+loaded on demand and are unchanged.
+
+| Eagerly loaded JavaScript (`index.html` script + modulepreload) | Raw | gzip |
+|---|---:|---:|
+| Before: one `index` chunk | 1,861.98 kB | 905.19 kB |
+| After: `index` 265.72 + `vexflow` 719.28 + `audio` 284.20 + `react` 190.91 + runtime 0.59 | 1,460.70 kB | 603.20 kB |
+
+The VexFlow chunk alone went from 1,119.52 kB (688.40 kB gzip, all fonts) to
+719.28 kB (387.08 kB gzip). An editor-only change now invalidates the 265.72 kB
+`index` chunk rather than the whole bundle, so a returning browser can reuse the
+library chunks; that reuse and the actual first-paint time in a browser were not
+measured here. The 500 kB chunk warning remains for the VexFlow chunk.
+
 ## Quality and remaining work
 
 These measurements used **RAG off**. The product has since gained default-on

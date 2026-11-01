@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { VexFlow } from 'vexflow';
+import { VexFlow } from 'vexflow/bravura';
 import { STANDARD_KEYS, STANDARD_KEY_SIGNATURES, keySignatureFor, normalizeKeySignature } from './keySignatures.ts';
 import { buildImportedSong, createScoreImportDraft, importMeasureRomanPreview, parseImportedChord, validateScoreImportDraft } from './scoreImport.ts';
 

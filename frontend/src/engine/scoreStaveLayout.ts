@@ -1,4 +1,4 @@
-import { Stave } from 'vexflow';
+import { Stave } from 'vexflow/bravura';
 import { scoreMeasureLayout } from './scoreLayout.ts';
 import type { ScoreMeasureLayout } from './scoreLayout.ts';
 

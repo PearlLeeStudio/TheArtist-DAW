@@ -5,7 +5,7 @@ import { registerHooks } from 'node:module';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { transpileModule, JsxEmit, ModuleKind } from 'typescript';
-import { Stave } from 'vexflow';
+import { Stave } from 'vexflow/bravura';
 import { scoreStaveLayout } from './scoreStaveLayout.ts';
 import type { Song } from '../models/types.ts';
 

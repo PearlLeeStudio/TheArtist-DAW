@@ -1,4 +1,4 @@
-import { CanvasContext, Renderer, Stave } from 'vexflow';
+import { CanvasContext, Renderer, Stave } from 'vexflow/bravura';
 import { jsPDF } from 'jspdf';
 import type { Chord, Song } from '../models/types';
 import { getChordDisplayParts } from './chordDisplay';
