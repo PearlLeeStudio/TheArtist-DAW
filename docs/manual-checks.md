@@ -297,6 +297,13 @@ verified. Existing unchecked audio/DAW cases below remain unchecked.
   prevent an obsolete plan from being applied.
 - [ ] Ctrl+A / ⌘A selects every editor bar. In a title input or dialog it retains
   native text selection. Projects does not intercept the shortcut.
+- [ ] Clipboard editing in Chrome and Safari: drag two bars, ⌘C, select eight bars,
+  ⌘V repeats the pattern; select one slot, ⌘V writes forward and appends bars when it
+  runs past the end; ⌘X empties the selection and keeps it; Delete clears; ⌘Z undoes
+  each step; the right-click menu offers the same. Text `Dm7 G7 | Cmaj7` pasted from
+  another app lands as chords. Text inputs and open dialogs keep their native keys.
+  Not yet exercised in a browser by the implementer; the event wiring (including
+  Safari's `beforecopy`/`beforepaste` enabling) has unit coverage for the logic only.
 - [ ] Force a failure using an isolated test server or browser request blocking:
   the dialog
   shows the error and keeps the staff untouched. With the backend available,

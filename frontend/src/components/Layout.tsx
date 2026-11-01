@@ -55,7 +55,7 @@ export default function Layout() {
   const setTitle = useSongStore((s) => s.setTitle);
   const clearSong = useSongStore((s) => s.clearSong);
   const selectedSlots = useSongStore((s) => s.selectedSlots);
-  const setChord = useSongStore((s) => s.setChord);
+  const clearSlots = useSongStore((s) => s.clearSlots);
   const addSession = useSessionStore((s) => s.add);
   const sessionCount = useSessionStore((s) => s.sessions.length);
   const modelKey = useGenerationStore((s) => s.modelKey);
@@ -153,8 +153,8 @@ export default function Layout() {
   }, [clearSong]);
 
   const handleClearSelection = useCallback(() => {
-    for (const slot of selectedSlots) setChord(slot, null);
-  }, [selectedSlots, setChord]);
+    clearSlots(selectedSlots);
+  }, [selectedSlots, clearSlots]);
 
   const handleMidiNotes = useCallback((notes: number[]) => {
     setMidiActiveNotes(notes);
@@ -275,7 +275,7 @@ export default function Layout() {
                   onClick={handleClearSelection}
                   className="px-3 py-1  text-xs btn-hover"
                   style={{ background: 'var(--btn-bg)', color: 'var(--text-primary)' }}
-                  title="Reset chords in the selected slots"
+                  title="Reset chords in the selected slots (Delete; ⌘Z / Ctrl+Z undoes it)"
                 >
                   Clear
                 </button>

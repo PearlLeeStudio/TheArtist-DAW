@@ -7,11 +7,14 @@ import type { Measure, SlotAddress, SongSection } from '../../models/types';
 import { scoreStaveLayout } from '../../engine/scoreStaveLayout';
 import { SCORE_MEASURES_PER_ROW, SCORE_ROW_HEIGHT } from '../../engine/scoreLayout';
 import { selectAllScore } from '../../engine/scoreShortcuts';
+import { selectionHasChords } from '../../engine/scoreClipboard';
 import { keySignatureFor } from '../../engine/keySignatures';
 import { useStaffViewport, drawScoreStaves } from './scoreSurface';
 import ImportedMeasureReview from './ImportedMeasureReview';
 import ReharmBand from './ReharmBand.tsx';
 import ScoreContextMenu from './ScoreContextMenu.tsx';
+import type { ContextMenuItem } from './ScoreContextMenu.tsx';
+import { editorKeysBlocked, scoreEdits, useClipboardMemory, useScoreClipboard } from './useScoreClipboard';
 import { useReharmonizeStore } from '../../store/reharmonizeStore';
 import { hasEmptySlot, isExplicitNoChord, needsSourceReview } from './importedBars';
 
@@ -28,6 +31,12 @@ const SECTION_LABEL_DY = 16;
 const SECTION_LABEL_MAX_CHARS = 22;
 /** Baseline of an imported bar's Review/Unresolved marker, below the Roman numerals. */
 const IMPORT_MARKER_DY = 127;
+const APPLE_KEYBOARD = typeof navigator !== 'undefined' && /Mac|iPhone|iPad|iPod/.test(navigator.platform);
+
+/** The shortcut shown in the context menu for a Cmd/Ctrl key. */
+function keyHint(key: string): string {
+  return APPLE_KEYBOARD ? `⌘${key}` : `Ctrl+${key}`;
+}
 
 /** Keyboard activation (Enter or Space) for SVG text that acts as a button. */
 function onEnterOrSpace(action: () => void) {
@@ -108,6 +117,8 @@ export default function Staff({ onOpenControls }: StaffProps = {}) {
   const selectSlot = useSongStore((s) => s.selectSlot);
   const selectSlotRange = useSongStore((s) => s.selectSlotRange);
   const addMeasures = useSongStore((s) => s.addMeasures);
+  const canUndo = useSongStore((s) => s.editHistory.length > 0);
+  const clipboardMemory = useClipboardMemory();
 
   const [dragStart, setDragStart] = useState<SlotAddress | null>(null);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; epoch: number; selection: SlotAddress[] } | null>(null);
@@ -126,15 +137,25 @@ export default function Staff({ onOpenControls }: StaffProps = {}) {
 
   useEffect(() => {
     const handleKeyDown = (event: globalThis.KeyboardEvent) => {
-      const target = event.target instanceof Element ? event.target : null;
-      const textControl = target?.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"]), [role="textbox"], [role="combobox"]');
-      const blocked = Boolean(textControl || document.querySelector('dialog[open]'));
-      selectAllScore(event, useSongStore.getState().song.measures.length, blocked, selectSlotRange);
+      selectAllScore(event, useSongStore.getState().song.measures.length, editorKeysBlocked(event.target), selectSlotRange);
     };
     // Staff mounts only in the editor, so Projects keeps its browser shortcuts.
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [selectSlotRange]);
+  // Cut / copy / paste / Delete / undo over the selection, likewise editor-only.
+  useScoreClipboard();
+
+  const selectionChords = selectionHasChords(song.measures, selectedSlots);
+  const contextItems: ContextMenuItem[] = [
+    { id: 'cut', label: 'Cut', hint: keyHint('X'), disabled: !selectionChords, title: 'The selected slots are empty.', run: () => scoreEdits.cut() },
+    { id: 'copy', label: 'Copy', hint: keyHint('C'), run: () => scoreEdits.copy() },
+    { id: 'paste', label: 'Paste', hint: keyHint('V'), disabled: !clipboardMemory, title: 'Copy or cut chords on the score first.', run: () => scoreEdits.paste() },
+    { id: 'clear', label: 'Clear', hint: '⌫', disabled: !selectionChords, title: 'The selected slots are empty.', run: () => scoreEdits.clear() },
+    { id: 'undo', label: 'Undo edit', hint: keyHint('Z'), disabled: !canUndo, title: 'No cut, paste or clear to undo.', run: () => scoreEdits.undo() },
+    { id: 'generate', label: 'Generate', divider: true, run: () => onOpenControls?.('generate') },
+    { id: 'reharmonize', label: 'Reharmonize', run: () => onOpenControls?.('reharmonize') },
+  ];
 
   const staveLayouts = useMemo(() => {
     return Array.from({ length: song.measures.length }, (_, i) => {
@@ -483,8 +504,8 @@ export default function Staff({ onOpenControls }: StaffProps = {}) {
         <ReharmBand />
       </div>}
     </div>
-    {visibleMenu && <ScoreContextMenu x={visibleMenu.x} y={visibleMenu.y} onClose={closeContextMenu}
-      onChoose={tool => { closeContextMenu(); onOpenControls?.(tool); }} />}
+    {visibleMenu && <ScoreContextMenu x={visibleMenu.x} y={visibleMenu.y} items={contextItems} onClose={closeContextMenu}
+      onChoose={item => { closeContextMenu(); item.run(); }} />}
     </>
   );
 }

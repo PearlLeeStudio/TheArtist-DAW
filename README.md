@@ -207,6 +207,12 @@ file, contract and test coverage, fixes, and remaining verification limits.
   A successful run is applied from the dialog; the staff stays free of execution
   logs. Reopen the dialog's collapsed **Run details** for Undo and the trace.
   Ctrl+A or ⌘A selects every bar in the editor; text inputs retain native selection.
+  Drag across the staff to select slots, then Ctrl/⌘+X, C and V cut, copy and paste
+  them: a copied passage that divides the selection repeats over it, anything else
+  is written forward from the first selected slot and adds bars as needed. Delete
+  clears the selection and Ctrl/⌘+Z undoes cut, paste and clear. The clipboard
+  holds the chords with their voicings and the plain text `Dm7 G7 | Cmaj7 | -`,
+  which can also be pasted from elsewhere. Right-click offers the same edits.
   In the hybrid/template path, the chord model receives key, meter, genre and preceding chords. Section identities
   are not learned conditioning tokens in the served tokenizer: Muse or the genre
   template plans the form, and song-form rules adjust starts, loops and cadences.

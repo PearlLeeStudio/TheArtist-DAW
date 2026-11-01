@@ -1,19 +1,36 @@
 import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 
+export interface ContextMenuItem {
+  id: string;
+  label: string;
+  /** Keyboard shortcut shown beside the label. */
+  hint?: string;
+  disabled?: boolean;
+  /** Why the item is disabled, as its tooltip. */
+  title?: string;
+  /** Draw a separator above this item. */
+  divider?: boolean;
+  run: () => void;
+}
+
 interface Props {
   x: number;
   y: number;
-  onChoose: (tool: 'generate' | 'reharmonize') => void;
+  items: ContextMenuItem[];
+  onChoose: (item: ContextMenuItem) => void;
   onClose: () => void;
 }
 
-/** Navigation only: opening a tool never starts a model call or changes chords. */
-export default function ScoreContextMenu({ x, y, onChoose, onClose }: Props) {
+const MENU_WIDTH = 208;
+
+/** Right-click menu over the selected passage: clipboard edits on the
+ *  selection, then the tools. Opening a tool never starts a model call. */
+export default function ScoreContextMenu({ x, y, items, onChoose, onClose }: Props) {
   const menu = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const element = menu.current;
-    const buttons = [...element?.querySelectorAll<HTMLButtonElement>('button') ?? []];
+    const buttons = [...element?.querySelectorAll<HTMLButtonElement>('button:not([disabled])') ?? []];
     buttons[0]?.focus();
     const dismissOutside = (event: PointerEvent) => {
       if (!element?.contains(event.target as Node)) onClose();
@@ -42,15 +59,18 @@ export default function ScoreContextMenu({ x, y, onChoose, onClose }: Props) {
     };
   }, [onClose]);
 
+  const height = items.length * 34 + 12;
   return createPortal(<div ref={menu} role="menu" aria-label="Selected passage" className="fixed p-1 rounded-md shadow-xl"
     onContextMenu={event => event.preventDefault()}
-    style={{ left: Math.max(8, Math.min(x, window.innerWidth - 188)),
-      top: Math.max(8, Math.min(y, window.innerHeight - 100)), width: 180, maxWidth: 'calc(100vw - 16px)',
+    style={{ left: Math.max(8, Math.min(x, window.innerWidth - MENU_WIDTH - 8)),
+      top: Math.max(8, Math.min(y, window.innerHeight - height - 8)), width: MENU_WIDTH, maxWidth: 'calc(100vw - 16px)',
       zIndex: 100, background: 'var(--bg-surface)', color: 'var(--text-primary)', border: '1px solid var(--border)' }}>
-    {(['generate', 'reharmonize'] as const).map(tool => <button key={tool} role="menuitem"
-      onClick={() => onChoose(tool)} className="block w-full text-left px-3 py-2 text-sm rounded btn-hover focus-visible:outline-2"
-      style={{ outlineColor: 'var(--brand-yellow)' }}>
-      {tool === 'generate' ? 'Generate' : 'Reharmonize'}
+    {items.map(item => <button key={item.id} role="menuitem" disabled={item.disabled} title={item.disabled ? item.title : undefined}
+      onClick={() => onChoose(item)}
+      className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm rounded btn-hover focus-visible:outline-2 disabled:opacity-40 disabled:cursor-default"
+      style={{ outlineColor: 'var(--brand-yellow)', ...(item.divider ? { borderTop: '1px solid var(--border)', borderRadius: 0, marginTop: 4, paddingTop: 10 } : {}) }}>
+      <span>{item.label}</span>
+      {item.hint && <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{item.hint}</span>}
     </button>)}
   </div>, document.body);
 }

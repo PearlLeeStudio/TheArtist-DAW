@@ -70,7 +70,7 @@ const song: Song = {
 };
 Object.defineProperty(globalThis, 'staffTestState', {
   configurable: true, value: {
-    song, selectedSlots: [{ measureIndex: 0, slotIndex: 0 }], playbackPosition: null,
+    song, selectedSlots: [{ measureIndex: 0, slotIndex: 0 }], playbackPosition: null, editHistory: [],
     selectSlot() {}, selectSlotRange() {}, addMeasures() {},
   },
 });

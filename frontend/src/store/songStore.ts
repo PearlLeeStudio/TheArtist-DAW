@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import type { Song, Measure, Chord, SlotAddress, SectionType, SongSection } from '../models/types';
 import { captureGenerationComparison } from '../engine/generationComparison';
 import type { GenerationComparison, TargetChord } from '../engine/generationComparison';
+import type { PastePlan } from '../engine/scoreClipboard';
 import { withoutChordPreview } from '../engine/chordPreview';
 import type { ChordPreview } from '../engine/chordPreview';
 import { calculateRomanNumeral } from '../engine/romanNumeral';
@@ -116,6 +117,8 @@ function lengthWithoutEmptyTail(measures: Measure[], sections: SongSection[], mi
 
 const STORAGE_KEY = 'theartist-song';
 const AUTOSAVE_DEBOUNCE_MS = 500;
+/** Songs kept for undoEdit, newest last. */
+const EDIT_HISTORY_LIMIT = 50;
 
 function loadFromStorage(): Song | null {
   try {
@@ -171,6 +174,9 @@ interface SongState {
   /** The song the last import replaced, for undoImport; any other song
    *  replacement clears it. */
   previousImportSong: Song | null;
+  /** The song before each cut, paste or clear, newest last, for undoEdit.
+   *  A song replacement empties it. */
+  editHistory: Song[];
 
   // Actions
   /** A user edit — also turns the automatic (section-derived) title off. */
@@ -193,6 +199,15 @@ interface SongState {
     previewOriginal?: GenerationComparison | null;
   }) => void;
   commitChordPreview: () => void;
+  /** Empty the given slots (Clear, Cut, Delete); recorded for undoEdit. */
+  clearSlots: (slots: SlotAddress[]) => void;
+  /** Write a paste plan (engine/scoreClipboard.ts): appends the bars it
+   *  needs, writes its chords and selects the pasted range; recorded for
+   *  undoEdit. */
+  pasteSlots: (plan: PastePlan) => void;
+  /** Restore the song before the latest cut, paste or clear. False when
+   *  there is nothing to undo. */
+  undoEdit: () => boolean;
   addMeasures: (count?: number) => void;
   /** Record a song-form section of `bars` measures right after the last
    *  used measure (see sectionPlacement), appending measures only as
@@ -243,7 +258,13 @@ function songReplacement(song: Song, previousEpoch: number): Partial<SongState> 
     isPlaying: false,
     midiCandidates: [],
     previousImportSong: null,
+    editHistory: [],
   };
+}
+
+/** The history with the current song appended, within EDIT_HISTORY_LIMIT. */
+function recorded(state: Pick<SongState, 'song' | 'editHistory'>): Song[] {
+  return [...state.editHistory.slice(-(EDIT_HISTORY_LIMIT - 1)), structuredClone(state.song)];
 }
 
 export const useSongStore = create<SongState>((set, get) => ({
@@ -255,6 +276,7 @@ export const useSongStore = create<SongState>((set, get) => ({
   isPlaying: false,
   midiCandidates: [],
   previousImportSong: null,
+  editHistory: [],
 
   setTitle: (title) => set((state) => ({
     song: { ...state.song, title, autoTitle: false },
@@ -335,6 +357,51 @@ export const useSongStore = create<SongState>((set, get) => ({
   }),
 
   commitChordPreview: () => set({ chordPreview: null }),
+
+  clearSlots: (slots) => set((state) => {
+    const targets = slots.filter((slot) => state.song.measures[slot.measureIndex]?.chords[slot.slotIndex]);
+    if (targets.length === 0) return {};
+    const cleared = new Set(targets.map(slotToLinear));
+    const measures = state.song.measures.map((m, mi) => {
+      if (!cleared.has(mi * 2) && !cleared.has(mi * 2 + 1)) return m;
+      const chords = m.chords.map((chord, si) => cleared.has(mi * 2 + si) ? null : chord) as [Chord | null, Chord | null];
+      return { ...m, chords };
+    });
+    return { ...interruptIfPlaying(state), editHistory: recorded(state), song: { ...state.song, measures } };
+  }),
+
+  pasteSlots: (plan) => set((state) => {
+    if (plan.targets.length === 0) return {};
+    const added = createMeasures(state.song.measures.length, plan.measuresToAdd);
+    const updatesByMeasure = groupByMeasure(plan.targets);
+    const measures = [...state.song.measures, ...added].map((m, mi) => {
+      const measureUpdates = updatesByMeasure.get(mi);
+      if (!measureUpdates) return m;
+      const chords = [...m.chords] as [Chord | null, Chord | null];
+      for (const { address, chord } of measureUpdates) {
+        chords[address.slotIndex] = chord ? analyzeChord(chord, state.song.key) : null;
+      }
+      return { ...m, chords };
+    });
+    return {
+      ...interruptIfPlaying(state),
+      editHistory: recorded(state),
+      song: { ...state.song, measures },
+      selectedSlots: buildSlotRange(plan.select[0], plan.select[1]),
+    };
+  }),
+
+  undoEdit: () => {
+    const previous = get().editHistory.at(-1);
+    if (!previous) return false;
+    set((state) => ({
+      ...interruptIfPlaying(state),
+      song: previous,
+      editHistory: state.editHistory.slice(0, -1),
+      selectedSlots: state.selectedSlots.filter((slot) => slot.measureIndex < previous.measures.length),
+    }));
+    return true;
+  },
 
   addMeasures: (count = 4) => set((state) => {
     const newMeasures = createMeasures(state.song.measures.length, count);

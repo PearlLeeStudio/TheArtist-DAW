@@ -36,6 +36,15 @@ Select the relevant slots on the staff and open **Input**.
 | Reharmonize | Alternatives to chords already in the score | A bounded set of substitutions within the selected slots |
 | Set manually / MIDI | A specific harmonic decision | The chosen slot |
 
+Select slots by clicking or dragging across the staff; Ctrl/⌘+A selects the whole
+score. Ctrl/⌘+X, C and V cut, copy and paste the selected slots (right-click offers
+the same): a copied passage that divides the selection exactly repeats over it,
+so a two-bar pattern fills eight selected bars; anything else is written forward
+from the first selected slot and appends bars as needed. Delete clears the
+selection and Ctrl/⌘+Z undoes cut, paste and clear. The clipboard carries the
+chords with their voicings and the text form `Dm7 G7 | Cmaj7 | -`, which can
+also be pasted from any text source.
+
 In **Reharmonize**, choose **Change up to 1, 2, 3 or 4 chords** and a mode.
 This sets the maximum per candidate, not a required number of edits or the
 number of alternatives. The result always offers three candidates when the
