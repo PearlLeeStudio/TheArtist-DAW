@@ -1,6 +1,9 @@
 import { create } from 'zustand';
 import type { Song, Measure, Chord, SlotAddress, SectionType, SongSection } from '../models/types';
-import type { TargetChord } from '../engine/generationComparison';
+import { captureGenerationComparison } from '../engine/generationComparison';
+import type { GenerationComparison, TargetChord } from '../engine/generationComparison';
+import { withoutChordPreview } from '../engine/chordPreview';
+import type { ChordPreview } from '../engine/chordPreview';
 import { calculateRomanNumeral } from '../engine/romanNumeral';
 import { generatePianoVoicing } from '../engine/voicingEngine';
 import { transposeSongKey } from '../engine/songTranspose';
@@ -160,6 +163,7 @@ interface SongState {
    *  session keeps the id of the song it was saved from, so song.id cannot
    *  tell a replacement from an edit; listeners compare this instead. */
   songEpoch: number;
+  chordPreview: ChordPreview | null;
   selectedSlots: SlotAddress[];
   playbackPosition: { measureIndex: number; slotIndex: 0 | 1 } | null;
   isPlaying: boolean;
@@ -184,7 +188,11 @@ interface SongState {
   /** Several slots in one song update (applying an A/B/C suggestion).
    *  `preserveAnalysis` writes copies of the chords as given (restoring
    *  captured originals) instead of running analyzeChord on them. */
-  setChords: (updates: TargetChord[], options?: { preserveAnalysis?: boolean }) => void;
+  setChords: (updates: TargetChord[], options?: {
+    preserveAnalysis?: boolean;
+    previewOriginal?: GenerationComparison | null;
+  }) => void;
+  commitChordPreview: () => void;
   addMeasures: (count?: number) => void;
   /** Record a song-form section of `bars` measures right after the last
    *  used measure (see sectionPlacement), appending measures only as
@@ -229,6 +237,7 @@ function songReplacement(song: Song, previousEpoch: number): Partial<SongState> 
   return {
     song,
     songEpoch: previousEpoch + 1,
+    chordPreview: null,
     selectedSlots: [],
     playbackPosition: null,
     isPlaying: false,
@@ -240,6 +249,7 @@ function songReplacement(song: Song, previousEpoch: number): Partial<SongState> 
 export const useSongStore = create<SongState>((set, get) => ({
   song: loadFromStorage() || createInitialSong(),
   songEpoch: 0,
+  chordPreview: null,
   selectedSlots: [],
   playbackPosition: null,
   isPlaying: false,
@@ -314,8 +324,17 @@ export const useSongStore = create<SongState>((set, get) => ({
       }
       return { ...m, chords: newChords };
     });
-    return { ...interruptIfPlaying(state), song: { ...state.song, measures } };
+    const song = { ...state.song, measures };
+    const original = options?.previewOriginal;
+    const chordPreview = original === undefined ? state.chordPreview : original === null ? null : {
+      original,
+      shown: captureGenerationComparison(song, original.original.map(item => item.address), state.songEpoch),
+      key: song.key,
+    };
+    return { ...interruptIfPlaying(state), song, chordPreview };
   }),
+
+  commitChordPreview: () => set({ chordPreview: null }),
 
   addMeasures: (count = 4) => set((state) => {
     const newMeasures = createMeasures(state.song.measures.length, count);
@@ -447,10 +466,10 @@ export const useSongStore = create<SongState>((set, get) => ({
 // else now (sessionStore.add — see Layout.tsx).
 let _autosaveTimer: number | null = null;
 useSongStore.subscribe((state, prev) => {
-  if (state.song === prev.song) return;
+  if (state.song === prev.song && state.chordPreview === prev.chordPreview) return;
   if (_autosaveTimer !== null) window.clearTimeout(_autosaveTimer);
   _autosaveTimer = window.setTimeout(() => {
-    saveToStorage(state.song);
+    saveToStorage(withoutChordPreview(state.song, state.songEpoch, state.chordPreview));
     _autosaveTimer = null;
   }, AUTOSAVE_DEBOUNCE_MS);
 });

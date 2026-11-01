@@ -24,13 +24,22 @@ not change the song's genre or playback arrangement.
 and their local connections; an explicit parallel mode remains optional and limits
 every proposed chord to that scale. Auto does not assign one mode to the whole song.
 
-The Original/A/B/C comparison appears between the selected passage and the next
-measure. Click A, B, or C to put that version directly on the staff, then use the
-existing Play controls. The three choices remain visible across candidate changes,
-Original restoration, and navigation to the Play panel. Every preview starts from
-the captured original, so A's changes never leak into B. **Keep current & close**
-closes the comparison and retains the version on the score. This comparison is an
-editor session, not a saved-project version history; reloading the page clears it.
+Four equal cards—**Origin / Alter 1 / Alter 2 / Alter 3**—appear in one row between
+the selected passage and the next measure. Select multiple alternatives to preview
+their combined changes on the staff, then use the existing Play controls. Clicking
+a selected alternative deselects it. If a new choice changes any of the same slots,
+it replaces the conflicting alternative as a whole; other selected alternatives
+remain. Each preview combines the selected patches over the captured original.
+The change limit applies to each alternative; a combination can change more slots.
+Combining cards makes no additional Meta call and does not rescore the combination.
+
+**Apply**, directly below **Find 3 alternatives**, keeps the preview and leaves all
+cards available. **Origin** previews the exact original symbols and voicings and can
+also be applied. The **×** closes the comparison and discards changes made since the
+last Apply, preserving later manual edits. A fresh search also discards pending
+previews. Autosave retains the last Apply and unrelated edits; reloading clears the
+comparison without keeping unconfirmed previews. This is an editor session, not a
+saved-project version history.
 The controls also show search errors and a **View 3 alternatives on the score**
 link, so the comparison remains findable when it is below the visible score rows.
 
@@ -109,7 +118,7 @@ The response contains three `candidates` with address/before/after patches and
 computed metrics, `modelUsed`, `contextMeasures`, `metaModel`, `requestIds`,
 `costUsd`, and `toolCalls`. Scores are ranking signals, not quality probabilities.
 Selection and context edits during a request invalidate its result. Later edits
-block stale candidate application; Original may still restore an untouched target
+block stale candidate application; Origin may still restore an untouched target
 range without removing edits outside it.
 
 Only Meta Standard `muse-spark-1.3` is used. Native calls follow the
@@ -141,8 +150,9 @@ That paid fixture predates convention scoring. The updated preferences and final
 tool payloads are covered with controlled transports, without a new paid Meta run.
 
 Tests cover sparse bounds, both neighboring chords, modes, tensions and slash
-basses, validated native calls, spending on failures, persistent A/B/C transitions,
-exact Original restoration, stale edits, and the actual staff/comparison markup.
+basses, validated native calls, spending on failures, combined and overlapping
+selections, Apply/cancel/autosave, exact Origin restoration, stale edits, and the
+actual staff/comparison markup.
 Automated transition tests do not establish audio quality.
 
 The LoRA regression originated in the whole-context scorer added by `1571197`,

@@ -40,8 +40,11 @@ search succeeds. It may favor fewer changes when they fit the passage.
 Select existing chords across at most eight measures and sixteen occupied
 slots; empty slots stay unchanged. The surrounding harmony informs the search.
 
-Switch **A/B/C** on the score, then use **Play** to audition the result.
-**Original** restores the original symbols and voicings. Compare a passage
+In Reharmonize, the **Origin / Alter 1 / Alter 2 / Alter 3** cards share one row.
+Select alternatives together, then use **Play** to audition the result. A new
+overlapping choice replaces the conflicting card. **Apply** keeps the selection;
+**×** discards changes since the last Apply. **Origin** previews the original
+symbols and voicings. Generate retains its separate **Original/A/B/C** controls. Compare a passage
 in the context of the arrangement, including how it leads into the next section.
 An explicit mode constrains substitutions; Auto lets the search consider
 contextual harmonic colors. The [Reharmonize guide](reharmonization.md) explains

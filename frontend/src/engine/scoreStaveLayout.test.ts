@@ -87,10 +87,10 @@ test('overlay geometry matches VexFlow before drawing, across rows and narrow wi
   }
 });
 
-test('reharmonization choices stay between the selected bar and the next bar through A/B switching', () => {
+test('four equal reharmonization cards stay inline with the score through multiple selection', () => {
   const state = {
     comparison: { original: [{ address: { measureIndex: 1, slotIndex: 0 }, chord: song.measures[1].chords[0] }] },
-    active: 0, loading: false, error: null, close() {}, preview() {},
+    selected: [0], loading: false, error: null, close() {}, preview() {},
     result: { candidates: ['Dm', 'Fm', 'Am'].map((after, index) => ({
       id: `choice-${index}`, family: 'common_tones',
       changes: [{ address: { measureIndex: 1, slotIndex: 0 }, before: 'C', after, commonTones: 2 }],
@@ -98,11 +98,14 @@ test('reharmonization choices stay between the selected bar and the next bar thr
   };
   Object.defineProperty(globalThis, 'staffReharmTestState', { configurable: true, value: state });
   try {
-    for (const active of [0, 1, 2, null]) {
-      Object.assign(state, { active });
+    for (const selected of [[0], [1], [2], [0, 1], []]) {
+      Object.assign(state, { selected });
       const html = renderToStaticMarkup(createElement(Staff));
-      for (const letter of ['A', 'B', 'C']) assert.ok(html.includes(`Preview candidate ${letter} on the score`));
-      assert.ok(html.includes('Original'));
+      for (const index of [0, 1, 2]) assert.ok(html.includes(`aria-pressed="${selected.includes(index)}" aria-label="Select Alter ${index + 1}"`));
+      assert.ok(html.includes(`aria-pressed="${selected.length === 0}" aria-label="Preview Origin on the score"`));
+      assert.ok(html.includes('grid-cols-4'));
+      assert.ok(html.includes('Close reharmonization'));
+      assert.ok(!html.includes('Keep current &amp; close'));
       const ys = [...html.matchAll(/<text[^>]*\sy="([\d.]+)"[^>]*>C<\/text>/g)].map(match => Number(match[1]));
       assert.equal(ys.length, 16);
       assert.equal(ys[0], ys[1]);

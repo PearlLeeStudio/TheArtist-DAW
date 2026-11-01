@@ -5,6 +5,7 @@ import { useReharmonizeStore } from '../../store/reharmonizeStore';
 import { useGenerationStore } from '../../store/generationStore';
 import { REHARM_CHANGE_LIMITS, REHARM_MODES, reharmSelectionError, reharmTargets } from '../../engine/reharmonize';
 import type { ReharmChangeLimit, ReharmMode } from '../../engine/reharmonize';
+import { hasPendingReharmSelection } from '../../engine/reharmonizeSession';
 
 export default function ReharmControls({ modelKey }: { modelKey: string }) {
   const song = useSongStore(s => s.song);
@@ -15,15 +16,18 @@ export default function ReharmControls({ modelKey }: { modelKey: string }) {
   const result = useReharmonizeStore(s => s.result);
   const generating = useGenerationStore(s => s.loading);
   const run = useReharmonizeStore(s => s.run);
+  const apply = useReharmonizeStore(s => s.apply);
+  const pending = useReharmonizeStore(hasPendingReharmSelection);
   const [maxChanges, setMaxChanges] = useState<ReharmChangeLimit>(1);
   const [mode, setMode] = useState<ReharmMode>('auto');
   const problem = reharmSelectionError(song, slots);
   const targetCount = reharmTargets(song, slots).length;
   const disabled = loading || generating || !!problem;
+  const applyDisabled = loading || generating || !result || !pending || !!error;
   const selectStyle = { background: 'var(--btn-bg)', color: 'var(--text-primary)', border: '1px solid var(--border)' };
   return <div className="space-y-3">
     <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-      Explore three substitutes in context. Switch A/B/C on the score and use Play to compare.
+      Select alternatives together and use Play to compare. Overlapping choices replace each other. Apply to keep your selection.
     </p>
     <label className="flex items-center justify-between gap-2 text-xs">
       Change up to
@@ -55,6 +59,10 @@ export default function ReharmControls({ modelKey }: { modelKey: string }) {
       className="w-full px-3 py-2 text-sm font-bold"
       style={{ background: 'var(--brand-yellow)', color: '#1a1a1a', opacity: disabled ? .55 : 1 }}>
       {loading ? 'Exploring substitutes…' : 'Find 3 alternatives'}
+    </button>
+    <button disabled={applyDisabled} onClick={apply} className="w-full px-3 py-2 text-sm font-bold"
+      style={{ background: 'var(--text-heading)', color: 'var(--bg-primary)', opacity: applyDisabled ? .45 : 1 }}>
+      Apply
     </button>
     {problem && <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{problem}</p>}
     {loading && <OperationProgress label="Comparing substitutions against the surrounding chords…" />}

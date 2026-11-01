@@ -34,8 +34,9 @@ genre adapters with real weights; mocked success is insufficient.
 
 After deployment, verify the affected flow in the hosted app using an imported or
 self-authored sparse score: select an unresolved passage and Generate; select an
-existing extended chord such as `Eaug7` and Reharmonize. Check A/B/C application,
-card persistence across control/Play changes, active playback, Original restoration,
+existing extended chord such as `Eaug7` and Reharmonize. Check Origin/Alter 1–3,
+disjoint multi-selection, conflicting choices, Apply, × cancel, reload persistence,
+card persistence across control/Play changes, active playback, original restoration,
 and preservation of untargeted slots. Exercise drag/right-click navigation when
 selection or control routing changes. Keep these checks on a separate score unless
 the user explicitly asks to edit their current score. Report untested behavior;
@@ -43,6 +44,11 @@ passing unit tests alone does not complete this verification.
 
 ## Observed workflow
 
+- [x] Chrome, production API with an isolated local score: F1 generated four bars;
+  Reharmonize returned three real candidates. Alter 1 + 2 combined; Alter 3 replaced
+  only overlapping Alter 2. Apply kept Alter 1 + 3. Origin preview restored the
+  source; × returned to the last Apply, and reload retained the combination.
+  Four equal cards occupy one row, with Apply directly below Find 3 alternatives.
 - [x] User-confirmed: Logic Pro integration works in the user's own workflow.
   This confirms the DAW handoff; the separate Scripter, hardware and detailed
   meter/controller cases below retain their own verification scope.

@@ -1,8 +1,9 @@
 import type { Song, SlotAddress } from '../models/types.ts';
 import { captureGenerationComparison, matchesCapturedRange } from './generationComparison.ts';
 import type { GenerationComparison, TargetChord } from './generationComparison.ts';
-import { reharmFingerprint, reharmSelectionError, reharmTargets, reharmUpdates, requestReharmonization } from './reharmonize.ts';
+import { reharmFingerprint, reharmSelectionError, reharmTargets, reharmUpdates, requestReharmonization, toggleReharmSelection } from './reharmonize.ts';
 import type { ReharmChangeLimit, ReharmMode, ReharmResult } from './reharmonize.ts';
+import { previewRollback } from './chordPreview.ts';
 
 export interface ReharmState {
   loading: boolean;
@@ -10,30 +11,54 @@ export interface ReharmState {
   result: ReharmResult | null;
   comparison: GenerationComparison | null;
   applied: GenerationComparison | null;
-  active: number | null;
+  selected: number[];
+  committed: GenerationComparison | null;
+  committedSelection: number[];
   originalKey: string | null;
   expectedFingerprint: string | null;
   run: (modelKey: string, maxChanges: ReharmChangeLimit, mode: ReharmMode) => Promise<void>;
   preview: (index: number | null) => void;
+  apply: () => void;
   close: () => void;
 }
 export const emptyReharmState = {
   loading: false, error: null, result: null, comparison: null, applied: null,
-  active: null, originalKey: null, expectedFingerprint: null,
+  selected: [], committed: null, committedSelection: [], originalKey: null, expectedFingerprint: null,
 };
 interface Host {
   read: () => { song: Song; songEpoch: number; selectedSlots: SlotAddress[] };
   stop: () => void;
-  write: (updates: TargetChord[]) => void;
+  write: (updates: TargetChord[], previewOriginal?: GenerationComparison) => void;
+  commit: () => void;
   clearGeneration: () => void;
+}
+
+export function hasPendingReharmSelection(state: Pick<ReharmState, 'selected' | 'committedSelection'>): boolean {
+  return state.selected.join(',') !== state.committedSelection.join(',');
 }
 
 /** Editor-independent lifecycle, shared by the UI store and transition tests. */
 export function reharmActions(host: Host, get: () => ReharmState, set: (patch: Partial<ReharmState>) => void,
-  requestCandidates = requestReharmonization): Pick<ReharmState, 'run' | 'preview' | 'close'> {
+  requestCandidates = requestReharmonization): Pick<ReharmState, 'run' | 'preview' | 'apply' | 'close'> {
   let request: AbortController | null = null;
+  const close = () => {
+    request?.abort();
+    request = null;
+    const state = get();
+    const { song, songEpoch } = host.read();
+    if (state.committed && state.applied && state.originalKey && hasPendingReharmSelection(state)) {
+      const updates = previewRollback(song, songEpoch, {
+        original: state.committed, shown: state.applied, key: state.originalKey,
+      });
+      if (updates.length) { host.stop(); host.write(updates); }
+    }
+    host.commit();
+    set(emptyReharmState);
+  };
   return {
     run: async (modelKey, maxChanges, mode) => {
+      // A new search starts from the last Apply, never from a pending preview.
+      close();
       const { song, songEpoch, selectedSlots } = host.read();
       const problem = reharmSelectionError(song, selectedSlots);
       if (problem) { set({ error: problem }); return; }
@@ -44,7 +69,7 @@ export function reharmActions(host: Host, get: () => ReharmState, set: (patch: P
       const comparison = captureGenerationComparison(song, targets, songEpoch);
       const fingerprint = reharmFingerprint(song);
       host.clearGeneration();
-      set({ ...emptyReharmState, loading: true, comparison, applied: comparison,
+      set({ ...emptyReharmState, loading: true, comparison, applied: comparison, committed: comparison,
         originalKey: song.key, expectedFingerprint: fingerprint });
       try {
         const result = await requestCandidates(song, targets, maxChanges, mode, modelKey, controller.signal);
@@ -61,7 +86,7 @@ export function reharmActions(host: Host, get: () => ReharmState, set: (patch: P
     preview: index => {
       const state = get();
       const { song, songEpoch } = host.read();
-      if (!state.comparison || !state.applied || state.loading || (index !== null && !state.result?.candidates[index])) return;
+      if (!state.comparison || !state.applied || !state.committed || state.loading || (index !== null && !state.result?.candidates[index])) return;
       if (!matchesCapturedRange(state.applied, song, songEpoch)) {
         set({ error: 'This passage was edited. Generate fresh candidates to keep those edits.' });
         return;
@@ -75,15 +100,27 @@ export function reharmActions(host: Host, get: () => ReharmState, set: (patch: P
         set({ error: 'The key changed. Generate fresh candidates for the new key.' });
         return;
       }
+      const selected = index === null ? [] : toggleReharmSelection(state.selected, index, state.result!.candidates);
       host.stop();
       host.write(reharmUpdates(state.comparison, song, songEpoch,
-        index === null ? undefined : state.result!.candidates[index]));
+        selected.map(i => state.result!.candidates[i])), state.committed);
       const current = host.read();
-      set({ active: index, error: stale ? 'Original restored. Generate again to use the changed context.' : null,
+      set({ selected, error: stale ? 'Origin restored. Generate again to use the changed context.' : null,
         applied: captureGenerationComparison(current.song, state.comparison.original.map(c => c.address), current.songEpoch),
         expectedFingerprint: stale ? state.expectedFingerprint : reharmFingerprint(current.song) });
-      // All three alternatives stay available, including after A→B→A and Original.
     },
-    close: () => { request?.abort(); request = null; set(emptyReharmState); },
+    apply: () => {
+      const state = get();
+      const { song, songEpoch } = host.read();
+      if (!state.result || !state.applied || state.loading || !hasPendingReharmSelection(state)) return;
+      if (song.key !== state.originalKey || !matchesCapturedRange(state.applied, song, songEpoch) ||
+          reharmFingerprint(song) !== state.expectedFingerprint) {
+        set({ error: 'The score changed. Close this comparison and search again to keep your edits.' });
+        return;
+      }
+      host.commit();
+      set({ committed: state.applied, committedSelection: [...state.selected], error: null });
+    },
+    close,
   };
 }

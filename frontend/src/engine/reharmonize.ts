@@ -123,9 +123,20 @@ export async function requestReharmonization(song: Song, slots: SlotAddress[], m
   }
 }
 
-/** A/B/C always starts from the captured original, including untouched voicings. */
-export function reharmUpdates(comparison: GenerationComparison, song: Song, epoch: number, candidate?: ReharmCandidate) {
-  const replacements = new Map(candidate?.changes.map(change => {
+/** Toggle an entire alternative; the newest selection replaces overlapping alternatives. */
+export function toggleReharmSelection(selected: readonly number[], index: number, candidates: ReharmCandidate[]): number[] {
+  if (selected.includes(index)) return selected.filter(i => i !== index);
+  const slots = new Set(candidates[index].changes.map(change => slotKey(change.address)));
+  return [...selected.filter(i => !candidates[i].changes.some(change => slots.has(slotKey(change.address)))), index].sort();
+}
+
+/** Selected alternatives always start from Origin, including untouched voicings. */
+export function reharmUpdates(comparison: GenerationComparison, song: Song, epoch: number, candidates: ReharmCandidate[] = []) {
+  const changes = candidates.flatMap(candidate => candidate.changes);
+  if (new Set(changes.map(c => slotKey(c.address))).size !== changes.length) {
+    throw new Error('Choose only one alternative for each chord position.');
+  }
+  const replacements = new Map(changes.map(change => {
     const chord = parseChordName(change.after);
     if (!chord) throw new Error('The candidate contains an unreadable chord.');
     return [slotKey(change.address), {

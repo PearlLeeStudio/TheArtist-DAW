@@ -9,7 +9,9 @@ export const useReharmonizeStore = create<ReharmState>((set, get) => ({
   ...reharmActions({
     read: () => useSongStore.getState(),
     stop: () => useSongStore.getState().resetPlayback(),
-    write: updates => useSongStore.getState().setChords(updates, { preserveAnalysis: true }),
+    write: (updates, previewOriginal) => useSongStore.getState().setChords(updates,
+      { preserveAnalysis: true, previewOriginal: previewOriginal ?? null }),
+    commit: () => useSongStore.getState().commitChordPreview(),
     clearGeneration: () => useGenerationStore.getState().clearSuggestions(),
   }, get, set),
 }));

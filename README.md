@@ -29,7 +29,7 @@ workflow; the musician chooses what stays in the score.
 | Step | Work in the editor | Result |
 |---|---|---|
 | Bring in the material | Import Score, MIDI keyboard, manual chords, or New from Song Form | An editable harmonic score with key, meter and section boundaries |
-| Shape the harmony | Select existing chords and Reharmonize, or Generate a new passage | A/B/C comparisons with exact Original restoration; Reharmonize changes up to 1–4 selected chords |
+| Shape the harmony | Select existing chords and Reharmonize, or Generate a new passage | Combine Reharmonize alternatives, preview Origin and Apply; each alternative changes up to 1–4 selected chords. Generate retains Original/A/B/C |
 | Develop the form | Extend a sketch, add a section or start a new song | A complete harmonic form; starting fresh first saves the existing score in Projects |
 | Arrange and audition | Adjust voicings, sounds, comping rhythm, drums, tempo and part levels in Play | A playable Harmony/Bass/Drums arrangement |
 | Continue production | Save a project, export MIDI or score PDF, or hand off to Logic | Editable material for further instrumental, melodic and production work |
@@ -181,7 +181,9 @@ file, contract and test coverage, fixes, and remaining verification limits.
   and after the selected passage. **Change up to** offers 1, 2, 3 or 4 changed
   chords per alternative; this is a maximum, so a candidate may change fewer.
   Meta compares bounded searches scored by the selected Music Transformer and
-  returns three choices. Preview A/B/C on the score or return to **Original**.
+  returns three choices. **Origin / Alter 1 / Alter 2 / Alter 3** share one row.
+  Select alternatives together; overlapping choices replace each other. **Apply**
+  keeps the preview; **×** discards changes since the last Apply.
   Empty slots stay unchanged; use Generate to create a new passage.
 - **Second ear** under a three-candidate list asks the judge model which candidate
   fits, on facts code computed (chords outside the key, changed slots, repetition of
@@ -292,7 +294,7 @@ Current Safari interface: section labels, chord staff, Play controls and the alw
 | | |
 |---|---|
 | **Arrange on a staff** | Import or enter harmonic material, edit section boundaries, select measures or slot ranges, and preserve slash chords |
-| **Compare harmonic alternatives** | Reharmonize existing chords with a 1–4 change limit, or Generate new material; persistent A/B/C previews and Original restoration |
+| **Compare harmonic alternatives** | Combine Reharmonize choices with a 1–4 change limit per alternative, preview Origin and Apply; Generate keeps its Original/A/B/C comparison |
 | **Develop a complete form** | Add sections or extend a sketch with Meta-only, hybrid or genre-template generation; preserve the current project before starting fresh |
 | **Choose the harmonic engine** | F1–F5, F1 v2, Phase 0 and 11 genre LoRAs serve a 13-genre vocabulary. Model training, the F1 checkpoint-selection caveat and evaluation limits are documented under [AI Model](#ai-model) |
 | **Live progress streaming** | `/api/generate/stream` SSE pipeline shows each phase (Read → Load → Compose → Rank → Voice → Done) as the model thinks; a Theory phase retrieves attributed source excerpts when an enabled corpus is ready; OMT is enabled by default after its setup step |
@@ -321,8 +323,9 @@ Intro, Verse or Chorus function is uncertain.
 ### Develop harmony with Generate and Reharmonize
 
 Use **Reharmonize** for substitutions within an existing passage. Choose up to
-1–4 changed chords, compare the three returned versions on the staff, and use
-**Original** to restore the exact passage. [Search behavior and limits](docs/reharmonization.md)
+1–4 changed chords per alternative, combine non-overlapping choices on the staff,
+and **Apply** to keep them. **Origin** previews the exact source passage; **×**
+discards unapplied changes. [Search behavior and limits](docs/reharmonization.md)
 explain the role of neighboring chords, mode constraints and the trained scorer.
 Use **Generate** when the arrangement needs new harmonic material:
 
@@ -571,7 +574,7 @@ TheArtist-DAW/
 │   │   └── MyPage/                       # Projects and first-row score previews
 │   ├── engine/
 │   │   ├── chordGenerator.ts             # Chord/section generation clients
-│   │   ├── reharmonize.ts · reharmonizeSession.ts # Bounded patch requests and A/B/C/Original
+│   │   ├── reharmonize.ts · reharmonizeSession.ts # Bounded patches, multi-select preview and Apply
 │   │   ├── planClient.ts · sseStream.ts   # Full-form runs and SSE transport
 │   │   ├── scoreImport.ts                # Import requests and source provenance
 │   │   ├── exportSpec.ts · pdf.ts        # Shared export snapshot and PDF rendering

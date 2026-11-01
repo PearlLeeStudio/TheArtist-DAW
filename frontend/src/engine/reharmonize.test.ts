@@ -4,8 +4,11 @@ import type { Song, SlotAddress } from '../models/types.ts';
 import { parseChordName } from './chordParser.ts';
 import { reharmSymbol, reharmSelectionError, requestReharmonization, validateReharmResult } from './reharmonize.ts';
 import type { ReharmCandidate, ReharmResult } from './reharmonize.ts';
-import { emptyReharmState, reharmActions } from './reharmonizeSession.ts';
+import { emptyReharmState, hasPendingReharmSelection, reharmActions } from './reharmonizeSession.ts';
 import type { ReharmState } from './reharmonizeSession.ts';
+import { withoutChordPreview } from './chordPreview.ts';
+import type { ChordPreview } from './chordPreview.ts';
+import { captureGenerationComparison } from './generationComparison.ts';
 
 const slots = [{ measureIndex: 1, slotIndex: 0 as const }, { measureIndex: 1, slotIndex: 1 as const }];
 function score(): Song {
@@ -28,27 +31,32 @@ function harness(requester: typeof requestReharmonization = async () => result()
   let epoch = 1;
   let writes = 0;
   let stops = 0;
+  let pendingPreview: ChordPreview | null = null;
   let state: ReharmState;
   const actions = reharmActions({
     read: () => ({ song, songEpoch: epoch, selectedSlots }),
     stop: () => { stops++; },
     clearGeneration: () => undefined,
-    write: updates => {
+    commit: () => { pendingPreview = null; },
+    write: (updates, previewOriginal) => {
       writes++;
       song = { ...song, measures: song.measures.map((m, index) => {
         const chords = [...m.chords] as typeof m.chords;
         for (const u of updates) if (u.address.measureIndex === index) chords[u.address.slotIndex] = u.chord;
         return { ...m, chords };
       }) };
+      pendingPreview = previewOriginal ? { original: previewOriginal,
+        shown: captureGenerationComparison(song, previewOriginal.original.map(item => item.address), epoch), key: song.key } : null;
     },
   }, () => state, patch => { state = { ...state, ...patch }; }, requester);
   state = { ...emptyReharmState, ...actions };
   return { actions, state: () => state, song: () => song, writes: () => writes, stops: () => stops,
+    saved: () => withoutChordPreview(song, epoch, pendingPreview),
     edit: (edit: (s: Song) => void) => { song = structuredClone(song); edit(song); },
     replace: () => { song = score(); epoch++; actions.close(); } };
 }
 
-test('request offers three candidates without changing the score; A/B/A/Original all remain available', async () => {
+test('disjoint alternatives combine and toggle independently; Origin restores the exact score', async () => {
   const h = harness();
   const original = structuredClone(h.song());
   await h.actions.run('ft_f1', 1, 'auto');
@@ -57,10 +65,13 @@ test('request offers three candidates without changing the score; A/B/A/Original
   h.actions.preview(0);
   assert.equal(reharmSymbol(h.song().measures[1].chords[1]!), 'Db7');
   h.actions.preview(1);
+  assert.equal(reharmSymbol(h.song().measures[1].chords[1]!), 'Db7');
+  assert.equal(reharmSymbol(h.song().measures[1].chords[0]!), 'Fm7');
+  assert.deepEqual(h.state().selected, [0, 1]);
+  h.actions.preview(0);
   assert.deepEqual(h.song().measures[1].chords[1], original.measures[1].chords[1]);
   assert.equal(reharmSymbol(h.song().measures[1].chords[0]!), 'Fm7');
-  h.actions.preview(0);
-  assert.deepEqual(h.song().measures[1].chords[0], original.measures[1].chords[0]);
+  assert.deepEqual(h.state().selected, [1]);
   h.actions.preview(null);
   assert.deepEqual(h.song(), original);
   assert.equal(h.state().result, choices);
@@ -68,15 +79,93 @@ test('request offers three candidates without changing the score; A/B/A/Original
   assert.equal(h.stops(), 4);
 });
 
-test('closing comparison keeps the chosen score, with no automatic disappearance on preview', async () => {
+test('the latest overlapping alternative replaces only conflicting candidates', async () => {
   const h = harness();
+  await h.actions.run('ft_f1', 1, 'auto');
+  h.actions.preview(0);
+  h.actions.preview(1);
+  h.actions.preview(2);
+  assert.deepEqual(h.state().selected, [1, 2]);
+  assert.deepEqual(h.song().measures[1].chords.map(c => reharmSymbol(c!)), ['Fm7', 'G9']);
+  h.actions.preview(0);
+  assert.deepEqual(h.state().selected, [0, 1]);
+  assert.deepEqual(h.song().measures[1].chords.map(c => reharmSymbol(c!)), ['Fm7', 'Db7']);
+});
+
+test('X discards pending previews; Apply keeps combined choices and leaves all cards available', async () => {
+  const h = harness();
+  const original = structuredClone(h.song());
   await h.actions.run('ft_f1', 1, 'auto');
   h.actions.preview(2);
   assert.equal(h.state().result?.candidates.length, 3);
+  assert.deepEqual(h.saved(), original);
+  h.actions.close();
+  assert.deepEqual(h.song(), original);
+  await h.actions.run('ft_f1', 1, 'auto');
+  assert.equal(hasPendingReharmSelection(h.state()), false);
+  h.actions.preview(0);
+  h.actions.preview(1);
+  assert.equal(hasPendingReharmSelection(h.state()), true);
   const chosen = structuredClone(h.song());
+  h.actions.apply();
+  assert.equal(hasPendingReharmSelection(h.state()), false);
+  assert.equal(h.state().result?.candidates.length, 3);
+  assert.deepEqual(h.saved(), chosen);
+  h.actions.preview(2);
+  assert.deepEqual(h.saved(), chosen);
   h.actions.close();
   assert.equal(h.state().result, null);
   assert.deepEqual(h.song(), chosen);
+});
+
+test('Origin can be previewed and applied after keeping an alternative', async () => {
+  const h = harness();
+  const original = structuredClone(h.song());
+  await h.actions.run('ft_f1', 1, 'auto');
+  h.actions.preview(0);
+  h.actions.apply();
+  h.actions.preview(null);
+  assert.equal(hasPendingReharmSelection(h.state()), true);
+  h.actions.apply();
+  h.actions.close();
+  assert.deepEqual(h.song(), original);
+  assert.deepEqual(h.saved(), original);
+});
+
+test('a new search discards a pending preview before building its request', async () => {
+  const requested: Song[] = [];
+  const h = harness(async song => { requested.push(structuredClone(song)); return result(); });
+  await h.actions.run('ft_f1', 1, 'auto');
+  h.actions.preview(0);
+  await h.actions.run('ft_f1', 1, 'auto');
+  assert.deepEqual(requested[1], requested[0]);
+});
+
+test('Apply rejects stale edits; cancel and autosave preserve manual edits but remove remaining previews', async () => {
+  const h = harness();
+  const original = structuredClone(h.song());
+  await h.actions.run('ft_f1', 1, 'auto');
+  h.actions.preview(0);
+  h.actions.preview(1);
+  h.edit(s => { s.measures[1].chords[1] = parseChordName('E7'); s.measures[2].chords[0] = parseChordName('Ab'); });
+  h.actions.apply();
+  assert.match(h.state().error!, /score changed/);
+  const saved = h.saved();
+  assert.deepEqual(saved.measures[1].chords[0], original.measures[1].chords[0]);
+  assert.equal(reharmSymbol(saved.measures[1].chords[1]!), 'E7');
+  assert.equal(reharmSymbol(saved.measures[2].chords[0]!), 'Ab');
+  h.actions.close();
+  assert.deepEqual(h.song(), saved);
+});
+
+test('closing pending choices after replacing a song does not write into the new song', async () => {
+  const h = harness();
+  await h.actions.run('ft_f1', 1, 'auto');
+  h.actions.preview(0);
+  const writes = h.writes();
+  h.replace();
+  assert.equal(h.writes(), writes);
+  assert.deepEqual(h.song(), score());
 });
 
 test('four-change requests carry the cap, preview whole alternatives and restore the exact original', async t => {
