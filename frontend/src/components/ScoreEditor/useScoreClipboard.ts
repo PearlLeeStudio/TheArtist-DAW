@@ -4,6 +4,7 @@ import {
   CHORD_CLIPBOARD_TYPE,
   clipboardText,
   copySelection,
+  holdsWholeBars,
   parseClipboardText,
   planPaste,
   readClipboardPayload,
@@ -79,12 +80,18 @@ export const scoreEdits = {
     const data = event?.clipboardData;
     const payload = data?.getData(CHORD_CLIPBOARD_TYPE) || '';
     const text = data?.getData('text/plain') || '';
-    let slots = payload ? readClipboardPayload(payload)?.slots ?? null : null;
+    let clip = payload ? readClipboardPayload(payload) : null;
     // The editor's own copy, with voicings, when the browser gives back its text or nothing.
-    if (!slots && memory && (!text || text === memoryText)) slots = memory.slots;
-    if (!slots && text) slots = parseClipboardText(text);
+    if (!clip && memory && (!text || text === memoryText)) clip = memory;
+    let slots = clip?.slots ?? null;
+    // Chord text with bar lines holds whole bars; a bare list of symbols is slot by slot.
+    let wholeBars = clip ? holdsWholeBars(clip) : false;
+    if (!slots && text) {
+      slots = parseClipboardText(text);
+      wholeBars = /[|\n\r]/.test(text) && (slots?.length ?? 1) % 2 === 0;
+    }
     if (!slots) return false;
-    const plan = planPaste(selectedSlots, slots, song.measures.length);
+    const plan = planPaste(selectedSlots, slots, song.measures.length, { wholeBars });
     if (!plan) return false;
     event?.preventDefault();
     pasteSlots(plan);

@@ -14,7 +14,10 @@ import { chordToString, parseChordName } from './chordParser.ts';
  * Paste lands on the selection: a clipboard that divides the selected
  * slots exactly is tiled over them (copy two bars, select eight, paste);
  * anything else is written forward from the first selected slot, adding
- * bars at the end of the score as needed.
+ * bars at the end of the score as needed. Whole bars stay whole: a copy
+ * that began on a bar line and holds complete bars is pasted from the
+ * start of the first selected bar, whichever half of it was clicked, so
+ * it never straddles a bar line or spills a half-bar onto the next row.
  */
 
 export const CHORD_CLIPBOARD_TYPE = 'application/x-theartist-chords';
@@ -41,6 +44,16 @@ export interface PastePlan {
   measuresToAdd: number;
   /** The pasted range, selected afterwards. */
   select: [SlotAddress, SlotAddress];
+}
+
+export interface PasteOptions {
+  /** The clipboard holds complete bars from a bar line: paste bar-aligned. */
+  wholeBars?: boolean;
+}
+
+/** Whether a copied passage is complete bars starting on a bar line. */
+export function holdsWholeBars(clip: Pick<ChordClipboard, 'slots' | 'firstSlotIndex'>): boolean {
+  return clip.firstSlotIndex === 0 && clip.slots.length % SLOTS_PER_BAR === 0;
 }
 
 function slotToLinear(slot: SlotAddress): number {
@@ -194,9 +207,19 @@ export function parseClipboardText(text: string): (Chord | null)[] | null {
 
 /** Where a paste of `slots` lands for this selection, or null when there is
  *  nothing to paste or no selection to anchor it. */
-export function planPaste(selection: SlotAddress[], slots: (Chord | null)[], measureCount: number): PastePlan | null {
-  const selected = orderedSlots(selection).filter((slot) => slot.measureIndex < measureCount);
+export function planPaste(selection: SlotAddress[], slots: (Chord | null)[], measureCount: number,
+  options: PasteOptions = {}): PastePlan | null {
+  let selected = orderedSlots(selection).filter((slot) => slot.measureIndex < measureCount);
   if (slots.length === 0 || selected.length === 0) return null;
+  if (options.wholeBars) {
+    // Whole bars land on whole bars: widen the selection to the bars it touches.
+    const first = selected[0].measureIndex;
+    const last = selected[selected.length - 1].measureIndex;
+    selected = [];
+    for (let measureIndex = first; measureIndex <= last; measureIndex++) {
+      selected.push({ measureIndex, slotIndex: 0 }, { measureIndex, slotIndex: 1 });
+    }
+  }
   const clone = (chord: Chord | null) => chord ? cloneChord(chord) : null;
   if (selected.length > 1 && selected.length % slots.length === 0) {
     return {

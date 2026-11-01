@@ -4,6 +4,7 @@ import {
   CHORD_CLIPBOARD_TYPE,
   clipboardText,
   copySelection,
+  holdsWholeBars,
   orderedSlots,
   parseClipboardText,
   planPaste,
@@ -121,6 +122,29 @@ test('otherwise paste writes forward from the first selected slot and grows the 
   assert.equal(planPaste([], [chord('C')], 4), null);
   assert.equal(planPaste([slot(0, 0)], [], 4), null);
   assert.equal(planPaste([slot(7, 0)], [chord('C')], 4), null);
+});
+
+test('whole bars are pasted from the start of the clicked bar, never straddling a bar line', () => {
+  const twoBars = [chord('Dm7'), chord('G7'), chord('Cmaj7'), chord('Cmaj7')];
+  // Clicking the second half of bar 3 still pastes the two bars as bars 3 and 4.
+  const plan = planPaste([slot(2, 1)], twoBars, 8, { wholeBars: true })!;
+  assert.deepEqual(plan.targets.map((t) => [t.address.measureIndex, t.address.slotIndex]), [[2, 0], [2, 1], [3, 0], [3, 1]]);
+  assert.equal(plan.measuresToAdd, 0);
+  assert.deepEqual(plan.select, [slot(2, 0), slot(3, 1)]);
+  // At the last bar of a four-bar score it adds exactly the one bar that is missing.
+  const atEnd = planPaste([slot(3, 1)], twoBars, 4, { wholeBars: true })!;
+  assert.equal(atEnd.measuresToAdd, 1);
+  assert.equal(atEnd.targets[0].address.measureIndex, 3);
+  // Dragging bars 4–7 (any slots) and pasting one bar tiles it over those whole bars.
+  const tiled = planPaste([slot(4, 1), slot(5, 0), slot(6, 1), slot(7, 0)], [chord('F'), chord('G')], 8, { wholeBars: true })!;
+  assert.deepEqual(tiled.targets.map((t) => `${t.address.measureIndex}.${t.address.slotIndex}:${t.chord?.root}`),
+    ['4.0:F', '4.1:G', '5.0:F', '5.1:G', '6.0:F', '6.1:G', '7.0:F', '7.1:G']);
+  // A half-bar copy keeps slot precision.
+  const half = planPaste([slot(2, 1)], [chord('G7')], 8, { wholeBars: false })!;
+  assert.deepEqual(half.targets.map((t) => [t.address.measureIndex, t.address.slotIndex]), [[2, 1]]);
+  assert.equal(holdsWholeBars({ slots: twoBars, firstSlotIndex: 0 }), true);
+  assert.equal(holdsWholeBars({ slots: twoBars.slice(1), firstSlotIndex: 1 }), false);
+  assert.equal(holdsWholeBars({ slots: twoBars.slice(0, 3), firstSlotIndex: 0 }), false);
 });
 
 test('selection helpers', () => {
