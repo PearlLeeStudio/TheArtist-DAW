@@ -181,7 +181,7 @@ Streaming variant of `/api/generate` — **the frontend's primary generate path*
 | `composing` | `{"label", "step", "total", "creativity"}` | ×3 — one per temperature pass; `step` 1-3, `total` 3, `creativity` ∈ `conservative` (0.7) / `balanced` (0.9) / `creative` (1.1). |
 | `ranking` | `{"label": "Scoring consonance and theory relevance"}` | R1 roughness + ready-source text relevance; label is `Scoring consonance` when no source is ready. |
 | `voicing` | `{"label": "Picking inversions for smooth bass motion"}` | Unless disabled via `THEARTIST_DISABLE_VOICE_LEADING`. |
-| `ranking` (second frame) | `{"label": "Compared candidates with preceding and following chords"}` or `{"label": "<reason> Whole-score comparison was skipped."}` | Only when `context` holds chords in unselected measures after the selection: the candidates are re-ordered (and re-lettered A/B/C) by their whole-score likelihood under the checkpoint (`app/services/chord_context.py`). |
+| `ranking` (second frame) | `{"label": "Compared candidates with preceding and following chords"}`, `{"label": "Compared candidates with the <n> bars before and after the passage"}` when the whole score exceeds the checkpoint's token window and the nearest `n` bars on each side were compared instead, or `{"label": "<reason> Whole-score comparison was skipped."}` when not even the neighbouring bars fit or a context chord is outside the vocabulary | Only when `context` holds chords in unselected measures after the selection: the candidates are re-ordered and re-lettered A/B/C by their likelihood in context under the checkpoint (`app/services/chord_context.py`); the list order is the ranking. |
 | `explaining` | `{"label": "Retrieving related theory references"}` | Only when an enabled corpus is ready and explanation output is enabled; all genres may retrieve related references. |
 | `complete` | `{"label": "Done"}` | Right before `result`. |
 | `result` | Same payload shape as `/api/generate`'s 200 JSON (`{suggestions, source}`) plus `elapsed_ms` | Final frame, then the stream closes. |
@@ -426,9 +426,10 @@ proposes bounded edits within the selection and leaves empty slots untouched.
 }
 ```
 
-Context contains 1–256 consecutive, unique, zero-based measures, each with exactly
+Context contains 1–512 consecutive, unique measures with their zero-based score
+numbers (any window of a longer score; it need not start at 0), each with exactly
 two chord slots. `selectedSlots` contains 1–16 unique occupied slots spanning at
-most eight measures. The browser omits empty slots from its selection request.
+most eight measures, all inside the context. The browser omits empty slots from its selection request.
 `maxChanges` is `1 | 2 | 3 | 4` (default 1), an upper bound per candidate; it does
 not request four alternatives or require exactly four edits. Supported meters
 are 4/4, 3/4, 6/8, 2/4 and 5/4. `mode` defaults to `auto`; explicit `ionian`,
@@ -806,8 +807,10 @@ including locally readable scores up to 512 bars. Unresolved bars remain editabl
 If neither reader can recover a score, the request fails.
 
 Responses have optional `verification`: `status` (`compared`, `local_unavailable`,
-`unaligned`, `local_fallback`; legacy records may contain `local_only`), `localMeasures`, `metaMeasures`, `comparedMeasures`, zero-based
-`disputedMeasures`, and explanatory `notes`. An unsupported local file may be read
+`unaligned`, `local_fallback`, or `local_only` when a quick local reading exceeded
+Meta's 128-bar limit and no Meta call was made), `localMeasures`, `metaMeasures`, `comparedMeasures` (each up to 512), zero-based
+`disputedMeasures`, and explanatory `notes`. A reading that violates the import
+contract answers 502 with the first violation instead of a server error. An unsupported local file may be read
 by Meta because the checkbox explicitly authorizes that path; it reports zero
 compared bars and marks the result for review. This is not a measured accuracy score.
 Legacy `auto` and `meta` modes remain available to API/MCP clients.
@@ -817,7 +820,7 @@ unresolved note-bearing bars in a score of at most 128 bars. These suggestions
 keep `analysisSource: local`, `model: ft_f1`, `requestId: null`, low confidence
 and their original note evidence. Deterministic bars keep `model: null`.
 The model receives known harmony; candidates are compared against fixed later
-chords in written order, within the checkpoint's token window (`max_seq_len`, 256 for the served checkpoints; the comparison refuses longer contexts instead of clipping). No mask-trained infilling
+chords in written order, within the checkpoint's token window (`max_seq_len`, 256 for the served checkpoints; a longer score is compared through the nearest bars on each side of the passage, reported in the `ranking` label, and refused only when the neighbouring bars themselves do not fit). No mask-trained infilling
 or original-chord recovery is claimed. Unread notation and explicit N.C. are
 never targets. Unknown vocabulary or unavailable weights leave an explicit warning.
 

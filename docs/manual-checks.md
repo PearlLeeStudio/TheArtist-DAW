@@ -119,6 +119,16 @@ failures are recorded in [evaluation.md](evaluation.md).
   to check its chords, Roman numerals and retained source against the original.
   Replace a file during analysis; an earlier result must not populate
   the replacement. Cancel and retry without choosing the file again.
+- [ ] A 465-bar PDF (e.g. a long jazz lead sheet) with **Use Meta model** checked
+  opens from the local reader within seconds with no Meta call (ledger unchanged),
+  and Reharmonize on bars deep inside it returns three candidates with addresses in
+  that bar range. Before `Hiromi`-length scores were handled, this request failed
+  with HTTP 500 (verification contract) and 422 (256-bar context).
+- [ ] Generate on an imported score with written chords after the selection: the
+  three cards read Option A, B, C in that order after the context comparison, and
+  the ranking frame names the compared reach for long scores.
+- [ ] In an Ab major import, D#7 / A#m7 / G#sus4 show V7 / ii7 / Isus4, D7sus4 and
+  EbM7#11 import as playable chords, and a manual G7 with b9 shows G7(b9) on the staff.
 - [ ] Import the original vector-score C/F
   fixtures without a model key: verify read pitches, bass, local source and Roman I.
   An unsupported scan reports that local reading cannot handle it without making
@@ -298,9 +308,11 @@ verified. Existing unchecked audio/DAW cases below remain unchecked.
 - [ ] Ctrl+A / ⌘A selects every editor bar. In a title input or dialog it retains
   native text selection. Projects does not intercept the shortcut.
 - [ ] Clipboard editing in Chrome and Safari: drag two bars, ⌘C, select eight bars,
-  ⌘V repeats the pattern; select one slot, ⌘V writes forward and appends bars when it
-  runs past the end; ⌘X empties the selection and keeps it; Delete clears; ⌘Z undoes
-  each step; the right-click menu offers the same. Text `Dm7 G7 | Cmaj7` pasted from
+  ⌘V repeats the pattern; click either half of a bar and ⌘V places copied whole bars
+  from that bar's start (no half-bar straddles a bar line); a half-bar copy keeps its
+  slot; a paste that runs past the last bar appends only the bars it needs; ⌘X empties
+  the selection and keeps it; Delete clears; ⌘Z undoes each step; the right-click
+  menu offers the same. Text `Dm7 G7 | Cmaj7` pasted from
   another app lands as chords. Text inputs and open dialogs keep their native keys.
   Not yet exercised in a browser by the implementer; the event wiring (including
   Safari's `beforecopy`/`beforepaste` enabling) has unit coverage for the logic only.

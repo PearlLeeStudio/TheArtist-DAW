@@ -43,9 +43,12 @@ Structured Meta output includes read notes, written notes, bass, meter and N.C.;
 these fields are not reconstructed from the chord label.
 
 Meta reading supports at most 128 written bars. A complete locally readable
-score can contain up to 512 bars. Checked analysis can recover that local score
-after a failed or oversized Meta reading, preserving every local bar and its
-provenance. The unchecked local path makes no Meta call.
+score can contain up to 512 bars. With **Use Meta model** checked, a local
+reading that finishes within two seconds and exceeds 128 bars opens directly with
+`local_only` provenance and no Meta call, because Meta's reading could never align
+with it; a slower long reading still recovers after Meta's bar-limit failure as
+`local_fallback`. Every local bar and its provenance is preserved in both cases.
+The unchecked local path makes no Meta call.
 
 The response's `verification` record reports comparison coverage and zero-based
 disputed bars. Reading checks in the existing review show those bars and structural

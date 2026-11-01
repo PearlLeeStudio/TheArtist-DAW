@@ -114,9 +114,13 @@ compare them with already written following chords.
 `POST /api/reharmonize` accepts `key`, `timeSignature`, consecutive `context` bars
 with two chord slots, `selectedSlots`, `modelKey`, `maxChanges` (1, 2, 3, or 4), and `mode`
 (`auto` or one of the seven diatonic modes). A selection may span eight measures
-and contain sixteen occupied slots; input context is limited to 256 measures.
-API targets must be occupied; the editor filters gaps from a mixed drag selection
-before sending the request, without changing the score selection.
+and contain sixteen occupied slots. The context is any consecutive run of up to
+512 bars with their score measure numbers; it need not start at bar 1. The
+editor sends the sixteen bars on each side of the passage, which covers the
+eight bars the search and the context scorer read, so a 465-bar imported score
+is reharmonized like a short one. API targets must be occupied; the editor
+filters gaps from a mixed drag selection before sending the request, without
+changing the score selection.
 
 The response contains three `candidates` with address/before/after patches and
 computed metrics, `modelUsed`, `contextMeasures`, `metaModel`, `requestIds`,
