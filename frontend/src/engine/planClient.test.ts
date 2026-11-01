@@ -6,6 +6,7 @@ import {
   buildPlanRequest,
   fetchMetaCapability,
   planBlocker,
+  resolveTargetBars,
   runPlan,
   sketchBars,
   type PlanEvent,
@@ -117,6 +118,14 @@ test('chorus choice is carried explicitly without mutating a locked sketch', () 
   assert.equal(buildPlanRequest(song, { ...options, chorusMode: 'reuse' }).chorusMode, 'reuse');
   assert.equal(buildPlanRequest(song, { ...options, chorusMode: 'new' }).chorusMode, 'new');
   assert.deepEqual(song, before);
+});
+
+test('a completed form and Undo never leave an unavailable target selected', () => {
+  assert.equal(resolveTargetBars(64, 32), null);
+  assert.equal(resolveTargetBars(51, 32), 64);
+  assert.equal(resolveTargetBars(32, 32), 48);
+  assert.equal(resolveTargetBars(0, 32), 32);
+  assert.equal(resolveTargetBars(8, 64), 64);
 });
 
 test('no genre, a target that leaves no room and a sketch too long to plan are refused before any request', () => {

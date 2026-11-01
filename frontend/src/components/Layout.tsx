@@ -15,6 +15,7 @@ import { useSongStore } from '../store/songStore';
 import { useSessionStore } from '../store/sessionStore';
 import { useGenerationStore } from '../store/generationStore';
 import { usePlayStore } from '../store/playStore';
+import { startNewSongFromForm } from '../store/newSong';
 import { playSettingsFromSession } from '../engine/playSettings';
 import type { PlaySettings, SessionGenerationContext, Song } from '../models/types';
 
@@ -448,6 +449,11 @@ export default function Layout() {
         <SongFormDialog
           onClose={() => setSongFormOpen(false)}
           onGenerated={handleSongFormGenerated}
+          onNewSong={() => {
+            const current = useSongStore.getState().song;
+            startNewSongFromForm(generationContext(current,
+              useGenerationStore.getState().modelKey, usePlayStore.getState().settings));
+          }}
           onEditSections={() => {
             setSongFormOpen(false);
             setSectionsOpen(true);

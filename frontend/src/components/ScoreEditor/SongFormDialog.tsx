@@ -43,6 +43,7 @@ import {
   availableTargetBars,
   fetchMetaCapability,
   planBlocker,
+  resolveTargetBars,
   sketchBars,
   type MetaCapability,
   type PlanContrast,
@@ -133,9 +134,11 @@ interface SongFormDialogProps {
   /** Called after the new section's chords landed on the staff. */
   onGenerated: () => void;
   onEditSections: () => void;
+  /** Saves the current project before opening an empty score; throws if saving fails. */
+  onNewSong: () => void;
 }
 
-export default function SongFormDialog({ onClose, onGenerated, onEditSections }: SongFormDialogProps) {
+export default function SongFormDialog({ onClose, onGenerated, onEditSections, onNewSong }: SongFormDialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const sectionRef = useRef<HTMLSelectElement>(null);
   const runningRef = useRef(false);
@@ -182,8 +185,8 @@ export default function SongFormDialog({ onClose, onGenerated, onEditSections }:
   // Full form: the sketch is the song up to its last used measure.
   const sketch = sketchBars(song);
   const targets = availableTargetBars(sketch);
-  const [targetBars, setTargetBars] = useState<TargetBars>(
-    () => targets.includes(DEFAULT_TARGET_BARS) ? DEFAULT_TARGET_BARS : (targets[0] ?? DEFAULT_TARGET_BARS));
+  const [preferredTargetBars, setTargetBars] = useState<TargetBars>(DEFAULT_TARGET_BARS);
+  const targetBars = resolveTargetBars(sketch, preferredTargetBars);
   const [wantOutro, setWantOutro] = useState(true);
   const [contrast, setContrast] = useState<PlanContrast>('medium');
   const [chorusMode, setChorusMode] = useState<ChorusMode>('reuse');
@@ -234,7 +237,7 @@ export default function SongFormDialog({ onClose, onGenerated, onEditSections }:
 
   const blocker = planBlocker(song);
   const metaOff = meta?.enabled === false;
-  const planDisabled = blocker !== null || metaOff || busy;
+  const planDisabled = blocker !== null || targetBars === null || metaOff || busy;
   const sectionCount = song.sections?.length ?? 0;
 
   const handleSectionChange = (value: string) => {
@@ -282,7 +285,7 @@ export default function SongFormDialog({ onClose, onGenerated, onEditSections }:
   };
 
   const startRun = async (planner: PlannerKind) => {
-    if (blocker !== null || busy || planRunningRef.current || (planner === 'meta' && metaOff)) return;
+    if (blocker !== null || targetBars === null || busy || planRunningRef.current || (planner === 'meta' && metaOff)) return;
     planRunningRef.current = true;
     await startPlan({ targetBars, wantOutro, contrast, chorusMode, planner, modelKey,
       chordSource: planner === 'meta' ? chordSource : 'own' });
@@ -357,6 +360,32 @@ export default function SongFormDialog({ onClose, onGenerated, onEditSections }:
             Edit Song Form
           </button>
         </div>
+
+        {sketch > 0 && (
+          <div className="space-y-2 text-xs" style={labelStyle}>
+            <p>Generation continues after the current {sketch}-bar score.</p>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => {
+                try {
+                  onNewSong();
+                  setTargetBars(DEFAULT_TARGET_BARS);
+                  setError(null);
+                } catch (failure) {
+                  setError(failure instanceof Error ? failure.message : 'The current song could not be saved.');
+                }
+              }}
+              className="px-3 py-1.5 text-xs btn-hover disabled:opacity-40"
+              style={fieldStyle}
+            >
+              Start a new song
+            </button>
+            <p>Your current score is kept in Projects before starting a new song.</p>
+          </div>
+        )}
+
+        {error && tab === 'full' && <p role="alert" className="text-xs" style={valueStyle}>{error}</p>}
 
         {/* Section / Full form tabs, in the Input sub-tab style. Locked
             while a section generation runs, so its progress stays in view. */}
@@ -552,11 +581,11 @@ export default function SongFormDialog({ onClose, onGenerated, onEditSections }:
         {tab === 'full' && (
           <>
             <fieldset disabled={planning} className="grid grid-cols-[auto_1fr] items-center gap-x-3 gap-y-2.5">
-              <ChoiceRow
+              <ChoiceRow<TargetBars | 'unavailable'>
                 label="Length"
                 options={TARGET_BARS.map((bars) => ({ value: bars, label: `${bars} bars`, disabled: !targets.includes(bars) }))}
-                value={targetBars}
-                onChange={setTargetBars}
+                value={targetBars ?? 'unavailable'}
+                onChange={(value) => { if (value !== 'unavailable') setTargetBars(value); }}
               />
               <ChoiceRow
                 label="Outro"
@@ -589,7 +618,7 @@ export default function SongFormDialog({ onClose, onGenerated, onEditSections }:
               Sketch{' '}
               <span style={valueStyle}>
                 {sketch === 0 ? 'empty score' : `${sketch} ${sketch === 1 ? 'bar' : 'bars'}${sectionCount ? `, ${sectionCount} ${sectionCount === 1 ? 'section' : 'sections'}` : ''}`}
-                {` → ${targetBars} bars`}
+                {targetBars === null ? ' · no room to extend' : ` → ${targetBars} bars`}
               </span>
             </p>
 

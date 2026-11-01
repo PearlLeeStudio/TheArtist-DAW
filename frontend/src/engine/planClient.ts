@@ -231,6 +231,12 @@ export function availableTargetBars(bars: number): TargetBars[] {
   return TARGET_BARS.filter((target) => bars + MIN_PLAN_SECTION_BARS <= target);
 }
 
+/** Undo or another section can change the sketch while the dialog stays open. */
+export function resolveTargetBars(bars: number, preferred: TargetBars): TargetBars | null {
+  const available = availableTargetBars(bars);
+  return available.includes(preferred) ? preferred : (available[0] ?? null);
+}
+
 const NO_GENRE = 'Pick a genre first: the form follows the genre.';
 
 /** Why the song cannot be planned yet, or null. */

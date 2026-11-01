@@ -39,6 +39,8 @@ Object.defineProperty(globalThis, 'window', { configurable: true, value: globalT
 
 const { usePlanStore } = await import('./planStore.ts');
 const { useSongStore } = await import('./songStore.ts');
+const { useSessionStore } = await import('./sessionStore.ts');
+const { startNewSongFromForm } = await import('./newSong.ts');
 
 const chord = (root: string, quality: string): Chord => ({ root, quality, extensions: [], romanNumeral: '', voicing: [] });
 const measure = (index: number, chords: [Chord | null, Chord | null]): Measure => ({ id: `m${index}`, index, chords });
@@ -134,6 +136,44 @@ test('Meta-only form carries its composer, progress and real chord provenance th
   assert.ok(useSongStore.getState().song.measures.slice(2).every(bar => bar.chords.every(Boolean)));
   usePlanStore.getState().undoPlan();
   assert.deepEqual(useSongStore.getState().song, original);
+});
+
+test('starting a new song preserves the complete score and clears the old form run', async (t) => {
+  useSessionStore.setState({ sessions: [] });
+  useSongStore.getState().setSong(sketchSong());
+  t.mock.method(globalThis, 'fetch', async () => streamResponse(completedRun()));
+  await usePlanStore.getState().startPlan(options);
+  usePlanStore.getState().applyPlan();
+  const previous = structuredClone(useSongStore.getState().song);
+  const generation = { model: 'ft_f1', genre: previous.genre };
+  startNewSongFromForm(generation);
+  assert.deepEqual(useSessionStore.getState().sessions[0].song, previous);
+  assert.deepEqual(useSessionStore.getState().sessions[0].generation, generation);
+  const fresh = useSongStore.getState().song;
+  assert.notEqual(fresh.id, previous.id);
+  assert.equal(fresh.title, 'Untitled');
+  assert.equal(fresh.genre, previous.genre);
+  assert.equal(fresh.key, previous.key);
+  assert.equal(fresh.bpm, previous.bpm);
+  assert.deepEqual(fresh.timeSignature, previous.timeSignature);
+  assert.deepEqual(fresh.sections, []);
+  assert.equal(fresh.measures.length, 4);
+  assert.ok(fresh.measures.every(bar => bar.chords.every(value => value === null)));
+  assert.equal(usePlanStore.getState().status, 'idle');
+  // Opening the stored project and starting again must not duplicate it.
+  useSongStore.getState().setSong(previous);
+  startNewSongFromForm(generation);
+  assert.equal(useSessionStore.getState().sessions.length, 1);
+});
+
+test('a failed project save leaves the current score intact when starting a new song', (t) => {
+  useSessionStore.setState({ sessions: [] });
+  useSongStore.getState().setSong(sketchSong());
+  const previous = structuredClone(useSongStore.getState().song);
+  t.mock.method(useSessionStore.getState(), 'add', () => { throw new Error('Storage is full'); });
+  assert.throws(() => startNewSongFromForm({ model: 'ft_f1', genre: 'pop' }), /Storage is full/);
+  assert.deepEqual(useSongStore.getState().song, previous);
+  assert.equal(useSessionStore.getState().sessions.length, 0);
 });
 
 test('a plan cannot apply to a sketch edited after the request, but keeps its trace and spend', async (t) => {
