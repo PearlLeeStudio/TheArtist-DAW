@@ -6,6 +6,8 @@ are review flags. A failed Meta request returns an explicitly attributed local r
 from __future__ import annotations
 
 from collections.abc import Callable
+from concurrent.futures import ThreadPoolExecutor
+from contextvars import copy_context
 import logging
 from fastapi import HTTPException
 
@@ -104,29 +106,40 @@ def import_verified_score(req: ScoreImportRequest, attachment: dict, *,
                           on_progress: Callable[[str], None] | None = None) -> ScoreImportResponse:
     progress = on_progress or (lambda _label: None)
     def read_local():
-        progress("Reading the score's notes, chord symbols and bar lines…")
-        local = analyze_local_score(req)
-        if req.mode == "infer_harmony":
-            from app.services.score_completion import complete_sparse_harmony
-            progress("Analyzing harmony where printed chord symbols are missing…")
-            local = complete_sparse_harmony(local)
-        return local
+        try:
+            local = analyze_local_score(req)
+            if req.mode == "infer_harmony":
+                from app.services.score_completion import complete_sparse_harmony
+                local = complete_sparse_harmony(local)
+            return local
+        except (LocalScoreUnsupported, ScoreInputError):
+            return None
 
+    local = None
+    local_finished = False
     try:
         if before_meta is not None:
             before_meta(SCORE_MAX_REQUEST_USD)
-        progress("Meta is reading the original score…")
-        checked = _import_meta_score(req, attachment)
+        progress("Meta is reading the original score while the local reader checks its notation…")
+        # Both readers consume the original, never each other's hypotheses. Keep
+        # Meta's attribution and fallback rules while overlapping independent work.
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            local_future = executor.submit(copy_context().run, read_local)
+            try:
+                checked = _import_meta_score(req, attachment)
+            finally:
+                local = local_future.result()
+                local_finished = True
     except (LLMError, ScoreInputError, HTTPException) as failure:
         logging.getLogger(__name__).warning("Meta score reading failed; using local reader: kind=%s request_id=%s",
                                             getattr(failure, "kind", type(failure).__name__),
                                             getattr(failure, "request_id", None))
         progress("Meta reading was unavailable. Continuing with the local score reader…")
-        try:
+        if not local_finished:
             local = read_local()
-        except (LocalScoreUnsupported, ScoreInputError) as local_failure:
+        if local is None:
             raise ScoreInputError("Neither reader could recover an editable score from this file. "
-                                  "Use a PDF with readable notation or a clearer image.", 422) from local_failure
+                                  "Use a PDF with readable notation or a clearer image.", 422) from failure
         local.verification = ScoreVerification(
             status="local_fallback", localMeasures=len(local.measures), metaMeasures=0,
             comparedMeasures=0, disputedMeasures=[],
@@ -134,10 +147,6 @@ def import_verified_score(req: ScoreImportRequest, attachment: dict, *,
         progress("Local analysis is ready. You can import the reviewed score.")
         return local
 
-    try:
-        local = read_local()
-    except (LocalScoreUnsupported, ScoreInputError):
-        local = None
     try:
         progress("Comparing both readings and marking unresolved bars for review…")
         return compare_readings(local, checked)

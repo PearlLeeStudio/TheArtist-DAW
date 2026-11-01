@@ -5,6 +5,10 @@ Known bars on both sides are retained in written order. No mask token is invente
 """
 from __future__ import annotations
 
+from collections import defaultdict
+
+CONTEXT_BATCH_SIZE = 3  # Bound CPU activations on the shared two-core server.
+
 
 def sequence_tokens(tokenizer, header, context, candidate, selected):
     """Return tokens and the positions whose conditional likelihood can change."""
@@ -48,16 +52,26 @@ def context_scores(loaded, tokenizer, suggestions, header, context, selected):
     limit = getattr(model, "max_seq_len", 512)
     if any(len(ids) > limit for ids, _ in prepared):
         raise ValueError(f"Whole-score chord comparison exceeds the {limit}-token model context.")
-    scores = []
+    # Different exact chord patches can project to the same model vocabulary.
+    # Score that token sequence once, keeping every original candidate intact.
+    keys = [(tuple(ids), tuple(positions)) for ids, positions in prepared]
+    groups = defaultdict(list)
+    for item in dict.fromkeys(keys):
+        groups[len(item[0])].append(item)
+    scores = {}
     with inference._HOSTED_INFERENCE_LOCK, inference.torch.inference_mode():
-        for ids, positions in prepared:
-            inputs = inference.torch.tensor([ids[:-1]], device=loaded.device)
-            logits = model(inputs)[0]
-            indices = inference.torch.tensor([p - 1 for p in positions], device=loaded.device)
-            targets = inference.torch.tensor([ids[p] for p in positions], device=loaded.device)
-            values = logits[indices].log_softmax(-1).gather(1, targets[:, None])
-            scores.append(float(values.mean().item()))
-    return scores
+        for group in groups.values():
+            for start in range(0, len(group), CONTEXT_BATCH_SIZE):
+                batch = group[start:start + CONTEXT_BATCH_SIZE]
+                # Equal-length groups need no padding or changed attention mask.
+                inputs = inference.torch.tensor([ids[:-1] for ids, _ in batch], device=loaded.device)
+                logits = model(inputs)
+                for row, (ids, positions) in enumerate(batch):
+                    indices = inference.torch.tensor([p - 1 for p in positions], device=loaded.device)
+                    targets = inference.torch.tensor([ids[p] for p in positions], device=loaded.device)
+                    values = logits[row, indices].log_softmax(-1).gather(1, targets[:, None])
+                    scores[(ids, positions)] = float(values.mean().item())
+    return [scores[item] for item in keys]
 
 
 def rank_with_context(loaded, tokenizer, suggestions, header, context, selected):

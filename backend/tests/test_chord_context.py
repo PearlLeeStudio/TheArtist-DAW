@@ -55,19 +55,37 @@ class ContextTest(unittest.TestCase):
         class Model:
             max_seq_len = 32
             def __call__(self, inputs):
-                logits = torch.zeros(1, inputs.shape[1], 8)
+                logits = torch.zeros(inputs.shape[0], inputs.shape[1], 8)
                 # Prior chord probabilities equal. The fixed later chord is
                 # much likelier after Dm than Am in this controlled model.
-                if 5 in inputs:
-                    logits[0, -1, 6] = 8
-                else:
-                    logits[0, -1, 6] = -8
+                for row, ids in enumerate(inputs):
+                    logits[row, -1, 6] = 8 if 5 in ids else -8
                 return logits
         candidates = [Suggestion(label="Am", chords={"1": ["Am"]}), Suggestion(label="Dm", chords={"1": ["Dm"]})]
         context = [ContextMeasure(measure=0, chords=["C"]), ContextMeasure(measure=2, chords=["G7"])]
         result = rank_with_context(SimpleNamespace(model=Model(), device="cpu"), tokenizer, candidates, [1], context, [1])
         self.assertEqual(result[0].label, "Dm")
         self.assertEqual(result[0].chords, {"1": ["Dm"]})
+
+    def test_batched_scores_preserve_variable_lengths_order_and_duplicate_patches(self):
+        from app.services import inference, chord_context
+        torch = inference.torch
+        with torch.random.fork_rng(devices=[]):
+            torch.manual_seed(17)
+            model = inference.MusicTransformer(vocab_size=24, d_model=16, n_heads=2,
+                d_ff=32, n_layers=2, max_seq_len=32, dropout=0).eval()
+        loaded = SimpleNamespace(model=model, device='cpu')
+        tokenizer = SimpleNamespace(bar_id=3, encode_chord=lambda s: {'C': 4, 'Dm': 5, 'G7': 6}[s])
+        context = [ContextMeasure(measure=0, chords=['C']), ContextMeasure(measure=2, chords=['G7'])]
+        candidates = [Suggestion(label=str(i), chords={'1': row}) for i, row in enumerate(
+            [['Dm', 'G7'], ['C'], ['C', 'Dm'], ['G7'], ['Dm', 'G7'], ['G7', 'C']])]
+        with patch.object(chord_context, 'CONTEXT_BATCH_SIZE', 1):
+            expected = context_scores(loaded, tokenizer, candidates, [1], context, [1])
+        with patch.object(model, 'forward', wraps=model.forward) as forward:
+            actual = context_scores(loaded, tokenizer, candidates, [1], context, [1])
+        torch.testing.assert_close(torch.tensor(actual), torch.tensor(expected), rtol=1e-5, atol=1e-6)
+        self.assertEqual(actual[0], actual[4])
+        self.assertEqual([call.args[0].shape[0] for call in forward.call_args_list], [3, 2])
 
     def test_sparse_notes_reach_own_model_with_every_known_bar_without_overwriting_source(self):
         draft = reading(count=3, basis="printed")

@@ -48,7 +48,7 @@ serves the built frontend after API routes; separate hosting needs a suitable
 
 The editor defaults to local reading and keeps Analyze as the explicit trigger.
 Its **Use Meta model** checkbox sends `engine: "verified"`: one original-file
-Meta call first, followed by local comparison or explicitly labeled local
+Meta call alongside local analysis, followed by comparison or explicitly labeled local
 recovery when Meta fails. `score_verification.py` preserves printed local
 symbols/N.C., flags disagreement, and reports unavailable local comparison.
 The direct `meta` and bounded `auto` API modes remain supported.

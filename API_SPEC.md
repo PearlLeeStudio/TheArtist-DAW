@@ -789,15 +789,16 @@ Printed symbols and N.C.
 are preserved. Browser cancellation suppresses stale results but does not undo
 an external call already sent or its cost.
 
-`verified` first sends the original attachment to one Meta request, with a
+`verified` sends the original attachment to one Meta request, with a
 150-second timeout, 32,768 output tokens, low reasoning effort, a default $1.50
-request reservation cap and at most 128 written result bars. Local reading then
-compares bar counts, key, meter, chord readings
+request reservation cap and at most 128 written result bars. After admission,
+local reading runs concurrently against the same original. Neither reader sees
+the other's hypotheses. Once both finish, comparison checks bar counts, key, meter, chord readings
 and note evidence. Aligned printed local symbols/N.C. are retained; discrepancies
 become review flags and low confidence. Unequal counts retain the whole local
 reading without merging or truncating bars. Agreement never increases confidence
-or clears an existing review flag. A failed Meta reading instead runs the local
-reader and returns an explicitly attributed `local_fallback` result when possible,
+or clears an existing review flag. A failed Meta reading reuses the local
+result and returns an explicitly attributed `local_fallback` result when possible,
 including locally readable scores up to 512 bars. Unresolved bars remain editable.
 If neither reader can recover a score, the request fails.
 

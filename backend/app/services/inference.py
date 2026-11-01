@@ -226,7 +226,8 @@ class ModelRegistry:
     def __init__(self) -> None:
         self._models: dict[str, LoadedModel] = {}
         self._tokenizer: object | None = None  # ChordTokenizer
-        self._load_lock = threading.Lock()
+        self._load_lock = threading.RLock()  # A missing adapter may resolve to F1 under this lock.
+        self._f1_checkpoint: dict | None = None
 
     @classmethod
     def get(cls) -> ModelRegistry:
@@ -272,7 +273,7 @@ class ModelRegistry:
         d_model = model.token_emb.embedding_dim
         pad_id = model.token_emb.padding_idx
 
-        new_emb = nn.Embedding(new_vocab, d_model, padding_idx=pad_id).to(device)
+        new_emb = nn.Embedding(new_vocab, d_model, padding_idx=pad_id, device="meta").to_empty(device=device)
         with torch.no_grad():
             new_emb.weight[:old_vocab] = model.token_emb.weight
             none_row = model.token_emb.weight[none_id]
@@ -280,7 +281,7 @@ class ModelRegistry:
                 new_emb.weight[i] = none_row
         model.token_emb = new_emb
 
-        new_out = nn.Linear(d_model, new_vocab, bias=False).to(device)
+        new_out = nn.Linear(d_model, new_vocab, bias=False, device="meta").to_empty(device=device)
         with torch.no_grad():
             new_out.weight[:old_vocab] = model.out_proj.weight
             none_row = model.out_proj.weight[none_id]
@@ -299,19 +300,38 @@ class ModelRegistry:
         (359). Used for both F-series and LoRA serving paths."""
         trained_vocab = self._trained_vocab_size()
         extended_vocab = self.tokenizer.vocab_size
-        model = MusicTransformer(
-            vocab_size=trained_vocab,
-            d_model=config.get("d_model", 512),
-            n_heads=config.get("n_heads", 8),
-            d_ff=config.get("d_ff", 2048),
-            n_layers=config.get("n_layers", 8),
-            max_seq_len=config.get("max_seq_len", 256),
-            dropout=0.0,
-            pad_id=self.tokenizer.pad_id,
-        ).to(device)
-        model.load_state_dict(ckpt["model_state_dict"])
+        # Every parameter comes from the checkpoint. Allocating and randomly
+        # initializing 25M values only to overwrite them is wasted startup work.
+        with torch.device("meta"):
+            model = MusicTransformer(
+                vocab_size=trained_vocab,
+                d_model=config.get("d_model", 512),
+                n_heads=config.get("n_heads", 8),
+                d_ff=config.get("d_ff", 2048),
+                n_layers=config.get("n_layers", 8),
+                max_seq_len=config.get("max_seq_len", 256),
+                dropout=0.0,
+                pad_id=self.tokenizer.pad_id,
+            )
+        model.load_state_dict(ckpt["model_state_dict"], assign=True)
+        model.to(device)
         self._resize_embedding_inplace(model, trained_vocab, extended_vocab, device)
         return model
+
+    def _read_checkpoint(self, name: str, device: "torch.device") -> dict:
+        """Map released weights; retain only F1's inference state for its adapters.
+
+        Each LoRA has independent modules/embeddings/adapters but shares immutable
+        F1 base tensor storage. Never merge adapters or train these served models.
+        Training/optimizer tensors are deliberately not retained in this cache.
+        """
+        if name == "ft_f1" and self._f1_checkpoint is not None:
+            return self._f1_checkpoint
+        ckpt = torch.load(CHECKPOINTS[name], map_location=device, weights_only=False, mmap=True)
+        result = {"model_state_dict": ckpt["model_state_dict"], "config": ckpt.get("config", {})}
+        if name == "ft_f1":
+            self._f1_checkpoint = result
+        return result
 
     def _load_lora(self, name: str, lora_dir: Path) -> LoadedModel | None:
         """Serve a LoRA model: F1 base + embedding_extension overlay + peft adapter.
@@ -332,7 +352,7 @@ class ModelRegistry:
             return None
 
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        ckpt = torch.load(f1_path, map_location=device, weights_only=False)
+        ckpt = self._read_checkpoint("ft_f1", device)
         config = ckpt.get("config", {})
 
         # Step 1+2: F1 base into a fresh model + resize to extended vocab
@@ -349,7 +369,7 @@ class ModelRegistry:
 
         # Step 4: Apply peft LoRA adapter
         peft_model = PeftModel.from_pretrained(base_model, str(adapter_dir))
-        peft_model.eval()
+        peft_model.eval().requires_grad_(False)
         loaded = LoadedModel(model=peft_model, name=name, device=device)
         self._models[name] = loaded
         log.info(f"Loaded LoRA '{name}' on {device} (F1 base + adapter)")
@@ -375,10 +395,10 @@ class ModelRegistry:
                 log.warning(f"Checkpoint not found: {path}")
                 return None
             device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-            ckpt = torch.load(path, map_location=device, weights_only=False)
+            ckpt = self._read_checkpoint(name, device)
             config = ckpt.get("config", {})
             model = self._build_base_model(ckpt, config, device)
-            model.eval()
+            model.eval().requires_grad_(False)
             loaded = LoadedModel(model=model, name=name, device=device)
             self._models[name] = loaded
             params = sum(p.numel() for p in model.parameters()) / 1e6

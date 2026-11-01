@@ -66,6 +66,7 @@ from typing import Any
 from urllib.parse import urlsplit
 
 import openai
+import httpx
 
 from app.services.env_flags import meta_enabled, meta_budget_unlimited
 
@@ -800,6 +801,11 @@ class OpenAITransport:
     """
 
     def __init__(self, config: LLMConfig, http_client: Any | None = None) -> None:
+        if http_client is None:
+            # Planning, local generation and tool execution can exceed HTTPX's
+            # five-second idle default. Retain TLS connections across those steps.
+            http_client = openai.DefaultHttpxClient(limits=httpx.Limits(
+                max_connections=32, max_keepalive_connections=16, keepalive_expiry=60.0))
         self._client = openai.OpenAI(api_key=config.api_key, base_url=config.base_url,
                                      timeout=config.timeout_s, max_retries=0, http_client=http_client)
         self._where = f"{config.provider} ({config.model})"

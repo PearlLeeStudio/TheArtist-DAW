@@ -113,7 +113,7 @@ to the DAW. Its existing chord model supplies a harmonic engine for this workflo
 
 | Path | File | Calls per use | Switch |
 |---|---|---|---|
-| **Use Meta model** checkbox, `engine: "verified"`: Meta first, local recovery on failure, comparison when both readings succeed | `score_verification.py`, `score_import.py` | 1 PDF/image request, default ≤ $1.50; no automatic Meta retry | `THEARTIST_META_ENABLED`; public hosts also require `THEARTIST_PUBLIC_META_READER=1` |
+| **Use Meta model** checkbox, `engine: "verified"`: concurrent Meta/local reading, explicit local recovery on failure, comparison when both succeed | `score_verification.py`, `score_import.py` | 1 PDF/image request, default ≤ $1.50; no automatic Meta retry | `THEARTIST_META_ENABLED`; public hosts also require `THEARTIST_PUBLIC_META_READER=1` |
 | Direct full-file API reading, `engine: "meta"` | `score_import.py` | 1 request, default ≤ $1.50 | same |
 | Bounded API assist, `engine: "auto"` | `score_assistance.py`, `harmony_meta.py`, `score_form.py` | ≤ 2 × 8-bar harmony reviews + 1 form analysis, ≤ $0.30 total | same; leave the editor checkbox off for no Meta calls |
 | Complete the form planner (plan, validate, revise, judge) | `backend/app/services/planner.py`, `routes/plan.py` | ≤ 5 calls per run (1 plan, ≤ 2 revisions, ≤ 2 judgments) | same; judge role via `LLM_JUDGE_*` |
@@ -159,8 +159,8 @@ file, contract and test coverage, fixes, and remaining verification limits.
   without blocking import; their original symbols and evidence are retained.
   Correct highlighted project fields, then click
   **Import reviewed score** to confirm. The footer explains any blocker.
-  The checkbox is off by default. Checked analysis sends the original to Meta first,
-  then compares it with the local reading. A truncated, timed-out or invalid Meta
+  The checkbox is off by default. Checked analysis sends the original to Meta while
+  the local reader analyzes it, then compares both readings. A truncated, timed-out or invalid Meta
   response proceeds to local reading automatically; unresolved bars remain editable.
   Meta supports up to 128 written bars. A larger or failed Meta reading can still
   open all locally readable bars (up to 512), labeled as local recovery.

@@ -220,19 +220,19 @@ class NativeToolsTests(LLMTestCase):
     def test_bad_context_names_its_slot_before_model_loading_or_any_meta_call(self):
         req = request()
         req.context[0].chords[1] = 'Cmadeup'
-        transport = FakeTransport(tool_response('search_substitutions', {'family': 'modal'}))
+        transport = FakeTransport(tool_response('search_substitutions', {'families': ['common_tones', 'modal']}))
         with patch.object(agent, 'ContextScorer') as scorer, self.assertRaisesRegex(ValueError, 'M1.2'):
             agent.propose(req, client=self.client(transport))
         scorer.assert_not_called()
         self.assertEqual(transport.calls, [])
 
     def test_tool_turn_has_auto_choice_and_settles_usage(self):
-        transport = FakeTransport(tool_response("search_substitutions", {"family": "modal"}))
+        transport = FakeTransport(tool_response("search_substitutions", {"families": ["modal"]}))
         client = self.client(transport)
         with llm.track_call_costs() as costs:
             reply = client.chat_tools([{"role": "user", "content": "Compare chords."}], agent.TOOLS,
                                       label="reharm-test", max_request_usd=.15)
-        self.assertEqual(reply.data['calls'][0]['arguments'], {"family": "modal"})
+        self.assertEqual(reply.data['calls'][0]['arguments'], {"families": ["modal"]})
         self.assertEqual(transport.calls[0]['tool_choice'], 'auto')
         self.assertNotIn('response_format', transport.calls[0])
         self.assertGreater(costs.cost_usd, 0)
@@ -263,9 +263,8 @@ class NativeToolsTests(LLMTestCase):
 
         def transport(body):
             calls.append(body)
-            if len(calls) < 3:
-                family = ['common_tones', 'modal'][len(calls) - 1]
-                response = tool_response('search_substitutions', {'family': family})
+            if len(calls) == 1:
+                response = tool_response('search_substitutions', {'families': ['common_tones', 'modal']})
             else:
                 pool = [c for msg in body['messages'] if msg['role'] == 'tool'
                         for c in json.loads(msg['content']).get('candidates', [])]
@@ -278,14 +277,16 @@ class NativeToolsTests(LLMTestCase):
         with llm.track_call_costs() as costs:
             result = agent.propose(req, client=client, scorer=FakeScorer())
         self.assertEqual(len(result.candidates), 3)
-        self.assertEqual(result.toolCalls, ['search_substitutions', 'search_substitutions', 'offer_candidates'])
+        self.assertEqual(result.toolCalls, ['search_substitutions', 'offer_candidates'])
         self.assertTrue(all(call['max_completion_tokens'] == 4096 for call in calls))
         self.assertTrue(all(call['reasoning_effort'] == 'low' for call in calls))
-        self.assertEqual(result.requestIds, ['req-1', 'req-2', 'req-3'])
+        self.assertEqual(result.requestIds, ['req-1', 'req-2'])
         self.assertAlmostEqual(result.costUsd, costs.cost_usd)
         self.assertEqual(calls[1]['messages'][-2]['role'], 'assistant')
         self.assertEqual(calls[1]['messages'][-1]['tool_call_id'], 'call-1')
         self.assertEqual(req.model_dump_json(), original)
+        self.assertEqual(len(calls[0]['tools']), 1)
+        self.assertEqual(calls[0]['tools'][0]['function']['parameters']['properties']['families']['minItems'], 2)
         offered = [c for message in calls[-1]['messages'] if message['role'] == 'tool'
                    for c in json.loads(message['content']).get('candidates', [])]
         self.assertTrue(any(c['conventionScore'] > 0 and c['changes'][0]['conventions'] for c in offered))
@@ -296,7 +297,7 @@ class NativeToolsTests(LLMTestCase):
         self.assertEqual(json.loads(calls[0]['messages'][1]['content'])['modelApproximations'], expected)
 
     def test_repeated_searches_stop_at_four_turns(self):
-        transport = FakeTransport(tool_response('search_substitutions', {'family': 'common_tones'}))
+        transport = FakeTransport(tool_response('search_substitutions', {'families': ['common_tones', 'modal']}))
         with self.assertRaisesRegex(llm.LLMResponseError, 'four-turn'):
             agent.propose(request(), client=self.client(transport), scorer=FakeScorer())
         self.assertEqual(len(transport.calls), 4)
@@ -309,7 +310,7 @@ class NativeToolsTests(LLMTestCase):
     def test_route_settles_prior_calls_on_later_failure(self):
         from app.routes.reharmonize import reharmonize_route
         from fastapi import HTTPException
-        client = self.client(FakeTransport(tool_response('search_substitutions', {'family': 'common_tones'})))
+        client = self.client(FakeTransport(tool_response('search_substitutions', {'families': ['common_tones', 'modal']})))
         with patch('app.routes.reharmonize.limits.limiter') as limiter, \
                 patch.object(agent.llm, 'get_client', return_value=client), \
                 patch.object(agent, 'ContextScorer', return_value=FakeScorer()):

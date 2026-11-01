@@ -723,7 +723,8 @@ def _meta_composition(run: _Run) -> None:
          "apart from its planned cadence. You write the actual chords: no downstream rules will repair your endings. "
          "Use playable lead-sheet symbols (e.g. C, Am, Dm7, G7, Cmaj7, F6, Bm7b5, C/E); no N.C., Roman numerals or prose in the bars."},
         {"role": "user", "content": json.dumps({"request": run.request.model_dump(mode="json", exclude={"modelKey", "seed"}),
-                                                  "plan": run.plan.model_dump(mode="json")})},
+                                                  "plan": run.plan.model_dump(mode="json")},
+                                                 ensure_ascii=False, separators=(",", ":"))},
     ], schema, name="song_form_chords", effort="low", max_tokens=8192)
     sections = result.data.get("sections")
     if not isinstance(sections, list) or len(sections) != len(run.plan.sections):

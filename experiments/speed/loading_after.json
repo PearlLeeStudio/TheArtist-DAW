@@ -1,0 +1,28 @@
+{
+  "import_seconds": 2.1699,
+  "torch": "2.13.0",
+  "threads": 2,
+  "platform": "darwin",
+  "peak_mib": 636.3,
+  "all_models_retained": true,
+  "models": [
+    {
+      "key": "ft_f1",
+      "load_seconds": 0.0165,
+      "first_forward_seconds": 0.01,
+      "logits_sha256": "8680eaa9724819d313855a2ac72d7330e6adfa6eb57592fc76f79cd5cbe99d49"
+    },
+    {
+      "key": "ft_f4",
+      "load_seconds": 0.0135,
+      "first_forward_seconds": 0.0097,
+      "logits_sha256": "852ab2b8ee5e58e642ab05365f9e912c07b99df4869304250449251d67bb8f84"
+    },
+    {
+      "key": "ft_f1_lora_rock",
+      "load_seconds": 0.0495,
+      "first_forward_seconds": 0.0064,
+      "logits_sha256": "b9075dfc8cba4843acf986e916d4f28130366840812629801aab91ca39560451"
+    }
+  ]
+}

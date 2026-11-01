@@ -8,6 +8,56 @@ uncached path. Set `THEARTIST_DISABLE_KV_CACHE=1` to compare or roll back infere
 
 ## Local generation
 
+### Checkpoint startup and Meta scheduling
+
+Serving constructs models on Torch's meta device, assigns memory-mapped weights,
+and allocates only the extended embedding/output rows. The eleven genre adapters
+share immutable F1 base tensor storage while keeping independent modules, adapter
+weights and embedding overlays. Served models are inference-only: adapters must
+not be merged into the shared base or trained in this registry. No quantization,
+weight conversion or reduced candidate count is involved.
+
+A fresh-process local CPU comparison (two Torch threads, Darwin arm64) retains
+F1, F4 and Rock LoRA together. This is one run per version, with the filesystem
+cache left intact; it is not an uncached-disk or all-catalog benchmark.
+
+| Loading measurement | Before | After |
+|---|---:|---:|
+| Three model loads, excluding imports | 0.471 s | 0.080 s |
+| Process peak | 1,027.8 MiB | 636.3 MiB |
+| Python/dependency import | 2.240 s | 2.170 s |
+
+All three first-forward logit hashes match, including a repeated forward after
+the other models load. [Before](loading_before.json) and [after](loading_after.json)
+contain raw timings and hashes. Reproduce with `backend/scripts/loading_probe.py`
+through the project wrapper and an absolute `--out` path. First-forward timings
+are separate so lazy page faults are not hidden in the load measurement.
+
+Meta workflow changes preserve model IDs, reasoning efforts, output allowances,
+timeouts, validation, accounting and visible failures:
+
+- All seven call sites share the HTTP transport, which retains up to sixteen idle
+  connections for sixty seconds across local work rather than expiring them after
+  five seconds. Planning, composition, judgment, Second ear, tool turns, full-file
+  reading, note assistance and form analysis benefit when a connection is reused.
+- Reharmonize's first native tool call requests at least two families together;
+  Meta still chooses the families and final three candidates and can inspect the
+  remaining family. All exact metrics are sent as compact JSON.
+- Context scoring deduplicates identical token projections and batches equal-length
+  sequences in groups of at most three. Candidate order and exact patches remain
+  separate. Tests compare scores to individual forwards with floating-point tolerance.
+- Verified Import admits the Meta request before starting either reader, then
+  overlaps local work with the original-file call. Both readers remain independent;
+  failure reuses the single local result with explicit `local_fallback` provenance.
+  Harmony assistance already runs its two independent batches concurrently; form
+  analysis waits for their evidence. Plan, compose and judge retain their necessary
+  dependencies. No inference effort is lowered to make the timings look faster.
+
+Connection reuse and Import overlap remove avoidable waits, but provider generation
+time still varies. They are not a guaranteed speedup for every Meta endpoint.
+
+### Autoregressive attention cache
+
 CPU, Darwin arm64, four Torch threads. Medians of three paired runs with seeds
 17–19, after one warmup per mode. Each chord request generates all three
 candidates and includes ranking and voicing. Checkpoint loading, HTTP/browser

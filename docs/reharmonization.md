@@ -36,8 +36,9 @@ link, so the comparison remains findable when it is below the visible score rows
 
 ## How candidates are made
 
-1. Muse Spark invokes native `search_substitutions` function tools for at least two
-   harmonic families: shared tones, parallel-mode color, or dominant approaches.
+1. Muse Spark invokes native `search_substitutions` with a `families` array. The
+   first call compares at least two families together: shared tones, parallel-mode
+   color, or dominant approaches. This removes an unnecessary network round trip.
 2. A bounded deterministic search enumerates sparse patches inside the selection.
    It prunes using shared pitch classes, a symmetric nearest-pitch-class distance
    across neighboring chords, circular bass motion, and parallel scale membership.
@@ -54,6 +55,8 @@ link, so the comparison remains findable when it is below the visible score rows
    chords and known later chords. This is causal sequence reranking, not a new
    bidirectional infilling model or explicit modal conditioning. Slash bass is
    evaluated mathematically; the trained tokenizer has no bass tokens.
+   Identical token projections are scored once; equal-length sequences run in
+   batches of at most three, with every original candidate and exact patch retained.
 4. Meta compares returned facts, can explore the remaining family, and calls
    `offer_candidates` with three distinct IDs. It cannot invent an output chord,
    change the score, or call arbitrary functions. The frontend applies the chosen

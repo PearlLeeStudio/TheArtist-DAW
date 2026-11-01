@@ -12,8 +12,8 @@ an earlier result cannot populate the new selection. Start the new analysis expl
 A provider call already in progress may still finish and incur cost.
 
 The checkbox defaults off (`local`). Checked analysis uses `verified`: one
-original-file Meta reading first, followed by local comparison or local recovery
-if Meta fails. Local processing combines vector-score reading,
+original-file Meta reading alongside local analysis, followed by comparison or
+explicit local recovery if Meta fails. Local processing combines vector-score reading,
 deterministic note analysis and, for unresolved passages with readable notes,
 bounded F1 harmonization proposals. The checkbox accepts PDF, PNG, JPEG and WebP when
 `meta.fullFileScoreImport` is true. File compatibility is checked
@@ -31,7 +31,7 @@ confidence and mark review; agreement never raises confidence or clears a review
 flag. Different counts retain the complete local result without aligning bars by
 position. If local reading is unsupported, Meta may read the file but the review
 reports that local comparison was unavailable. A truncated, timed-out or invalid
-Meta response proceeds to the local reader. Its result has `local_fallback`
+Meta response reuses the local reading. Its result has `local_fallback`
 provenance and retains unresolved editable bars; it is never labeled Meta-verified.
 If neither reader can provide a review, import reports an error.
 An empty Meta chord hypothesis no longer erases an existing local hypothesis;

@@ -1,4 +1,6 @@
 import unittest
+from threading import Event
+from contextvars import ContextVar
 from unittest.mock import Mock, patch
 
 from app.models.score_import import ImportedMeasure, ScoreImportRequest, ScoreImportResponse
@@ -37,20 +39,30 @@ class ScoreVerificationTest(unittest.TestCase):
         self.request = ScoreImportRequest(filename="private-name.pdf", mimeType="application/pdf",
                                           dataBase64="", engine="verified", mode="infer_harmony")
 
-    def test_meta_is_attempted_first_then_compared_with_local_reading(self):
+    def test_readers_overlap_after_admission_and_keep_request_context(self):
         order = []
+        local_started, meta_started = Event(), Event()
+        context = ContextVar('verification_request', default=None)
+        token = context.set('request-context')
+        self.addCleanup(context.reset, token)
         def local(_):
             order.append("local")
+            self.assertEqual(context.get(), 'request-context')
+            local_started.set()
+            self.assertTrue(meta_started.wait(2), 'Local reader must not finish before Meta starts')
             return reading(count=2)
         def meta(*args, **kwargs):
             order.append("meta")
+            meta_started.set()
+            self.assertTrue(local_started.wait(2), 'Meta must overlap the local reader')
             self.assertNotIn("local_context", kwargs)
             return reading("meta", count=2)
         admit = Mock(side_effect=lambda _: order.append("admit"))
         with patch.object(verify, "analyze_local_score", side_effect=local), \
              patch.object(verify, "_import_meta_score", side_effect=meta) as call:
             result = verify.import_verified_score(self.request, {"type": "file"}, before_meta=admit)
-        self.assertEqual(order, ["admit", "meta", "local"])
+        self.assertEqual(order[0], "admit")
+        self.assertCountEqual(order[1:], ["meta", "local"])
         call.assert_called_once()
         admit.assert_called_once_with(1.50)
         self.assertEqual(result.verification.status, "compared")

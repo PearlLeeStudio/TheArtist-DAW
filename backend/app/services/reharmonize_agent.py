@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import copy
 import time
 
 from app.models.reharmonize import ReharmRequest, ReharmResponse
@@ -17,10 +18,11 @@ MAX_COMPLETION_TOKENS = 4096  # Reasoning and the final native tool call share t
 TOOLS = [
     {"type": "function", "function": {
         "name": "search_substitutions",
-        "description": "Enumerate sparse chord substitutions, prune mathematically, and score the shortlist with the trained Music Transformer against preceding and following bars. Search at least two different families before choosing.",
+        "description": "Compare one to three families together: enumerate sparse substitutions, prune mathematically, and score each shortlist with the trained Music Transformer against preceding and following bars. Start with at least two different families in one call.",
         "parameters": {"type": "object", "properties": {
-            "family": {"type": "string", "enum": ["common_tones", "modal", "dominant"]}},
-            "required": ["family"], "additionalProperties": False}}},
+            "families": {"type": "array", "minItems": 1, "maxItems": 3, "uniqueItems": True,
+                         "items": {"type": "string", "enum": ["common_tones", "modal", "dominant"]}}},
+            "required": ["families"], "additionalProperties": False}}},
     {"type": "function", "function": {
         "name": "offer_candidates",
         "description": "Finish with three distinct candidate IDs already returned by the search tool. Offer contrasting options for the composer, without applying or rewriting any chords.",
@@ -32,7 +34,7 @@ SYSTEM = """You are the harmonic search partner inside a score editor. Preserve 
 The user selected existing chords and wants THREE sparse alternatives, not a rewritten passage.
 maxChangedSlots is the upper bound, from one to four. For a three- or four-chord limit,
 compare the wider patches as well as the sparser choices returned by the tools.
-First search two DIFFERENT families (these searches may share one turn), inspecting the metrics and learned
+First search two DIFFERENT families together in ONE search_substitutions call, inspecting the metrics and learned
 context scores. You may search the remaining family if needed. Then call offer_candidates with three
 distinct returned IDs, preferably spanning different roots and harmonic approaches. Maximum four turns.
 Never invent chord symbols or candidate IDs. High modelScore means higher mean conditional log likelihood,
@@ -70,7 +72,7 @@ def propose(req: ReharmRequest, *, client=None, scorer=None) -> ReharmResponse:
         "selectedSlots": [s.model_dump() for s in req.selectedSlots],
         "context": [bar.model_dump() for bar in window],
         "modelApproximations": approximations,
-    })}]
+    }, ensure_ascii=False, separators=(",", ":"))}]
     pool, searched, trace, ids = {}, set(), [], []
     cost = 0.0
     for turn in range(MAX_TURNS):
@@ -80,7 +82,13 @@ def propose(req: ReharmRequest, *, client=None, scorer=None) -> ReharmResponse:
         if not meta_budget_unlimited() and cost >= MAX_USD:
             raise llm.BudgetExceeded("The reharmonization search reached its cost limit.",
                                      spent_usd=cost, outstanding_usd=0, request_usd=0, cap_usd=MAX_USD)
-        reply = client.chat_tools(messages, TOOLS, label=f"reharmonize:turn-{turn + 1}",
+        tools = TOOLS
+        if not searched:
+            # Comparing two families does not depend on seeing the first one's
+            # result. Require the first comparison in one paid network round trip.
+            tools = copy.deepcopy(TOOLS[:1])
+            tools[0]['function']['parameters']['properties']['families']['minItems'] = 2
+        reply = client.chat_tools(messages, tools, label=f"reharmonize:turn-{turn + 1}",
                                   max_request_usd=MAX_USD - cost, timeout_s=min(30, remaining),
                                   max_completion_tokens=MAX_COMPLETION_TOKENS)
         cost += reply.cost_usd
@@ -95,15 +103,15 @@ def propose(req: ReharmRequest, *, client=None, scorer=None) -> ReharmResponse:
             name, args = call['name'], call['arguments']
             trace.append(name)
             if name == "search_substitutions":
-                family = args['family']
-                if family in searched:
-                    result = {"error": "This family was already searched. Search a different family or offer candidates."}
-                else:
-                    searched.add(family)
-                    candidates = scorer.score(search(req, family))
-                    pool.update({candidate.id: candidate for candidate in candidates})
-                    result = {"candidates": [c.model_dump() for c in candidates]}
-                messages.append({"role": "tool", "tool_call_id": call['callId'], "content": json.dumps(result)})
+                fresh = [family for family in args['families'] if family not in searched]
+                candidates = scorer.score([candidate for family in fresh for candidate in search(req, family)])
+                searched.update(fresh)
+                pool.update({candidate.id: candidate for candidate in candidates})
+                result = {"candidates": [c.model_dump() for c in candidates]}
+                if not fresh:
+                    result['error'] = "These families were already searched. Search the remaining family or offer candidates."
+                messages.append({"role": "tool", "tool_call_id": call['callId'],
+                                 "content": json.dumps(result, ensure_ascii=False, separators=(",", ":"))})
                 continue
             chosen = args['candidateIds']
             if len(searched) < 2 or len(chosen) != 3 or len(set(chosen)) != 3 or any(cid not in pool for cid in chosen):

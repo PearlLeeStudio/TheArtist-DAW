@@ -2,6 +2,7 @@
 import os
 from pathlib import Path
 import sys
+import time
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "backend"))
@@ -19,8 +20,9 @@ def main():
     from app.services.serving_readiness import require_full_catalog
     from app.services.env_flags import meta_enabled
 
+    started = time.perf_counter()
     models = require_full_catalog()
-    print(f"Serving all {len(models)} released model choices", flush=True)
+    print(f"Serving all {len(models)} released model choices (catalog load {time.perf_counter() - started:.3f}s)", flush=True)
     sources = capabilities().data["rag"]["sources"]
     if sources != {"omt": "ready", "berklee": "disabled"}:
         raise SystemExit("Serving requires prepared OMT and disabled Berklee; run backend/scripts/setup_omt.py")
