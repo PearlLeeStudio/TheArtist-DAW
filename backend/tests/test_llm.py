@@ -317,14 +317,26 @@ class LedgerTests(LLMTestCase):
         with mock.patch.dict(os.environ, env, clear=True), mock.patch.object(llm, "_clients", {}):
             client = llm.get_client()
             self.assertIs(llm.get_client(), client)
-            judge = llm.get_client("judge")  # no LLM_JUDGE_PROVIDER: the judge is the default client's twin
-            self.assertIsNot(judge, client)
+            judge = llm.get_client("judge")  # no separate provider: reuse the live connection pool too
+            self.assertIs(judge, client)
             self.assertIs(llm.get_client("judge"), judge)
         self.assertEqual((client.config.model, client.ledger.cap_usd), ("muse-spark-1.3", 40.0))
         self.assertEqual(client.ledger.path, self.ledger_path.resolve())
         self.assertEqual((judge.config, judge.ledger.path, judge.ledger.cap_usd),
                          (client.config, client.ledger.path, 40.0))  # the same config and ledger file
         self.assertFalse(self.ledger_path.parent.exists())  # nothing is created until a request
+
+    def test_judge_first_reuses_the_default_transport_but_configured_roles_stay_separate(self):
+        env = {"MODEL_API_KEY": KEY, "THEARTIST_META_LEDGER": str(self.ledger_path)}
+        with mock.patch.dict(os.environ, env, clear=True), mock.patch.object(llm, "_clients", {}):
+            judge = llm.get_client('judge')
+            transport = FakeTransport(response(json.dumps(GOOD)))
+            judge._transport = transport
+            self.assertIs(llm.get_client()._get_transport(), transport)
+            with mock.patch.dict(os.environ, {"LLM_JUDGE_PROVIDER": "meta"}):
+                separate = llm.get_client('judge')
+                self.assertIsNot(separate, judge)
+                self.assertEqual(separate.config.role, 'judge')
 
     def test_get_client_builds_the_judge_role_from_its_own_variables_and_ledger(self):
         judge_path = self.ledger_path.with_name("judge_ledger.json")

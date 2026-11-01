@@ -1267,7 +1267,7 @@ _client_lock = threading.Lock()
 
 
 def get_client(role: str = "default") -> LLMClient:
-    """One process-wide client per role, built from the environment on first use.
+    """One process-wide client per configured role, built on first use.
 
     The Meta flag is checked on every call, for every role, before anything is built; a direct
     LLMClient(...) is not subject to it (tests, evaluation scripts).
@@ -1278,6 +1278,10 @@ def get_client(role: str = "default") -> LLMClient:
         raise LLMConfigError(str(exc)) from None
     if not enabled:
         raise LLMDisabled("Meta Model API features are disabled on this server (THEARTIST_META_ENABLED=0)")
+    if role == "judge" and not _env_str(os.environ, "LLM_JUDGE_PROVIDER"):
+        # A default-provider judge already shares config, budget and ledger.
+        # Share its live transport too, including when Second ear is used first.
+        role = "default"
     with _client_lock:
         client = _clients.get(role)
         if client is None:
