@@ -110,7 +110,7 @@ test('invalid or oversized recognition structures fail instead of dropping data'
 });
 
 test('import chord parser rejects unsupported qualities rather than using major fallback', () => {
-  for (const symbol of ['C7alt', 'C7(b9)', 'C6/9', 'C/Gb/Ab', 'Cxyz', 'N.C.', '%', 'H7']) {
+  for (const symbol of ['C7alt', 'C7(b9)', 'Cmaj7(#11)', 'C/Gb/Ab', 'Cxyz', 'N.C.', '%', 'H7']) {
     assert.equal(parseImportedChord(symbol, 'C major'), null, symbol);
   }
   assert.equal(parseImportedChord('Cmajor', 'C major')?.quality, 'maj');

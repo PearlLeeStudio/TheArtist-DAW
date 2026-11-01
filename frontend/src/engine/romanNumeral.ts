@@ -5,8 +5,16 @@ const ROMAN_NUMERALS = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'];
 const NOTE_LETTERS = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
 
 const MINOR_QUALITIES = new Set([
-  'min', 'm7', 'dim', 'dim7', 'm7b5', 'm6', 'm9', 'm11', 'm13', 'mMaj7',
+  'min', 'm7', 'dim', 'dim7', 'm7b5', 'm6', 'm9', 'm11', 'm13', 'mMaj7', 'mMaj9', 'm6/9',
+  'madd9', 'm(add9)', 'm(add2)', 'm(add4)', 'm(add11)',
 ]);
+
+/** Conventional spelling of a non-diatonic root when its written letter would
+ *  need a double accidental: by semitone above the tonic, for major and minor keys. */
+const CHROMATIC_DEGREES: Record<'major' | 'minor', Record<number, string>> = {
+  major: { 1: 'bII', 3: 'bIII', 6: '#IV', 8: 'bVI', 10: 'bVII' },
+  minor: { 1: 'bII', 4: '#III', 6: '#IV', 9: '#VI', 11: '#VII' },
+};
 
 function parseKey(key: string): { root: number; letter: number; isMinor: boolean } {
   const parts = key.split(' ');
@@ -26,18 +34,24 @@ export function calculateRomanNumeral(chord: Chord, key: string): string {
 
   // The written note letter determines the degree. Pitch distance alone
   // cannot distinguish F# (#IV) from Gb (bV), or Bb (bVII) from A# (#VI).
-  const degree = (chordLetter - keyLetter + 7) % 7;
+  let degree = (chordLetter - keyLetter + 7) % 7;
+  // A root spelled enharmonically to a scale tone (D# in Ab major, G# for the
+  // Ab tonic) reads as that scale tone rather than as a doubly altered degree.
+  const diatonicDegree = scaleIntervals.indexOf(interval);
+  if (diatonicDegree >= 0) degree = diatonicDegree;
 
   let numeral = ROMAN_NUMERALS[degree];
-  if (MINOR_QUALITIES.has(chord.quality)) {
-    numeral = numeral.toLowerCase();
-  }
-
   const expectedInterval = scaleIntervals[degree];
   if (interval !== expectedInterval) {
     // Semitones away from the scale degree, wrapped into -6..+5: sharps above, flats below.
     const alteration = ((interval - expectedInterval + 18) % 12) - 6;
-    numeral = (alteration > 0 ? '#'.repeat(alteration) : 'b'.repeat(-alteration)) + numeral;
+    numeral = Math.abs(alteration) === 1
+      ? (alteration > 0 ? '#' : 'b') + numeral
+      // Double accidentals never appear in chord analysis: use the conventional chromatic degree.
+      : CHROMATIC_DEGREES[isMinor ? 'minor' : 'major'][interval] ?? numeral;
+  }
+  if (MINOR_QUALITIES.has(chord.quality)) {
+    numeral = numeral.replace(/[IV]+/, (roman) => roman.toLowerCase());
   }
 
   return numeral + getQualitySuffix(chord.quality);
@@ -88,7 +102,12 @@ function getQualitySuffix(quality: string): string {
     case '11': case 'm11': return '11';
     case '13': case 'm13': return '13';
     case 'mMaj7': return 'maj7';
-    case 'add9': return 'add9';
+    case 'mMaj9': return 'maj9';
+    case 'add9': case 'madd9': case 'm(add9)': return 'add9';
+    case 'm(add2)': return 'add2';
+    case 'm(add4)': return 'add4';
+    case 'm(add11)': return 'add11';
+    case '6/9': case 'm6/9': return '6/9';
     case '7b9': return '7b9';
     case '7#9': return '7#9';
     case '7#11': return '7#11';

@@ -48,6 +48,36 @@ export const QUALITY_INTERVALS: Record<string, number[]> = {
   '7#9':    [0, 4, 10, 15],
   '7#11':   [0, 4, 10, 18],
   '7b13':   [0, 4, 10, 20],
+
+  // Suspended sevenths and ninths (charts write D7sus4, G9sus4) — keep the 4th
+  '7sus4':  [0, 5, 7, 10],
+  '7sus2':  [0, 2, 7, 10],
+  '9sus4':  [0, 5, 10, 14],
+  '9sus2':  [0, 2, 10, 14],
+  '13sus4': [0, 5, 10, 21],
+
+  // Sixth/ninth and added tones — 4 notes, drop the 5th where a tension replaces it
+  '6/9':    [0, 4, 9, 14],
+  'm6/9':   [0, 3, 9, 14],
+  'add2':   [0, 2, 4, 7],
+  'add4':   [0, 4, 5, 7],
+  'add11':  [0, 4, 7, 17],
+  'madd9':  [0, 3, 7, 14],
+  'm(add9)': [0, 3, 7, 14],
+  'm(add2)': [0, 2, 3, 7],
+  'm(add4)': [0, 3, 5, 7],
+  'm(add11)': [0, 3, 7, 17],
+
+  // Major sevenths with upper extensions — root–3–maj7–top
+  'maj7#11': [0, 4, 11, 18],
+  'maj11':  [0, 4, 11, 17],
+  'maj13':  [0, 4, 11, 21],
+  'mMaj9':  [0, 3, 11, 14],
+  '7b5':    [0, 4, 6, 10],
+
+  // Power chords (manual entry's "5") — root, fifth, octave
+  '5':      [0, 7, 12],
+  '7(no3)': [0, 7, 10],
 };
 
 /** MIDI middle C: an inverted slash chord whose bass lands at or above it drops an octave. */

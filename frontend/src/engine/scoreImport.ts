@@ -371,7 +371,7 @@ export function createScoreImportDraft(response: ScoreImportResponse, filename: 
 }
 
 /** A root, a suffix without spaces, slashes or parentheses, and an optional slash bass. */
-const IMPORTED_CHORD_SYMBOL = /^[A-G](?:#|b)?[^\s/()]*(?:\/[A-G](?:#|b)?)?$/;
+const IMPORTED_CHORD_SYMBOL = /^[A-G](?:#|b)?(?:m?6\/9|[^\s/()]*)(?:\/[A-G](?:#|b)?)?$/;
 
 /** Deliberately stricter than manual chord entry: no unknown suffix may
  *  silently fall back to a major triad, and parenthesized extensions are
