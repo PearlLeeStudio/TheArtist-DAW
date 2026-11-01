@@ -706,13 +706,15 @@ def _rerank_composite(
         "off" if r2_disabled else "on",
     )
 
-    reranked: list[Suggestion] = []
-    for i, (_comp, _r1v, _r2v, s) in enumerate(breakdown):
-        new_letter = chr(ord("A") + i)
+    return _reletter([s for _comp, _r1v, _r2v, s in breakdown])
+
+
+def _reletter(suggestions: list[Suggestion]) -> list[Suggestion]:
+    """Option A/B/C follow list order after any reordering; the creativity body stays."""
+    for i, s in enumerate(suggestions):
         body = s.label.split(" — ", 1)[1] if " — " in s.label else s.label
-        s.label = f"Option {new_letter} — {body}"
-        reranked.append(s)
-    return reranked
+        s.label = f"Option {chr(ord('A') + i)} — {body}"
+    return suggestions
 
 
 # ─── Pipeline stages ───────────────────────────────────────────────────
@@ -963,11 +965,14 @@ def generate_ai_result(
     # including the likelihood of the already fixed chords after the hole.
     if selected_measures and any(cm.measure > min(selected_measures) and cm.measure not in selected_measures
                                  and any(cm.chords) for cm in context):
-        from app.services.chord_context import rank_with_context
+        from app.services.chord_context import compare_with_context
         try:
             header = build_prompt(tokenizer, key, genre, time_signature, [], [], bpm=bpm)
-            suggestions = rank_with_context(loaded, tokenizer, suggestions, header, context, selected_measures)
-            notify("ranking", {"label": "Compared candidates with preceding and following chords"})
+            suggestions, reach = compare_with_context(loaded, tokenizer, suggestions, header, context, selected_measures)
+            # The list order is the ranking the editor shows, so the letters follow it.
+            suggestions = _reletter(suggestions)
+            notify("ranking", {"label": "Compared candidates with preceding and following chords" if reach is None
+                               else f"Compared candidates with the {reach} bars before and after the passage"})
         except ValueError as exc:
             notify("ranking", {"label": str(exc) + " Whole-score comparison was skipped."})
             log.warning("Whole-score candidate comparison skipped: %s", exc)

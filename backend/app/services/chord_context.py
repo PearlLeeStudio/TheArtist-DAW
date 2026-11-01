@@ -33,6 +33,43 @@ def sequence_tokens(tokenizer, header, context, candidate, selected):
     return ids, positions
 
 
+def _scoring_model(loaded):
+    # PEFT's FEATURE_EXTRACTION wrapper injects Hugging Face arguments such as
+    # attention_mask. Our MusicTransformer accepts token tensors directly.
+    # get_base_model keeps the installed LoRA layers and saved embedding/output
+    # modules; it does not disable, merge or unload the adapter.
+    from app.services import inference
+    model = loaded.model
+    if inference.PEFT_AVAILABLE and isinstance(model, inference.PeftModel):
+        model = model.get_base_model()
+    return model
+
+
+def fitting_context(loaded, tokenizer, suggestions, header, context, selected):
+    """The known bars the model window can hold with every candidate.
+
+    The whole score when it fits (reach None); otherwise the nearest `reach` bars
+    on each side of the passage, the widest that fits. Nothing is clipped
+    silently: the caller reports the reach, and a passage whose immediate
+    neighbours do not fit raises before any inference.
+    """
+    limit = getattr(_scoring_model(loaded), "max_seq_len", 512)
+
+    def fits(bars):
+        return all(len(sequence_tokens(tokenizer, header, bars, item, selected)[0]) <= limit for item in suggestions)
+
+    if fits(context):
+        return context, None
+    first, last = min(selected), max(selected)
+    known = [bar.measure for bar in context]
+    widest = max(first - min(known), max(known) - last)
+    for reach in range(widest, 0, -1):
+        window = [bar for bar in context if first - reach <= bar.measure <= last + reach]
+        if fits(window):
+            return window, reach
+    raise ValueError(f"Whole-score chord comparison exceeds the {limit}-token model context.")
+
+
 def context_scores(loaded, tokenizer, suggestions, header, context, selected):
     """Mean log likelihood of target chords AND known later chords.
 
@@ -41,13 +78,7 @@ def context_scores(loaded, tokenizer, suggestions, header, context, selected):
     """
     from app.services import inference
 
-    # PEFT's FEATURE_EXTRACTION wrapper injects Hugging Face arguments such as
-    # attention_mask. Our MusicTransformer accepts token tensors directly.
-    # get_base_model keeps the installed LoRA layers and saved embedding/output
-    # modules; it does not disable, merge or unload the adapter.
-    model = loaded.model
-    if inference.PEFT_AVAILABLE and isinstance(model, inference.PeftModel):
-        model = model.get_base_model()
+    model = _scoring_model(loaded)
     prepared = [sequence_tokens(tokenizer, header, context, item, selected) for item in suggestions]
     limit = getattr(model, "max_seq_len", 512)
     if any(len(ids) > limit for ids, _ in prepared):
@@ -74,6 +105,13 @@ def context_scores(loaded, tokenizer, suggestions, header, context, selected):
     return [scores[item] for item in keys]
 
 
+def compare_with_context(loaded, tokenizer, suggestions, header, context, selected):
+    """Candidates best first by likelihood in context, and the reach that was compared
+    (None for the whole score)."""
+    bars, reach = fitting_context(loaded, tokenizer, suggestions, header, context, selected)
+    scores = context_scores(loaded, tokenizer, suggestions, header, bars, selected)
+    return [item for _, item in sorted(zip(scores, suggestions), key=lambda pair: -pair[0])], reach
+
+
 def rank_with_context(loaded, tokenizer, suggestions, header, context, selected):
-    scores = context_scores(loaded, tokenizer, suggestions, header, context, selected)
-    return [item for _, item in sorted(zip(scores, suggestions), key=lambda pair: -pair[0])]
+    return compare_with_context(loaded, tokenizer, suggestions, header, context, selected)[0]

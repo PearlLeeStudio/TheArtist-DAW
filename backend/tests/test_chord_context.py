@@ -3,7 +3,7 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 from app.models.schemas import ContextMeasure, Suggestion
-from app.services.chord_context import context_scores, sequence_tokens, rank_with_context
+from app.services.chord_context import compare_with_context, context_scores, fitting_context, sequence_tokens, rank_with_context
 from app.services.score_completion import complete_sparse_harmony
 from tests.test_score_verification import reading
 
@@ -66,6 +66,36 @@ class ContextTest(unittest.TestCase):
         result = rank_with_context(SimpleNamespace(model=Model(), device="cpu"), tokenizer, candidates, [1], context, [1])
         self.assertEqual(result[0].label, "Dm")
         self.assertEqual(result[0].chords, {"1": ["Dm"]})
+
+    def test_long_scores_compare_through_the_nearest_bars_and_reletter_options(self):
+        from app.services import inference
+        torch = inference.torch
+        tokenizer = SimpleNamespace(bar_id=3, encode_chord=lambda symbol: {"C": 4, "Dm": 5, "G7": 6, "Am": 7}[symbol])
+        class Model:
+            max_seq_len = 14  # header 1 + a few bars; the 40-bar score cannot fit
+            def __call__(self, inputs):
+                logits = torch.zeros(inputs.shape[0], inputs.shape[1], 8)
+                for row, ids in enumerate(inputs):
+                    logits[row, -1, 6] = 8 if 5 in ids else -8
+                return logits
+        candidates = [Suggestion(label="Option A — F1 (conservative)", chords={"20": ["Am"]}),
+                      Suggestion(label="Option B — F1 (creative)", chords={"20": ["Dm"]})]
+        # Twenty known bars precede the hole and the fixed G7 follows it: far too long for the window.
+        context = [ContextMeasure(measure=i, chords=["C"]) for i in range(20)] + [ContextMeasure(measure=21, chords=["G7"])]
+        bars, reach = fitting_context(SimpleNamespace(model=Model(), device="cpu"), tokenizer, candidates, [1], context, [20])
+        self.assertIsNotNone(reach)
+        self.assertEqual([bar.measure for bar in bars], [*range(20 - reach, 20), 21])
+        self.assertIn(21, [bar.measure for bar in bars], "the fixed later chord stays in the window")
+        ranked, reach_again = compare_with_context(SimpleNamespace(model=Model(), device="cpu"), tokenizer, candidates, [1], context, [20])
+        self.assertEqual(reach_again, reach)
+        self.assertEqual(ranked[0].chords, {"20": ["Dm"]})
+        relettered = inference._reletter(ranked)
+        self.assertEqual([s.label for s in relettered], ["Option A — F1 (creative)", "Option B — F1 (conservative)"])
+        # Even the immediate neighbours do not fit: the comparison is declined, never clipped silently.
+        class Tiny(Model):
+            max_seq_len = 2
+        with self.assertRaisesRegex(ValueError, "exceeds"):
+            fitting_context(SimpleNamespace(model=Tiny(), device="cpu"), tokenizer, candidates, [1], context, [20])
 
     def test_batched_scores_preserve_variable_lengths_order_and_duplicate_patches(self):
         from app.services import inference, chord_context
