@@ -129,8 +129,8 @@ the author's model and every export keep working.
 notation and proposes note-based harmony; the author's Music Transformer generates
 chord variations and bounded contextual suggestions for sparse read-note passages.
 Fixed following chords now affect candidate ranking as well as preceding harmony.
-The **Use Meta model** checkbox first attempts one original-file reading. If Meta
-fails, the local reader prepares an editable result and enables Import reviewed score.
+The **Use Meta model** checkbox attempts one original-file reading while local
+analysis runs. If Meta fails, the local result enables Import reviewed score.
 When both readers succeed, bar counts, key, meter, chords and note evidence are compared.
 Differences remain review flags; model agreement is not proof
 of correctness. If local reading is unsupported, the result clearly states that

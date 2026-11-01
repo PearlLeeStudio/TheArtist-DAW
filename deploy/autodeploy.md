@@ -16,7 +16,10 @@ The timer waits 60 seconds after each completed check or deployment, with up to
 five seconds of scheduling tolerance. Builds take additional time. Frontend-only
 changes deploy through Pages and advance the server checkout without restarting
 the API or interrupting active composition requests. Documentation and backend-test-only
-changes also leave the API running. The container's bundled frontend is refreshed
+changes also leave the API running. Experiment records and the explicitly listed
+loading/hosted latency/workflow probes do not restart models either. Build-time
+scripts such as OMT preparation and model downloads still trigger deployment.
+The container's bundled frontend is refreshed
 on the next model-server deployment; the public Artist frontends are served by Pages.
 Unknown changed files trigger a build. Dependencies and model downloads occupy
 cached Docker layers, separate from application code.

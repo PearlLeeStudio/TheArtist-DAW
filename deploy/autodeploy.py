@@ -61,8 +61,11 @@ def runtime_changed(paths: list[str]) -> bool:
         or path in {"LICENSE", "AGENTS.md", ".gitignore",
                     # Installed independently, never loaded by the app container.
                     "deploy/autodeploy.py", "deploy/theartist-deploy.service",
-                    "deploy/theartist-deploy.timer"}
-        or path.startswith(("docs/", "backend/tests/", "frontend/", ".github/"))
+                    "deploy/theartist-deploy.timer",
+                    # Operator-only probes, never imported by the runtime/build.
+                    "backend/scripts/loading_probe.py", "backend/scripts/hosted_latency_probe.py",
+                    "backend/scripts/hosted_workflow_smoke.py"}
+        or path.startswith(("docs/", "experiments/", "backend/tests/", "frontend/", ".github/"))
     ) for path in paths)
 
 

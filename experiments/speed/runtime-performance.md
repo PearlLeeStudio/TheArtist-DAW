@@ -36,10 +36,12 @@ are separate so lazy page faults are not hidden in the load measurement.
 Meta workflow changes preserve model IDs, reasoning efforts, output allowances,
 timeouts, validation, accounting and visible failures:
 
-- All seven call sites share the HTTP transport, which retains up to sixteen idle
+- All Meta call sites use the common HTTP transport, which retains up to sixteen idle
   connections for sixty seconds across local work rather than expiring them after
   five seconds. Planning, composition, judgment, Second ear, tool turns, full-file
   reading, note assistance and form analysis benefit when a connection is reused.
+  A judge without its own provider now uses the default client's actual connection
+  pool and ledger object; an explicitly configured judge keeps separate resources.
 - Reharmonize's first native tool call requests at least two families together;
   Meta still chooses the families and final three candidates and can inspect the
   remaining family. All exact metrics are sent as compact JSON.
@@ -55,6 +57,53 @@ timeouts, validation, accounting and visible failures:
 
 Connection reuse and Import overlap remove avoidable waits, but provider generation
 time still varies. They are not a guaranteed speedup for every Meta endpoint.
+
+### Hosted observations
+
+The same public-server Reharmonize fixture ran three times before and three times
+after the changes: F1, C major, four selected slots, maximum four edits, five bars
+of context. Both sets returned three valid alternatives on every request.
+
+| End-to-end HTTP measurement | Before | After |
+|---|---:|---:|
+| Reharmonize median, three requests | 13.828 s | 10.358 s |
+| Range | 12.820–14.510 s | 9.374–11.884 s |
+| Meta calls per request | 3 | 3 |
+
+This sample is 25.1% faster. The batched first search removes a dependency, but
+Meta made a further search turn on these runs, so the observed call count
+did not fall. This is a sequential before/after sample, not a randomized latency
+experiment or evidence of better musical quality. Provider load, prompt caching
+and different model choices can affect timing. Raw requests, request IDs, costs
+and durations are in [before](meta_before.json) and [after](meta_after.json).
+`backend/scripts/hosted_latency_probe.py` reproduces the bounded three-request
+sequence (each fixture can make several paid Meta turns).
+
+The previous hosted startup log spans approximately 29 seconds between app import
+and completion of all 18 checkpoint loads. The new explicit catalog timer reports
+4.042 seconds. This excludes Python/dependency imports, image startup, deployment
+health polling and first inference; page-cache conditions were not controlled.
+Mapped weights are loaded on demand by the OS, so loaded model objects do not imply
+that every tensor page is already resident. The catalog smoke exercises every
+model's first generation to check that this deferral does not hide a broken model.
+
+The [hosted workflow record](hosted_workflows.json) exercises all 18 models with
+eight-bar generation: 54 candidates, correct model identity, no fallback. It also
+records complete 32-bar hybrid and Meta-only Song Forms and Second ear with real
+request IDs. Their durations (36.525 s, 13.110 s and 4.092 s) are smoke observations,
+not paired improvement claims; the hybrid run includes regeneration and two judges.
+The one-bar checked Import returned in 12.994 s through explicit `local_fallback`
+after Meta output failed validation. That verifies recovery, not a successful Meta
+transcription. The synthetic fixture and both reader success/failure paths are
+covered by tests; broader transcription accuracy remains separate work.
+
+After all 18 models generated, the running app used approximately 1.077 GiB in
+Docker stats, versus 2.561 GiB observed before the change. These are process
+observations with different request histories, not matched peak-memory benchmarks.
+Performance records and the three operator probes are excluded from model-server
+restarts; runtime code, dependencies, OMT preparation and model downloads still
+deploy normally. The complete backend suite passes 635 tests, including 15 deployment
+checks. Frontend build and lint also pass.
 
 ### Autoregressive attention cache
 

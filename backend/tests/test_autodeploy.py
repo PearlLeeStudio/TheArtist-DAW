@@ -44,6 +44,22 @@ class AutoDeployTest(unittest.TestCase):
         self.assertEqual(self.state["failed_revision"], "b" * 40)
         self.assertNotIn("pending", self.state)
 
+    def test_performance_records_and_operator_probes_do_not_restart_models(self):
+        self.host.changes.return_value = [
+            "experiments/speed/meta_after.json", "backend/scripts/hosted_workflow_smoke.py",
+            "backend/scripts/loading_probe.py", "backend/scripts/hosted_latency_probe.py",
+            "deploy/autodeploy.py",
+        ]
+        self.assertEqual(self.run_deploy(), "documentation-only")
+        self.host.build.assert_not_called()
+        self.host.start.assert_not_called()
+        self.assertEqual(self.state['deployed_revision'], 'a' * 40)
+
+    def test_build_time_scripts_are_not_exempted_with_measurements(self):
+        for path in ('backend/scripts/setup_omt.py', 'model/_download.py', 'backend/app/services/llm.py'):
+            with self.subTest(path=path):
+                self.assertTrue(deploy.runtime_changed(['experiments/speed/result.json', path]))
+
     def test_pages_frontend_change_does_not_interrupt_model_requests(self):
         self.host.changes.return_value = [
             "frontend/src/components/ScoreEditor/SongFormDialog.tsx",

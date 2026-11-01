@@ -1,7 +1,7 @@
 # 악보 분석: Local / Meta / Hybrid 1회 / Hybrid 2회
 
 편곡에 사용할 원본을 읽는 단계의 실험이다. 아래 Local-first Hybrid 조건과
-호출 한도는 저장된 실험 당시의 설정이며, 제품의 Meta-first 읽기·로컬 복구
+호출 한도는 저장된 실험 당시의 설정이며, 제품의 Meta·로컬 동시 읽기와 명시적 로컬 복구
 흐름과 구분한다. 실제 사용 순서는 [편곡 가이드](arrangement-workflow.md),
 현재 읽기 동작은 [악보 분석](score-analysis.md)에 설명한다.
 
