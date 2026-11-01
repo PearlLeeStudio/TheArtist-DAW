@@ -8,7 +8,9 @@
   <a href="https://arxiv.org/abs/2605.04998"><img alt="arXiv" src="https://img.shields.io/badge/arXiv-2605.04998-b31b1b?style=flat-square"></a>
   <a href="https://arxiv.org/abs/2606.07334"><img alt="arXiv" src="https://img.shields.io/badge/arXiv-2606.07334-b31b1b?style=flat-square"></a>
   <a href="https://huggingface.co/PearlLeeStudio"><img alt="HuggingFace" src="https://img.shields.io/badge/%F0%9F%A4%97%20HuggingFace-PearlLeeStudio-ffd21e?style=flat-square&labelColor=1c1917"></a>
-  <a href="https://youtu.be/iSDj4VK9nKc"><img alt="Demo" src="https://img.shields.io/badge/Demo-YouTube-FF0000?style=flat-square&logo=youtube&logoColor=white"></a>
+  <a href="https://artist-daw.pearlleestudio.co"><img alt="Live demo" src="https://img.shields.io/badge/Live%20demo-artist--daw.pearlleestudio.co-1c1917?style=flat-square"></a>
+  <a href="#hackathon-work-and-where-meta-is-used"><img alt="Meta model" src="https://img.shields.io/badge/Meta%20model-muse--spark--1.3-0467DF?style=flat-square"></a>
+  <a href="https://youtu.be/iSDj4VK9nKc"><img alt="Pre-hackathon demo" src="https://img.shields.io/badge/Pre--hackathon%20demo-YouTube-FF0000?style=flat-square&logo=youtube&logoColor=white"></a>
   <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/code-MIT-737373?style=flat-square"></a>
   <a href="https://huggingface.co/PearlLeeStudio"><img alt="Weights" src="https://img.shields.io/badge/weights-CC%20BY--NC%204.0-737373?style=flat-square"></a>
   <img alt="Stack" src="https://img.shields.io/badge/stack-React%2019%20%C2%B7%20FastAPI%20%C2%B7%20PyTorch-1c1917?style=flat-square">
@@ -26,6 +28,19 @@ workflow; the musician chooses what stays in the score.
 [Workflow guide](docs/arrangement-workflow.md) · [Documentation](docs/README.md) ·
 [Hackathon work log](HACKATHON.md) · [Run locally](#getting-started)
 
+### Try it in two minutes
+
+On the [live workspace](https://artist-daw.pearlleestudio.co), in a desktop browser (no sign-in; projects stay in the browser):
+
+1. **New from Song Form → Full form**, Length 32 bars, press **Muse Spark only**. Muse Spark plans the sections and writes every chord; the form lands on the staff in about 25 seconds. Press Play.
+2. Drag across two to four chords, right-click → **Reharmonize** → **Find 3 alternatives** (about 10 seconds). Switch **Alter 1–3** on the staff, listen, then **Apply**; Ctrl/⌘+Z undoes it.
+3. **Import Score**, choose a PDF lead sheet, tick **Use Meta model** and press **Analyze and import**. The score opens from the local reading at once; Meta's reading of the original runs in the background (up to 150 seconds), marks the bars where the two readings differ and fills bars the local reader left empty.
+4. **Export ▾ → Download MIDI** for separate Harmony, Bass and Drums tracks, or **PDF · Light (print)** for the score.
+
+The local reader handles vector PDFs, reading printed chord symbols or analyzing the notes. It read
+none of eight Mutopia editions, and scans or photos go to Meta only, whose readings need checking
+(a notes-only PNG matched 1/4 chords).
+
 | Step | Work in the editor | Result |
 |---|---|---|
 | Bring in the material | Import Score, MIDI keyboard, manual chords, or New from Song Form | An editable harmonic score with key, meter and section boundaries |
@@ -35,7 +50,8 @@ workflow; the musician chooses what stays in the score.
 | Continue production | Save a project, export MIDI or score PDF, or hand off to Logic | Editable material for further instrumental, melodic and production work |
 
 **What the AI contributes.** The author's Music Transformer proposes and scores
-harmony; Meta reads scores, plans form and compares bounded harmonic alternatives.
+harmony; Meta reads scores, plans and writes song forms, drives the reharmonization
+search with tool calls and judges candidates.
 Voicings, accompaniment patterns, mixer controls and MIDI rendering use application
 code. The current arrangement is a harmonic score with three accompaniment parts.
 Imported melody notes and durations are not transferred as an editable melody
@@ -55,7 +71,10 @@ to the DAW. Its existing chord model supplies a harmonic engine for this workflo
 | Editor | staff, voicings, Roman numerals, MIDI input, playback, saved-sessions page | Import Score, Original/A/B/C, Reharmonize (Origin / Alter 1–3), Second ear, Complete the form, Projects rework (first-row previews, full Export menu, bulk delete, preserve current work), the Play panel and mixer, Safari MIDI bridge and Logic handoff |
 | Service | `/api/generate*`, basic `midi_b64` render | local vector-PDF reader and harmony analyzer, editable three-part MIDI export (`/api/export/midi`, replacing the baseline's basic MIDI download), score PDF, DAW handoff, Logic Scripter script, REST + MCP contract, Meta client with ledger, planner, Second-ear review, Reharmonize |
 
-**Where Meta is used.** These six paths are the only Meta calls in the product; voicings, accompaniment, MIDI rendering and the local score reader are application code, and chord candidates come from the author's Music Transformer. Every call uses the Standard model id and records its timeout, request id, token count and cost in the ledger; Import labels a recovered local result as local.
+Since the `baseline` tag: more than 250 commits and 120 entries in the [work log](HACKATHON.md),
+each with its tests and limits.
+
+**Where Meta is used.** These six paths are the only Meta calls in the product; voicings, accompaniment, MIDI rendering and the local score reader are application code, and Generate's chord candidates come from the author's Music Transformer. Every call uses the Standard model `muse-spark-1.3` through the Meta Model API and records its timeout, request id, token count and cost in the ledger; Import labels a recovered local result as local.
 
 | Path | File | Calls per use | Switch |
 |---|---|---|---|
@@ -66,9 +85,24 @@ to the DAW. Its existing chord model supplies a harmonic engine for this workflo
 | Second ear: pick one of a Generate's A/B/C on analyzer facts, each reason checked | `backend/app/services/review.py`, `routes/review.py` | 1 judge call | `THEARTIST_META_ENABLED` only; judge role via `LLM_JUDGE_*` |
 | [Reharmonize](docs/reharmonization.md): search sparse substitutions, compare learned context scores, offer three persistent score previews | `backend/app/services/reharmonize_agent.py`, `reharmonize.py` | ≤ 4 native tool turns, ≤ $0.15 per search | `THEARTIST_META_ENABLED`; selected Music Transformer must be available |
 
-With `THEARTIST_META_ENABLED=0` any attempted Meta call answers HTTP 503 "disabled".
-An auto import requiring no Meta work may finish locally. The local reader,
-the author's model and every export keep working.
+With `THEARTIST_META_ENABLED=0` any attempted Meta call answers HTTP 503 "disabled":
+Reharmonize, both Meta modes of Complete the form and Second ear stop there, and Import
+opens from the local reader alone. Generate with the author's model, the Genre template
+and every export keep working.
+
+**Meta capabilities in use.**
+
+| Meta capability | Where it does the work | Recorded result |
+|---|---|---|
+| Whole-document reading of a score PDF or image | Import's **Use Meta model** check, compared bar by bar with the local reader; images are read by Meta only | 52-bar PDF on the hosted demo: 51.4 s, $0.053 |
+| Native tool calling over a bounded music search | Reharmonize: up to 4 tool turns drive the substitution search; Meta picks three contrasting patches the Music Transformer has scored in context | hosted median 10.4 s; $0.014–0.021 per search in recorded runs |
+| Strict JSON checked by code, with revision rounds | Complete the form: plan → validate → up to 2 revisions → compose (**Muse Spark only**) or judge (hybrid) | empty score → 32 bars / 6 sections on the hosted demo: 23.7 s, $0.020 |
+| Reasoning held to computed facts | Second ear: each reason cites an analyzer fact and is marked *analyzer confirmed* or *model statement* | 115/115 reasons confirmed in 60 reviews; $0.0041, 2.8 s per review |
+| Reading harmony from notes | The note-interpretation task behind Import assist (API `engine: "auto"`) | exact chords: Muse Spark 89.5%, local analyzer 77.8% (640 slots of real progressions rendered as notes) |
+| Meta open weights | The judge role can run on Muse Spark Open through Baseten (`LLM_JUDGE_*`) | same pick as Muse Spark in 52/60 reviews at $0.0028 per review |
+
+Reasoning effort is set per role, for example low for file reading and tool turns and medium
+for the form plan. Measurements and their limits are under [Evidence](#evidence).
 
 The [hackathon work log](HACKATHON.md) separates these additions from the existing
 editor and trained models. This development repository stays intact; a separate
@@ -82,8 +116,8 @@ file, contract and test coverage, fixes, and remaining verification limits.
 
 ### Where Meta appears in the editor
 
-The editor does not advertise the model: Meta's work shows up as ordinary editor
-state. Two places call it during normal use.
+Meta's work appears on the score rather than in a chat window. The two places a
+musician meets it most often:
 
 | Place | What the musician does | What Meta does | What appears |
 |---|---|---|---|
@@ -156,12 +190,20 @@ Automatic judge scores are not listener preference, and no row is a listening st
 
 | Evaluation | Material | Result |
 |---|---|---|
-| Reharmonization selectors (F4 / Meta / hybrid ×1 / hybrid ×2) | JAZZVAR, 40 passages; 200 Meta calls, $2.465 | Blinded judge means 2.464 / 2.671 / 2.624 / 2.649 of 4; no clear winner among Meta and hybrids; a second pass changes 5/40 sets |
+| Reharmonization selectors (own F4 model / Meta / hybrid ×1 / hybrid ×2) | JAZZVAR jazz-standard passages, 40; 200 Meta calls, $2.465 | A Muse Spark judge with sources hidden (the same model family as the Meta selector) gave means 2.464 / 2.671 / 2.624 / 2.649 of 4; no clear winner among Meta and hybrids; a second pass changes 5/40 sets |
 | F2 vs F3 checkpoints | Same 40 passages, 200 calls each | Rank differences include 0 in all four methods; top-2 unions keep the overall best in 35/40 |
 | Full-form planner, fixed seeds | 60 Muse+F1 vs template pairs, $1.02 | Structure 60/60 both; section variety 2.75 → 3.48; out-of-key slots 19.4% → 14.7%; judge still asked regeneration in 21/60 |
+| Second ear: a judge picks one of A/B/C | 20 candidate lists × 3 orders, 60 reviews per model | Muse Spark: 115/115 reasons confirmed by the analyzer; most in-key pick in diatonic genres 33/36 (R1 order 67%); same pick in all orders 17/20; $0.0041, 2.8 s. Muse Spark Open: 112/112, same pick 52/60, $0.0028, 2.1 s |
+| Chord reading from notes | 40 real-progression excerpts rendered as notes, 640 slots; Muse Spark 40 calls, $0.338 | Exact: local analyzer 77.8%, Muse Spark 89.5% (answers every slot), local-then-Meta 83.9% for $0.050, Muse Spark Open 73.8%; local is more precise where it answers (95.4%); one real PDF 18.9 / 29.7 / 21.6% |
 | Score readers (local / Meta / hybrid ×1 / ×2) | 5 PDFs, 14 calls, $0.272 | Completed 3/5, 3/5, 4/5, 3/5 |
 | Import: own fixtures and published editions | 20-bar vector score; notes-only PNG; 8 Mutopia PDFs | 20/20 chords and 8/8/4 sections; PNG 1/4; local reader 0/8 on Mutopia, Meta Bach pitch sets 8/32 |
 | Own-model speed, identical outputs | CPU 4 threads, F1/F4/Rock LoRA, 30 pairs | 1.73–3.89× faster; F1 64 bars 7.18 → 1.85 s; loading 0.471 → 0.080 s; hosted Reharmonize median 13.8 → 10.4 s |
+
+F1–F5 are checkpoints of the author's Music Transformer (F4 serves jazz); R1 orders candidates
+by Sethares roughness; OMT is the Open Music Theory text behind the attributed excerpts.
+Automated checks on 2026-11-01: 641 backend tests (`python -m unittest discover -s tests -t .`
+in `backend/`; the MIDI-bridge test needs permission to open a local port) and 304 frontend
+tests (`node --test "frontend/src/**/*.test.ts"`).
 
 Conditions, costs, failures and every record: [evaluation evidence](docs/evidence.md) ·
 [evaluation framing](docs/evaluation.md) · [manual checks](docs/manual-checks.md).
