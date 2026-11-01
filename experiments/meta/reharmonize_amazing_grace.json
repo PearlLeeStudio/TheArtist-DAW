@@ -1,0 +1,280 @@
+{
+ "purpose": "README worked example: one hosted Reharmonize run on Amazing Grace bars 5-8 (traditional harmonization of the CC0 Public Domain Song Anthology, https://doi.org/10.32881/book2)",
+ "date": "2026-11-01",
+ "host": "https://music-api.pearlleestudio.co",
+ "elapsedSeconds": 12.52,
+ "chart": "G | G D7 | Em C | G | G | G D7 | G | G | G | G | C | G | Em G/D | D7 | G | G",
+ "request": {
+  "key": "G major",
+  "timeSignature": [
+   3,
+   4
+  ],
+  "context": [
+   {
+    "measure": 0,
+    "chords": [
+     "G",
+     "G"
+    ]
+   },
+   {
+    "measure": 1,
+    "chords": [
+     "G",
+     "D7"
+    ]
+   },
+   {
+    "measure": 2,
+    "chords": [
+     "Em",
+     "C"
+    ]
+   },
+   {
+    "measure": 3,
+    "chords": [
+     "G",
+     "G"
+    ]
+   },
+   {
+    "measure": 4,
+    "chords": [
+     "G",
+     "G"
+    ]
+   },
+   {
+    "measure": 5,
+    "chords": [
+     "G",
+     "D7"
+    ]
+   },
+   {
+    "measure": 6,
+    "chords": [
+     "G",
+     "G"
+    ]
+   },
+   {
+    "measure": 7,
+    "chords": [
+     "G",
+     "G"
+    ]
+   },
+   {
+    "measure": 8,
+    "chords": [
+     "G",
+     "G"
+    ]
+   },
+   {
+    "measure": 9,
+    "chords": [
+     "G",
+     "G"
+    ]
+   },
+   {
+    "measure": 10,
+    "chords": [
+     "C",
+     "C"
+    ]
+   },
+   {
+    "measure": 11,
+    "chords": [
+     "G",
+     "G"
+    ]
+   },
+   {
+    "measure": 12,
+    "chords": [
+     "Em",
+     "G/D"
+    ]
+   },
+   {
+    "measure": 13,
+    "chords": [
+     "D7",
+     "D7"
+    ]
+   },
+   {
+    "measure": 14,
+    "chords": [
+     "G",
+     "G"
+    ]
+   },
+   {
+    "measure": 15,
+    "chords": [
+     "G",
+     "G"
+    ]
+   }
+  ],
+  "selectedSlots": [
+   {
+    "measureIndex": 4,
+    "slotIndex": 0
+   },
+   {
+    "measureIndex": 4,
+    "slotIndex": 1
+   },
+   {
+    "measureIndex": 5,
+    "slotIndex": 0
+   },
+   {
+    "measureIndex": 5,
+    "slotIndex": 1
+   },
+   {
+    "measureIndex": 6,
+    "slotIndex": 0
+   },
+   {
+    "measureIndex": 6,
+    "slotIndex": 1
+   },
+   {
+    "measureIndex": 7,
+    "slotIndex": 0
+   },
+   {
+    "measureIndex": 7,
+    "slotIndex": 1
+   }
+  ],
+  "maxChanges": 4,
+  "mode": "auto",
+  "modelKey": "ft_f1_lora_gospel"
+ },
+ "response": {
+  "candidates": [
+   {
+    "id": "11:D7b9",
+    "family": "dominant",
+    "changes": [
+     {
+      "address": {
+       "measureIndex": 5,
+       "slotIndex": 1
+      },
+      "before": "D7",
+      "after": "D7b9",
+      "commonTones": 4,
+      "modes": [],
+      "conventions": [
+       "Dominant resolution",
+       "V7♭9 resolving to tonic"
+      ]
+     }
+    ],
+    "pitchDistance": 0.833,
+    "originalPitchDistance": 0.833,
+    "bassMotion": 5.0,
+    "originalBassMotion": 5.0,
+    "mathScore": 1.0167,
+    "conventionScore": 0.45,
+    "modelScore": -1.69549
+   },
+   {
+    "id": "11:Ab7#11",
+    "family": "dominant",
+    "changes": [
+     {
+      "address": {
+       "measureIndex": 5,
+       "slotIndex": 1
+      },
+      "before": "D7",
+      "after": "Ab7#11",
+      "commonTones": 3,
+      "modes": [],
+      "conventions": [
+       "Resolving tritone substitute"
+      ]
+     }
+    ],
+    "pitchDistance": 0.733,
+    "originalPitchDistance": 0.833,
+    "bassMotion": 1.0,
+    "originalBassMotion": 5.0,
+    "mathScore": 1.1467,
+    "conventionScore": 0.5,
+    "modelScore": -2.02633
+   },
+   {
+    "id": "13:G7",
+    "family": "modal",
+    "changes": [
+     {
+      "address": {
+       "measureIndex": 6,
+       "slotIndex": 1
+      },
+      "before": "G",
+      "after": "G7",
+      "commonTones": 3,
+      "modes": [
+       "mixolydian"
+      ],
+      "conventions": []
+     }
+    ],
+    "pitchDistance": 0.25,
+    "originalPitchDistance": 0.0,
+    "bassMotion": 0.0,
+    "originalBassMotion": 0.0,
+    "mathScore": 1.75,
+    "conventionScore": 0.0,
+    "modelScore": -1.50011
+   }
+  ],
+  "modelUsed": "F1 + LoRA: gospel",
+  "contextMeasures": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8,
+   9,
+   10,
+   11,
+   12,
+   13,
+   14,
+   15
+  ],
+  "metaModel": "muse-spark-1.3",
+  "requestIds": [
+   "aa88bd55-fe85-4677-a3fa-907ddc28c7c7",
+   "8031a31c-8ed4-4063-8639-e36ff42fdf40",
+   "079ce0b9-e4a2-426f-88ba-7cf26eec69c4"
+  ],
+  "costUsd": 0.019658,
+  "toolCalls": [
+   "search_substitutions",
+   "search_substitutions",
+   "offer_candidates"
+  ],
+  "modelApproximations": []
+ }
+}

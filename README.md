@@ -1,15 +1,15 @@
 <h1 align="center">TheArtist</h1>
 
 <p align="center">
-  <em>An AI arrangement tool: bring in a score or chord sketch, shape its harmony, form and accompaniment, and continue in your DAW.</em>
+  <em>An AI arrangement tool with Meta Muse Spark: bring in a score or chord sketch, shape its harmony, form and accompaniment, and continue in your DAW.</em>
 </p>
 
 <p align="center">
+  <a href="https://artist-daw.pearlleestudio.co"><img alt="Live demo" src="https://img.shields.io/badge/Live%20demo-artist--daw.pearlleestudio.co-1c1917?style=flat-square"></a>
+  <a href="#hackathon-work-and-where-meta-is-used"><img alt="Meta model" src="https://img.shields.io/badge/Meta%20model-muse--spark--1.3-0467DF?style=flat-square"></a>
   <a href="https://arxiv.org/abs/2605.04998"><img alt="arXiv" src="https://img.shields.io/badge/arXiv-2605.04998-b31b1b?style=flat-square"></a>
   <a href="https://arxiv.org/abs/2606.07334"><img alt="arXiv" src="https://img.shields.io/badge/arXiv-2606.07334-b31b1b?style=flat-square"></a>
   <a href="https://huggingface.co/PearlLeeStudio"><img alt="HuggingFace" src="https://img.shields.io/badge/%F0%9F%A4%97%20HuggingFace-PearlLeeStudio-ffd21e?style=flat-square&labelColor=1c1917"></a>
-  <a href="https://artist-daw.pearlleestudio.co"><img alt="Live demo" src="https://img.shields.io/badge/Live%20demo-artist--daw.pearlleestudio.co-1c1917?style=flat-square"></a>
-  <a href="#hackathon-work-and-where-meta-is-used"><img alt="Meta model" src="https://img.shields.io/badge/Meta%20model-muse--spark--1.3-0467DF?style=flat-square"></a>
   <a href="https://youtu.be/iSDj4VK9nKc"><img alt="Pre-hackathon demo" src="https://img.shields.io/badge/Pre--hackathon%20demo-YouTube-FF0000?style=flat-square&logo=youtube&logoColor=white"></a>
   <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/code-MIT-737373?style=flat-square"></a>
   <a href="https://huggingface.co/PearlLeeStudio"><img alt="Weights" src="https://img.shields.io/badge/weights-CC%20BY--NC%204.0-737373?style=flat-square"></a>
@@ -105,10 +105,8 @@ each with its tests and limits.
 | Second ear: pick one of a Generate's A/B/C on analyzer facts, each reason checked | `backend/app/services/review.py`, `routes/review.py` | 1 judge call | `THEARTIST_META_ENABLED` only; judge role via `LLM_JUDGE_*` |
 | [Reharmonize](docs/reharmonization.md): search sparse substitutions, compare learned context scores, offer three persistent score previews | `backend/app/services/reharmonize_agent.py`, `reharmonize.py` | ≤ 4 native tool turns, ≤ $0.15 per search | `THEARTIST_META_ENABLED`; selected Music Transformer must be available |
 
-With `THEARTIST_META_ENABLED=0` any attempted Meta call answers HTTP 503 "disabled":
-Reharmonize, both Meta modes of Complete the form and Second ear stop there, and Import
-opens from the local reader alone. Generate with the author's model, the Genre template
-and every export keep working.
+Reharmonize, both Meta modes of Complete the form, Second ear and Import's Meta check run on
+Muse Spark; there is no hidden substitute, and a failed call is shown as a failure.
 
 **Meta capabilities in use.**
 
@@ -123,6 +121,17 @@ and every export keep working.
 
 Reasoning effort is set per role, for example low for file reading and tool turns and medium
 for the form plan. Measurements and their limits are under [Evidence](#evidence).
+
+**One Reharmonize run, recorded.** *Amazing Grace* bars 5–8 (`G | G D7 | G | G`, G major, 3/4)
+with the gospel adapter as the scorer and *Change up to* 4, on the hosted demo
+([record](experiments/meta/reharmonize_amazing_grace.json)):
+
+- Muse Spark (`muse-spark-1.3`) called `search_substitutions` twice and finished with
+  `offer_candidates`: three requests, $0.0197, 12.5 s.
+- The tool scored each shortlisted patch with F1 + gospel LoRA against the surrounding bars,
+  and Muse Spark offered three contrasting ones: **Alter 1** bar 6 D7 → D7b9, **Alter 2** bar 6
+  D7 → Ab7#11 (a tritone substitute), **Alter 3** bar 7 G → G7.
+- Alter 2 and Alter 3 change different chords, so the musician can combine them before Apply.
 
 The [hackathon work log](HACKATHON.md) separates these additions from the existing
 editor and trained models. This development repository stays intact; a separate
@@ -210,11 +219,11 @@ Automatic judge scores are not listener preference, and no row is a listening st
 
 | Evaluation | Material | Result |
 |---|---|---|
+| Chord reading from notes | 40 real-progression excerpts rendered as notes, 640 slots; Muse Spark 40 calls, $0.338 | Exact: local analyzer 77.8%, Muse Spark 89.5% (answers every slot), local-then-Meta 83.9% for $0.050, Muse Spark Open 73.8%; local is more precise where it answers (95.4%); one real PDF 18.9 / 29.7 / 21.6% |
+| Second ear: a judge picks one of A/B/C | 20 candidate lists × 3 orders, 60 reviews per model | Muse Spark: 115/115 reasons confirmed by the analyzer; most in-key pick in diatonic genres 33/36 (R1 order 67%); same pick in all orders 17/20; $0.0041, 2.8 s. Muse Spark Open: 112/112, same pick 52/60, $0.0028, 2.1 s |
+| Full-form planner, fixed seeds | 60 Muse+F1 vs template pairs, $1.02 | Structure 60/60 both; section variety 2.75 → 3.48; out-of-key slots 19.4% → 14.7%; judge still asked regeneration in 21/60 |
 | Reharmonization selectors (own F4 model / Meta / hybrid ×1 / hybrid ×2) | JAZZVAR jazz-standard passages, 40; 200 Meta calls, $2.465 | A Muse Spark judge with sources hidden (the same model family as the Meta selector) gave means 2.464 / 2.671 / 2.624 / 2.649 of 4; no clear winner among Meta and hybrids; a second pass changes 5/40 sets |
 | F2 vs F3 checkpoints | Same 40 passages, 200 calls each | Rank differences include 0 in all four methods; top-2 unions keep the overall best in 35/40 |
-| Full-form planner, fixed seeds | 60 Muse+F1 vs template pairs, $1.02 | Structure 60/60 both; section variety 2.75 → 3.48; out-of-key slots 19.4% → 14.7%; judge still asked regeneration in 21/60 |
-| Second ear: a judge picks one of A/B/C | 20 candidate lists × 3 orders, 60 reviews per model | Muse Spark: 115/115 reasons confirmed by the analyzer; most in-key pick in diatonic genres 33/36 (R1 order 67%); same pick in all orders 17/20; $0.0041, 2.8 s. Muse Spark Open: 112/112, same pick 52/60, $0.0028, 2.1 s |
-| Chord reading from notes | 40 real-progression excerpts rendered as notes, 640 slots; Muse Spark 40 calls, $0.338 | Exact: local analyzer 77.8%, Muse Spark 89.5% (answers every slot), local-then-Meta 83.9% for $0.050, Muse Spark Open 73.8%; local is more precise where it answers (95.4%); one real PDF 18.9 / 29.7 / 21.6% |
 | Score readers (local / Meta / hybrid ×1 / ×2) | 5 PDFs, 14 calls, $0.272 | Completed 3/5, 3/5, 4/5, 3/5 |
 | Import: own fixtures and published editions | 20-bar vector score; notes-only PNG; 8 Mutopia PDFs | 20/20 chords and 8/8/4 sections; PNG 1/4; local reader 0/8 on Mutopia, Meta Bach pitch sets 8/32 |
 | Own-model speed, identical outputs | CPU 4 threads, F1/F4/Rock LoRA, 30 pairs | 1.73–3.89× faster; F1 64 bars 7.18 → 1.85 s; loading 0.471 → 0.080 s; hosted Reharmonize median 13.8 → 10.4 s |
@@ -384,11 +393,15 @@ Whole-file reading (`engine: "meta"` or the checkbox's `verified`) also needs
 The file reader has a 150-second timeout, one Meta call, low reasoning effort and
 32,768 output tokens so a complete score can fit beside reasoning tokens.
 `THEARTIST_META_UNLIMITED=1` explicitly disables session, daily, ledger, per-request
-and per-run dollar caps for development; the shared hosted demo server
-(`music-api.pearlleestudio.co`) currently runs with it, so its dollar caps are off
-while call counts, timeouts and the ledger stay on.
+and per-run dollar caps; the shared hosted demo server (`music-api.pearlleestudio.co`)
+runs with it through judging so that no visitor is stopped by a spending limit, while
+per-call timeouts, call counts and the ledger stay on.
 Request IDs, token usage, costs, timeouts and finite call counts remain recorded.
 Without that opt-in, the configured dollar caps apply; see `deploy/env.example`.
+With `THEARTIST_META_ENABLED=0` any attempted Meta call answers HTTP 503 "disabled":
+Reharmonize, both Meta modes of Complete the form and Second ear stop there, and Import
+opens from the local reader alone; Generate with the author's model, the Genre template
+and every export keep working.
 
 ## Models and data
 
