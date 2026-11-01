@@ -130,7 +130,7 @@ notation and proposes note-based harmony; the author's Music Transformer generat
 chord variations and bounded contextual suggestions for sparse read-note passages.
 Fixed following chords now affect candidate ranking as well as preceding harmony.
 The **Use Meta model** checkbox attempts one original-file reading while local
-analysis runs. If Meta fails, the local result enables Import reviewed score.
+analysis runs; if Meta fails, the local reading opens instead and is labeled local.
 When both readers succeed, bar counts, key, meter, chords and note evidence are compared.
 Differences remain review flags; model agreement is not proof
 of correctness. If local reading is unsupported, the result clearly states that
@@ -149,16 +149,16 @@ file, contract and test coverage, fixes, and remaining verification limits.
 
 - **Import Score**, immediately left of **New from Song Form**, accepts one
   PDF or image up to 8 MiB. Choose the file and optionally check **Use Meta model**,
-  then click **Analyze score**. File selection and checkbox changes do not start analysis.
-  Changing the checkbox clears the previous review; during analysis it also cancels
-  that request. Printed chords are preserved; only
-  passages without chords receive note-based harmony proposals. Confirm the
-  title, key and meter, then open the score view to check and edit chords. Inferred
-  chords are interpretations, not verified original harmony; melody notes and their
-  durations are not imported. Unresolved or unsupported chords stay editable
-  without blocking import; their original symbols and evidence are retained.
-  Correct highlighted project fields, then click
-  **Import reviewed score** to confirm. The footer explains any blocker.
+  then click **Analyze and import**. File selection and checkbox changes do not start analysis;
+  changing the checkbox during analysis cancels that request. The score opens on the
+  staff as soon as it is read: printed chords are preserved, only passages without
+  chords receive note-based harmony proposals, and bars to check carry a **Review**
+  or **Unresolved** mark with their source details. Inferred chords are
+  interpretations, not verified original harmony; melody notes and their durations
+  are not imported. Unresolved or unsupported chords stay editable without blocking
+  import; their original symbols and evidence are retained. Only an unusable title,
+  key, meter, tempo or section range stops in the dialog for correction, with
+  **Import reviewed score** to confirm; the footer explains the blocker.
   The checkbox is off by default. Checked analysis sends the original to Meta while
   the local reader analyzes it, then compares both readings. A truncated, timed-out or invalid Meta
   response proceeds to local reading automatically; unresolved bars remain editable.

@@ -113,9 +113,9 @@ failures are recorded in [evaluation.md](evaluation.md).
   one original-file Meta reading, then local comparison or labeled local recovery.
   Printed local chords/N.C. stay preserved and unequal bar counts retain the full
   local result. Changing the checkbox during analysis cancels the browser request
-  and waits for **Analyze score**; verify its late response cannot populate the
-  review. Provider calls already sent may still finish and incur cost.
-  The Review score dialog has no chord-analysis list. After import, select a bar
+  and waits for **Analyze and import**; verify its late response cannot open a
+  score. Provider calls already sent may still finish and incur cost.
+  A readable score opens on the staff without a review stop. After import, select a bar
   to check its chords, Roman numerals and retained source against the original.
   Replace a file during analysis; an earlier result must not populate
   the replacement. Cancel and retry without choosing the file again.
@@ -123,10 +123,11 @@ failures are recorded in [evaluation.md](evaluation.md).
   fixtures without a model key: verify read pitches, bass, local source and Roman I.
   An unsupported scan reports that local reading cannot handle it without making
   an implicit external model request; checking **Use Meta model** is explicit.
-- [ ] The footer always shows why Import reviewed score
-  is disabled. Correct missing key/meter or highlighted project fields using the footer
-  links, then click Import reviewed score to confirm. Valid project metadata enables the
-  button immediately. Check on a narrow mobile window as well as desktop.
+- [ ] A score with a readable key and meter opens on the staff as soon as analysis
+  finishes, with no review stop. With a missing key/meter the dialog stays open, the
+  footer shows why Import reviewed score is disabled, the footer links focus the
+  highlighted fields, and Import reviewed score confirms the correction. Check on a
+  narrow mobile window as well as desktop.
   Readable C/Am key aliases normalize to C major/A minor.
 - [ ] Review C, Am and G7 in C major: I, vi and V7 appear in the score view after
   import. Change the review key to reanalyze fixed symbols; the main Key control

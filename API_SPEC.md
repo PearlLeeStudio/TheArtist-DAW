@@ -783,7 +783,7 @@ A strike at beat `p` plays the chord of the slot `p` falls in (slot 0 = beats `[
 
 Accepts one explicitly chosen PDF, PNG, JPEG or WebP as bytes sent to the configured backend. `engine: "local"` (the request default) reads supported vector PDFs without a model key or external provider call. `mode: "chord_symbols"` reads written chords; `mode: "infer_harmony"` analyzes notes, timing and bass. Inference is reviewable interpretation, not verified original harmony. The endpoint does not fetch a URL, read a supplied filesystem path, store uploaded bytes, or import melody performance tracks.
 
-The editor keeps file selection and **Analyze score**, with a **Use Meta model**
+The editor keeps file selection and **Analyze and import**, with a **Use Meta model**
 checkbox instead of Reader choices. It defaults off (`local`); checked means
 `verified`, always with `mode: "infer_harmony"`. Only Analyze submits the request.
 Toggling clears the prior review and aborts an active browser request without
@@ -871,9 +871,9 @@ The JSON response is a **review draft**, not a ready-to-replace editor song:
 | `warnings` | Review notes, including any repeat/ending limitations |
 | `model`, `requestId` | `null` for local reading, except that `model` is `ft_f1` (top level and on each completed measure, `requestId` still `null`) when own-model harmonization filled unresolved bars; actual provider metadata when Meta is used. Mixed responses retain request/model metadata per affected measure |
 
-Raw measure chord counts are preserved. The Import reviewed score button opens an
-editable song once key, meter and section metadata are valid; unresolved harmony
-does not require a separate checkbox or block editing. One chord fills both equal
+Raw measure chord counts are preserved. The editor opens the editable song as soon
+as key, meter and section metadata are valid (Import reviewed score confirms a
+corrected draft otherwise); unresolved harmony does not require a separate checkbox or block editing. One chord fills both equal
 slots, two fill one each. More than two changes leave the slots unassigned while
 retaining every source proposal; unsupported symbols remain unresolved. Repeats,
 D.C./D.S. and endings remain in written order. An unsupported or declared incomplete
@@ -887,7 +887,7 @@ Service errors use `{"detail": "..."}`; request-schema errors use FastAPI's vali
 
 #### POST `/api/import/score/stream`
 
-Same body as `/api/import/score`; the response is `text/event-stream` (`Cache-Control: no-cache, no-transform`, `X-Accel-Buffering: no`). Frames: `progress` `{"label": "..."}` for each reader stage (file check, local reading, Meta reading, comparison), a comment keep-alive line (`: reading score`) every 5 s while a reader is busy, then exactly one terminal frame: `result` carrying the JSON response described above, or `error` `{"detail": "...", "status": <one of the HTTP statuses listed above>}`. The editor's **Analyze score** uses this variant. Closing the stream does not cancel a Meta call already sent; its cost still settles.
+Same body as `/api/import/score`; the response is `text/event-stream` (`Cache-Control: no-cache, no-transform`, `X-Accel-Buffering: no`). Frames: `progress` `{"label": "..."}` for each reader stage (file check, local reading, Meta reading, comparison), a comment keep-alive line (`: reading score`) every 5 s while a reader is busy, then exactly one terminal frame: `result` carrying the JSON response described above, or `error` `{"detail": "...", "status": <one of the HTTP statuses listed above>}`. The editor's **Analyze and import** uses this variant. Closing the stream does not cancel a Meta call already sent; its cost still settles.
 
 ### POST `/api/export/midi` — Edited arrangement to MIDI
 

@@ -176,6 +176,8 @@ rows 59 and 64; successful execution alone does not establish musical quality.
 
 | 113 | **Distinguish pending and applied reharmonization choices**: yellow Apply for a changed combination, Applied ✓ with the saved combination, and an explanation before any alternative is selected | [`015fb1f`](https://github.com/PearlLeeStudio/TheArtist-DAW/commit/015fb1f); [behavior](docs/reharmonization.md) | No model calls | Actual controls against real stores cover multi-selection, Apply/autosave, conflicting replacements, returning to the saved combination, and applying Origin. Frontend 274 tests, build/lint and backend import pass; existing bundle-size warning remains |
 
+| 115 | **Open imported scores without a review stop**: Analyze and import replaces Analyze score; a score whose title, key, meter, tempo and sections are usable opens on the staff as soon as it is read (local, compared or recovered-local alike), keeping Review/Unresolved marks and source details there; the dialog's review form appears only for unusable project fields | this commit; [workflow](docs/arrangement-workflow.md) | Same Import readers, limits and Meta calls as the Use Meta model rows; no new paid validation | Frontend build, lint and tests pass; the direct-open path was not run in a browser by the implementer (manual checklist) |
+
 Validation details and unchecked browser/audio/DAW cases are in the
 [manual checklist](docs/manual-checks.md). The README distinguishes application
 screenshots from the pre-existing baseline video. Safari export opened a sixteen-bar,

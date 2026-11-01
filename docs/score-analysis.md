@@ -96,8 +96,9 @@ affect the choice that previously used only preceding bars.
 
 Printed chords and N.C. are preserved. The separate `auto` API mode reviews local inferred harmony
 and automatically proposes form in uncovered passages. Valid project metadata
-enables Import reviewed score without a separate checkbox. The button opens an
-editable score, including unresolved bars; source details remain available there.
+opens the editable score directly after analysis, including unresolved bars;
+source details remain available there. Only unusable project fields stop in the
+dialog for correction before Import reviewed score.
 There is no song-name lookup or stored answer for a particular score.
 
 The file is sent to the configured TheArtist backend. Local vector-PDF analysis

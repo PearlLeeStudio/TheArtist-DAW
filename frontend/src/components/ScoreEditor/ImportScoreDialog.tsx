@@ -88,7 +88,7 @@ function isEditorMeter(meter: string): boolean {
 function importBlockReason(reading: boolean, running: boolean, validation: ScoreImportValidation | null): string {
   if (reading) return 'Wait for the file check to finish.';
   if (running) return 'Wait for the score analysis to finish.';
-  if (!validation) return 'Choose your file, then select Analyze score.';
+  if (!validation) return 'Choose your file, then select Analyze and import.';
   if (validation.valid) return '';
   const corrections = validation.errors.length + validation.sectionErrors.filter(Boolean).length;
   return `Fix ${corrections} highlighted ${corrections === 1 ? 'field' : 'fields'} to enable import.`;
@@ -123,8 +123,10 @@ function blankSection(measureCount: number): ImportSectionDraft {
   return { type: null, label: 'Section', startBar: '1', endBar: String(measureCount || 1), origin: 'manual', note: '' };
 }
 
-/** Original → recognition → editable review → explicit replacement. The
- *  local File and blob URL only live for this dialog's lifetime. */
+/** Original → recognition → the score opens on the staff. The review form
+ *  appears only when the recognized project fields (key, meter, tempo,
+ *  sections) cannot be imported as read; chords are corrected on the staff.
+ *  The local File and blob URL only live for this dialog's lifetime. */
 export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -274,9 +276,13 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
       if (!body) throw new Error('The score connection ended before analysis finished. Please try again.');
       const recognized = readScoreImportResponse(body, IMPORT_MODE, engine);
       const created = createScoreImportDraft(recognized, selected.file.name);
-      setDraft(created);
-      setStatus(scoreImportReadyStatus(created, engine));
       finish();
+      // Open the score as soon as it is read. Reading provenance, unresolved
+      // bars and Review marks stay on the staff; only unusable project
+      // fields stop here for correction.
+      if (validateScoreImportForEditor(created).valid && openImported(created)) return;
+      setDraft(created);
+      setStatus(`${scoreImportReadyStatus(created, engine)} Correct the highlighted fields to import.`);
     } catch (caught) {
       if (!isCurrent(sequence)) return;
       setStatus('');
@@ -323,15 +329,23 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
     setDraft((current) => current ? update(current) : current);
   };
 
-  const importDraft = () => {
-    if (!canImport || !draft) return;
+  /** Replace the editor's score with the draft and close; false (with the
+   *  error shown) when the editor could not take it. */
+  const openImported = (ready: ScoreImportDraft): boolean => {
     try {
-      const imported = buildScoreImportForEditor(draft);
+      const imported = buildScoreImportForEditor(ready);
       onImported(imported);
       dialogRef.current?.close();
+      return true;
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'The reviewed score could not be imported.');
+      return false;
     }
+  };
+
+  const importDraft = () => {
+    if (!canImport || !draft) return;
+    openImported(draft);
   };
 
   return (
@@ -403,7 +417,7 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
                   setMetaConnectionError(false); setCheckingMeta(true); setMetaAttempt(attempt => attempt + 1);
                 }}>Retry connection</button>
               </div>}
-              {useMeta && <p className="text-xs" style={mutedStyle}>Meta reads the original score first. If it cannot finish, the local reader prepares the score for import.</p>}
+              {useMeta && <p className="text-xs" style={mutedStyle}>Meta and the local reader read the original together. The score opens as soon as the reading is ready; bars where the two readings differ are marked Review on the staff.</p>}
               {meta && !metaAvailable && (
                 <p className="text-xs" style={mutedStyle}>
                   {meta.enabled ? 'No Meta key is configured on this server: TheArtist only is available.'
@@ -412,7 +426,7 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
               )}
               <div className="flex flex-wrap gap-2">
                 <button type="button" onClick={startAnalysis} disabled={!source || reading || running} className="px-3 py-2 text-xs font-bold btn-hover disabled:opacity-45" style={{ background: 'var(--brand-yellow)', color: '#1a1a1a' }}>
-                  {running ? 'Analyzing…' : draft ? 'Analyze again' : 'Analyze score'}
+                  {running ? 'Analyzing…' : draft ? 'Analyze again' : 'Analyze and import'}
                 </button>
                 {(reading || running) && <button type="button" className="px-3 py-2 text-xs btn-hover" style={controlStyle} onClick={cancelRecognition}>Cancel</button>}
               </div>
@@ -490,7 +504,7 @@ function ScoreReview({ idPrefix, draft, validation, onEdit }: ScoreReviewProps) 
     <div className="min-w-0 space-y-4">
       <div className="space-y-2">
         <h3 className="font-display text-xl font-semibold" style={{ color: 'var(--text-heading)' }}>Review score</h3>
-        <p className="text-xs" style={mutedStyle}>Check the key and meter. Chords can be reviewed in the score view.</p>
+        <p className="text-xs" style={mutedStyle}>The score could not open as read: correct the highlighted fields, then import. Chords are reviewed in the score view.</p>
         {changesMeter && <p className="text-xs" style={mutedStyle}>The original uses {meters.join(', ')}. The editor uses {draft.timeSignature || 'one chosen meter'} throughout.</p>}
         {draft.verification && <details open={draft.verification.status !== 'compared' || draft.verification.disputedMeasures.length > 0}
           className="text-xs" style={mutedStyle}>

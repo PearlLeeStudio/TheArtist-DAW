@@ -12,11 +12,14 @@ or **Set manually** to enter harmony in a selected slot. **New from Song Form**
 can create the starting material when there is no score yet.
 
 For Import, choose the file, set **Use Meta model** if wanted, then click
-**Analyze score**. The unchecked path reads supported vector PDFs locally.
-The checked path attempts one Meta reading first, compares it with a local
-reading when available, and labels a recovered local result if Meta fails.
-Review the key, meter, chord symbols and section boundaries before
-**Import reviewed score**. A source disagreement remains a review item.
+**Analyze and import**. The unchecked path reads supported vector PDFs locally.
+The checked path sends the original to Meta while the local reader works,
+compares the two readings when both finish, and opens the labeled local reading
+if Meta fails. The score opens on the staff as soon as it is read; bars whose
+readings disagree or stayed unresolved carry a **Review** or **Unresolved** mark
+with their source details, and key, meter, chords and section boundaries are
+corrected there. Only unusable project fields (key, meter, tempo, section
+ranges) stop in the dialog for correction before **Import reviewed score**.
 
 The imported result is harmonic material. Note evidence can support chord
 interpretation, but melody notes and durations are not imported as a melody
