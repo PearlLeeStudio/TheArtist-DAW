@@ -46,6 +46,17 @@ test('verified reading requires comparison evidence and preserves review notes',
   assert.throws(() => readScoreImportResponse({ ...verified, verification: { ...verified.verification, metaMeasures: 3 } }, 'chord_symbols', 'verified'));
 });
 
+test('an unaligned comparison of a long local reading is accepted up to the 512-bar import limit', () => {
+  const measures = Array.from({ length: 300 }, (_, i) => ({ chords: ['C'], sourceLabel: `Bar ${i + 1}`, needsReview: true, note: 'Local/Meta comparison: bar alignment could not be established.', analysisSource: 'local' as const, model: null, requestId: null }));
+  const raw = response({ analysisSource: 'mixed', measures, sections: [], verification: {
+    status: 'unaligned', localMeasures: 300, metaMeasures: 128, comparedMeasures: 0,
+    disputedMeasures: measures.map((_, i) => i), notes: ['Bar counts differ: local 300; Meta 128.'],
+  } });
+  const parsed = readScoreImportResponse(raw, 'chord_symbols', 'verified');
+  assert.equal(parsed.verification?.disputedMeasures.length, 300);
+  assert.throws(() => readScoreImportResponse({ ...raw, verification: { ...raw.verification!, metaMeasures: 513 } }, 'chord_symbols', 'verified'));
+});
+
 test('unavailable local comparison is never described as cross-checked', () => {
   const parsed = readScoreImportResponse(response({ verification: {
     status: 'local_unavailable', localMeasures: 0, metaMeasures: 2,

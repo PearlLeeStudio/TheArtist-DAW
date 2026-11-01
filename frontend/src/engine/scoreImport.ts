@@ -307,9 +307,11 @@ export function readScoreImportResponse(raw: unknown, expectedMode: ScoreImportM
     const check = raw.verification;
     if (!isRecord(check) || !isOneOf(check.status, ['compared', 'local_unavailable', 'unaligned', 'local_only', 'local_fallback']) ||
         !Number.isInteger(check.localMeasures) || (check.localMeasures as number) < 0 || (check.localMeasures as number) > MAX_SCORE_IMPORT_MEASURES ||
-        ![check.metaMeasures, check.comparedMeasures].every((n) => Number.isInteger(n) && (n as number) >= 0 && (n as number) <= 128) ||
+        // Counts follow the import's own 512-bar limit: an unaligned comparison of a long local
+        // reading lists every local bar.
+        ![check.metaMeasures, check.comparedMeasures].every((n) => Number.isInteger(n) && (n as number) >= 0 && (n as number) <= MAX_SCORE_IMPORT_MEASURES) ||
         (!['local_only', 'local_fallback'].includes(check.status) && (check.metaMeasures as number) < 1) || !isTextList(check.notes, 4, 400) ||
-        !Array.isArray(check.disputedMeasures) || check.disputedMeasures.length > 128 ||
+        !Array.isArray(check.disputedMeasures) || check.disputedMeasures.length > MAX_SCORE_IMPORT_MEASURES ||
         check.disputedMeasures.some((n) => !Number.isInteger(n) || n < 0 || n >= measures.length) ||
         new Set(check.disputedMeasures).size !== check.disputedMeasures.length) return invalidResponse();
     if (check.status === 'compared' && (check.localMeasures !== measures.length || check.metaMeasures !== measures.length || check.comparedMeasures !== measures.length)) return invalidResponse();
