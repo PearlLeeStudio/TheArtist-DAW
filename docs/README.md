@@ -6,6 +6,7 @@ accompaniment and editable DAW delivery. Start with the
 
 | Task | Guide |
 |---|---|
+| Watch the hackathon demo | [TheArtist — From Chord Sketch to Your Own Music](https://youtu.be/Xw3BwB64Jt0) |
 | Arrange from source material through DAW export | [Arrangement workflow](arrangement-workflow.md) |
 | Look up a control, its limits and provenance rules | [Editor reference](editor-reference.md), [screenshots](walkthrough.md) |
 | Read the recorded evaluation numbers and their conditions | [Evaluation evidence](evidence.md) |

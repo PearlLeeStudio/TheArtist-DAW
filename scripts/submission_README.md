@@ -1,8 +1,13 @@
 # TheArtist · Meta hackathon contribution
 
+[Watch the hackathon demo](https://youtu.be/Xw3BwB64Jt0) ·
+[Try the live workspace](https://artist-daw.pearlleestudio.co) ·
+[Development repository](https://github.com/PearlLeeStudio/TheArtist-DAW)
+
 TheArtist is an AI arrangement tool: bring in a score or chord sketch, develop
-its harmony and form, audition accompaniment and continue with editable DAW
-tracks. Chord generation supplies musical material within that workflow.
+its harmony and form, audition accompaniment, then export a PDF chord chart or
+continue with editable DAW tracks. Chord generation supplies musical material
+within that workflow; the musician shapes the sketch into their own music.
 
 The existing TheArtist core supplies the score editor, Music Transformer,
 trained weights, music utilities and research code. The event contribution adds
@@ -72,7 +77,5 @@ only the reviewed original-edition subset with CC BY-SA attribution. Berklee is
 off and blocked in public-host mode. No corpora, weights, keys or private planning
 documents are included. The app's README contains full dependency attribution.
 
-Suggested video opening: “The score editor and trained music model predate this
-event; my hackathon contribution connects Meta score understanding, bounded
-harmonic revision, arrangement decisions and editable DAW delivery.” The package is not itself a
-published hosted app or a completed human listening evaluation.
+The package is not itself a published hosted app or a completed human listening
+evaluation. The live workspace and hackathon demo are linked above.

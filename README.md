@@ -10,7 +10,7 @@
   <a href="https://arxiv.org/abs/2605.04998"><img alt="arXiv" src="https://img.shields.io/badge/arXiv-2605.04998-b31b1b?style=flat-square"></a>
   <a href="https://arxiv.org/abs/2606.07334"><img alt="arXiv" src="https://img.shields.io/badge/arXiv-2606.07334-b31b1b?style=flat-square"></a>
   <a href="https://huggingface.co/PearlLeeStudio"><img alt="HuggingFace" src="https://img.shields.io/badge/%F0%9F%A4%97%20HuggingFace-PearlLeeStudio-ffd21e?style=flat-square&labelColor=1c1917"></a>
-  <a href="https://youtu.be/iSDj4VK9nKc"><img alt="Pre-hackathon demo" src="https://img.shields.io/badge/Pre--hackathon%20demo-YouTube-FF0000?style=flat-square&logo=youtube&logoColor=white"></a>
+  <a href="https://youtu.be/Xw3BwB64Jt0"><img alt="Hackathon demo" src="https://img.shields.io/badge/Hackathon%20demo-YouTube-FF0000?style=flat-square&logo=youtube&logoColor=white"></a>
   <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/code-MIT-737373?style=flat-square"></a>
   <a href="https://huggingface.co/PearlLeeStudio"><img alt="Weights" src="https://img.shields.io/badge/weights-CC%20BY--NC%204.0-737373?style=flat-square"></a>
   <img alt="Stack" src="https://img.shields.io/badge/stack-React%2019%20%C2%B7%20FastAPI%20%C2%B7%20PyTorch-1c1917?style=flat-square">
@@ -25,8 +25,23 @@ Harmony, Bass and Drums tracks into a DAW. Chord generation is one step in that
 workflow; the musician chooses what stays in the score.
 
 **[Open the arrangement workspace](https://artist-daw.pearlleestudio.co)** ·
+[Watch the hackathon demo](https://youtu.be/Xw3BwB64Jt0) ·
 [Workflow guide](docs/arrangement-workflow.md) · [Documentation](docs/README.md) ·
 [Hackathon work log](HACKATHON.md) · [Run locally](#getting-started)
+
+<p align="center">
+  <a href="https://youtu.be/Xw3BwB64Jt0">
+    <img src="https://i.ytimg.com/vi/Xw3BwB64Jt0/hqdefault.jpg" alt="TheArtist hackathon demo — From Chord Sketch to Your Own Music" width="60%">
+  </a>
+</p>
+
+<p align="center">
+  <a href="https://youtu.be/Xw3BwB64Jt0"><strong>TheArtist — From Chord Sketch to Your Own Music</strong></a>
+</p>
+
+Import a score, try and combine harmonic alternatives, and listen again as the
+sketch takes shape. Export a PDF chord chart or editable MIDI tracks to continue
+making your own music in a DAW such as Logic Pro.
 
 ### Try it in two minutes
 
@@ -136,9 +151,10 @@ with the gospel adapter as the scorer and *Change up to* 4, on the hosted demo
 The [hackathon work log](HACKATHON.md) separates these additions from the existing
 editor and trained models. This development repository stays intact; a separate
 submission repository will contain event work and patches against a pinned core
-dependency. The screenshots illustrate their documented flows and predate the
-latest Import controls and theory references; the linked YouTube video
-is the pre-existing demo. Verified paths and remaining audio/device checks are
+dependency. The [hackathon demo](https://youtu.be/Xw3BwB64Jt0) is the featured
+video above; the pre-existing demo is listed separately under [Links](#links).
+The screenshots illustrate their documented flows and predate the latest Import
+controls and theory references. Verified paths and remaining audio/device checks are
 separated in the [manual checklist](docs/manual-checks.md).
 The [repository consistency report](docs/repository-checks.md) records the
 file, contract and test coverage, fixes, and remaining verification limits.
@@ -245,20 +261,12 @@ Conditions, costs, failures and every record: [evaluation evidence](docs/evidenc
 Current Safari interface: section labels, chord staff, Play controls and the always-visible mixer. This capture predates the optional theory references. Corpus text is not shipped in the repository.
 </sub></p>
 
-<p align="center">
-  <a href="https://youtu.be/iSDj4VK9nKc">
-    <img src="https://img.youtube.com/vi/iSDj4VK9nKc/hqdefault.jpg" alt="TheArtist demo video — interactive staff editor, MIDI input, AI generation, per-genre LoRA playback" width="60%">
-  </a>
-</p>
-
-<p align="center"><sub>
-▶ <a href="https://youtu.be/iSDj4VK9nKc">Watch the baseline demo on YouTube</a> — existing staff editor, MIDI input and generation; this is not the hackathon submission video.
-</sub></p>
-
 ## Links
 
 | | |
 |---|---|
+| 🎬 **Hackathon demo** | [TheArtist — From Chord Sketch to Your Own Music](https://youtu.be/Xw3BwB64Jt0) |
+| **Pre-hackathon demo** | [Existing score editor, MIDI input and chord generation](https://youtu.be/iSDj4VK9nKc) — baseline work, not the hackathon submission video |
 | 🎬 **Demo videos** | [youtube.com/@StudioPearlLee](https://www.youtube.com/@StudioPearlLee) |
 | 🤗 **Released models** | [huggingface.co/PearlLeeStudio](https://huggingface.co/PearlLeeStudio) — 7 base checkpoints + 11 LoRA adapters |
 | 📄 **Paper / technical report** | [arXiv:2605.04998](https://arxiv.org/abs/2605.04998) · [arXiv:2606.07334](https://arxiv.org/abs/2606.07334) |

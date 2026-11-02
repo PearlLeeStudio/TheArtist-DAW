@@ -3,6 +3,9 @@
 Meta Global AI Developer Hackathon — building period Oct 27 – Nov 4, 2026 (ET);
 project submissions due Nov 4, 9:00 PM ET.
 
+[Watch the hackathon demo](https://youtu.be/Xw3BwB64Jt0) ·
+[Try the live workspace](https://artist-daw.pearlleestudio.co)
+
 The product is an AI arrangement tool: source score or chord sketch → harmonic
 revision and form → accompaniment → editable DAW delivery. Chord generation is
 one component. The [workflow guide](docs/arrangement-workflow.md) describes the
@@ -175,8 +178,9 @@ rows 59 and 64; successful execution alone does not establish musical quality.
 | 123 | **Keep the Mac bridge available and recover failed exports**: one-time per-user login installation copies the bridge off the checkout, starts it at login and restarts exited processes; hosted Export links to setup, checks the local connection before requesting MIDI, and releases failed or cancelled windows for a fresh retry | [`708937a`](https://github.com/PearlLeeStudio/TheArtist-DAW/commit/708937a); [automatic startup](docs/midi-input.md#automatic-startup-on-mac) | none | 10 backend bridge/installer tests and 3 frontend handoff tests pass, plus build, lint and backend import. Installation tests use an isolated project folder and mocked launchctl; actual login/restart installation and renewed physical Logic import are not claimed |
 
 Validation details and unchecked browser/audio/DAW cases are in the
-[manual checklist](docs/manual-checks.md). The README distinguishes application
-screenshots from the pre-existing baseline video. Safari export opened a sixteen-bar,
+[manual checklist](docs/manual-checks.md). The README features the
+[hackathon demo](https://youtu.be/Xw3BwB64Jt0) and labels the pre-existing baseline
+video separately. Safari export opened a sixteen-bar,
 80 BPM arrangement in Logic with Harmony, Bass and Drums visible; this verifies the
 MIDI handoff, not listening quality, GM/CC response or Scripter transport behavior.
 Generated theory explanation and a native AU/VST3 plugin are not claimed as
