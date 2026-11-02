@@ -68,6 +68,7 @@ from app.services.llm import (
     LLMResult,
     LLMSchemaError,
     LLMTimeout,
+    SpendCapReached,
     get_client,
 )
 from app.services.song_form import SECTION_RULES, rule_slots
@@ -583,7 +584,10 @@ def _kind(exc: LLMError) -> str:
 
 
 def _message(exc: LLMError) -> str:
-    """The failure's text for the trace: never a ledger path, and the request id kept apart."""
+    """The failure's text for the trace: never a ledger path, and the request id kept apart. The ledger's
+    own cap names no amount, since the editor shows this text (the figures are in the server log)."""
+    if isinstance(exc, SpendCapReached):
+        return "Meta's spending cap on this server is reached; nothing more was sent to Meta"
     if isinstance(exc, BudgetExceeded):
         return (f"Meta budget: spent ${exc.spent_usd:.4f} + outstanding ${exc.outstanding_usd:.4f} + this "
                 f"request ${exc.request_usd:.4f} would pass the cap ${exc.cap_usd:.2f}")

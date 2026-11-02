@@ -11,7 +11,7 @@ from app.models.export import MAX_EXPORT_BYTES, MAX_EXPORT_MEASURES, MIN_MIDI_BY
 from app.models.plan import MAX_PLAN_SECTION_BARS, MIN_PLAN_SECTION_BARS, TARGET_BARS
 from app.models.score_import import MAX_SCORE_BYTES, MAX_SCORE_MEASURES
 from app.services.env_flags import meta_enabled, meta_budget_unlimited
-from app.services.llm import LLMConfig
+from app.services.llm import LLMConfig, meta_availability
 from app.services.planner import MAX_META_CALLS, MAX_RUN_USD, RUN_BUDGET_S
 from app.services import theory_rag
 
@@ -66,10 +66,12 @@ def contract_result(data: BaseModel | dict) -> ContractEnvelope:
 
 
 def _meta_status() -> dict[str, Any]:
-    """Whether Meta-backed features can run here: the flag, a key's presence, the provider and model.
+    """Whether Meta-backed features can run here: the flag, a key's presence, whether a request would be
+    taken now (available, with the reason when not), the provider and model, and the same for the
+    judge role that Second ear runs on.
 
-    Never the key, where it came from, or an error: discovery must answer even on a broken
-    configuration, which then shows as configured false with no provider.
+    Never the key, where it came from, an error or a spend amount: discovery must answer even on a
+    broken configuration, which then shows as configured false with no provider.
     """
     try:
         enabled = meta_enabled()
@@ -77,14 +79,25 @@ def _meta_status() -> dict[str, Any]:
         enabled = False  # a typo in the flag refuses every Meta call
     provider = model = None
     configured = False
+    reader_usd = None
     try:
         config = LLMConfig.from_env()
         provider, model, configured = config.provider, config.model, bool(config.api_key)
+        from app.services.score_import import SCORE_INPUT_TOKEN_BOUND, SCORE_MAX_OUTPUT_TOKENS
+        # The whole-file reader's reservation, so the option is offered only while it would be admitted
+        reader_usd = (SCORE_INPUT_TOKEN_BOUND * config.price_input_per_m
+                      + SCORE_MAX_OUTPUT_TOKENS * config.price_output_per_m) / 1_000_000
     except Exception:  # an LLMConfigError, or a malformed URL that urlsplit rejects
         pass
+    unavailable = meta_availability()
+    judge = meta_availability("judge")
     from app.services.limits import full_file_score_import_allowed
-    return {"enabled": enabled, "configured": configured, "provider": provider, "model": model,
-            "fullFileScoreImport": enabled and configured and provider == "meta" and model == "muse-spark-1.3" and full_file_score_import_allowed()}
+    reader = (unavailable is None and reader_usd is not None and provider == "meta" and model == "muse-spark-1.3"
+              and full_file_score_import_allowed() and meta_availability(need_usd=reader_usd) is None)
+    return {"enabled": enabled, "configured": configured, "available": unavailable is None,
+            "unavailableReason": unavailable, "provider": provider, "model": model,
+            "judge": {"available": judge is None, "unavailableReason": judge},
+            "fullFileScoreImport": reader}
 
 
 def capabilities() -> ContractEnvelope:
@@ -130,7 +143,13 @@ def capabilities() -> ContractEnvelope:
                         "It never switches an unsupported local file to a whole-file request. A public host requires "
                         "THEARTIST_PUBLIC_META_READER=1 for meta; THEARTIST_META_UNLIMITED explicitly disables dollar caps for development. "
                         "meta.fullFileScoreImport controls that explicit PDF/image option. With THEARTIST_META_ENABLED=0 "
-                        "(meta.enabled false), direct Meta calls return HTTP 503; verified Import recovers with the local reader.",
+                        "(meta.enabled false), direct Meta calls return HTTP 503; verified Import recovers with the local reader. "
+                        "meta.available is false (meta.unavailableReason disabled, unconfigured or paused) while Meta "
+                        "controls should be off; meta.judge reports the judge role the same way. paused means less than $0.05 "
+                        "is left on the THEARTIST_META_CREDIT_USD credit stop line (or under the dollar cap with caps on), the "
+                        "ledger cannot be read, or the provider answered that the account has no credit. Under the credit line "
+                        "or that answer, calls are refused before any network request with HTTP 503, and Reharmonize picks its "
+                        "three alternatives without Meta (selection local). No amount is reported.",
                         "Note-based harmony analysis is opt-in and returns reviewable interpretations, not verified original chords or imported melody notes.",
                         "export_daw requires a loopback request, server opt-in, and explicit per-call confirmation.",
                         "plan_song plans only: section chords come from generate_section, and the observe-then-act judgment runs "

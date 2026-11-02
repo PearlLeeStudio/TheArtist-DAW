@@ -309,7 +309,8 @@ class ReviewLimitsTest(ReviewCase):
             self.assertEqual(CLIENT.post(REVIEW, json=body(), headers=SESSION).status_code, 200)
         res = CLIENT.post(REVIEW, json=body(), headers=SESSION)
         self.assertEqual(res.status_code, 429, res.text)
-        self.assertIn("worst case $0.03", res.json()["detail"])
+        self.assertIn("allowance is used up", res.json()["detail"])
+        self.assertNotIn("$", res.json()["detail"])  # the amounts go to the server log only
         self.assertIn("retry-after", res.headers)
         self.assertEqual(len(transport.calls), 2)
 

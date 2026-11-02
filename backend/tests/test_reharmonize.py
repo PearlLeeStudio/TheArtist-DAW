@@ -340,6 +340,7 @@ class NativeToolsTests(LLMTestCase):
         from fastapi import HTTPException
         client = self.client(FakeTransport(tool_response('search_substitutions', {'families': ['common_tones', 'modal']})))
         with patch('app.routes.reharmonize.limits.limiter') as limiter, \
+                patch.object(agent.llm, 'meta_availability', return_value=None), \
                 patch.object(agent.llm, 'get_client', return_value=client), \
                 patch.object(agent, 'ContextScorer', return_value=FakeScorer()):
             with self.assertRaises(HTTPException) as caught:

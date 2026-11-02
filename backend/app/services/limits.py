@@ -15,6 +15,7 @@ records every call. There are no per-IP limits.
 from __future__ import annotations
 
 import hmac
+import logging
 import math
 import os
 import threading
@@ -26,6 +27,8 @@ from fastapi import HTTPException, Request
 
 from app.services.env_flags import env_bool, meta_budget_unlimited
 from app.services.llm import Ledger, LLMError, _round_usd
+
+log = logging.getLogger(__name__)
 
 PUBLIC_HOST_VAR = "THEARTIST_PUBLIC_HOST"
 PUBLIC_META_READER_VAR = "THEARTIST_PUBLIC_META_READER"
@@ -195,16 +198,19 @@ class SpendLimiter:
             day_usd = _DayLedger.from_env(env).day_usd(day)
         except LLMError:
             raise HTTPException(status_code=503, detail=_LEDGER_UNREADABLE) from None
+        # The refusal text reaches the browser, so the figures go to the server log only
         if day_usd + estimate_usd > limits.daily_usd + _TOLERANCE_USD:
-            raise _refusal(f"This server's daily Meta limit is reached: ${day_usd:.2f} spent or reserved today + this "
-                           f"request's worst case ${estimate_usd:.2f} would pass ${limits.daily_usd:.2f}.")
+            log.warning("Meta daily cap: $%.2f spent or reserved today + this request's worst case $%.2f would pass "
+                        "%s=$%.2f", day_usd, estimate_usd, DAILY_LIMIT_VAR, limits.daily_usd)
+            raise _refusal("This server's daily Meta limit is reached.")
         with self._lock:
             if day != self._day:
                 self._day, self._usage = day, {}
             used = self._usage.get(pool, 0.0)
             if used + estimate_usd > allowance + _TOLERANCE_USD:
-                raise _refusal(f"{whose} daily Meta allowance is used up: ${used:.2f} admitted today + this request's "
-                               f"worst case ${estimate_usd:.2f} would pass ${allowance:.2f}.")
+                log.warning("Meta allowance of %s: $%.2f admitted today + this request's worst case $%.2f would "
+                            "pass $%.2f", pool.split(":", 1)[0], used, estimate_usd, allowance)
+                raise _refusal(f"{whose} daily Meta allowance is used up.")
             self._usage[pool] = _round_usd(used + estimate_usd)
         return Admission(day, pool, estimate_usd)
 

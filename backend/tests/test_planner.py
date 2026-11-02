@@ -466,7 +466,8 @@ class PlannerRunTest(unittest.TestCase):
         self.client(transport, cap=0.001)  # the ledger's own cap
         trace = planner.complete_form(request())
         self.assertEqual((trace.status, trace.error.kind, trace.calls, transport.calls), ("error", "budget", [], []))
-        self.assertIn("cap $0.00", trace.error.message)
+        self.assertIn("spending cap on this server is reached", trace.error.message)
+        self.assertNotIn("$", trace.error.message)  # the editor shows it: no spend or cap amount
         self.assertNotIn(str(self.ledger.path), trace.error.message)
 
     def test_the_run_cap_counts_settled_spend_not_unspent_reservations(self):

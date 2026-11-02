@@ -31,6 +31,12 @@ Environment (names in deploy/env.example):
                         and ollama is free only on a loopback host
   THEARTIST_META_BUDGET_USD   spend cap in USD (default 25)
   THEARTIST_META_UNLIMITED    explicit development opt-in to record spend without dollar caps
+  THEARTIST_META_CREDIT_USD   the API credit left in USD, as the provider's console shows it. The
+                        ledger notes its total when it first sees the value and then refuses,
+                        before any network I/O and also under THEARTIST_META_UNLIMITED, every
+                        request whose worst case would take the spend recorded since past it,
+                        and every request once less than $0.05 is left. A judge on the meta
+                        provider shares the line. Empty = no stop line; 0 pauses Meta at once
   THEARTIST_META_LEDGER       ledger path (default backend/.ledger/meta_ledger.json)
   LLM_JUDGE_PROVIDER, LLM_JUDGE_BASE_URL, LLM_JUDGE_MODEL, LLM_JUDGE_API_KEY,
   LLM_JUDGE_TIMEOUT_S, LLM_JUDGE_REASONING_EFFORT, LLM_JUDGE_PRICE_*_PER_M
@@ -99,6 +105,15 @@ class LLMDisabled(LLMConfigError):
     """Every Meta Model API feature is switched off on this server (THEARTIST_META_ENABLED=0)."""
 
 
+class CreditExhausted(LLMDisabled):
+    """Meta is paused: the credit stop line (THEARTIST_META_CREDIT_USD) is reached, or the provider answered
+    that the account has no credit left. Raised before any network I/O, except for the one reply that
+    reported it. Its text can reach the browser, so it never names an amount; the server log has them."""
+
+
+PAUSED_TEXT = "Meta is paused on this server; nothing was sent to Meta."
+
+
 class LLMSchemaError(LLMError, ValueError):
     """A response schema that strict structured output cannot express."""
 
@@ -117,6 +132,12 @@ class BudgetExceeded(LLMError):
         self.outstanding_usd = outstanding_usd
         self.request_usd = request_usd
         self.cap_usd = cap_usd
+
+
+class SpendCapReached(BudgetExceeded):
+    """The ledger's own dollar cap (THEARTIST_META_BUDGET_USD) refused the request, as opposed to a
+    per-request or per-run cap. Its message holds the figures for the server log; text that reaches
+    the browser names no amount."""
 
 
 class LLMTimeout(LLMError):
@@ -537,6 +558,56 @@ _warned_ledgers: set[str] = set()  # ledgers that already logged the 80 % warnin
 _warned_ignored_keys: set[str] = set()  # key variables already reported as ignored for meta
 _warned_lock = threading.Lock()
 
+# The credit stop line of the default client's account; a judge on the meta provider shares it
+CREDIT_VAR = "THEARTIST_META_CREDIT_USD"
+# Once less than this is left on the credit line, Meta is paused: the ledger refuses every request and
+# discovery reports it. The margin also absorbs the estimate error of a reservation
+CREDIT_FLOOR_USD = 0.05
+# How long this process keeps Meta paused after the provider answered that the account has no credit;
+# such an answer is not billed, so the first request after the hold checks again
+CREDIT_REFUSAL_HOLD_S = 600
+# Provider error codes or types that say the account has no credit left (HTTP 402 always does). The
+# free-text message is never matched: it can echo request text, and a rate-limit message may link a
+# billing page
+_NO_CREDIT = re.compile(r"insufficient[ _-]?(?:quota|credits?|funds|balance)|credits?[ _-]?(?:exhausted|depleted)"
+                        r"|out[ _-]of[ _-]credits?|billing[ _-]?(?:hard[ _-]?limit|not[ _-]?active|required|error)"
+                        r"|payment[ _-]?required", re.I)
+_warned_unavailable: set[str] = set()  # reasons meta_availability already logged in this process
+_no_credit_until: dict[str, float] = {}  # "provider base_url" -> time.monotonic() when the hold ends
+_no_credit_lock = threading.Lock()
+
+
+def _endpoint(config: LLMConfig) -> str:
+    return f"{config.provider} {config.base_url}"
+
+
+def _no_credit(config: LLMConfig) -> bool:
+    """Whether the provider answered within the last CREDIT_REFUSAL_HOLD_S that this account has no credit."""
+    key = _endpoint(config)
+    with _no_credit_lock:
+        until = _no_credit_until.get(key)
+        if until is not None and time.monotonic() >= until:
+            del _no_credit_until[key]
+            until = None
+    return until is not None
+
+
+def _hold_no_credit(config: LLMConfig) -> None:
+    with _no_credit_lock:
+        _no_credit_until[_endpoint(config)] = time.monotonic() + CREDIT_REFUSAL_HOLD_S
+
+
+def _reports_no_credit(status: int, body: Any) -> bool:
+    """HTTP 402, or another 4xx whose error code or type (never its message) says the account has no credit."""
+    if status == 402:
+        return True
+    if not 400 <= status < 500:
+        return False
+    inner = body.get("error", body) if isinstance(body, dict) else None
+    if not isinstance(inner, dict):
+        return False
+    return any(_NO_CREDIT.search(str(inner.get(name) or "")) for name in ("code", "type"))
+
 
 def _utc_now() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="milliseconds")
@@ -554,28 +625,44 @@ class Ledger:
     ".lock" file, re-reads the file and replaces it atomically (temp file +
     os.replace), so concurrent processes never lose an entry or a reservation.
     A reservation left open by a crashed worker stays counted (safe over-count).
+
+    A credit stop line (credit_usd) is held even when the dollar caps are off: the first
+    reservation under a new value records the ledger's spent + outstanding total as the line's
+    start. Once less than CREDIT_FLOOR_USD is left, or when a request's worst case would take the
+    spend recorded since past the value, the request is refused with CreditExhausted. The line
+    lives in this file: a replaced file, or a value that differs, starts a new line.
     """
 
     def __init__(self, path: str | os.PathLike[str] | None = None, cap_usd: float | None = None,
-                 *, unlimited: bool = False) -> None:
+                 *, unlimited: bool = False, credit_usd: float | None = None) -> None:
         self.path = Path(path).expanduser().resolve() if path is not None else DEFAULT_LEDGER_PATH
         self.cap_usd = DEFAULT_BUDGET_USD if cap_usd is None else float(cap_usd)
         self.unlimited = unlimited
         if not (math.isfinite(self.cap_usd) and self.cap_usd >= 0):
             raise LLMConfigError(f"the budget cap must be a non-negative number, got {cap_usd!r}")
+        self.credit_usd = None if credit_usd is None else float(credit_usd)
+        if self.credit_usd is not None and not (math.isfinite(self.credit_usd) and self.credit_usd >= 0):
+            raise LLMConfigError(f"{CREDIT_VAR} must be a non-negative number of USD, got {credit_usd!r}")
         self._lock_path = self.path.with_name(self.path.name + ".lock")
         self._lock = threading.Lock()
 
     @classmethod
     def from_env(cls, env: Mapping[str, str] | None = None, role: str = "default") -> Ledger:
-        """The role's ledger; a judge without a provider of its own shares the default ledger."""
+        """The role's ledger; a judge without a provider of its own shares the default ledger.
+
+        So does a judge on the meta provider while a credit line is set: it spends the same account
+        (the Meta key is only MODEL_API_KEY), so its calls must count against that one line.
+        """
         env = os.environ if env is None else env
-        if role != "default" and not _env_str(env, _var(role, "PROVIDER")):
-            return cls.from_env(env)
+        if role != "default":
+            own = _env_str(env, _var(role, "PROVIDER")).lower()
+            if not own or (own == "meta" and _env_str(env, CREDIT_VAR)):
+                return cls.from_env(env)
         path_var, cap_var, default_path, default_cap = _LEDGER_ENV[role]
         cap = _env_float(env, cap_var)
         return cls(_env_str(env, path_var) or default_path, default_cap if cap is None else cap,
-                   unlimited=meta_budget_unlimited(env))
+                   unlimited=meta_budget_unlimited(env),
+                   credit_usd=_env_float(env, CREDIT_VAR) if role == "default" else None)
 
     def snapshot(self) -> dict[str, Any]:
         """Current totals, read without locking or creating anything (writes replace the file whole)."""
@@ -583,13 +670,69 @@ class Ledger:
         return {"path": str(self.path), "cap_usd": None if self.unlimited else self.cap_usd, "spent_usd": state["spent_usd"],
                 "outstanding_usd": _outstanding(state), "entries": len(state["entries"])}
 
+    def credit_left(self) -> float | None:
+        """USD the credit stop line still allows, read without locking or writing; None without a line."""
+        if self.credit_usd is None:
+            return None
+        state = self._load()
+        line = self._credit_line(state)
+        used = state["spent_usd"] + _outstanding(state) - line["base_usd"] if line else 0.0
+        return _round_usd(self.credit_usd - used)
+
+    def left_usd(self) -> float | None:
+        """What the credit line and, with dollar caps on, the cap still allow (the smaller of the two),
+        read without locking or writing; None when neither applies."""
+        if self.credit_usd is None and self.unlimited:
+            return None
+        state = self._load()
+        used = state["spent_usd"] + _outstanding(state)
+        lefts = []
+        if self.credit_usd is not None:
+            line = self._credit_line(state)
+            lefts.append(self.credit_usd - (used - line["base_usd"] if line else 0.0))
+        if not self.unlimited:
+            lefts.append(self.cap_usd - used)
+        return _round_usd(min(lefts))
+
+    def _credit_line(self, state: Mapping[str, Any]) -> dict[str, Any] | None:
+        """The recorded start of the line for the current credit value, or None before its first request."""
+        line = state.get("credit")
+        if not isinstance(line, dict) or line.get("usd") != self.credit_usd:
+            return None
+        base = line.get("base_usd")
+        valid = isinstance(base, (int, float)) and not isinstance(base, bool) and math.isfinite(base)
+        return line if valid else None
+
+    def _hold_credit_line(self, state: dict[str, Any], spent: float, outstanding: float,
+                          reserved_usd: float, label: str) -> None:
+        """Refuse every request once less than CREDIT_FLOOR_USD is left on the credit line, and any request
+        whose worst case would pass it; the first admitted request under a new value records where the
+        line starts (a refusal writes nothing, so the start is the same later)."""
+        line = self._credit_line(state)
+        base = line["base_usd"] if line else _round_usd(spent + outstanding)
+        used = _round_usd(spent + outstanding - base)
+        below_floor = self.credit_usd - used < CREDIT_FLOOR_USD - _CAP_TOLERANCE_USD
+        if below_floor or used + reserved_usd > self.credit_usd + _CAP_TOLERANCE_USD:
+            # The figures stay in the server log; the error's text can reach the browser
+            why = (f"less than the ${CREDIT_FLOOR_USD:.2f} floor is left" if below_floor
+                   else f"this request ${reserved_usd:.4f} would pass it")
+            log.warning("llm refused label=%s: $%.4f used since %s=$%.2f was set; %s; Meta is paused (ledger %s)",
+                        label, used, CREDIT_VAR, self.credit_usd, why, self.path)
+            raise CreditExhausted(PAUSED_TEXT)
+        if line is None:
+            state["credit"] = {"usd": self.credit_usd, "base_usd": base, "set_at": _utc_now()}
+            log.info("credit stop line %s=$%.2f starts at the ledger total $%.4f (ledger %s)",
+                     CREDIT_VAR, self.credit_usd, base, self.path)
+
     def reserve(self, *, label: str, provider: str, model: str, reserved_usd: float) -> str:
-        """Record a worst-case reservation and return its id, or raise BudgetExceeded."""
+        """Record a worst-case reservation and return its id, or raise CreditExhausted / BudgetExceeded."""
         reserved_usd = _round_usd(reserved_usd)
         with self._transaction() as state:
             spent, outstanding = state["spent_usd"], _outstanding(state)
+            if self.credit_usd is not None:
+                self._hold_credit_line(state, spent, outstanding, reserved_usd, label)
             if not self.unlimited and spent + outstanding + reserved_usd > self.cap_usd + _CAP_TOLERANCE_USD:
-                raise BudgetExceeded(
+                raise SpendCapReached(
                     f"LLM budget cap reached: spent ${spent:.4f} + outstanding ${outstanding:.4f} "
                     f"+ this request ${reserved_usd:.4f} > cap ${self.cap_usd:.2f} (ledger {self.path})",
                     spent_usd=spent, outstanding_usd=outstanding, request_usd=reserved_usd,
@@ -1042,6 +1185,11 @@ class LLMClient:
     def _attempt(self, transport: Transport, prepared: PreparedRequest, label: str, attempts: int) -> LLMResult:
         """Reserve, send and settle one request; every failure is settled, then raised as an LLMError."""
         cfg = self.config
+        if _no_credit(cfg):
+            log.warning("llm refused provider=%s model=%s label=%s: the provider answered within the last %d s "
+                        "that the account has no credit; Meta is paused", cfg.provider, cfg.model, label,
+                        CREDIT_REFUSAL_HOLD_S)
+            raise CreditExhausted(PAUSED_TEXT)
         try:
             entry_id = self.ledger.reserve(label=label, provider=cfg.provider, model=cfg.model,
                                            reserved_usd=prepared.reserve_usd)
@@ -1203,6 +1351,13 @@ class LLMClient:
             # over-count; any other 4xx rejects the request before generation, so nothing is billed.
             billed = full if status >= 500 or status == 408 else 0.0
             detail = self._scrub(_api_message(exc))
+            if _reports_no_credit(status, exc.body):
+                # Every request now stops here until the hold ends; the provider's words go to the log only
+                _hold_no_credit(self.config)
+                log.warning("llm %s answered HTTP %d that the account has no credit (%s); Meta is paused in this "
+                            "process for %d s", where, status, detail, CREDIT_REFUSAL_HOLD_S)
+                return CreditExhausted(f"Meta is paused on this server: Meta declined the request (HTTP {status}).",
+                                       request_id=_request_id(headers)), billed
             if status == 429:
                 # The provider's rate-limit headers say when to try again; they go ahead of the provider
                 # text so the ledger note's length cut cannot drop them
@@ -1287,3 +1442,49 @@ def get_client(role: str = "default") -> LLMClient:
         if client is None:
             client = _clients[role] = LLMClient(LLMConfig.from_env(role=role), Ledger.from_env(role=role))
         return client
+
+
+def _warn_unavailable(reason: str) -> None:
+    """Log why Meta is unavailable once per process, so a misconfiguration is not mistaken for a pause."""
+    with _warned_lock:
+        if reason in _warned_unavailable:
+            return
+        _warned_unavailable.add(reason)
+    log.warning("Meta is unavailable: %s", reason)
+
+
+def meta_availability(role: str = "default", need_usd: float = CREDIT_FLOOR_USD) -> str | None:
+    """Why the role's model API cannot take a request of `need_usd` worst case now, or None when it can.
+
+    "disabled": THEARTIST_META_ENABLED is off (or not a valid switch). "unconfigured": no key, or a
+    configuration the client refuses. "paused": less than `need_usd` (at least CREDIT_FLOOR_USD) is left
+    on the credit stop line or, with dollar caps on, under the ledger's cap; or the ledger cannot be
+    read; or the provider answered within CREDIT_REFUSAL_HOLD_S that the account has no credit. Reads
+    the ledger without locking or writing and never raises, so discovery always answers; it reports no
+    amount. A configuration or ledger fault is logged once, since its reason alone looks like a pause.
+    """
+    try:
+        if not meta_enabled():
+            return "disabled"
+    except ValueError:
+        return "disabled"  # a typo in the flag refuses every Meta call
+    try:
+        config = LLMConfig.from_env(role=role)
+    except Exception as exc:  # an LLMConfigError, or a malformed URL that urlsplit rejects
+        _warn_unavailable(f"the {role} configuration is refused ({type(exc).__name__}: {exc})")
+        return "unconfigured"
+    if not config.api_key:
+        return "unconfigured"
+    if _no_credit(config):
+        return "paused"
+    try:
+        left = Ledger.from_env(role=role).left_usd()
+    except LLMConfigError as exc:  # e.g. THEARTIST_META_CREDIT_USD is not a number
+        _warn_unavailable(f"the {role} ledger configuration is refused ({exc})")
+        return "unconfigured"
+    except Exception as exc:  # an unreadable ledger refuses every request too
+        _warn_unavailable(f"the {role} spend ledger cannot be read ({type(exc).__name__}: {exc})")
+        return "paused"
+    if left is not None and left < max(CREDIT_FLOOR_USD, need_usd) - _CAP_TOLERANCE_USD:
+        return "paused"
+    return None

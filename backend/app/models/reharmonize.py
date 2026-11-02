@@ -5,6 +5,9 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 Family = Literal["common_tones", "modal", "dominant"]
+# Why Meta did not choose: switched off, no key, paused (credit stop line or no provider credit),
+# or the caller's Meta allowance is used up
+MetaUnavailable = Literal["disabled", "unconfigured", "paused", "limit"]
 # The editor opens scores of up to 512 bars; a request carries the bars around the passage.
 MAX_REHARM_MEASURES = 512
 Mode = Literal["auto", "ionian", "dorian", "phrygian", "lydian", "mixolydian", "aeolian", "locrian"]
@@ -82,11 +85,16 @@ class ReharmResponse(BaseModel):
     candidates: list[ReharmCandidate]
     modelUsed: str
     contextMeasures: list[int]
+    # "not used" when the three were chosen without Meta (selection "local")
     metaModel: str
     requestIds: list[str]
     costUsd: float
     toolCalls: list[str]
     modelApproximations: list["ModelApproximation"] = Field(default_factory=list)
+    # meta: Meta chose the three from the searched candidates. local: Meta could not take the
+    # request, so code chose the best Music Transformer score of each family; metaUnavailable says why
+    selection: Literal["meta", "local"] = "meta"
+    metaUnavailable: MetaUnavailable | None = None
 
 
 class ModelApproximation(BaseModel):

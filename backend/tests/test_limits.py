@@ -90,7 +90,8 @@ class LimiterTest(LimitsCase):
         for _ in range(10):  # the $1.00 default holds ten $0.10 planner runs
             self.assertIsNotNone(self.admit(a, 0.10))
         refusal = self.refused(a, 0.10, 429)
-        self.assertIn("This session's daily Meta allowance is used up: $1.00 admitted today", refusal.detail)
+        self.assertEqual(refusal.detail, "This session's daily Meta allowance is used up. Allowances reset at 00:00 UTC.")
+        self.assertNotIn("$", refusal.detail)  # the editor shows this text: no spend or allowance amount
         self.assertTrue(1 <= int(refusal.headers["Retry-After"]) <= 86400)
         self.assertIsNotNone(self.admit(Caller(session="browser-b"), 0.10))  # another session, its own allowance
         c = Caller(session="browser-c")
@@ -137,7 +138,7 @@ class LimiterTest(LimitsCase):
         ledger.reserve(label="open", provider="meta", model="muse-spark-1.3", reserved_usd=0.50)  # counts while open
         self.assertIsNotNone(self.admit(Caller(session="a"), 0.10))  # 0.40 + 0.50 + 0.10 fills the cap exactly
         refusal = self.refused(Caller(session="b"), 0.11, 429)
-        self.assertIn("This server's daily Meta limit is reached: $0.90 spent or reserved today", refusal.detail)
+        self.assertEqual(refusal.detail, "This server's daily Meta limit is reached. Allowances reset at 00:00 UTC.")
         self.ledger_path.write_text("{not json", encoding="utf-8")
         self.assertIn("ledger", self.refused(Caller(session="c"), 0.01, 503).detail)
 
@@ -238,9 +239,12 @@ class PlanLimitsTest(LimitsCase):
     def test_over_the_limit_is_429_before_any_meta_call_and_the_judge_code_has_its_own_allowance(self):
         self.env(THEARTIST_META_SESSION_LIMIT_USD="0.05", THEARTIST_JUDGE_CODE="open-sesame")  # under one run's $0.10
         for route in (PLAN, PLAN_STREAM):
-            res = CLIENT.post(route, json=plan_body(), headers=SESSION)
+            with self.assertLogs("app.services.limits", level="WARNING") as logs:
+                res = CLIENT.post(route, json=plan_body(), headers=SESSION)
             self.assertEqual(res.status_code, 429, res.text)
-            self.assertIn("worst case $0.10 would pass $0.05", res.json()["detail"])
+            self.assertEqual(res.json()["detail"],
+                             "This session's daily Meta allowance is used up. Allowances reset at 00:00 UTC.")
+            self.assertIn("worst case $0.10 would pass $0.05", "\n".join(logs.output))  # figures: server log only
             self.assertTrue(res.headers["content-type"].startswith("application/json"))
         self.assertEqual(self.transport.calls, [])
         res = CLIENT.post(PLAN, json=plan_body(), headers={**SESSION, **JUDGE})
@@ -280,9 +284,11 @@ class ScoreImportLimitsTest(LimitsCase):
     def test_meta_reading_is_metered_per_session_at_its_worst_case_and_settled_at_cost(self):
         res = CLIENT.post(IMPORT, json=score_body())  # engine meta without a session
         self.assertEqual(res.status_code, 400, res.text)
-        res = CLIENT.post(IMPORT, json=score_body(), headers=SESSION)  # the $1.00 default cannot hold a $1.35 reading
+        with self.assertLogs("app.services.limits", level="WARNING") as logs:
+            res = CLIENT.post(IMPORT, json=score_body(), headers=SESSION)  # the $1.00 default cannot hold a $1.35 reading
         self.assertEqual(res.status_code, 429, res.text)
-        self.assertIn("worst case $1.50 would pass $1.00", res.json()["detail"])
+        self.assertNotIn("$", res.json()["detail"])
+        self.assertIn("worst case $1.50 would pass $1.00", "\n".join(logs.output))  # figures: server log only
         self.assertEqual(self.requests, [])
         self.env(THEARTIST_META_SESSION_LIMIT_USD="3.00")
         for engine in ("meta", "meta", "meta"):  # settled at $0.0034 each; at their worst case only two would fit
