@@ -36,10 +36,11 @@ support is documented in [MDN's compatibility table](https://developer.mozilla.o
 
 1. On the Mac physically connected to the keyboard, use Python 3 and Apple's
    command-line developer tools (which provide Swift). No Python packages are needed.
-2. Run `tools/midi-bridge/run.py` from this checkout using its absolute file path:
-   `python3 /absolute/path/to/TheArtist-DAW/tools/midi-bridge/run.py`.
-   The launcher builds its helper and module cache inside `tools/midi-bridge/.build/`,
-   which Git ignores. Keep the process running while using MIDI.
+2. Install the [automatic login service](#automatic-startup-on-mac) once. For a
+   foreground session instead, run
+   `python3 /absolute/path/to/TheArtist-DAW/tools/midi-bridge/run.py` and keep that
+   terminal process running. The launcher builds its helper and module cache inside
+   `tools/midi-bridge/.build/`, which Git ignores.
 3. In Safari, open TheArtist-DAW's **Input → MIDI → Enable MIDI**. Automatic chooses the
    local bridge when Web MIDI is unavailable. Allow the connection window to open
    and keep that small window open while playing.
@@ -87,3 +88,35 @@ Export menu. The MIDI download path works without the helper.
 
 Live keyboard notes remain unrecorded. Exported arrangements are intentionally
 saved on the Mac for the DAW; cloud generation/export still uses the existing API.
+
+## Automatic startup on Mac
+
+Install once on the Mac where Logic or the MIDI keyboard is used:
+
+```sh
+python3 /absolute/path/to/TheArtist-DAW/tools/midi-bridge/run.py --install
+```
+
+If a bridge is already running in a terminal, stop that process with Ctrl-C first.
+The installer builds the CoreMIDI helper and installs copies of it and the Python
+bridge in `~/Library/Application Support/TheArtist/MIDI Bridge/`. It registers
+`~/Library/LaunchAgents/co.pearlleestudio.theartist-midi-bridge.plist` with macOS.
+No administrator password or Python packages are required; Apple's command-line
+developer tools provide Swift and the system Python used by the service.
+
+The bridge starts immediately and at subsequent logins. macOS restarts it if it
+exits, including when its native MIDI helper stops. The terminal can be closed;
+the installed service does not depend on the checkout or an external drive staying
+connected. It remains local to this Mac and serves both the hosted Artist and
+Artist-DAW origins. A website cannot install or start a native helper by itself.
+
+Open `http://127.0.0.1:8768/health` to check the installed service, or run the launcher
+with `--status`. For updates, rerun `--install`; existing exported MIDI is retained.
+Installed exports are under the service folder's `.build/exports/`, and startup
+errors are in `bridge-error.log` in the same service folder.
+
+If the bridge is unavailable, the Export menu closes the failed connection window
+after eight seconds and shows the setup link. Start or install the bridge, then
+choose **Open in Logic Pro** again. Each attempt uses a fresh connection; a failed
+connection does not send a MIDI file. If a transfer was sent but no confirmation
+returned, check Logic before retrying, since that earlier transfer may have opened.

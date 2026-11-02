@@ -250,6 +250,8 @@ def main():
                 events.publish(json.loads(line))
         finally:
             events.publish({"type": "error", "message": "CoreMIDI input stopped. Restart the bridge."})
+            # Let the login service restart both processes if the native helper exits.
+            server.shutdown()
     threading.Thread(target=read, daemon=True).start()
     print(f"TheArtist MIDI Bridge ready at http://127.0.0.1:{PORT}. Open Input → Enable MIDI in Safari or Chrome.", flush=True)
     try:

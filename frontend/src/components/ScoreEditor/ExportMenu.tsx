@@ -159,6 +159,7 @@ export default function ExportMenu({ session }: ExportMenuProps) {
         else {
           const bridge = openDawBridge(controller.signal);
           try {
+            await bridge.ready;
             const blob = await requestMidiExport(buildExportSpec(song, settings), controller.signal);
             handoff = await bridge.send(action, song.title, blob);
           } finally { bridge.close(); }
@@ -227,6 +228,8 @@ export default function ExportMenu({ session }: ExportMenuProps) {
         </div>
         <p className="px-3 py-2 text-[10px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>
           {dawHint(onLocalhost, targets, targetError)}
+          {!onLocalhost && <> <a className="underline" href="https://github.com/PearlLeeStudio/TheArtist-DAW/blob/main/docs/midi-input.md#automatic-startup-on-mac"
+            target="_blank" rel="noopener noreferrer">Mac bridge setup · automatic startup</a></>}
         </p>
         {busy && <OperationProgress label="Preparing the export file…" />}
         {feedback && <p role={feedback.error ? 'alert' : 'status'} className="px-3 py-2 text-xs leading-relaxed break-words"
