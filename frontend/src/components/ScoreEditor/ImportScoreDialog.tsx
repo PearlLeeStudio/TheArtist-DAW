@@ -28,7 +28,6 @@ interface ImportScoreDialogProps {
 interface SourceFile {
   file: File;
   mimeType: ScoreMime;
-  previewUrl: string;
 }
 
 type DraftUpdate = (current: ScoreImportDraft) => ScoreImportDraft;
@@ -151,7 +150,6 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
     return () => {
       mountedRef.current = false;
       controllerRef.current?.abort();
-      if (sourceRef.current) URL.revokeObjectURL(sourceRef.current.previewUrl);
     };
   }, []);
 
@@ -188,7 +186,6 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
     if (!file) return;
     cancelRecognition();
     const sequence = ++sequenceRef.current;
-    if (sourceRef.current) URL.revokeObjectURL(sourceRef.current.previewUrl);
     sourceRef.current = null;
     setSource(null);
     setDraft(null);
@@ -202,7 +199,7 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
       if (!isCurrent(sequence)) return;
       const checked = checkScoreFile(file, header);
       if (!checked.ok) throw new Error(checked.message);
-      const selected = { file, mimeType: checked.mimeType, previewUrl: URL.createObjectURL(file) };
+      const selected = { file, mimeType: checked.mimeType };
       sourceRef.current = selected;
       setSource(selected);
     } catch (caught) {
@@ -336,7 +333,7 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
       aria-labelledby={`${id}-heading`}
       className="m-auto p-0 backdrop:bg-black/60"
       style={{
-        width: draft ? 'min(1040px, calc(100vw - 24px))' : 'min(720px, calc(100vw - 24px))',
+        width: 'min(720px, calc(100vw - 24px))',
         maxHeight: 'calc(100dvh - 24px)',
         overflow: 'hidden',
         background: 'var(--bg-surface)',
@@ -417,12 +414,7 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
           {(reading || status) && <p role="status" className="text-sm" style={mutedStyle}>{reading ? 'Checking the file…' : status}</p>}
           {(reading || running) && <OperationProgress label={reading ? 'Checking the score file…' : status} />}
 
-          {source && (
-            <div className={draft ? 'grid grid-cols-1 items-start gap-5 md:grid-cols-[minmax(220px,0.8fr)_minmax(0,1.2fr)]' : ''}>
-              <OriginalScorePreview source={source} />
-              {draft && validation && <ScoreReview idPrefix={id} draft={draft} validation={validation} onEdit={editDraft} />}
-            </div>
-          )}
+          {source && draft && validation && <ScoreReview idPrefix={id} draft={draft} validation={validation} onEdit={editDraft} />}
         </div>
 
         <footer className="flex shrink-0 flex-col items-stretch gap-3 px-5 py-3 sm:flex-row sm:items-end" style={{ borderTop: '1px solid var(--border)', background: 'var(--bg-surface)' }}>
@@ -441,26 +433,6 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
         </footer>
       </form>
     </dialog>
-  );
-}
-
-/** The chosen PDF or image beside its editable analysis. */
-function OriginalScorePreview({ source }: { source: SourceFile }) {
-  return (
-    <details open className="min-w-0 md:sticky md:top-0" style={{ border: '1px solid var(--border)' }}>
-      <summary className="cursor-pointer px-3 py-2 text-sm font-semibold">Original score</summary>
-      <div className="space-y-2 px-3 pb-3">
-        <p className="break-words text-xs" style={mutedStyle}>{source.file.name}</p>
-        {source.mimeType === 'application/pdf' ? (
-          <object data={source.previewUrl} type="application/pdf" aria-label="Original PDF preview" className="w-full" style={{ height: 360, background: '#ffffff' }}>
-            <p className="p-3 text-sm" style={mutedStyle}>The browser cannot display this PDF here. Open the original to review it.</p>
-          </object>
-        ) : (
-          <img src={source.previewUrl} alt={`Original score: ${source.file.name}`} className="w-full object-contain" style={{ maxHeight: 430, background: '#ffffff' }} />
-        )}
-        <a href={source.previewUrl} target="_blank" rel="noreferrer" className="text-xs underline" style={{ color: 'var(--text-heading)' }}>Open original in a new tab</a>
-      </div>
-    </details>
   );
 }
 
