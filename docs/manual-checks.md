@@ -91,7 +91,9 @@ failures are recorded in [evaluation.md](evaluation.md).
 ## Import and revise
 
 - [ ] Import Score is immediately left of New from Song Form. Load a chord-symbol
-  PDF and compare each measure with the source preview before confirming.
+  PDF and compare each imported measure with the original file open in its own
+  viewer. Picking a file shows only its name under Choose file; no page of the
+  original appears in the dialog.
   The original `backend/tests/fixtures/vector-score-c.pdf` and `vector-score-f.pdf`
   are small notes-only starter cases. Leave **Use Meta model** unchecked for
   local vector-PDF reading; check it for PNG/JPEG/WebP when the reader is available.
