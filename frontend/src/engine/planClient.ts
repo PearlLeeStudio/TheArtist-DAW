@@ -204,13 +204,45 @@ export type PlanEvent =
   | { event: 'judge'; data: JudgeDecision & { attempt: number; t_ms: number } }
   | { event: 'complete' | 'error'; data: PlanTrace };
 
-export interface MetaCapability {
+/** Why the server would refuse a Meta request now. paused: its credit stop line is reached or Meta
+ *  answered that the credit is used up (the server reports no amount). */
+export type MetaUnavailableReason = 'disabled' | 'unconfigured' | 'paused';
+const META_UNAVAILABLE_REASONS: readonly MetaUnavailableReason[] = ['disabled', 'unconfigured', 'paused'];
+
+export interface MetaRoleState {
+  /** Whether the server would take this role's request now; its controls are off while it is false. */
+  available: boolean;
+  /** Why not, while available is false. */
+  unavailableReason: MetaUnavailableReason | null;
+}
+
+export interface MetaCapability extends MetaRoleState {
   /** THEARTIST_META_ENABLED; false makes the plan route answer 503. */
   enabled: boolean;
   /** A Meta key is present on the server. */
   configured: boolean;
+  /** The judge role Second ear runs on, which may use another provider; absent: as the default role. */
+  judge?: MetaRoleState;
   /** True only when the server permits explicitly sending an entire score file. */
   fullFileScoreImport?: boolean;
+}
+
+/** The reason a Meta control is off, for its label or tooltip; null while the role takes requests
+ *  or the server has not answered yet (a run then shows the server's own answer). */
+export function metaUnavailableText(meta: MetaCapability | null, role: 'default' | 'judge' = 'default'): string | null {
+  const state = role === 'judge' ? meta?.judge ?? meta : meta;
+  if (!state || state.available) return null;
+  if (state.unavailableReason === 'paused') return 'Meta is paused on this server';
+  if (state.unavailableReason === 'unconfigured') return 'Meta is not configured on this server';
+  return 'Meta features are disabled on this server';
+}
+
+function roleState(value: unknown): MetaRoleState | null {
+  if (typeof value !== 'object' || value === null) return null;
+  const state = value as { available?: unknown; unavailableReason?: unknown };
+  if (typeof state.available !== 'boolean') return null;
+  const reported = META_UNAVAILABLE_REASONS.find((reason) => reason === state.unavailableReason);
+  return { available: state.available, unavailableReason: state.available ? null : reported ?? 'paused' };
 }
 
 /** The song's genre as the backend names it, or null when none is set.
@@ -380,8 +412,19 @@ export async function runPlan(
 export async function fetchMetaCapability(signal?: AbortSignal): Promise<MetaCapability> {
   const res = await fetch('/api/capabilities', { signal });
   if (!res.ok) throw new Error(await describeHttpError(res));
-  const body = (await res.json()) as { data?: { meta?: { enabled?: unknown; configured?: unknown; fullFileScoreImport?: unknown } } } | null;
+  const body = (await res.json()) as { data?: { meta?: {
+    enabled?: unknown; configured?: unknown; available?: unknown; unavailableReason?: unknown;
+    judge?: unknown; fullFileScoreImport?: unknown;
+  } } } | null;
   const meta = body?.data?.meta;
   if (!meta || typeof meta.enabled !== 'boolean') throw new Error('The server did not report its Meta capability');
-  return { enabled: meta.enabled, configured: meta.configured === true, fullFileScoreImport: meta.fullFileScoreImport === true };
+  const configured = meta.configured === true;
+  // A server that predates `available` reports only its flag and whether it has a key
+  const state = roleState(meta) ?? {
+    available: meta.enabled && configured,
+    unavailableReason: !meta.enabled ? 'disabled' : !configured ? 'unconfigured' : null,
+  };
+  const judge = roleState(meta.judge);
+  return { enabled: meta.enabled, configured, ...state, ...(judge ? { judge } : {}),
+    fullFileScoreImport: meta.fullFileScoreImport === true };
 }

@@ -5,6 +5,7 @@ import {
   availableTargetBars,
   buildPlanRequest,
   fetchMetaCapability,
+  metaUnavailableText,
   planBlocker,
   resolveTargetBars,
   runPlan,
@@ -291,8 +292,50 @@ test('the Meta capability is read from the capabilities envelope', async (t) => 
     assert.equal(input, '/api/capabilities');
     return new Response(JSON.stringify({ schemaVersion: '1.0', data: { meta: { enabled: false, configured: true, provider: 'meta', model: 'muse-spark-1.3' } } }));
   });
-  assert.deepEqual(await fetchMetaCapability(), { enabled: false, configured: true, fullFileScoreImport: false });
+  assert.deepEqual(await fetchMetaCapability(), { enabled: false, configured: true, available: false,
+    unavailableReason: 'disabled', fullFileScoreImport: false });
   mock.mock.restore();
   t.mock.method(globalThis, 'fetch', async () => new Response(JSON.stringify({ schemaVersion: '1.0', data: { tools: [] } })));
   await assert.rejects(fetchMetaCapability(), /did not report its Meta capability/);
+});
+
+test('a paused server turns the Meta controls off without naming an amount', async (t) => {
+  t.mock.method(globalThis, 'fetch', async () => new Response(JSON.stringify({ schemaVersion: '1.0', data: { meta: {
+    enabled: true, configured: true, available: false, unavailableReason: 'paused', fullFileScoreImport: false } } })));
+  const paused = await fetchMetaCapability();
+  assert.deepEqual(paused, { enabled: true, configured: true, available: false, unavailableReason: 'paused',
+    fullFileScoreImport: false });
+  assert.equal(metaUnavailableText(paused), 'Meta is paused on this server');
+  assert.equal(metaUnavailableText({ ...paused, unavailableReason: 'unconfigured' }), 'Meta is not configured on this server');
+  assert.equal(metaUnavailableText({ ...paused, enabled: false, unavailableReason: 'disabled' }),
+    'Meta features are disabled on this server');
+  assert.equal(metaUnavailableText({ ...paused, available: true, unavailableReason: null }), null);
+  assert.equal(metaUnavailableText(null), null);  // not answered yet: the control stays on
+  // Without a judge block the judge follows the default role
+  assert.equal(metaUnavailableText(paused, 'judge'), 'Meta is paused on this server');
+});
+
+test('Second ear follows the judge role, which may run on another provider', async (t) => {
+  t.mock.method(globalThis, 'fetch', async () => new Response(JSON.stringify({ schemaVersion: '1.0', data: { meta: {
+    enabled: true, configured: false, available: false, unavailableReason: 'unconfigured',
+    judge: { available: true, unavailableReason: null }, fullFileScoreImport: false } } })));
+  const meta = await fetchMetaCapability();
+  assert.deepEqual(meta.judge, { available: true, unavailableReason: null });
+  assert.equal(metaUnavailableText(meta), 'Meta is not configured on this server');
+  assert.equal(metaUnavailableText(meta, 'judge'), null);  // a Baseten judge still reviews
+  assert.equal(metaUnavailableText({ ...meta, judge: { available: false, unavailableReason: 'paused' } }, 'judge'),
+    'Meta is paused on this server');
+});
+
+test('a server that predates the available field is read from its flag and key', async (t) => {
+  for (const [meta, expected] of [
+    [{ enabled: true, configured: true }, { available: true, unavailableReason: null }],
+    [{ enabled: true, configured: false }, { available: false, unavailableReason: 'unconfigured' }],
+    [{ enabled: false, configured: true }, { available: false, unavailableReason: 'disabled' }],
+  ] as const) {
+    const mock = t.mock.method(globalThis, 'fetch', async () => new Response(JSON.stringify({ schemaVersion: '1.0', data: { meta } })));
+    const capability = await fetchMetaCapability();
+    assert.deepEqual({ available: capability.available, unavailableReason: capability.unavailableReason }, expected);
+    mock.mock.restore();
+  }
 });

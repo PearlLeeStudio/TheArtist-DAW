@@ -3,7 +3,7 @@ import OperationProgress from '../OperationProgress';
 import { useSongStore } from '../../store/songStore';
 import { useReharmonizeStore } from '../../store/reharmonizeStore';
 import { useGenerationStore } from '../../store/generationStore';
-import { REHARM_CHANGE_LIMITS, REHARM_MODES, reharmRunDetails, reharmSelectionError, reharmTargets } from '../../engine/reharmonize';
+import { REHARM_CHANGE_LIMITS, REHARM_MODES, reharmLocalNote, reharmRunDetails, reharmSelectionError, reharmTargets } from '../../engine/reharmonize';
 import type { ReharmChangeLimit, ReharmMode } from '../../engine/reharmonize';
 import { hasPendingReharmSelection } from '../../engine/reharmonizeSession';
 
@@ -76,6 +76,8 @@ export default function ReharmControls({ modelKey }: { modelKey: string }) {
         : pending ? `${selectionLabel} selected. Apply to keep ${selected.length ? 'these changes' : 'the original chords'}.`
           : 'Choose an alternative on the score to enable Apply.'}
     </p>}
+    {result && !loading && !error && reharmLocalNote(result) && <p role="status" className="text-xs"
+      style={{ color: 'var(--text-muted)' }}>{reharmLocalNote(result)}</p>}
     {result && !loading && !error && <details className="text-xs" style={{ color: 'var(--text-muted)' }}>
       <summary className="cursor-pointer">Run details</summary>
       <ul className="mt-1 space-y-0.5 break-words">

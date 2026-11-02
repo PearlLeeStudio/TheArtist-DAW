@@ -124,7 +124,8 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
   const [checkingMeta, setCheckingMeta] = useState(true);
   const [metaConnectionError, setMetaConnectionError] = useState(false);
   const [metaAttempt, setMetaAttempt] = useState(0);
-  const metaAvailable = !!meta?.enabled && !!meta?.configured;
+  // False also while Meta is paused on the server: the checkbox stays off and the local reader is used
+  const metaAvailable = !!meta?.available;
   const readerEngine: ScoreImportEngine = useMeta ? 'verified' : 'local';
   const fullFileAvailable = metaAvailable && meta?.fullFileScoreImport === true;
 
@@ -398,8 +399,10 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
               {useMeta && <p className="text-xs" style={mutedStyle}>The score opens right away; the original is then checked in the background, differing bars are marked for review and empty bars filled.</p>}
               {meta && !metaAvailable && (
                 <p className="text-xs" style={mutedStyle}>
-                  {meta.enabled ? 'No Meta key is configured on this server: TheArtist only is available.'
-                    : 'Meta is off on this server: TheArtist only is available.'}
+                  {!meta.enabled ? 'Meta is off on this server: TheArtist only is available.'
+                    : meta.unavailableReason === 'paused' ? 'Meta is paused on this server: TheArtist only is available.'
+                      : !meta.configured ? 'No Meta key is configured on this server: TheArtist only is available.'
+                        : 'Meta is not configured on this server: TheArtist only is available.'}
                 </p>
               )}
               <div className="flex flex-wrap gap-2">

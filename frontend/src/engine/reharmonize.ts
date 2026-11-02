@@ -23,16 +23,36 @@ export interface ReharmCandidate {
   conventionScore?: number;
   modelScore: number;
 }
+/** Why the server picked the three without Meta: switched off, no key, paused, or the Meta allowance used up. */
+export type ReharmMetaUnavailable = 'disabled' | 'unconfigured' | 'paused' | 'limit';
+const REHARM_META_UNAVAILABLE: Record<ReharmMetaUnavailable, string> = {
+  disabled: 'Meta is off on this server',
+  unconfigured: 'No Meta key is configured on this server',
+  paused: 'Meta is paused on this server',
+  limit: 'The Meta allowance is used up for today',
+};
 export interface ReharmResult {
   candidates: ReharmCandidate[];
   modelUsed: string;
   contextMeasures: number[];
+  /** 'not used' when the three were picked without Meta. */
   metaModel: string;
   modelApproximations?: { address: SlotAddress; original: string; scoredAs: string }[];
   /** The Meta call record of this search, listed under Run details. */
   requestIds?: string[];
   costUsd?: number;
   toolCalls?: string[];
+  /** meta (or absent, from an older server): Meta chose the three. local: the server picked the best
+   *  Music Transformer score of each substitution family because Meta could not take the request. */
+  selection?: 'meta' | 'local';
+  metaUnavailable?: ReharmMetaUnavailable | null;
+}
+
+/** The visible note of a result picked without Meta; null when Meta chose it. */
+export function reharmLocalNote(result: ReharmResult): string | null {
+  if (result.selection !== 'local') return null;
+  const why = result.metaUnavailable ? REHARM_META_UNAVAILABLE[result.metaUnavailable] : 'Meta was not available';
+  return `${why}, so the best-scoring alternative of each substitution family was picked without Meta.`;
 }
 
 /** Include manually added tensions; unsupported combinations must fail rather than disappear. */
@@ -79,6 +99,9 @@ export function validateReharmResult(value: unknown, song: Song, slots: SlotAddr
   if ((result.requestIds !== undefined && !strings(result.requestIds)) ||
       (result.toolCalls !== undefined && !strings(result.toolCalls)) ||
       (result.costUsd !== undefined && !(Number.isFinite(result.costUsd) && result.costUsd >= 0))) return fail();
+  if ((result.selection !== undefined && result.selection !== 'meta' && result.selection !== 'local') ||
+      (result.metaUnavailable !== undefined && result.metaUnavailable !== null &&
+        !Object.hasOwn(REHARM_META_UNAVAILABLE, result.metaUnavailable))) return fail();
   const allowed = new Set(slots.map(slotKey));
   const ids = new Set<string>();
   const signatures = new Set<string>();
@@ -110,7 +133,8 @@ export function validateReharmResult(value: unknown, song: Song, slots: SlotAddr
   return result;
 }
 
-/** Run details for a finished search: Meta's tool calls, the scoring model, then request ids, cost and time. */
+/** Run details for a finished search: Meta's tool calls (or the pick made without Meta), the scoring
+ *  model, then request ids, cost and time. */
 export function reharmRunDetails(result: ReharmResult, elapsedMs: number | null): string[] {
   const calls = result.toolCalls?.length ? result.toolCalls.join(' → ') : 'tool calls not reported';
   const record = [
@@ -118,8 +142,12 @@ export function reharmRunDetails(result: ReharmResult, elapsedMs: number | null)
     result.costUsd === undefined ? null : `$${result.costUsd.toFixed(4)}`,
     elapsedMs === null ? null : `${(elapsedMs / 1000).toFixed(1)} s`,
   ].filter((part): part is string => part !== null);
+  const local = result.selection === 'local';
   return [
-    `Meta ${result.metaModel} · ${calls}`,
+    ...(local
+      ? ['Picked without Meta: the best context score of each substitution family',
+        ...(result.toolCalls?.length ? [`Meta search before it stopped · ${calls}`] : [])]
+      : [`Meta ${result.metaModel} · ${calls}`]),
     `Scored against the surrounding bars by ${result.modelUsed}`,
     ...(record.length ? [record.join(' · ')] : []),
   ];

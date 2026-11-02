@@ -42,6 +42,7 @@ import {
   TARGET_BARS,
   availableTargetBars,
   fetchMetaCapability,
+  metaUnavailableText,
   planBlocker,
   resolveTargetBars,
   sketchBars,
@@ -236,7 +237,12 @@ export default function SongFormDialog({ onClose, onGenerated, onEditSections, o
   const generateDisabled = !check.ok || busy;
 
   const blocker = planBlocker(song);
-  const metaOff = meta?.enabled === false;
+  // Off while the server would refuse Meta (off, no key, or paused); Genre template needs no Meta call
+  const metaOffText = metaUnavailableText(meta);
+  const metaOff = metaOffText !== null;
+  const metaNotice = !meta || meta.available || !meta.enabled ? null
+    : meta.unavailableReason === 'paused' ? 'Muse Spark is paused on this server. Use Genre template.'
+      : 'Muse Spark is not configured. Use Genre template.';
   const planDisabled = blocker !== null || targetBars === null || metaOff || busy;
   const sectionCount = song.sections?.length ?? 0;
 
@@ -644,7 +650,7 @@ export default function SongFormDialog({ onClose, onGenerated, onEditSections, o
               </details>
             )}
 
-            {(blocker || (meta?.enabled && !meta.configured)) && (
+            {(blocker || metaNotice) && (
               <p
                 role="alert"
                 className="text-xs px-3 py-2"
@@ -654,7 +660,7 @@ export default function SongFormDialog({ onClose, onGenerated, onEditSections, o
                   borderLeft: '3px solid var(--brand-yellow)',
                 }}
               >
-                {blocker ?? 'Muse Spark is not configured. Use Genre template.'}
+                {blocker ?? metaNotice}
               </p>
             )}
 
@@ -689,7 +695,7 @@ export default function SongFormDialog({ onClose, onGenerated, onEditSections, o
                     // undefined when enabled, so btn-hover's hover dimming applies
                     opacity: planDisabled ? 0.6 : undefined,
                   }}
-                  title={metaOff ? 'Meta features are disabled on this server' : chordSource === 'meta' ? 'Muse Spark writes the form and every chord' : 'Muse Spark plans and reviews Music Transformer chords'}
+                  title={metaOffText ?? (chordSource === 'meta' ? 'Muse Spark writes the form and every chord' : 'Muse Spark plans and reviews Music Transformer chords')}
                 >
                   {planning ? 'Generating…' : metaOff ? 'Muse Spark unavailable' : chordSource === 'meta' ? 'Muse Spark only' : 'Meta + Music Transformer'}
                 </button>

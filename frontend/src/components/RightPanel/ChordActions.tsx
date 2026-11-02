@@ -15,7 +15,7 @@ import type { Suggestion, SuggestionSource } from '../../engine/chordGenerator';
 import { canApplyComparison, compareCandidate, matchesCapturedRange, slotKey } from '../../engine/generationComparison';
 import type { GenerationComparison } from '../../engine/generationComparison';
 import { genreForModel } from '../../engine/genres';
-import { fetchMetaCapability, type MetaCapability } from '../../engine/planClient';
+import { fetchMetaCapability, metaUnavailableText, type MetaCapability } from '../../engine/planClient';
 import {
   MAX_SECTION_BARS,
   SECTION_GROUPS,
@@ -151,6 +151,14 @@ function ModelSelect({ models, value, onChange, note }: ModelSelectProps) {
 
 /** Reharmonize is a two-model tool: the dropdown picks the scorer, Meta runs the search. */
 const REHARM_MODEL_NOTE = 'Scores each candidate in the context of the surrounding chords. The Meta model (Muse Spark) explores the substitution search with tool calls and picks the three alternatives.';
+
+/** The scorer note; while the server would refuse Meta, the server picks the best score of each family itself. */
+function reharmModelNote(meta: MetaCapability | null): string {
+  const off = metaUnavailableText(meta);
+  return off
+    ? `Scores each candidate in the context of the surrounding chords. ${off}, so the best-scoring alternative of each substitution family is offered without Meta.`
+    : REHARM_MODEL_NOTE;
+}
 
 interface SectionSelectProps {
   id: string;
@@ -465,17 +473,20 @@ function SecondEar({ suggestions, disabled }: { suggestions: Suggestion[]; disab
   const runReview = useReviewStore((s) => s.runReview);
   // null until /api/capabilities answers (or when it does not): a review then shows the server's own answer
   const [meta, setMeta] = useState<MetaCapability | null>(null);
-  const metaOff = meta?.enabled === false;
+  // Second ear runs on the judge role, which can use another provider than the rest of Meta
+  const metaOffText = metaUnavailableText(meta, 'judge');
+  const metaOff = metaOffText !== null;
   const blocked = disabled || loading || metaOff;
   const rules = result ? rulesSlotCount(result) : 0;
 
+  // Asked again after a failed review, so a pause that began meanwhile turns the button off
   useEffect(() => {
     const controller = new AbortController();
     fetchMetaCapability(controller.signal)
       .then((capability) => setMeta(capability))
       .catch(() => { /* unknown: the button stays enabled */ });
     return () => controller.abort();
-  }, []);
+  }, [error]);
   // The review names the cards A, B, C in list order; Favorite Generate's cards carry preset names
   const pickedLabel = result ? suggestions[result.choice.charCodeAt(0) - 65]?.label : undefined;
 
@@ -487,10 +498,10 @@ function SecondEar({ suggestions, disabled }: { suggestions: Suggestion[]; disab
         className="w-full px-3 py-1 text-xs"
         style={{ background: 'var(--btn-bg)', color: 'var(--text-primary)', opacity: blocked ? 0.5 : 1 }}
         title={metaOff
-          ? 'THEARTIST_META_ENABLED=0 on the server'
+          ? meta?.enabled === false ? 'THEARTIST_META_ENABLED=0 on the server' : metaOffText
           : "Ask the judge model which candidate fits best; its reasons are checked against the analyzer's facts (one model call)"}
       >
-        {metaOff ? 'Second ear: Meta features are disabled on this server' : loading ? 'Second ear: listening…' : 'Second ear'}
+        {metaOff ? `Second ear: ${metaOffText}` : loading ? 'Second ear: listening…' : 'Second ear'}
       </button>
       {result && (
         <div
@@ -647,6 +658,18 @@ export default function ChordActions({ view = 'all' }: ChordActionsProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Reharmonize's note names who picks the three; null until /api/capabilities answers (the note then
+  // names Meta). Asked again when a search starts or ends, so a pause or its end shows up in the note
+  const [reharmMeta, setReharmMeta] = useState<MetaCapability | null>(null);
+  useEffect(() => {
+    if (view !== 'reharmonize') return;
+    const controller = new AbortController();
+    fetchMetaCapability(controller.signal)
+      .then((capability) => setReharmMeta(capability))
+      .catch(() => { /* unknown: a result still says whether Meta chose it */ });
+    return () => controller.abort();
+  }, [view, reharmLoading]);
+
   // Song-form section the drag-path Generate sends: the explicit pick, or
   // for 'auto' the section that contains the whole selection (else none).
   const selectedMeasures = [...new Set(selectedSlots.map((s) => s.measureIndex))];
@@ -716,7 +739,7 @@ export default function ChordActions({ view = 'all' }: ChordActionsProps) {
       </h3>
 
       {view !== 'manual' && modelList.length > 0 && <ModelSelect models={modelList} value={modelKey} onChange={pickModel}
-        note={view === 'reharmonize' ? REHARM_MODEL_NOTE : undefined} />}
+        note={view === 'reharmonize' ? reharmModelNote(reharmMeta) : undefined} />}
       {view === 'reharmonize' && <ReharmControls modelKey={modelKey} />}
 
       {/* ---------- Generate (model) UI ---------- */}

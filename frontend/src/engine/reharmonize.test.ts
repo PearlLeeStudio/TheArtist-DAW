@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import type { Song, SlotAddress } from '../models/types.ts';
 import { parseChordName } from './chordParser.ts';
-import { reharmRunDetails, reharmSymbol, reharmSelectionError, requestReharmonization, validateReharmResult } from './reharmonize.ts';
+import { reharmLocalNote, reharmRunDetails, reharmSymbol, reharmSelectionError, requestReharmonization, validateReharmResult } from './reharmonize.ts';
 import type { ReharmCandidate, ReharmResult } from './reharmonize.ts';
 import { emptyReharmState, hasPendingReharmSelection, reharmActions } from './reharmonizeSession.ts';
 import type { ReharmState } from './reharmonizeSession.ts';
@@ -292,6 +292,37 @@ test('the Meta call record is validated and listed for Run details', () => {
     (r: ReharmResult) => { r.costUsd = NaN; },
   ]) {
     const r = result(); mutate(r);
+    assert.throws(() => validateReharmResult(r, score(), slots, 1), /invalid reharmonization/);
+  }
+});
+
+test('a result picked without Meta says so, keeps any Meta record and rejects unknown reasons', () => {
+  const local: ReharmResult = { ...result(), metaModel: 'not used', selection: 'local', metaUnavailable: 'paused',
+    requestIds: [], costUsd: 0, toolCalls: [] };
+  const checked = validateReharmResult(local, score(), slots, 1);
+  assert.equal(reharmLocalNote(checked),
+    'Meta is paused on this server, so the best-scoring alternative of each substitution family was picked without Meta.');
+  assert.deepEqual(reharmRunDetails(checked, 2_000), [
+    'Picked without Meta: the best context score of each substitution family',
+    'Scored against the surrounding bars by Music Transformer',
+    '$0.0000 · 2.0 s',
+  ]);
+  const stopped = { ...local, requestIds: ['req-1'], costUsd: 0.0171, toolCalls: ['search_substitutions'] };
+  assert.deepEqual(reharmRunDetails(validateReharmResult(stopped, score(), slots, 1), null), [
+    'Picked without Meta: the best context score of each substitution family',
+    'Meta search before it stopped · search_substitutions',
+    'Scored against the surrounding bars by Music Transformer',
+    'req-1 · $0.0171',
+  ]);
+  assert.match(reharmLocalNote({ ...local, metaUnavailable: 'limit' })!, /^The Meta allowance is used up for today, /);
+  assert.equal(reharmLocalNote(result()), null);  // Meta's own choice carries no note
+  assert.equal(reharmLocalNote({ ...result(), selection: 'meta' }), null);
+  for (const mutate of [
+    (r: ReharmResult) => { r.selection = 'guess' as unknown as 'local'; },
+    (r: ReharmResult) => { r.metaUnavailable = 'broke' as unknown as 'paused'; },
+    (r: ReharmResult) => { r.metaUnavailable = 'toString' as unknown as 'paused'; },
+  ]) {
+    const r = structuredClone(local); mutate(r);
     assert.throws(() => validateReharmResult(r, score(), slots, 1), /invalid reharmonization/);
   }
 });
