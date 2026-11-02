@@ -437,7 +437,10 @@ are 4/4, 3/4, 6/8, 2/4 and 5/4. `mode` defaults to `auto`; explicit `ionian`,
 each proposed chord to the corresponding parallel scale.
 
 `ReharmResponse` contains three `candidates`, `modelUsed`, `contextMeasures`,
-`metaModel`, `requestIds`, `costUsd`, `toolCalls` and `modelApproximations`.
+`metaModel`, `requestIds`, `costUsd`, `toolCalls`, `modelApproximations`,
+`selection` (`meta`, or `local` when the three were chosen without Meta) and
+`metaUnavailable` (`null`, or why Meta did not choose: `disabled`, `unconfigured`,
+`paused` or `limit`). A local choice has `metaModel: "not used"`.
 Each candidate has an `id`, search `family`, and `changes` containing an address,
 `before`/`after` symbols, shared-tone count, compatible modes and verified
 convention labels. Candidate metrics include pitch distance, bass motion,
@@ -450,10 +453,17 @@ at most four Meta turns, six tool calls, six scored candidates per family,
 low reasoning effort and 4,096 output tokens per call. The per-call timeout is
 30 seconds and the loop deadline is 100 seconds. The normal request reservation
 cap is $0.15; configured development overrides and public session/day controls
-follow the existing spend policy. Failures are visible: invalid input 422,
-budget/rate limits 429, configuration/disabled 503, timeout 504, other Meta
-failures 502. No success-shaped fallback substitutes for a failed search.
-See [search and comparison behavior](docs/reharmonization.md).
+follow the existing spend policy. Failures are visible: invalid input 422, the
+search's own $0.15 cap 429 (detail without figures), configuration 503, timeout 504,
+other Meta failures 502. No success-shaped fallback substitutes for a failed search.
+When Meta cannot take the request at all, the search runs without it and says so.
+That covers Meta switched off, no key, paused (the credit stop line, the ledger's
+dollar cap with caps on, or a provider with no credit), or the caller's session or
+daily Meta allowance used up (the limiter's 429). It also covers such a stop between
+two Meta turns. Every family is then searched, the Music Transformer scores the
+shortlist, and code offers the best-scoring candidate of each family, with
+`selection: "local"`. Fewer than three distinct candidates is a 422. See
+[search and comparison behavior](docs/reharmonization.md).
 
 ### POST `/api/review/candidates` — Second ear
 
@@ -987,17 +997,35 @@ import admission estimate; planner/review errors retain the known paid cost.
 The global cap `THEARTIST_META_DAILY_LIMIT_USD` (default 10.00) counts the UTC day's
 ledger entries. Statuses: 400 missing or over-long session header, 403 wrong judge
 code, 429 a limit reached (with `Retry-After` to UTC midnight), 503 a misconfigured
-limit variable or unreadable ledger.
+limit variable or unreadable ledger. A 429's detail names the pool and the reset time
+but no amount; the figures go to the server log. Reharmonize does not answer the
+limiter's 429. It runs its search without Meta instead and returns 200 with
+`selection: "local"` and `metaUnavailable: "limit"`.
 
 ### GET `/api/capabilities` and `/mcp/` — Shared contract discovery
 
 `GET /api/capabilities` returns `{"schemaVersion":"1.0","data":{...}}`, including implemented tools, contract names, payload limits, source/model fields and known limitations. The MCP `capabilities` tool returns the same envelope. The `data.rag` object reports `enabled`, `ready`, `sources` (`omt` and `berklee`: `ready`, `missing`, `invalid` or `disabled`), `method: "local_tfidf"` and `notes: "source_excerpt"`. A bad source configuration returns `error: "invalid_source_configuration"`. Other REST responses keep their existing shapes; they are not wrapped in this envelope.
 
-`data.meta` includes `enabled`, `configured`, `provider`, `model` and
-`fullFileScoreImport`. The last is true only for an enabled, configured Standard
-`muse-spark-1.3` provider, with `THEARTIST_PUBLIC_META_READER=1` additionally required
-on a public host; clients treat a missing field as
-false. Import limits advertise `scoreMeasures: 512`, `metaScoreMeasures: 128`,
+`data.meta` includes `enabled`, `configured`, `available`, `unavailableReason`,
+`provider`, `model`, `judge` and `fullFileScoreImport`. `available` is false while
+Meta controls should be off, and `unavailableReason` says why. `disabled` means the
+flag is off or invalid. `unconfigured` means there is no key, or a configuration the
+client refuses (logged once on the server). `paused` covers three cases: less than
+$0.05 is left on the `THEARTIST_META_CREDIT_USD` credit stop line or, with dollar
+caps on, under `THEARTIST_META_BUDGET_USD`; the ledger cannot be read; or the
+provider answered within the last 10 minutes that the account has no credit. The
+block never reports a spend or credit amount.
+
+While the credit line or the provider pause holds, every call is refused before any
+network request with HTTP 503 (`kind: "disabled"` in planner and review errors), and
+Reharmonize answers without Meta. A call is also refused whenever its own worst case
+would pass the line. The dollar cap keeps its own 429. `judge` is `{available,
+unavailableReason}` for the judge role that Second ear runs on, which can be another
+provider. `fullFileScoreImport` is true only while Meta is available on a Standard
+`muse-spark-1.3` provider and what the line and cap still allow covers a whole-file
+read's worst case (about $1.45). `THEARTIST_PUBLIC_META_READER=1` is additionally
+required on a public host. Clients treat a missing `fullFileScoreImport` as false,
+and a missing `available` as `enabled && configured` (a server that predates it). Import limits advertise `scoreMeasures: 512`, `metaScoreMeasures: 128`,
 `scoreAssistHarmonyBars: 16`, `scoreAssistCalls: 3`, `scoreAssistRunUsd: 0.30`, and
 source fields include `sections.*.basis` and `formAnalysis`.
 

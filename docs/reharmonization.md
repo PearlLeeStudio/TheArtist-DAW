@@ -147,7 +147,29 @@ and a $0.15 request reservation cap. Explicit low effort leaves room for the fin
 candidate IDs; the provider default exhausted the allowance on a four-slot hosted search.
 The existing persistent ledger records request IDs, tokens and costs, including
 failures; public session and daily limits also apply. Missing models, invalid tool
-output, timeout, and budget exhaustion return errors with no success fallback.
+output, timeout, and the search's own $0.15 cap return errors with no success fallback.
+
+## Without Meta
+
+When Meta cannot take the request, Reharmonize still answers, and says that Meta did
+not choose. That covers Meta switched off (`THEARTIST_META_ENABLED=0`), no key, Meta
+paused, or the caller's session or daily Meta allowance used up (the limiter's 429).
+Meta is paused when the `THEARTIST_META_CREDIT_USD` credit stop line is reached
+(less than $0.05 left), when the ledger's dollar cap is reached with caps on, or when
+the provider answered that the account has no credit. In those cases nothing is
+sent to Meta. The same bounded search runs for all three families, the selected Music
+Transformer scores the shortlist, and code offers the best-scoring candidate of each
+family. A patch that changes the same slots to the same roots as one already chosen
+waits until nothing else is left. If the credit line or the cap stops a search after
+Meta's first turn, that turn's request id, cost and tool call stay in the record.
+
+The response then carries `selection: "local"`, `metaUnavailable` (`disabled`,
+`unconfigured`, `paused` or `limit`) and `metaModel: "not used"`. The controls show
+a line saying the alternatives were picked without Meta. **Run details** start with
+*Picked without Meta*. The scorer note under the model picker says so before a search,
+and the editor checks the server again whenever a search starts or ends.
+Fewer than three distinct candidates is a 422 that asks for more changed chords or
+another mode.
 
 ## Evidence
 

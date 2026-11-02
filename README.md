@@ -118,10 +118,13 @@ each with its tests and limits.
 | Bounded API assist, `engine: "auto"` | `score_assistance.py`, `harmony_meta.py`, `score_form.py` | ≤ 2 × 8-bar harmony reviews + 1 form analysis, ≤ $0.30 total | `THEARTIST_META_ENABLED` only (public hosts do not require the reader flag); leave the editor checkbox off for no Meta calls |
 | Complete the form planner (plan, validate, revise, judge) | `backend/app/services/planner.py`, `routes/plan.py` | ≤ 5 calls per run (1 plan, ≤ 2 revisions, then either 1 Muse Spark composition call in **Muse Spark only** mode or ≤ 2 judgments in the hybrid mode) | `THEARTIST_META_ENABLED` only; judge role via `LLM_JUDGE_*` |
 | Second ear: pick one of a Generate's A/B/C on analyzer facts, each reason checked | `backend/app/services/review.py`, `routes/review.py` | 1 judge call | `THEARTIST_META_ENABLED` only; judge role via `LLM_JUDGE_*` |
-| [Reharmonize](docs/reharmonization.md): search sparse substitutions, compare learned context scores, offer three persistent score previews | `backend/app/services/reharmonize_agent.py`, `reharmonize.py` | ≤ 4 native tool turns, ≤ $0.15 per search | `THEARTIST_META_ENABLED`; selected Music Transformer must be available |
+| [Reharmonize](docs/reharmonization.md): search sparse substitutions, compare learned context scores, offer three persistent score previews | `backend/app/services/reharmonize_agent.py`, `reharmonize.py` | ≤ 4 native tool turns, ≤ $0.15 per search | `THEARTIST_META_ENABLED`; selected Music Transformer must be available; [without Meta](docs/reharmonization.md#without-meta) the best score of each family is offered, marked *picked without Meta* |
 
 Reharmonize, both Meta modes of Complete the form, Second ear and Import's Meta check run on
-Muse Spark; there is no hidden substitute, and a failed call is shown as a failure.
+Muse Spark, and a failed call is shown as a failure. There is no hidden substitute. When
+the server would refuse Meta (off, no key, or paused at the credit stop line), the Meta
+controls are disabled and say why, without any amount. Reharmonize then picks its three
+alternatives without Meta and says so.
 
 **Meta capabilities in use.**
 
@@ -406,10 +409,20 @@ runs with it through judging so that no visitor is stopped by a spending limit, 
 per-call timeouts, call counts and the ledger stay on.
 Request IDs, token usage, costs, timeouts and finite call counts remain recorded.
 Without that opt-in, the configured dollar caps apply; see `deploy/env.example`.
-With `THEARTIST_META_ENABLED=0` any attempted Meta call answers HTTP 503 "disabled":
-Reharmonize, both Meta modes of Complete the form and Second ear stop there, and Import
-opens from the local reader alone; Generate with the author's model, the Genre template
-and every export keep working.
+`THEARTIST_META_CREDIT_USD` is a credit stop line that holds even with
+`THEARTIST_META_UNLIMITED=1`. Set it to the API credit the provider's console shows.
+The ledger notes its total when it first sees the value. From then on it refuses,
+before any network request, every Meta call whose worst case would take the spend
+recorded since past that value, and every call once less than $0.05 is left. A judge
+on the meta provider counts against the same line. HTTP 402, or a 4xx whose error
+code says the account has no credit, pauses Meta for 10 minutes the same way. While
+paused, `/api/capabilities` reports `meta.available: false` with
+`unavailableReason: "paused"` and no amount. Refusal texts name no amount either.
+With `THEARTIST_META_ENABLED=0` any attempted Meta call answers HTTP 503 "disabled",
+and a paused Meta does the same. Both Meta modes of Complete the form and Second ear
+stop there, and Import opens from the local reader alone. Reharmonize picks its
+alternatives without Meta. Generate with the author's model, the Genre template and
+every export keep working.
 
 ## Models and data
 

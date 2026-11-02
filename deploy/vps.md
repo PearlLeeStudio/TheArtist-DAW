@@ -92,6 +92,23 @@ For the optional Meta demo, add `MODEL_API_KEY` to the server environment and se
 $10, daily global spend at $2 and daily session spend at $2. These are application
 limits, not the provider's balance or an automatic credit-expiry detector.
 
+`THEARTIST_META_CREDIT_USD` ties a stop line to the provider's balance. It holds
+even with `THEARTIST_META_UNLIMITED=1`. Set it in `/srv/theartist.env` to the credit
+the provider's console shows, then recreate the app service with the
+`up -d --force-recreate app` command shown under stopping Meta below. The
+ledger notes its total at the first call under the new value. It refuses any call
+that would pass the line, and every call once less than $0.05 is left, before sending
+anything. The editor's Meta controls are disabled meanwhile, and Reharmonize picks
+without Meta. A no-credit answer from the provider (HTTP 402) pauses Meta for 10
+minutes on its own. Enter a little less than the console shows: calls between the
+reading and the restart are not counted against the line. See the
+[deployment notes](README.md#optional-meta-service) for top-ups and a replaced ledger.
+To see what the line still allows (server shell only; the editor never shows an amount):
+
+```sh
+docker compose --env-file /srv/theartist.env -f /srv/TheArtist-DAW/deploy/compose.yaml exec app python -c "import sys; sys.path.insert(0, '/app/backend'); from app.services.llm import Ledger; print(Ledger.from_env().credit_left())"
+```
+
 The hosted **Use Meta model** checkbox and direct full-file PDF/image API are enabled with
 `THEARTIST_PUBLIC_META_READER=1`. It uses one Standard Meta call, at most 150 seconds,
 32,768 completion tokens, low reasoning effort and a default $1.50 request cap.

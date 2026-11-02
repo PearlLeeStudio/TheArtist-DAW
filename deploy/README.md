@@ -42,6 +42,21 @@ an enabled paid public demo. Session limits are abuse friction, not login or
 authentication. One worker owns the local ledger and model cache; do not scale
 to independent replicas with independent copies of the same spending budget.
 
+To stop before the provider's credit runs out, set `THEARTIST_META_CREDIT_USD` to the
+credit its console shows and recreate the app. The line holds with
+`THEARTIST_META_UNLIMITED=1` too. A call that would pass it is refused before anything
+is sent, and so is every call once less than $0.05 is left. The editor then disables
+its Meta controls without showing any amount, and Reharmonize offers alternatives
+picked without Meta.
+
+The line is counted from the first call under the new value, so leave room for spend
+the ledger does not see. That includes calls between reading the console and the
+restart (the old container keeps serving), a console that lags behind, and calls made
+with the same key elsewhere (a development machine, an evaluation script). Entering a
+slightly lower value covers them. A different value starts a new line; the same value
+continues the old one, so after a top-up that shows the same amount, add a cent. The
+line lives in the ledger file, so a replaced file or volume needs a fresh reading too.
+
 When Meta is off, leave **Use Meta model** unchecked for a supported vector PDF and
 **Genre template** for full form. Meta failures and disabled actions stay visible.
 The launcher accepts the same boolean switch spellings as the API.
