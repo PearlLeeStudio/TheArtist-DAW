@@ -137,9 +137,15 @@ Selection and context edits during a request invalidate its result. Later edits
 block stale candidate application; Origin may still restore an untouched target
 range without removing edits outside it.
 
-Only Meta Standard `muse-spark-1.3` is used. Native calls follow the
+The agent is the `agent` client role. By default it is Meta Standard `muse-spark-1.3`,
+where native calls follow the
 [Meta function-calling protocol](https://dev.meta.ai/docs/cookbook/tool-function-calling),
-including `tool_choice: auto` and paired assistant/tool messages. Each search is
+including `tool_choice: auto` and paired assistant/tool messages. With `LLM_AGENT_PROVIDER`
+set to an open-weight endpoint (Muse Spark Open on Baseten), the same tools are stated in
+the system message and each turn is one strict-JSON reply `{"name", "arguments"}` whose
+arguments are checked against the tool's schema; tool results return as user messages, a
+reply that is not a valid call earns exactly one retry, and `metaModel` names the
+open-weight model. Each search is
 bounded by four API turns, six function calls, three distinct family searches,
 six shortlisted candidates per family, a 30-second per-call timeout, a 100-second
 loop deadline, low reasoning effort, 4,096 output tokens per call (including reasoning),

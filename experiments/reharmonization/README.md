@@ -24,6 +24,10 @@ can retain good first-pass choices; it is not forced to make changes and does no
 apply substitutions on top of an already modified passage. Its reported total
 cost includes its shared first pass; the ledger bills that first pass only once.
 The production agent's dynamic function-calling loop is not timed by this experiment.
+`--selector-provider baseten` runs the three selection arms on Muse Spark Open (Baseten,
+`BASETEN_API_KEY`, Baseten list prices) with the blinded judge still on Muse Spark; the
+report then records `selectorProvider`, `selectorModel` and `judgeModel`. No such run is
+recorded here yet.
 
 ## Real paired material
 
