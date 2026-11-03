@@ -45,6 +45,7 @@ the downloaded submission directory and a **new, separate** app directory.
 First reconstruct the source, then let Docker install and prepare the full app:
 
 ```sh
+git clone https://github.com/PearlLeeStudio/TheArtist-Meta-Hackathon.git /absolute/submission
 python3 /absolute/submission/bootstrap.py --target /absolute/theartist-app
 docker build -f /absolute/theartist-app/deploy/Dockerfile -t theartist-submission /absolute/theartist-app
 docker run --rm --name theartist-submission -p 127.0.0.1:7860:7860 --mount type=volume,source=theartist-submission-ledger,target=/data theartist-submission
