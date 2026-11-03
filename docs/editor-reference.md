@@ -2,7 +2,7 @@
 
 What each control in the arrangement workspace does and where its limits are.
 The [workflow guide](arrangement-workflow.md) walks the same tools in order;
-the [README](../README.md#what-the-editor-does) keeps the one-line summary.
+the [README](https://github.com/PearlLeeStudio/TheArtist-DAW/blob/6ed1b50914c78c205ee7aabdde924c648caf292d/README.md#what-the-editor-does) keeps the one-line summary.
 
 **Import Score → review chords and song form → select a passage → Original/A/B/C
 → arrange in Play → export MIDI or PDF.** Local code reads supported vector-score

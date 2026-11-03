@@ -1,6 +1,6 @@
 # Architecture and module layout
 
-Internals behind the [shared arrangement workflow](../README.md#architecture):
+Internals behind the [shared arrangement workflow](https://github.com/PearlLeeStudio/TheArtist-DAW/blob/6ed1b50914c78c205ee7aabdde924c648caf292d/README.md#architecture):
 the editor/backend/model split, the passage-generation path, the MIDI input
 state machine and the file layout.
 

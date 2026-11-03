@@ -3,7 +3,7 @@
 The built frontend and API can run in one Python process on port 7860. This
 package does not provision a hosting account, publish an app or configure DNS.
 
-For the complete app, start with the [Docker quick start](../README.md#getting-started).
+For the complete app, start with the [Docker quick start](https://github.com/PearlLeeStudio/TheArtist-DAW/blob/6ed1b50914c78c205ee7aabdde924c648caf292d/README.md#getting-started).
 Docker prepares all 18 models and OMT. For public hosting, follow the complete
 [Docker → HTTPS → API domain → Pages → editor domain sequence](../docs/web-projects.md#from-docker-to-the-public-domains).
 The native alternative below requires the same complete catalog; an F1-only

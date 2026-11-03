@@ -1,7 +1,7 @@
 # Models, training data and theory sources
 
 The served checkpoints, their training-log metrics and caveats, the corpora
-behind them and the theory retrieval sources. The [README](../README.md#models-and-data)
+behind them and the theory retrieval sources. The [README](https://github.com/PearlLeeStudio/TheArtist-DAW/blob/6ed1b50914c78c205ee7aabdde924c648caf292d/README.md#models-and-data)
 keeps the summary.
 
 ## AI Model
@@ -29,7 +29,7 @@ These weights are gitignored — they live on HuggingFace as public repos under 
 ### R1 ranking and local theory retrieval
 
 **R1 is active in the product.** The backend uses mean Sethares sensory roughness
-from [`ai/physics/`](../ai/physics/) to order the author's model candidates.
+from [`ai/physics/`](https://github.com/PearlLeeStudio/TheArtist-DAW/tree/6ed1b50914c78c205ee7aabdde924c648caf292d/ai/physics) to order the author's model candidates.
 Roughness measures sensory consonance; it is not a next-chord accuracy or listener
 preference score. The same directory also contains Stolzenburg periodicity,
 composite metrics and diversity experiments from the pre-existing research.

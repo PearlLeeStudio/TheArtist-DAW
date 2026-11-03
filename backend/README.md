@@ -5,7 +5,7 @@ reading, harmonic generation and revision, form planning, accompaniment and
 editable MIDI delivery. [The workflow guide](../docs/arrangement-workflow.md)
 shows how these services connect in the editor. Install and run from
 the complete repository, because inference also uses `ai/` and model checkpoints.
-See the [project setup](../README.md#getting-started), [API contracts](../API_SPEC.md)
+See the [project setup](https://github.com/PearlLeeStudio/TheArtist-DAW/blob/6ed1b50914c78c205ee7aabdde924c648caf292d/README.md#getting-started), [API contracts](https://github.com/PearlLeeStudio/TheArtist-DAW/blob/6ed1b50914c78c205ee7aabdde924c648caf292d/API_SPEC.md)
 and [MCP guide](../docs/mcp.md).
 
 ```sh

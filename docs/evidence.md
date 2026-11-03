@@ -1,7 +1,7 @@
 # Evaluation evidence
 
 Numbers behind the product's claims, with their conditions and what they do not
-show. The [README](../README.md#evidence) keeps a shorter table.
+show. The [README](https://github.com/PearlLeeStudio/TheArtist-DAW/blob/6ed1b50914c78c205ee7aabdde924c648caf292d/README.md#evidence) keeps a shorter table.
 
 For **local / Meta / hybrid** side by side, start with the
 [three-way comparison](model-comparison.md). It separates Reharmonize selection,

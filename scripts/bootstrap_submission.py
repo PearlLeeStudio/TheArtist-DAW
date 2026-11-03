@@ -24,11 +24,20 @@ def main():
         parser.error("--prepare-assets requires --install")
     manifest = json.loads((package / "manifest.json").read_text())
     patch = package / "changes.patch"
-    if manifest["version"] != 1 or hashlib.sha256(patch.read_bytes()).hexdigest() != manifest["patchSha256"]:
+    if manifest["version"] != 2 or hashlib.sha256(patch.read_bytes()).hexdigest() != manifest["patchSha256"]:
         raise SystemExit("Invalid manifest or patch checksum")
     for name in manifest["files"]:
         if Path(name).is_absolute() or ".." in Path(name).parts or ".git" in Path(name).parts:
             raise SystemExit("Invalid manifest path")
+    materialized = manifest["materializedFiles"]
+    for name, entry in materialized.items():
+        if name not in manifest["files"] or entry["mode"] not in {"100644", "100755"}:
+            raise SystemExit("Invalid materialized file entry")
+        source = package / name
+        if source.is_symlink() or not source.resolve().is_relative_to(package):
+            raise SystemExit(f"Invalid contribution file: {name}")
+        if hashlib.sha256(source.read_bytes()).hexdigest() != manifest["files"][name]:
+            raise SystemExit(f"Contribution file checksum mismatch: {name}")
     run("git", "clone", "--no-checkout", args.core_source or manifest["core"]["repository"], args.target)
     run("git", "-C", args.target, "checkout", "--detach", manifest["core"]["commit"])
     tree = subprocess.check_output(["git", "-C", str(args.target), "rev-parse", "HEAD^{tree}"]).decode().strip()
@@ -36,6 +45,13 @@ def main():
         raise SystemExit("Core tree checksum differs from the declared baseline")
     run("git", "-C", args.target, "apply", "--check", patch)
     run("git", "-C", args.target, "apply", patch)
+    for name, entry in materialized.items():
+        destination = args.target / name
+        if destination.exists() != entry["replacesCore"]:
+            raise SystemExit(f"Unexpected core/patch collision: {name}")
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        destination.write_bytes((package / name).read_bytes())
+        destination.chmod(0o755 if entry["mode"] == "100755" else 0o644)
     for name, checksum in manifest["files"].items():
         file = args.target / name
         actual = hashlib.sha256(file.read_bytes()).hexdigest() if file.exists() else None

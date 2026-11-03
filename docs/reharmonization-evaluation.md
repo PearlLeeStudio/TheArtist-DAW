@@ -129,7 +129,7 @@ F2와 F3의 Local top2는 20/40구간에서 세트가 같고, 19구간에서 하
 
 공개 F1 v1의 가중치는 Phase 0과 동일하다. 모델 카드에 기록된 체크포인트 선택 문제이므로, 해당 파일을 Jazz 적응이 반영된 새 가중치라고 설명하지 않는다. F1 v2는 선택 기준을 고친 별도 재학습 체크포인트다. 11개 LoRA는 v1 기반과 짝을 이룬다. 과거 모델 카드의 best-epoch 학습 수치와 실제 배포된 체크포인트의 성능도 구별해야 한다.
 
-이 구분의 저장소 근거는 [서빙 모델·장르 매핑](../backend/app/services/inference.py), [전체 파라미터 학습](../ai/training/train.py), [LoRA 학습 구현](../ai/training/lora_train.py), [모델 목록과 F1 정정](../model/README.md)이다.
+이 구분의 저장소 근거는 [서빙 모델·장르 매핑](https://github.com/PearlLeeStudio/TheArtist-DAW/blob/6ed1b50914c78c205ee7aabdde924c648caf292d/backend/app/services/inference.py), [전체 파라미터 학습](https://github.com/PearlLeeStudio/TheArtist-DAW/blob/6ed1b50914c78c205ee7aabdde924c648caf292d/ai/training/train.py), [LoRA 학습 구현](https://github.com/PearlLeeStudio/TheArtist-DAW/blob/6ed1b50914c78c205ee7aabdde924c648caf292d/ai/training/lora_train.py), [모델 목록과 F1 정정](https://github.com/PearlLeeStudio/TheArtist-DAW/blob/6ed1b50914c78c205ee7aabdde924c648caf292d/model/README.md)이다.
 
 기반 모델을 사전학습한 뒤 용도에 맞게 적응시키고 여러 어댑터를 관리하는 방식은 일반적인 학습 패턴이다. [LoRA 원 논문](https://arxiv.org/abs/2106.09685)은 기존 가중치를 고정하고 저랭크 행렬을 학습하는 방법을 제시한다. [Hugging Face PEFT 문서](https://huggingface.co/docs/transformers/peft)는 여러 어댑터의 로드·전환과 어댑터 외 특정 층의 전체 학습도 지원한다. 다만 이 사실이 이 프로젝트의 장르 식별력이나 음악성을 자동으로 입증하지는 않는다.
 

@@ -60,7 +60,7 @@ midi = to_pretty_midi(song)       # ready for a soundfont render
 | `drum_pattern` | int \| `"off"` \| null | — | `null` | A drum pattern id 1–15, or `"off"` for no drums. `null` = the genre's. |
 | `harmony_instrument` | string \| null | — | `null` | One of the editor's 31 harmony instruments (GM Soundfont names). `null` = the genre's. |
 
-The three optional fields are the editor's Play-panel choices; [API_SPEC.md](../API_SPEC.md) lists every preset, pattern and instrument.
+The three optional fields are the editor's Play-panel choices; [API_SPEC.md](https://github.com/PearlLeeStudio/TheArtist-DAW/blob/6ed1b50914c78c205ee7aabdde924c648caf292d/API_SPEC.md) lists every preset, pattern and instrument.
 
 **4) Response shape** (`SongGenerateResponse` — top-level keys)
 
@@ -111,4 +111,4 @@ The full per-genre 1-bar harmony / bass rhythm patterns live in `frontend/src/en
 | 400 | `{"detail": "Unsupported genre '<x>'. Expected one of: ..."}` | Genre not in the 13-genre vocabulary. |
 | 422 | Pydantic validation | `length_bars` out of `[1, 64]`, missing `genre`, or an unknown `harmony_rhythm` / `drum_pattern` / `harmony_instrument` (the message lists the valid values). |
 
-For the older `/api/generate/chords` programmatic chord-only endpoint (no arrangement), see [API_SPEC.md](../API_SPEC.md).
+For the older `/api/generate/chords` programmatic chord-only endpoint (no arrangement), see [API_SPEC.md](https://github.com/PearlLeeStudio/TheArtist-DAW/blob/6ed1b50914c78c205ee7aabdde924c648caf292d/API_SPEC.md).

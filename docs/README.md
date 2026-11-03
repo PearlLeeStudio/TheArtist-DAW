@@ -21,11 +21,11 @@ accompaniment and editable DAW delivery. Start with the
 | Change selected harmony while preserving context | [Reharmonize: up to four changed chords](reharmonization.md) |
 | Enter played chords or open a hosted arrangement in Logic | [MIDI input and Mac bridge](midi-input.md) |
 | Understand related theory excerpts | [Theory retrieval](theory-retrieval.md) |
-| Connect another client | [REST API](../API_SPEC.md), [MCP contracts](mcp.md) |
-| Run the application | [Local setup](../README.md#getting-started), [backend](../backend/README.md), [hosting](../deploy/README.md) |
+| Connect another client | [REST API](https://github.com/PearlLeeStudio/TheArtist-DAW/blob/6ed1b50914c78c205ee7aabdde924c648caf292d/API_SPEC.md), [MCP contracts](mcp.md) |
+| Run the application | [Local setup](https://github.com/PearlLeeStudio/TheArtist-DAW/blob/6ed1b50914c78c205ee7aabdde924c648caf292d/README.md#getting-started), [backend](../backend/README.md), [hosting](../deploy/README.md) |
 | Use the Logic MIDI FX export | [Logic Scripter](../plugin/logic-scripter/README.md) |
 | Assess results and limits | [Evaluation](evaluation.md), [Reharmonization comparisons](reharmonization-evaluation.md), [score-reader comparisons](score-reader-comparison.md) |
-| Verify an editing-to-DAW change | [Manual checks](manual-checks.md), [REST contracts](../API_SPEC.md), [MCP contracts](mcp.md) |
+| Verify an editing-to-DAW change | [Manual checks](manual-checks.md), [REST contracts](https://github.com/PearlLeeStudio/TheArtist-DAW/blob/6ed1b50914c78c205ee7aabdde924c648caf292d/API_SPEC.md), [MCP contracts](mcp.md) |
 
 The product uses the author's Music Transformer and Meta models for harmonic
 proposals, reading and decisions. Accompaniment patterns, voicings and file

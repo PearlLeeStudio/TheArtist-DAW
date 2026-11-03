@@ -1,7 +1,7 @@
 # Web projects and deployment
 
 The hosted editors, the shared model server and the Voyager extension, with the
-deployment pipeline and its limits. The [README](../README.md#live-sites) keeps the summary.
+deployment pipeline and its limits. The [README](https://github.com/PearlLeeStudio/TheArtist-DAW/blob/6ed1b50914c78c205ee7aabdde924c648caf292d/README.md#live-sites) keeps the summary.
 
 On narrow or portrait screens, header controls sit above the title and the side
 panel starts collapsed. Open it with the yellow arrow to use Play or Input; it
@@ -60,7 +60,7 @@ distinguishes the existing adapter from the remaining hosted integration.
 Use the sequence below for a new deployment. The domain names describe the
 existing installation; use domains you control for a separate deployment.
 These steps provision application services on an existing host, not a hosting
-account or a domain purchase. The [local Docker quick start](../README.md#getting-started)
+account or a domain purchase. The [local Docker quick start](https://github.com/PearlLeeStudio/TheArtist-DAW/blob/6ed1b50914c78c205ee7aabdde924c648caf292d/README.md#getting-started)
 runs the same app without DNS or Pages.
 
 ### 1. Prepare the Linux host and runtime settings

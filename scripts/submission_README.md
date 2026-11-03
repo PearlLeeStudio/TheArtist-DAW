@@ -22,24 +22,36 @@ the hosted app and Safari–Logic bridge; source attribution and performance wor
 These are development claims. Listening evaluation is planned and will be reported
 in a paper; the recorded automated measurements do not establish musical preference.
 
-This package contains the cumulative diff from `baseline` to the development
-commit pinned in `manifest.json`. `changes.patch` includes event-added files,
-modifications and deletions, without copying the pre-event checkout or git history. `manifest.json` pins the original public core and
-the development snapshot, verifies the core tree and hashes every changed file.
-`provenance-review.json` flags added files that overlap earlier code; being new
-to git does not make all of a file's content a new contribution. The complete
-feature history and evaluation limitations are in the reconstructed app's
-`HACKATHON.md` and `experiments/` directory.
-Browse the [contribution record](https://github.com/PearlLeeStudio/TheArtist-DAW/blob/main/HACKATHON.md)
-and [evaluation evidence](https://github.com/PearlLeeStudio/TheArtist-DAW/blob/main/docs/evidence.md)
-in the development repository; this package's exact revision is pinned in
-`manifest.json`.
+## Review the contribution
+
+New source, documentation, benchmark inputs/results and screenshots are ordinary
+files in this repository. Start with the evidence and architecture below; no
+installation or patch application is needed to read them.
+
+| What to inspect | Files in this submission |
+|---|---|
+| New features and their development commits | [Contribution record](https://github.com/PearlLeeStudio/TheArtist-Meta-Hackathon/blob/main/HACKATHON.md) |
+| Model comparisons, measured accuracy, cost and time | [Model comparison](https://github.com/PearlLeeStudio/TheArtist-Meta-Hackathon/blob/main/docs/model-comparison.md), [evidence and limits](https://github.com/PearlLeeStudio/TheArtist-Meta-Hackathon/blob/main/docs/evidence.md) |
+| Muse Spark 89.5% vs local 77.8% on 640 notes-to-chords slots | [Benchmark report and raw results](https://github.com/PearlLeeStudio/TheArtist-Meta-Hackathon/tree/main/experiments/harmony_eval) — a separate benchmark, not an Import workflow accuracy claim |
+| Muse Spark Open on Baseten: 52/60 matching candidate choices | [Second-ear comparison and both result sets](https://github.com/PearlLeeStudio/TheArtist-Meta-Hackathon/tree/main/experiments/review_eval) |
+| System structure, agent flow and model roles | [Architecture](https://github.com/PearlLeeStudio/TheArtist-Meta-Hackathon/blob/main/docs/architecture.md), [Reharmonize](https://github.com/PearlLeeStudio/TheArtist-Meta-Hackathon/blob/main/docs/reharmonization.md), [model catalog](https://github.com/PearlLeeStudio/TheArtist-Meta-Hackathon/blob/main/docs/models.md) |
+| Score → harmony → playback → PDF → DAW | [Workflow](https://github.com/PearlLeeStudio/TheArtist-Meta-Hackathon/blob/main/docs/arrangement-workflow.md), [screenshots](https://github.com/PearlLeeStudio/TheArtist-Meta-Hackathon/blob/main/docs/walkthrough.md) |
+| All guides and recorded experiments | [Documentation index](https://github.com/PearlLeeStudio/TheArtist-Meta-Hackathon/blob/main/docs/README.md), [experiments](https://github.com/PearlLeeStudio/TheArtist-Meta-Hackathon/tree/main/experiments) |
+
+The ordinary files and `changes.patch` together represent the cumulative change
+from the original public `baseline` to the development commit in `manifest.json`.
+The patch contains edits/deletions of existing files and four refactored source
+files extracted from pre-event code. It does not duplicate the ordinary files.
+`manifest.json` pins both revisions, identifies the delivered files and verifies
+the core tree plus every reconstructed changed-file hash. The pre-event checkout
+and git history are acquired separately, not copied into this repository.
 
 Reviewed pre-event derivations include `scoreSurface.ts` (staff rendering),
 `drumPatterns.ts` (drum patterns), `genres.ts` (genre settings) and
 `manualChordDraft.ts` (chord-input logic). Their extraction/refactoring is part
 of the patch; their underlying pre-event functionality is not claimed as a new
-asset. Empty Python package markers also match existing empty files. The
+asset. `provenance-review.json` records the overlap checks. Empty Python package
+markers also match existing empty files. The
 architecture, model and Voyager API guides reuse material from the original
 README; the CPU serving lockfile shares third-party dependency records with the
 earlier locks. These are derived documentation and dependency metadata, not new
@@ -63,8 +75,9 @@ The bootstrap acquires the fixed core from the `baseline` tag of
 `PearlLeeStudio/TheArtist-DAW`, which holds the public TheArtist snapshot
 (`PearlLeeStudio/TheArtist` commit `f043e53`) unchanged, and checks its
 tree hash. The public TheArtist repository keeps only its latest snapshot, so that
-commit is no longer served there. The bootstrap applies the verified patch and
-checks changed-file hashes. Docker installs locked dependencies, builds the
+commit is no longer served there. The bootstrap verifies the ordinary contribution
+files, applies the patch, copies the contribution files into that separate checkout
+and checks all changed-file hashes. Docker installs locked dependencies, builds the
 frontend, downloads **all seven base checkpoints and eleven genre LoRA adapters**,
 and prepares reviewed OMT prose. Startup validates the complete catalog and OMT.
 Network access is required. Cached dependencies are permitted; weights and

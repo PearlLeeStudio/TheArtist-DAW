@@ -297,7 +297,9 @@ with the gospel adapter as the scorer and *Change up to* 4, on the hosted demo
 The [hackathon work log](HACKATHON.md) separates these additions from the existing
 editor and trained models. This development repository stays intact. The separate
 [submission repository](https://github.com/PearlLeeStudio/TheArtist-Meta-Hackathon)
-contains the cumulative event diff and a bootstrap against a pinned core dependency. The [hackathon demo](https://youtu.be/wC-dkLfot-c) is the featured
+contains browsable new source, documentation, comparison reports and raw evidence,
+plus a patch for existing-code changes and a bootstrap against the pinned core.
+The [hackathon demo](https://youtu.be/wC-dkLfot-c) is the featured
 video above; the pre-existing demo is listed separately under [Links](#links).
 The screenshots illustrate their documented flows and predate the latest Import
 controls and theory references. Verified paths and remaining audio/device checks are
