@@ -64,11 +64,16 @@ server-side `MODEL_API_KEY`, `THEARTIST_META_ENABLED=1`, and the persistent budg
 configuration described in `deploy/README.md`. No provider key goes in a browser.
 This starts a local server; it does not purchase hosting or configure a domain.
 
-The development snapshot `1be8009` was reconstructed from the public core in a
-new checkout, with fresh environments and shared download caches. All 371 changed
-file hashes, frozen installs, build, F1/OMT setup and an in-process HTTP path
-passed: original 20-bar PDF import → actual F1 completion to 64 bars → four-track
-MIDI (metadata plus Harmony/Bass/Drums). This does not verify a Docker image,
+The development snapshot `53a9c72` was reconstructed from the `baseline` tag in a
+new checkout, with fresh environments and shared download caches. All 510 changed
+file hashes, frozen installs, the frontend build and the app import passed, and the
+reconstruction's `scripts/verify_reconstruction.py` passed its in-process HTTP path:
+original 20-bar PDF import → actual F1 completion to 64 bars → four-track MIDI
+(metadata plus Harmony/Bass/Drums), with OMT ready and no Meta call. In that run the
+build machine's network sandbox cut Python downloads, so the seven OMT pages were
+fetched with curl and passed to the reconstruction's own setup code, which still
+checked every reviewed paragraph's hash, and the released F1 directory was copied
+from an earlier download of the same release. This does not verify a Docker image,
 external hosting, actual browser audio or human preference. The reconstructed
 `scripts/verify_reconstruction.py` can repeat that path with `--root` and a new
 absolute `--out` report path.
