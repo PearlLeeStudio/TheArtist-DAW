@@ -26,7 +26,9 @@ ranges) stop in the dialog for correction before **Import reviewed score**.
 
 The imported result is harmonic material. Extracted notes support interpretation
 only during analysis/comparison; they are not retained in the working score or
-saved project and are not imported as a melody track. The app does not cache or
+saved project and are not imported as a melody track. Melody editing and source
+melody-track reproduction were intentionally excluded from the harmonic workflow;
+they are not planned completion steps for this app. The app does not cache or
 save the original file. Keep your own source available for melodic and
 instrumental work in the DAW. **Use Meta model** sends that original file to Meta;
 use material you own or are permitted to process. See
@@ -133,6 +135,7 @@ Generation, playback and export each have separate checks. A successful model
 response does not establish listening quality, and a MIDI file opening in a DAW
 does not prove identical instrument sounds. The [evaluation guide](evaluation.md)
 separates component measurements from [browser, audio and DAW evidence](manual-checks.md).
-The current scope is harmonic arrangement with three accompaniment parts;
-melody-track import, vocal generation, audio mastering and a native AU/VST3
-plugin are not implemented.
+The current scope is harmonic arrangement with three accompaniment parts.
+Melody editing and reproduction of the source melody as an editable track are
+intentional scope exclusions. Vocal generation, audio mastering and a native
+AU/VST3 plugin are not implemented.

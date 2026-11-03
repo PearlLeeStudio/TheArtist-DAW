@@ -32,6 +32,7 @@ has been measured.
 
 **[Open the arrangement workspace](https://artist-daw.pearlleestudio.co)** ·
 [Watch the hackathon demo](https://youtu.be/Xw3BwB64Jt0) ·
+[Subtitle edit plan](docs/demo-subtitles.md) ·
 [Workflow guide](docs/arrangement-workflow.md) · [Documentation](docs/README.md) ·
 [Local / Meta / hybrid results](docs/model-comparison.md) ·
 [Run with Docker](#getting-started) · [Deploy to a domain](#deploy-to-a-domain)
@@ -118,8 +119,10 @@ harmony; Meta reads scores, plans and writes song forms, drives the reharmonizat
 search with tool calls and judges candidates.
 Voicings, accompaniment patterns, mixer controls and MIDI rendering use application
 code. The current arrangement is a harmonic score with three accompaniment parts.
-Imported melody notes and durations are not transferred as an editable melody
-track, and the app does not generate vocals or a finished audio master.
+**Melody editing and reproduction of the source melody as an editable track are
+deliberately outside the design.** TheArtist focuses on harmonic decisions and
+accompaniment preparation; melody writing and further production stay with the
+musician in the DAW. The app does not generate vocals or a finished audio master.
 
 ## Hackathon work and where Meta is used
 
