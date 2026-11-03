@@ -88,8 +88,9 @@ export function reharmSelectionError(song: Song, slots: SlotAddress[]): string |
   if (slots.some(s => !song.measures[s.measureIndex] || ![0, 1].includes(s.slotIndex))) {
     return 'The selected passage changed. Select it again on the score.';
   }
-  if (slots.length > 16 || Math.max(...slots.map(s => s.measureIndex)) - Math.min(...slots.map(s => s.measureIndex)) >= 8) {
-    return 'Select a passage spanning at most eight measures.';
+  const span = Math.max(...slots.map(s => s.measureIndex)) - Math.min(...slots.map(s => s.measureIndex)) + 1;
+  if (slots.length > 16 || span > 8) {
+    return `Select a passage spanning at most eight measures (this selection spans ${span}).`;
   }
   if (!reharmTargets(song, slots).length) {
     return 'This selection has no chord symbols yet. Add or generate chords before reharmonizing.';

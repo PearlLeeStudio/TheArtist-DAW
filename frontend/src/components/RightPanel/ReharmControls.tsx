@@ -68,9 +68,11 @@ export default function ReharmControls({ modelKey }: { modelKey: string }) {
       {mode === 'auto' ? 'Considers familiar substitutions and how they connect to surrounding chords.'
         : 'Only substitutes compatible with this parallel mode.'}
     </p>
-    {!problem && <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-      {targetCount} {targetCount === 1 ? 'chord' : 'chords'} selected. Empty slots stay unchanged.
-    </p>}
+    {problem
+      ? <p role="status" className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>{problem}</p>
+      : <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+        {targetCount} {targetCount === 1 ? 'chord' : 'chords'} selected (a passage of up to 8 bars). Empty slots stay unchanged.
+      </p>}
     <button disabled={disabled} onClick={() => void run(modelKey, maxChanges, mode)}
       className="w-full px-3 py-2 text-sm font-bold"
       style={{ background: 'var(--brand-yellow)', color: '#1a1a1a', opacity: disabled ? .55 : 1 }}>
@@ -94,7 +96,6 @@ export default function ReharmControls({ modelKey }: { modelKey: string }) {
       </ul>
     </details>}
     {!result && !loading && notice && <p role="status" className="text-xs" style={{ color: 'var(--text-muted)' }}>{notice}</p>}
-    {problem && <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{problem}</p>}
     {loading && <OperationProgress label="Comparing substitutions against the surrounding chords…" />}
     {error && <p role="alert" className="px-3 py-2 text-xs" style={{ border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
       <strong className="block text-sm">{/Meta/.test(error) ? 'Meta search failed' : 'Search failed'}</strong>{error}
