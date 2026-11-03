@@ -128,6 +128,7 @@ proposal exists; “exact where answered” excludes unanswered slots.
 | Local analyzer | 77.8% | 81.6% | **95.4%** | 0 | $0 |
 | Meta only | **89.5%** | **100.0%** | 89.5% | 40 | $0.3380 |
 | Hybrid, unresolved-only assist | 83.9% | 95.3% | 88.0% | 6 | $0.0501 |
+| Meta open weights (Muse Spark Open, Baseten, effort high) | 73.8% | 82.5% | 89.4% | 40 (4 failed) | $0.6329 |
 
 Meta improves overall exact agreement by **11.7 percentage points** over local;
 the hybrid improves it by **6.1 points** with fewer paid calls. Local is more
@@ -135,13 +136,20 @@ precise on the subset it answers. Rootless exact agreement rises from 0% local
 to 47.3% Meta, while inversions fall from 100% local to 96.9% Meta. More answers
 do not guarantee a correct interpretation of every bar.
 
+Muse Spark Open, given the same notes through the open-weight endpoint, is as exact as
+Muse Spark where it answers (89.4% against 89.5%) but lost 4 of 40 calls (3 replies
+failed harmony validation, 1 hit the length limit), which leaves 17.5% of the slots
+unanswered and its overall exact agreement below the local analyzer. Its median call
+is 8.0 s against Meta's 5.1 s. Rootless voicings are its weakest variant (23.2% exact
+overall), as they are for every engine.
+
 Meta's median call time is 5.079 seconds and the hybrid's Meta-call median is
 6.274 seconds. A model call covers up to eight bars; local timing is per bar.
 Those units must not be presented as a like-for-like whole-file speed comparison.
 
 The additional 42 synthetic scores scored **77.6% / 79.9% / 78.9%** for local /
-Meta / hybrid. On one private real score, 37 eligible bars (74 slots) scored
-**18.9% / 29.7% / 21.6%**. That real-score row uses already-read notes too, with
+Meta / hybrid, and 73.1% for Muse Spark Open. On one private real score, 37 eligible bars (74 slots) scored
+**18.9% / 29.7% / 21.6%**, and Muse Spark Open 0.0%. That real-score row uses already-read notes too, with
 estimated timing in most bars; it is not a whole-file vision accuracy score.
 Only aggregates are public. The source score and private test corpus are not
 redistributed.
@@ -154,7 +162,8 @@ reads the original file. Neither current path has been rerun in this benchmark.
 Records: [full metrics and limitations](../experiments/harmony_eval/summary.md),
 [local JSON](../experiments/harmony_eval/results-real-songs-local.json),
 [Meta JSON](../experiments/harmony_eval/results-real-songs-meta.json),
-[hybrid JSON](../experiments/harmony_eval/results-real-songs-auto.json).
+[hybrid JSON](../experiments/harmony_eval/results-real-songs-auto.json),
+[open-weight JSON](../experiments/harmony_eval/results-real-songs-openweight.json).
 Implementation: [metrics](../backend/scripts/harmony_eval/metrics.py),
 [Meta note interpretation](../backend/app/services/harmony_meta.py),
 [current bounded assist](../backend/app/services/score_assistance.py).

@@ -20,6 +20,13 @@ Original restoration. Those hosted choices used fewer than four edits; they do
 not establish that four edits are preferable. Listening preference and complete
 arrangement quality have not been evaluated by these functional checks.
 
+The questions in the right-hand column are left to a separate listening evaluation,
+planned and to be reported in a paper. Judgments about music are strongly
+subjective, so a few experts rating a few examples would not answer them, and how
+to measure them quantitatively is still an open problem. This repository reports
+the measurable side: agreement with reference chords, constraint checks, cost and
+time.
+
 ## Component measurements
 
 [External notation and annotated music](../experiments/external_eval/README.md)

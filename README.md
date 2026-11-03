@@ -7,9 +7,6 @@
 <p align="center">
   <a href="https://artist-daw.pearlleestudio.co"><img alt="Live demo" src="https://img.shields.io/badge/Live%20demo-artist--daw.pearlleestudio.co-1c1917?style=flat-square"></a>
   <a href="#hackathon-work-and-where-meta-is-used"><img alt="Meta model" src="https://img.shields.io/badge/Meta%20model-muse--spark--1.3-0467DF?style=flat-square"></a>
-  <a href="https://arxiv.org/abs/2605.04998"><img alt="arXiv" src="https://img.shields.io/badge/arXiv-2605.04998-b31b1b?style=flat-square"></a>
-  <a href="https://arxiv.org/abs/2606.07334"><img alt="arXiv" src="https://img.shields.io/badge/arXiv-2606.07334-b31b1b?style=flat-square"></a>
-  <a href="https://huggingface.co/PearlLeeStudio"><img alt="HuggingFace" src="https://img.shields.io/badge/%F0%9F%A4%97%20HuggingFace-PearlLeeStudio-ffd21e?style=flat-square&labelColor=1c1917"></a>
   <a href="https://youtu.be/Xw3BwB64Jt0"><img alt="Hackathon demo" src="https://img.shields.io/badge/Hackathon%20demo-YouTube-FF0000?style=flat-square&logo=youtube&logoColor=white"></a>
   <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/code-MIT-737373?style=flat-square"></a>
   <a href="https://huggingface.co/PearlLeeStudio"><img alt="Weights" src="https://img.shields.io/badge/weights-CC%20BY--NC%204.0-737373?style=flat-square"></a>
@@ -18,21 +15,36 @@
 
 ## Arrange with TheArtist
 
-TheArtist helps musicians save arrangement preparation time between reading a
-score and starting work in a DAW. Extract chords from a supported score or enter a
-chord sketch, revise the passage that needs attention, audition accompaniment and
-take separate Harmony, Bass and Drums MIDI tracks into the DAW. Reusing the same
-editable harmony across these steps reduces repeated chord entry and setup.
-The musician chooses the substitutions, sounds and rhythms and continues the
-instrumental, melodic and production work in their own DAW.
+**Why I built it.** The chord helpers I used in DAWs suggest the next chord while the
+song just keeps growing: no set length, no verses or choruses, no idea where a phrase
+has to land. A chord that does not know the song form cannot be suggested well.
+TheArtist starts from the form. The song has its length and sections first, read from
+the score or planned by Muse Spark, and every chord is generated, reharmonized and
+scored inside that form, against the bars around it.
 
-The time-saving value is this connected workflow. Recorded component timings are
-listed below; no fixed time saving or speedup over a musician's existing workflow
-has been measured.
+**Built October 27 – November 4, 2026 with Meta Muse Spark (`muse-spark-1.3`), on
+top of my own score editor and chord model.** Bring a lead sheet, select the bars that
+feel flat and hear alternatives in context:
+
+- **Reharmonize agent.** Muse Spark runs a bounded substitution search through native
+  tool calls, my Music Transformer scores each change against the surrounding bars,
+  and the musician combines and applies the alternatives on the staff. Run details
+  show the live calls: hosted median 10.4 s, about $0.02 per search.
+- **Import.** A score PDF or image opens as editable chords, and Muse Spark checks the
+  reading in the background. Reading chords from notes in a 640-slot test, Muse Spark
+  matched exactly 89.5% of slots against 77.8% for the local analyzer.
+- **DAW export.** Separate Harmony, Bass and Drums MIDI tracks go to Logic Pro or any
+  DAW, so the harmony is never typed twice.
+
+Existing before the event and not claimed as event work: the score editor with its
+voicings, playback engine and MIDI input; the 31 sounds, genre comping rhythms and drum
+patterns; and the Music Transformer with 11 genre adapters ([research](#research)).
+The Play panel with its mixer and timing fixes, the Logic Pro bridge and every
+Meta-powered feature are event work; the full split is in
+[Hackathon work](#hackathon-work-and-where-meta-is-used).
 
 **[Open the arrangement workspace](https://artist-daw.pearlleestudio.co)** ·
 [Watch the hackathon demo](https://youtu.be/Xw3BwB64Jt0) ·
-[Subtitle edit plan](docs/demo-subtitles.md) ·
 [Workflow guide](docs/arrangement-workflow.md) · [Documentation](docs/README.md) ·
 [Local / Meta / hybrid results](docs/model-comparison.md) ·
 [Run with Docker](#getting-started) · [Deploy to a domain](#deploy-to-a-domain)
@@ -126,11 +138,14 @@ musician in the DAW. The app does not generate vocals or a finished audio master
 
 ## Hackathon work and where Meta is used
 
-**Build for Your World.** The author's own problem is the preparation between a
-score and a DAW session: reading and entering chords, trying substitutions,
-developing sections, choosing accompaniment and transferring the result without
-retyping it. TheArtist connects those decisions in one workspace to save this
-preparation time. It keeps the musician's choices editable, discards the source
+**Build for Your World.** The author's own problem: DAW chord helpers keep proposing
+chords for a song with no set length or form, so the suggestions cannot follow its
+sections or where a phrase resolves. TheArtist fixes the form first and works inside
+it: Import keeps the score's sections, Complete the form has Muse Spark plan them, and
+Reharmonize scores every change against the surrounding bars. The same workspace then
+covers the preparation between a score and a DAW session: reading and entering
+chords, trying substitutions, developing sections, choosing accompaniment and
+transferring the result without retyping it. It keeps the musician's choices editable, discards the source
 data after analysis and delivers accompaniment parts for further DAW work.
 Its existing chord model supplies a harmonic engine for this workflow.
 
@@ -190,10 +205,47 @@ alternatives without Meta and says so.
 | Agentic plan → validate → revise loop with strict JSON | Complete the form: code validates each plan and sends errors back for up to 2 revisions, then Meta composes (**Muse Spark only**) or judges (hybrid) | empty score → 32 bars / 6 sections on the hosted demo: 23.7 s, $0.020 |
 | Reasoning held to computed facts | Second ear: each reason cites an analyzer fact and is marked *analyzer confirmed* or *model statement* | 115/115 reasons confirmed in 60 reviews; $0.0041, 2.8 s per review |
 | Reading harmony from notes | The note-interpretation task behind Import assist (API `engine: "auto"`) | exact chords: Muse Spark 89.5%, local analyzer 77.8% (640 slots of real progressions rendered as notes) |
-| Meta open weights | The judge role can run on Muse Spark Open through Baseten (`LLM_JUDGE_*`) | same pick as Muse Spark in 52/60 reviews at $0.0028 per review |
+| Meta open weights | The judge role can run on Muse Spark Open through Baseten (`LLM_JUDGE_*`); the notes → chords task was also run on it | Second ear: same pick as Muse Spark in 52/60 reviews at $0.0028 per review. Notes → chords: 89.4% exact where answered (73.8% of all 640 slots; 4 of 40 calls failed) |
 
 Reasoning effort is set per role, for example low for file reading and tool turns and medium
 for the form plan. Measurements and their limits are under [Evidence](#evidence).
+
+**Two agents, bounded.** Reharmonize and Complete the form are agents in the plain
+sense: Muse Spark decides the next step itself, through tool calls or a plan that code
+validates, and stops when it has a result or hits a limit.
+
+- *Reharmonize.* Muse Spark chooses which substitution families to search, calls
+  `search_substitutions` as often as it needs (at most 4 turns), reads the Music
+  Transformer's context score for every patch the tool returns, and ends the run with
+  `offer_candidates`: three patches that differ from each other. The musician hears
+  them, combines them and applies. Nothing outside the selected bars can change.
+- *Complete the form.* Muse Spark plans the song form as strict JSON; code checks
+  section lengths, recurrence and key and returns the errors; Muse Spark revises (at
+  most twice) and then writes every chord of the plan.
+
+Every run has a timeout, a turn limit, a per-call cost reservation against the spend
+cap and a ledger line with its request id, tokens and cost, so a judge can read what the
+agent did and what it cost. Both loops are measured under [Evidence](#evidence).
+
+**Running the judge on Meta open weights.** The Second ear judge is one role with its
+own provider, ledger and cap. Four lines in the server environment move it to Muse
+Spark Open on Baseten; the rest of the product stays on Muse Spark:
+
+```bash
+LLM_JUDGE_PROVIDER=baseten            # base URL and model default to Baseten's
+LLM_JUDGE_API_KEY=...                 # Baseten API key
+LLM_JUDGE_REASONING_EFFORT=low        # the setting the comparison used
+THEARTIST_JUDGE_BUDGET_USD=10         # the judge's own cap
+```
+
+With the judge switched, every Second ear result line in the editor reads
+`baseten meta-models/muse-spark-open-1026 · <request id> · $<cost>`, and the judge
+ledger records the same ids, so the switch is verifiable from the screen and the
+server. The [comparison](experiments/review_eval/summary.md) ran the same 60 reviews
+on both models: same pick in 52/60, every reason confirmed by the analyzer, $0.0028
+and 2.1 s per review on Muse Spark Open. The notes → chords task was run on the same
+open weights too ([Evidence](#evidence)). Reharmonize's tool loop is not: native tool
+calls are enabled for Muse Spark only, so that agent does not run on open weights.
 
 **One Reharmonize run, recorded.** *Amazing Grace* bars 5–8 (`G | G D7 | G | G`, G major, 3/4)
 with the gospel adapter as the scorer and *Change up to* 4, on the hosted demo
@@ -293,6 +345,17 @@ Exact controls, limits and provenance rules: [editor reference](docs/editor-refe
 
 Every number comes from a recorded run whose calls, costs and failures are kept.
 Automatic judge scores are not listener preference, and no row is a listening study.
+No end-to-end time saving over a musician's existing workflow has been measured.
+
+**Why there is no listening study here.** Judgments about music are strongly
+subjective, so a few experts rating a few examples would not show that one harmony is
+better than another. How to measure that quantitatively is a hard, open problem that
+cannot be solved within a hackathon week, and I am still working on it. A proper
+listening evaluation is planned and will be reported in a paper. This section reports
+only what can be measured now: agreement with reference chords, constraint checks,
+cost and time. The full records are in the [evaluation evidence](docs/evidence.md),
+the [evaluation framing](docs/evaluation.md) and the
+[three-way model comparison](docs/model-comparison.md).
 
 ### Local vs Meta vs hybrid
 
@@ -316,6 +379,15 @@ The separate five-PDF hybrid combines a local reading with one Meta read.
 Both Import experiments predate the current background verification flow; their
 scores are not a benchmark of the current checkbox. The present local Reharmonize
 fallback also adds diversity beyond the tested local baseline.
+
+**Meta open weights on the same 640 slots.** Muse Spark Open on Baseten (effort high)
+answered 82.5% of the slots and was exact on **89.4%** of those it answered, level with
+Muse Spark; 4 of its 40 calls failed (3 harmony validation, 1 length), so its exact
+agreement over all slots is 73.8%, below the local analyzer's 77.8%. Median call
+8.0 s, $0.63 in total. So the open weights were measured, not skipped: they can carry
+the judge role (above) but read notes less reliably, and the product ships on Muse
+Spark 1.3 for that reason. The Reharmonize rows have no open-weight column because the
+tool loop runs on Muse Spark only.
 
 Definitions, confidence intervals, coverage, costs, failures, raw results and
 differences from the current code: **[three-way model comparison](docs/model-comparison.md)**.
