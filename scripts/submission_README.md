@@ -92,6 +92,24 @@ The automated suites, 679 backend and 320 frontend tests, verify contracts and
 editing behavior, not musical quality. [Architecture](docs/architecture.md) ·
 [model catalog](docs/models.md)
 
+**Open to other clients over REST and MCP.** Everything the editor does is also a
+REST route (22 endpoints: section and song generation, Complete the form,
+Reharmonize, Second ear, Import, MIDI and Scripter export, DAW handoff,
+capabilities discovery) and, for the arrangement workflow, one of eleven MCP
+tools (`import_score`, `plan_song`, `validate_plan`, `generate_section`,
+`build_song`, `render_midi`, `export_daw` among them), with the same limits,
+provenance fields and ledger, plus an async Python client
+([client](backend/theartist_client/client.py)). A second live site already
+builds on it: TheVoyager (travel stories with generated music,
+[voyager.pearlleestudio.co](https://voyager.pearlleestudio.co)) sends a genre
+and a length and receives a three-track arrangement through
+`POST /api/generate/song` (the `build_song` MCP tool on a local backend). That
+song endpoint and the `/api/generate*` chord routes predate the event and are
+listed as existing work; the section, plan, review, reharmonize, import and
+export routes, the capabilities contract, the MCP server and the client are this
+week's. [API spec](https://github.com/PearlLeeStudio/TheArtist-DAW/blob/main/API_SPEC.md) ·
+[MCP](docs/mcp.md) · [Voyager API quick start](docs/voyager-api.md)
+
 ## Measured so far
 
 Judgments about music are strongly subjective, so a few experts rating a few
