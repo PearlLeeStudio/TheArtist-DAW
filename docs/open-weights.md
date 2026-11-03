@@ -20,7 +20,7 @@ the judging window.
 
 The other roles stay on Standard **Muse Spark 1.3** through the Meta Model API:
 reading a score PDF or image, planning and writing the song form, and the
-Reharmonize tool-call search. [Which model does what](../README.md#hackathon-work-and-where-meta-is-used).
+Reharmonize tool-call search. [Which model does what](https://github.com/PearlLeeStudio/TheArtist-DAW/blob/main/README.md#hackathon-work-and-where-meta-is-used).
 
 ## How to verify it
 

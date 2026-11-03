@@ -9,7 +9,7 @@ editor and Music Transformer.
 [Demo on X](https://x.com/pearlmedicilee/status/2117606784819249170) ·
 [Live app — artist-daw.pearlleestudio.co](https://artist-daw.pearlleestudio.co) ·
 [Development repository — TheArtist-DAW](https://github.com/PearlLeeStudio/TheArtist-DAW) ·
-[127 recorded contributions](HACKATHON.md)
+[128 recorded contributions](HACKATHON.md)
 
 [![Watch TheArtist's hackathon demo](https://i.ytimg.com/vi/wC-dkLfot-c/hqdefault.jpg)](https://youtu.be/wC-dkLfot-c)
 
@@ -35,7 +35,7 @@ Existing before the event and not claimed as event work: the score editor (staff
 voicings, Roman numerals, MIDI input, playback), the 31 sounds and genre rhythms,
 and the 25M-parameter Music Transformer with its 11 genre adapters. Everything
 below was built during the event; the [contribution record](HACKATHON.md) links
-each of the 127 additions to its commits, tests and limits.
+each of the 128 additions to its commits, tests and limits.
 
 <p align="center">
   <img src="screenshot/13-reharmonize-alternatives.png" alt="Reharmonize on an imported lead sheet: Origin and Alter 1–3 under the passage, Alter 3 selected, with the Reharmonize controls on the right" width="100%">
