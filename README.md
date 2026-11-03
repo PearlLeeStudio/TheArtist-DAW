@@ -39,6 +39,12 @@ workflow; the musician chooses what stays in the score.
   <a href="https://youtu.be/Xw3BwB64Jt0"><strong>TheArtist — From Chord Sketch to Your Own Music</strong></a>
 </p>
 
+<p align="center">
+  <img src="screenshot/13-reharmonize-alternatives.png" alt="Reharmonize on an imported lead sheet in the live workspace: Origin and Alter 1–3 under the passage, Alter 3 selected, with the Reharmonize controls on the right" width="100%">
+  <br>
+  <sub>Reharmonize on an imported lead sheet in the live workspace: Muse Spark explores the substitution search with tool calls, the Music Transformer scores the candidates in context, and Alter 1–3 wait under the passage until the musician applies one.</sub>
+</p>
+
 Import a score, try and combine harmonic alternatives, and listen again as the
 sketch takes shape. Export a PDF chord chart or editable MIDI tracks to continue
 making your own music in a DAW such as Logic Pro.
@@ -172,8 +178,11 @@ musician meets it most often:
 | **Import Score → Use Meta model** | Picks a PDF, ticks the checkbox, clicks **Analyze and import** | Reads the original file once (≤ $1.50, 150 s) after the local reading has already opened the score | A one-line status above the staff while the check runs, then **Review** marks on bars where the two readings differ and chords filled into bars the local reader left empty, each with its request id in the bar's source details |
 | **Input → Reharmonize → Find 3 alternatives** | Selects written chords, sets *Change up to* and a mode | Explores the mathematical substitution search with native tool calls (≤ 4 turns, ≤ $0.15) and picks three contrasting candidates scored by the Music Transformer | **Origin / Alter 1 / Alter 2 / Alter 3** cards under the passage; **Run details** under the controls list the tool calls, request ids, cost and time; **Apply** keeps a combination and closes them |
 
-<!-- Screenshots of these two states go here as screenshot/12-import-use-meta.png and
-     screenshot/13-reharmonize-alternatives.png once captured in a browser. -->
+<p align="center">
+  <img src="screenshot/12-import-use-meta.png" alt="Import Score with Use Meta model ticked for a PDF lead sheet, before Analyze and import" width="80%">
+  <br>
+  <sub>Import Score with <strong>Use Meta model</strong> ticked. The Reharmonize cards are pictured at the top of this page.</sub>
+</p>
 
 Complete the form (Muse Spark only / Music Transformer + Meta review) and Second ear
 are the other two paths; all four are listed with their files, call counts and
@@ -405,22 +414,28 @@ The file reader has a 150-second timeout, one Meta call, low reasoning effort an
 32,768 output tokens so a complete score can fit beside reasoning tokens.
 `THEARTIST_META_UNLIMITED=1` explicitly disables session, daily, ledger, per-request
 and per-run dollar caps; the shared hosted demo server (`music-api.pearlleestudio.co`)
-runs with it through judging so that no visitor is stopped by a spending limit, while
-per-call timeouts, call counts and the ledger stay on.
+runs with it through judging so that no visitor is stopped by a session or daily limit,
+while per-call timeouts, call counts, the ledger and the credit stop line below stay on.
 Request IDs, token usage, costs, timeouts and finite call counts remain recorded.
 Without that opt-in, the configured dollar caps apply; see `deploy/env.example`.
 `THEARTIST_META_CREDIT_USD` is a credit stop line that holds even with
-`THEARTIST_META_UNLIMITED=1`. Set it to the API credit the provider's console shows.
+`THEARTIST_META_UNLIMITED=1`. Set it to a little less than the API credit the
+provider's console shows. The hosted server's `deploy/compose.yaml` sets a fixed stop
+line of 50 instead, so that server stops Meta after $50 of spend recorded from the
+line's first call; a value in its env file replaces it.
 The ledger notes its total when it first sees the value. From then on it refuses,
-before any network request, every Meta call whose worst case would take the spend
-recorded since past that value, and every call once less than $0.05 is left. A judge
+before any network request, every Meta call whose estimated worst case would take the
+spend recorded since past that value, and every call once less than $0.05 is left. The
+estimate counts every character outside ASCII at its UTF-8 bytes. A judge
 on the meta provider counts against the same line. HTTP 402, or a 4xx whose error
 code says the account has no credit, pauses Meta for 10 minutes the same way. While
 paused, `/api/capabilities` reports `meta.available: false` with
-`unavailableReason: "paused"` and no amount. Refusal texts name no amount either.
-With `THEARTIST_META_ENABLED=0` any attempted Meta call answers HTTP 503 "disabled",
-and a paused Meta does the same. Both Meta modes of Complete the form and Second ear
-stop there, and Import opens from the local reader alone. Reharmonize picks its
+`unavailableReason: "paused"` and no amount; `meta.creditStop` says whether a line is
+set. Refusal texts name no amount, cap, ledger path or provider wording either.
+With `THEARTIST_META_ENABLED=0` a direct Meta call answers HTTP 503 "disabled", and a
+paused Meta does the same. Both Meta modes of Complete the form report it in the
+run's error, Second ear stops there, and Import opens a vector PDF from the local
+reader with a note (an image, which needs Meta, gets the 503). Reharmonize picks its
 alternatives without Meta. Generate with the author's model, the Genre template and
 every export keep working.
 

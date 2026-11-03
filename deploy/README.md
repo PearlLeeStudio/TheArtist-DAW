@@ -28,7 +28,8 @@ also requires `THEARTIST_PUBLIC_META_READER=1`; the hosted Artist service enable
 it while keeping the one-call timeout, call counts and cost accounting. The shared
 hosted demo server currently runs with `THEARTIST_META_UNLIMITED=1`, so its dollar
 caps are off (see the README's Running Locally notes); the dollar limits in
-`vps.env.example` apply only without that override.
+`vps.env.example` apply only without that override. The credit stop line applies
+either way, and `compose.yaml` sets it to 50 for that server.
 Hosted users download MIDI for their own DAW.
 
 ## Optional Meta service
@@ -42,9 +43,10 @@ an enabled paid public demo. Session limits are abuse friction, not login or
 authentication. One worker owns the local ledger and model cache; do not scale
 to independent replicas with independent copies of the same spending budget.
 
-To stop before the provider's credit runs out, set `THEARTIST_META_CREDIT_USD` to the
-credit its console shows and recreate the app. The line holds with
-`THEARTIST_META_UNLIMITED=1` too. A call that would pass it is refused before anything
+To stop before the provider's credit runs out, set `THEARTIST_META_CREDIT_USD` to a
+little less than the credit its console shows and recreate the app. The hosted
+`compose.yaml` already sets 50 for the shared server; a non-empty value in
+`/srv/theartist.env` replaces it. The line holds with `THEARTIST_META_UNLIMITED=1` too. A call that would pass it is refused before anything
 is sent, and so is every call once less than $0.05 is left. The editor then disables
 its Meta controls without showing any amount, and Reharmonize offers alternatives
 picked without Meta.

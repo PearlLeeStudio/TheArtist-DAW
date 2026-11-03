@@ -152,22 +152,28 @@ output, timeout, and the search's own $0.15 cap return errors with no success fa
 ## Without Meta
 
 When Meta cannot take the request, Reharmonize still answers, and says that Meta did
-not choose. That covers Meta switched off (`THEARTIST_META_ENABLED=0`), no key, Meta
-paused, or the caller's session or daily Meta allowance used up (the limiter's 429).
-Meta is paused when the `THEARTIST_META_CREDIT_USD` credit stop line is reached
-(less than $0.05 left), when the ledger's dollar cap is reached with caps on, or when
-the provider answered that the account has no credit. In those cases nothing is
-sent to Meta. The same bounded search runs for all three families, the selected Music
-Transformer scores the shortlist, and code offers the best-scoring candidate of each
-family. A patch that changes the same slots to the same roots as one already chosen
-waits until nothing else is left. If the credit line or the cap stops a search after
-Meta's first turn, that turn's request id, cost and tool call stay in the record.
+not choose. That covers Meta switched off (`THEARTIST_META_ENABLED=0`), not configured
+(no key, or a setting the server refuses), Meta paused, or the caller's session or
+daily Meta allowance used up (the limiter's 429). Meta is paused when the
+`THEARTIST_META_CREDIT_USD` credit stop line is reached (less than $0.05 left), when
+the ledger's dollar cap is reached with caps on, when a spend ledger cannot be read or
+written, or when the provider answered that the account has no credit. The line, the
+cap and the ledger refuse before anything is sent; the request that receives the
+provider's no-credit answer was sent, and its request id stays in the record. A search
+that will not call Meta asks the limiter for no admission. The same bounded search runs
+for all three families, the selected Music Transformer scores the shortlist, and code
+offers the best-scoring candidate of each family. A patch that changes the same slots
+to the same roots as one already chosen waits until nothing else is left. If the
+credit line or the cap stops a search after Meta's first turn, that turn's request id,
+cost and tool call stay in the record.
 
 The response then carries `selection: "local"`, `metaUnavailable` (`disabled`,
 `unconfigured`, `paused` or `limit`) and `metaModel: "not used"`. The controls show
 a line saying the alternatives were picked without Meta. **Run details** start with
-*Picked without Meta*. The scorer note under the model picker says so before a search,
-and the editor checks the server again whenever a search starts or ends.
+*Picked without Meta*. When Meta is off, not configured or paused, the scorer note
+under the model picker says so before a search, and the editor checks the server again
+whenever a search starts or ends. A used-up allowance is known only per request, so
+that reason appears in the result line alone.
 Fewer than three distinct candidates is a 422 that asks for more changed chords or
 another mode.
 

@@ -1000,14 +1000,19 @@ code, 429 a limit reached (with `Retry-After` to UTC midnight), 503 a misconfigu
 limit variable or unreadable ledger. A 429's detail names the pool and the reset time
 but no amount; the figures go to the server log. Reharmonize does not answer the
 limiter's 429. It runs its search without Meta instead and returns 200 with
-`selection: "local"` and `metaUnavailable: "limit"`.
+`selection: "local"` and `metaUnavailable: "limit"`; the limiter's 503 likewise
+becomes a search without Meta (`paused` for an unreadable ledger, `unconfigured` for a
+refused setting). A search that will not call Meta asks for no admission. A refused
+setting is named without its value.
 
 ### GET `/api/capabilities` and `/mcp/` — Shared contract discovery
 
 `GET /api/capabilities` returns `{"schemaVersion":"1.0","data":{...}}`, including implemented tools, contract names, payload limits, source/model fields and known limitations. The MCP `capabilities` tool returns the same envelope. The `data.rag` object reports `enabled`, `ready`, `sources` (`omt` and `berklee`: `ready`, `missing`, `invalid` or `disabled`), `method: "local_tfidf"` and `notes: "source_excerpt"`. A bad source configuration returns `error: "invalid_source_configuration"`. Other REST responses keep their existing shapes; they are not wrapped in this envelope.
 
 `data.meta` includes `enabled`, `configured`, `available`, `unavailableReason`,
-`provider`, `model`, `judge` and `fullFileScoreImport`. `available` is false while
+`creditStop`, `provider`, `model`, `judge` and `fullFileScoreImport`. `creditStop` is
+true while a `THEARTIST_META_CREDIT_USD` line is set (a value that is not a number counts,
+since it refuses every call) and never carries the value. `available` is false while
 Meta controls should be off, and `unavailableReason` says why. `disabled` means the
 flag is off or invalid. `unconfigured` means there is no key, or a configuration the
 client refuses (logged once on the server). `paused` covers three cases: less than
