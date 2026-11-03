@@ -32,7 +32,11 @@ Reviewed pre-event derivations include `scoreSurface.ts` (staff rendering),
 `manualChordDraft.ts` (chord-input logic). Their extraction/refactoring is part
 of the patch; their underlying pre-event functionality is not claimed as a new
 asset. Empty Python package markers also match existing empty files. The
-provenance heuristic cannot establish absence of smaller copied fragments.
+architecture, model and Voyager API guides reuse material from the original
+README; the CPU serving lockfile shares third-party dependency records with the
+earlier locks. These are derived documentation and dependency metadata, not new
+pre-event capabilities. The provenance heuristic cannot establish absence of
+smaller copied fragments.
 
 ## Reproduce
 
