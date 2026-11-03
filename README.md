@@ -155,7 +155,15 @@ Its existing chord model supplies a harmonic engine for this workflow.
 
 **Who it is for.** Musicians who already have a song on paper (a lead sheet or a chord chart)
 and want to hear harmonic options and take playable parts into their DAW: arrangers, band
-leaders, accompanists and students. TheArtist keeps their source material and
+leaders, accompanists and students. Producers mostly want assistive AI rather than generated
+songs: in Tracklib's 2025 survey of 1,734 producers, 6% used generative tools regularly and 82%
+opposed full-song generation from text prompts
+([MusicTech](https://musictech.com/news/industry/music-producers-are-rejecting-ai-study-reveals-over-80-of-producers-are-against-ai-generated-songs)).
+TheArtist keeps the musician's score and choices and hands over editable MIDI, not finished audio.
+Each piece exists elsewhere: Logic's Session Players follow a chord track, Scaler 3 suggests
+substitutions from MIDI or audio, and Band-in-a-Box has arranged typed chords for decades. What is
+new here is the chain from the printed score to contextual alternatives the musician chooses, a
+completed form and editable parts in the DAW. TheArtist keeps their source material and
 editing decisions connected: printed score → contextual harmonic alternatives →
 song form → accompaniment → editable MIDI. The musician can audition, combine,
 apply and undo proposals before continuing production in a DAW.

@@ -22,7 +22,14 @@ the form visible, imported from a score or planned by Muse Spark, and works insi
 it: Reharmonize changes only the selected bars and scores every alternative against
 the surrounding harmony, and the result leaves as separate, editable Harmony, Bass
 and Drums MIDI tracks, so the harmony is never typed twice between the score and
-the DAW session.
+the DAW session. It is built for musicians who already have a song on paper and
+want assistance, not a generated song: in Tracklib's 2025 survey of 1,734
+producers, 6% used generative tools regularly and 82% opposed full-song
+generation ([MusicTech](https://musictech.com/news/industry/music-producers-are-rejecting-ai-study-reveals-over-80-of-producers-are-against-ai-generated-songs)).
+Each piece exists elsewhere (Logic's Session Players follow a chord track, Scaler
+suggests substitutions, Band-in-a-Box arranges typed chords); what is new is the
+chain from the printed score to contextual alternatives the musician chooses, a
+completed form and editable parts in the DAW.
 
 Existing before the event and not claimed as event work: the score editor (staff,
 voicings, Roman numerals, MIDI input, playback), the 31 sounds and genre rhythms,
