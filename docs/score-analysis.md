@@ -139,7 +139,10 @@ metadata rather than provider prose that could repeat the source.
 The editor keeps chords, key, meter, section boundaries, playback choices and
 minimal reading/review metadata. It removes extracted note arrays and source
 evidence from the working Song and saved Projects; existing browser saves are
-sanitized while preserving the user's musical work. If the browser refuses the
+sanitized while preserving the user's musical work. A reopened project keeps its
+imported harmony and each bar's review mark, shown with a fixed application note
+in place of the discarded evidence; bars harmonized locally by the served F1
+checkpoint keep `model: ft_f1` without any API request id. If the browser refuses the
 storage rewrite, the recovered in-memory score remains available and the failed
 cleanup is reported; old stored bytes cannot be changed until writes are allowed.
 The original PDF/image is

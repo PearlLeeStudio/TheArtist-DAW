@@ -1136,7 +1136,7 @@ backend/
 │   │   ├── planner.py · review.py · llm.py · limits.py · env_flags.py
 │   │   ├── reharmonize.py · reharmonize_agent.py · chord_context.py · chorus_memory.py
 │   │   ├── score_import.py · score_pdf.py · score_analysis.py · score_verification.py
-│   │   ├── score_cache.py · score_completion.py · serving_readiness.py · chord_generator.py
+│   │   ├── score_completion.py · serving_readiness.py · chord_generator.py
 │   │   ├── score_context.py · score_assistance.py · score_form.py
 │   │   ├── harmony_analysis.py · harmony_meta.py
 │   │   ├── genre_tables.py · key_anchor.py · song_form.py · voice_leading.py
