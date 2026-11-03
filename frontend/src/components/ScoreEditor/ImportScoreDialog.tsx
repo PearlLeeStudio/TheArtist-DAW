@@ -98,13 +98,11 @@ function blankSection(measureCount: number): ImportSectionDraft {
 /** Original → recognition → the score opens on the staff. The review form
  *  appears only when the recognized project fields (key, meter, tempo,
  *  sections) cannot be imported as read; chords are corrected on the staff.
- *  The local File and blob URL only live for this dialog's lifetime. */
+ *  A selected File is released after analysis, cancellation or close. */
 export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const sourceRef = useRef<SourceFile | null>(null);
-  // The file whose local reading opened (or is about to open): Meta reviews it in the background.
-  const reviewSourceRef = useRef<SourceFile | null>(null);
   const controllerRef = useRef<AbortController | null>(null);
   // Bumped to invalidate pending file checks and analyses: on mount, a new
   // file, cancel, retry and close.
@@ -154,6 +152,8 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
     return () => {
       mountedRef.current = false;
       controllerRef.current?.abort();
+      controllerRef.current = null;
+      sourceRef.current = null;
     };
   }, []);
 
@@ -170,6 +170,9 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
     sequenceRef.current++;
     controllerRef.current?.abort();
     controllerRef.current = null;
+    sourceRef.current = null;
+    if (fileRef.current) fileRef.current.value = '';
+    setSource(null);
     runningRef.current = false;
     setRunning(false);
     setReading(false);
@@ -182,6 +185,13 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
     closedRef.current = true;
     sequenceRef.current++;
     controllerRef.current?.abort();
+    controllerRef.current = null;
+    sourceRef.current = null;
+    if (fileRef.current) fileRef.current.value = '';
+    setSource(null);
+    setDraft(null);
+    setRunning(false);
+    setReading(false);
     runningRef.current = false;
     onClose();
   };
@@ -208,6 +218,7 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
       setSource(selected);
     } catch (caught) {
       if (isCurrent(sequence)) {
+        if (fileRef.current) fileRef.current.value = '';
         setError(caught instanceof Error ? caught.message : 'The file could not be read.');
       }
     } finally {
@@ -221,7 +232,6 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
     const controller = new AbortController();
     controllerRef.current = controller;
     runningRef.current = true;
-    reviewSourceRef.current = null;
     setRunning(true);
     setDraft(null);
     setError(null);
@@ -243,7 +253,6 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
         try {
           recognized = await analyze('local');
           usedEngine = 'local';
-          reviewSourceRef.current = selected;
         } catch (caught) {
           // Only a PDF the local reader cannot read goes to Meta right away, as before.
           if (controller.signal.aborted || !(caught instanceof ScoreAnalysisError) || caught.status !== 422) throw caught;
@@ -254,12 +263,21 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
         recognized = await analyze(engine);
       }
       if (!isCurrent(sequence)) return;
-      const created = createScoreImportDraft(recognized, selected.file.name);
+      let created = createScoreImportDraft(recognized, selected.file.name);
+      // If project fields need correction, finish the opted-in check now, so
+      // the raw file is not held while the musician edits the draft.
+      if (localFirst && usedEngine === 'local' && !validateScoreImportForEditor(created).valid) {
+        recognized = await analyze('verified');
+        usedEngine = 'verified';
+        if (!isCurrent(sequence)) return;
+        created = createScoreImportDraft(recognized, selected.file.name);
+      }
       finish();
       // Open the score as soon as it is read. Reading provenance, unresolved
       // bars and Review marks stay on the staff; only unusable project
       // fields stop here for correction.
-      if (validateScoreImportForEditor(created).valid && openImported(created)) return;
+      if (validateScoreImportForEditor(created).valid &&
+          openImported(created, localFirst && usedEngine === 'local' ? selected : undefined)) return;
       setDraft(created);
       setStatus(`${scoreImportReadyStatus(created, usedEngine)} Correct the highlighted fields to import.`);
     } catch (caught) {
@@ -276,6 +294,9 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
       if (isCurrent(sequence)) {
         runningRef.current = false;
         controllerRef.current = null;
+        sourceRef.current = null;
+        if (fileRef.current) fileRef.current.value = '';
+        setSource(null);
         setRunning(false);
       }
     }
@@ -310,11 +331,10 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
   /** Replace the editor's score with the draft and close; false (with the
    *  error shown) when the editor could not take it. A local reading that
    *  stood in for the checked Meta reading starts the background review. */
-  const openImported = (ready: ScoreImportDraft): boolean => {
+  const openImported = (ready: ScoreImportDraft, review?: SourceFile): boolean => {
     try {
       const imported = buildScoreImportForEditor(ready);
       onImported(imported);
-      const review = reviewSourceRef.current;
       if (review) useImportReviewStore.getState().start(review.file, review.mimeType, useSongStore.getState().songEpoch);
       dialogRef.current?.close();
       return true;
@@ -391,6 +411,7 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
                   Use Meta model
                 </label>
               </fieldset>
+              <p className="text-xs" style={mutedStyle}>The selected file is sent to this app’s server for analysis. With Use Meta model checked, the full PDF or image is also sent to Meta. This app discards source files and extracted note details after analysis; your chord arrangement is kept.</p>
               {checkingMeta && <OperationProgress label="Checking score reader availability…" />}
               {metaConnectionError && <div className="space-y-2 text-xs" role="alert">
                 <p>Could not check Meta availability. Your selected file is kept.</p>

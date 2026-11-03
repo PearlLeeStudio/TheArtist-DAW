@@ -4,8 +4,11 @@ import json
 import logging
 from collections.abc import Callable
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.exception_handlers import request_validation_exception_handler
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import StreamingResponse
+from fastapi.routing import APIRoute
 from pydantic import ValidationError
 
 from app.models.score_import import ScoreImportRequest, ScoreImportResponse
@@ -15,7 +18,28 @@ from app.services.llm import (BudgetExceeded, CreditExhausted, LedgerError, LLMC
                               LLMTimeout, track_call_costs)
 from app.services.score_import import ScoreInputError, import_score
 
-router = APIRouter()
+
+class _NoStoreScoreRoute(APIRoute):
+    """Keep transient uploaded-score results and validation errors out of HTTP caches."""
+
+    def get_route_handler(self):
+        handler = super().get_route_handler()
+
+        async def no_store(request: Request):
+            try:
+                response = await handler(request)
+            except HTTPException as exc:
+                exc.headers = {**(exc.headers or {}), "Cache-Control": "no-store, no-transform"}
+                raise
+            except RequestValidationError as exc:
+                response = await request_validation_exception_handler(request, exc)
+            response.headers["Cache-Control"] = "no-store, no-transform"
+            return response
+
+        return no_store
+
+
+router = APIRouter(route_class=_NoStoreScoreRoute)
 PUBLIC_HOST_REASON = ("Meta reading of the whole score file is not available on this public server; choose "
                       "engine \"auto\" (bounded harmony and form analysis with the whole score context) or \"local\".")
 # Why Meta's reading failed, in fixed words: never the provider's own text, which can name a balance
@@ -147,7 +171,7 @@ async def import_score_stream(req: ScoreImportRequest,
                 break
 
     return StreamingResponse(stream(), media_type="text/event-stream",
-                             headers={"Cache-Control": "no-cache, no-transform", "X-Accel-Buffering": "no"})
+                             headers={"Cache-Control": "no-store, no-transform", "X-Accel-Buffering": "no"})
 
 
 _imports: set[asyncio.Task] = set()

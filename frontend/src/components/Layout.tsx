@@ -16,6 +16,7 @@ import { useSongStore } from '../store/songStore';
 import { useSessionStore } from '../store/sessionStore';
 import { useGenerationStore } from '../store/generationStore';
 import { usePlayStore } from '../store/playStore';
+import { useImportCleanupStore } from '../store/importCleanupStore';
 import { startNewSongFromForm } from '../store/newSong';
 import { playSettingsFromSession } from '../engine/playSettings';
 import type { PlaySettings, SessionGenerationContext, Song } from '../models/types';
@@ -66,6 +67,7 @@ export default function Layout() {
   const previousImportSong = useSongStore((s) => s.previousImportSong);
   const undoImport = useSongStore((s) => s.undoImport);
   const [saveMessage, setSaveMessage] = useState('');
+  const importCleanupFailed = useImportCleanupStore((state) => state.failedTargets.length > 0);
 
   // Bundle the Play-panel settings with the saved score, so MyPage replays
   // the session the way the editor played it at Save time (bpm + genre are
@@ -207,6 +209,10 @@ export default function Layout() {
           </button>
         </div>
       </header>
+
+      {importCleanupFailed && <p role="alert" className="shrink-0 px-4 py-2 text-xs" style={{ color: 'var(--text-primary)', background: 'var(--bg-surface)', borderBottom: '1px solid var(--border)' }}>
+        Old source details could not be removed from browser storage. Your recovered chord work is available. Allow browser storage, then reload or save again.
+      </p>}
 
       {view === 'my' ? (
         <MyPage onExitToEditor={() => setView('editor')} />

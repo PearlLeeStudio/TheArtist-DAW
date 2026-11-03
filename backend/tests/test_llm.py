@@ -994,5 +994,127 @@ class ReplyTests(LLMTestCase):
             self.assertNotIn(KEY, text)
 
 
+class ScoreInputPrivacyTests(LLMTestCase):
+    SOURCE = "private-score.pdf: written C4 E4 G4; private notation evidence"
+    LABELS = ("score.import", "score.form", "harmony.notes")
+
+    def score_call(self, client, label):
+        return client.chat_json([{"role": "user", "content": self.SOURCE}], SCHEMA,
+                                name="score_import", label=label)
+
+    def assert_source_absent(self, error, logs):
+        for text in (str(error), "".join(traceback.format_exception(error)),
+                     self.ledger_path.read_text(encoding="utf-8"), "\n".join(logs.output)):
+            self.assertNotIn(self.SOURCE, text)
+        self.assertIsNone(error.__cause__)
+        self.assertIsNone(error.__context__)
+
+    def test_refusal_and_schema_echoes_are_not_saved_or_returned(self):
+        refusal = response(None)
+        refusal["choices"][0]["message"]["refusal"] = self.SOURCE
+        invalid = response(json.dumps({"title": "x", "sections": [{"type": self.SOURCE, "chordCount": 4}]}))
+        for label in self.LABELS:
+            for kind, reply in (("refusal", refusal), ("schema_mismatch", invalid)):
+                with self.subTest(label=label, kind=kind):
+                    with (self.assertLogs("app.services.llm", "INFO") as logs,
+                          self.assertRaises(LLMResponseError) as ctx):
+                        self.score_call(self.client(FakeTransport(reply)), label)
+                    error = ctx.exception
+                    self.assertEqual((error.kind, error.request_id, error.attempts), (kind, "req_1", 1))
+                    entry = self.ledger()["entries"][-1]
+                    self.assertEqual((entry["status"], entry["request_id"], entry["response_id"]),
+                                     ("failed", "req_1", "chatcmpl-test"))
+                    self.assertAlmostEqual(entry["settled_usd"], USAGE_COST, places=8)
+                    self.assert_source_absent(error, logs)
+
+    def test_http_failure_keeps_status_request_id_and_billing_without_provider_prose(self):
+        for status, billed in ((400, False), (429, False), (500, True)):
+            with self.subTest(status=status):
+                def handler(request):
+                    return httpx.Response(status, json={"error": {"message": self.SOURCE}},
+                                          headers={"x-request-id": "req_private", "x-ratelimit-private": self.SOURCE})
+
+                client = self.sdk_client(handler)
+                reserve = client.prepare([{"role": "user", "content": self.SOURCE}], SCHEMA,
+                                         name="score_import").reserve_usd
+                with (self.assertLogs("app.services.llm", "INFO") as logs,
+                      self.assertRaises(LLMResponseError) as ctx):
+                    self.score_call(client, "score.import")
+                error = ctx.exception
+                self.assertEqual((error.kind, error.status_code, error.request_id), ("http", status, "req_private"))
+                self.assertAlmostEqual(error.cost_usd, reserve if billed else 0, places=8)
+                self.assertAlmostEqual(self.ledger()["entries"][-1]["settled_usd"], error.cost_usd, places=8)
+                self.assert_source_absent(error, logs)
+
+    def test_credit_failure_still_pauses_and_settles_without_echoing_input(self):
+        llm._no_credit_until.clear()
+        self.addCleanup(llm._no_credit_until.clear)
+
+        def handler(request):
+            return httpx.Response(402, json={"error": {"message": "insufficient credits: " + self.SOURCE}},
+                                  headers={"x-request-id": "req_credit"})
+
+        client = self.sdk_client(handler)
+        with (self.assertLogs("app.services.llm", "INFO") as logs,
+              self.assertRaises(llm.CreditExhausted) as ctx):
+            self.score_call(client, "score.import")
+        error = ctx.exception
+        self.assertEqual((error.request_id, error.cost_usd, error.attempts), ("req_credit", 0, 1))
+        self.assertTrue(llm._no_credit(client.config))
+        self.assertIn("paused", str(error))
+        self.assert_source_absent(error, logs)
+
+    def test_transport_and_parser_exceptions_do_not_leak_the_source_or_a_chain(self):
+        for transport_error in (RuntimeError(self.SOURCE), LLMResponseError(self.SOURCE, kind="bad_response"),
+                                TimeoutError(self.SOURCE), ConnectionError(self.SOURCE)):
+            with self.subTest(error=type(transport_error).__name__):
+                client = self.client(FakeTransport(transport_error))
+                reserve = client.prepare([{"role": "user", "content": self.SOURCE}], SCHEMA,
+                                         name="score_import").reserve_usd
+                with (self.assertLogs("app.services.llm", "INFO") as logs,
+                      self.assertRaises(LLMError) as ctx):
+                    self.score_call(client, "harmony.notes")
+                self.assertAlmostEqual(ctx.exception.cost_usd, reserve, places=8)
+                self.assert_source_absent(ctx.exception, logs)
+        with (mock.patch.object(llm, "schema_errors", side_effect=RuntimeError(self.SOURCE)),
+              self.assertLogs("app.services.llm", "INFO") as logs,
+              self.assertRaises(LLMResponseError) as ctx):
+            self.score_call(self.client(FakeTransport(response(json.dumps(GOOD)))), "score.form")
+        self.assertEqual(ctx.exception.kind, "bad_response")
+        self.assertAlmostEqual(ctx.exception.cost_usd, USAGE_COST, places=8)
+        self.assert_source_absent(ctx.exception, logs)
+
+    def test_score_content_stays_out_of_sdk_debug_logs_on_success_and_failure(self):
+        for status in (200, 400):
+            with self.subTest(status=status):
+                def handler(request):
+                    body = response(json.dumps(GOOD)) if status == 200 else {"error": {"message": self.SOURCE}}
+                    return httpx.Response(status, json=body, headers={"x-request-id": "req_debug"})
+
+                with self.assertLogs(level="DEBUG") as logs:
+                    try:
+                        self.score_call(self.sdk_client(handler), "score.import")
+                    except LLMResponseError:
+                        self.assertEqual(status, 400)
+                text = "\n".join(logs.output)
+                self.assertIn("request_id=req_debug", text)
+                self.assertNotIn(self.SOURCE, text)
+        with self.assertLogs(level="DEBUG") as logs:
+            self.call(self.sdk_client(lambda request: httpx.Response(200, json=response(json.dumps(GOOD)))))
+        self.assertIn("Request options", "\n".join(logs.output))
+
+    def test_interrupt_settles_without_saving_its_arbitrary_message(self):
+        client = self.client(FakeTransport(KeyboardInterrupt(self.SOURCE)))
+        with (self.assertLogs("app.services.llm", "INFO") as logs,
+              self.assertRaises(KeyboardInterrupt)):
+            self.score_call(client, "score.import")
+        self.assertNotIn(self.SOURCE, self.ledger_path.read_text(encoding="utf-8"))
+        self.assertNotIn(self.SOURCE, "\n".join(logs.output))
+        entry = self.ledger()["entries"][-1]
+        self.assertEqual(entry["status"], "failed")
+        self.assertEqual(entry["settled_usd"], entry["reserved_usd"])
+        self.assertFalse(llm._score_log_scope.get())
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -23,15 +23,15 @@ export type ImportedChordBasis = 'printed' | 'inferred' | 'unreadable';
 export type ImportConfidence = 'high' | 'medium' | 'low';
 /** Who read the score: the local reader, the Meta model, or each for some bars. */
 export type ScoreAnalysisSource = 'local' | 'meta' | 'mixed';
-/** What the import read in one source bar, kept as provenance. */
+/** Chords and minimal reading provenance; source pitches and prose are discarded. */
 export interface ImportMeasureSource {
   chordBasis: ImportedChordBasis;
   confidence: ImportConfidence;
-  /** The reader's note on the bar: its evidence, rationale or what was unreadable. */
+  /** Legacy compatibility field, cleared when an import enters the editor/storage. */
   evidence: string;
   /** Initial recognition/proposal, retained after the user edits the score. */
   originalChords: string[];
-  /** Initial import issue to finish in the score editor; source text stays intact. */
+  /** Application-written review status, without source note evidence. */
   editorReview?: string;
   /** The bar's position in the source's written order. */
   sourceMeasureIndex?: number;
@@ -39,8 +39,7 @@ export interface ImportMeasureSource {
   analysisSource?: 'local' | 'meta';
   model?: string | null;
   requestId?: string | null;
-  /** Sounding pitches; writtenNotes keeps them as written (under an 8va
-   *  line the written C6 sounds as C7). */
+  /** Legacy fields accepted on load only so they can be removed during migration. */
   notes?: string[];
   writtenNotes?: string[];
   bassNotes?: string[];
@@ -89,9 +88,9 @@ export interface Song {
    *  songForm.ts); editing the title turns it off. Missing on older songs,
    *  where a title of '' or 'Untitled' counts as automatic. */
   autoTitle?: boolean;
-  /** Source metadata only; uploaded file bytes are never autosaved. */
+  /** Chord reading provenance only; source filenames, bytes and note evidence are discarded. */
   importSource?: {
-    filename: string;
+    filename: string; // Empty; retained for compatibility with older project files.
     model: string | null;
     requestId: string | null;
     mode?: ScoreImportMode;

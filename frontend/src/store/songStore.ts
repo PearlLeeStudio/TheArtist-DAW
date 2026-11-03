@@ -5,6 +5,8 @@ import type { GenerationComparison, TargetChord } from '../engine/generationComp
 import type { PastePlan } from '../engine/scoreClipboard';
 import type { ImportReviewPlan } from '../engine/importReview';
 import { withoutChordPreview } from '../engine/chordPreview';
+import { withoutImportedContent } from '../engine/importRetention';
+import { useImportCleanupStore } from './importCleanupStore';
 import type { ChordPreview } from '../engine/chordPreview';
 import { calculateRomanNumeral } from '../engine/romanNumeral';
 import { generatePianoVoicing } from '../engine/voicingEngine';
@@ -125,7 +127,17 @@ function loadFromStorage(): Song | null {
   try {
     const data = localStorage.getItem(STORAGE_KEY);
     // Songs autosaved before song-form sections existed lack those fields.
-    if (data) return withSongFormDefaults(JSON.parse(data));
+    if (data) {
+      const song = withoutImportedContent(withSongFormDefaults(JSON.parse(data)));
+      const cleaned = JSON.stringify(song);
+      if (cleaned !== data) {
+        try {
+          localStorage.setItem(STORAGE_KEY, cleaned);
+          useImportCleanupStore.getState().complete('current score');
+        } catch { useImportCleanupStore.getState().failed('current score'); }
+      } else useImportCleanupStore.getState().complete('current score');
+      return song;
+    }
   } catch {
     // ignore
   }
@@ -133,7 +145,8 @@ function loadFromStorage(): Song | null {
 }
 
 function saveToStorage(song: Song): void {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(song));
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(withoutImportedContent(song)));
+  useImportCleanupStore.getState().complete('current score');
 }
 
 function slotToLinear(slot: SlotAddress): number {
@@ -257,7 +270,7 @@ interface SongState {
  */
 function songReplacement(song: Song, previousEpoch: number): Partial<SongState> {
   return {
-    song,
+    song: withoutImportedContent(song),
     songEpoch: previousEpoch + 1,
     chordPreview: null,
     selectedSlots: [],
@@ -271,7 +284,8 @@ function songReplacement(song: Song, previousEpoch: number): Partial<SongState> 
 
 /** The history with the current song appended, within EDIT_HISTORY_LIMIT. */
 function recorded(state: Pick<SongState, 'song' | 'editHistory'>): Song[] {
-  return [...state.editHistory.slice(-(EDIT_HISTORY_LIMIT - 1)), structuredClone(state.song)];
+  return [...state.editHistory.slice(-(EDIT_HISTORY_LIMIT - 1)).map(withoutImportedContent),
+    withoutImportedContent(structuredClone(state.song))];
 }
 
 export const useSongStore = create<SongState>((set, get) => ({
@@ -491,7 +505,7 @@ export const useSongStore = create<SongState>((set, get) => ({
   },
 
   importSong: (song) => {
-    const previous = structuredClone(get().song);
+    const previous = withoutImportedContent(structuredClone(get().song));
     get().setSong(song);
     set({ previousImportSong: previous });
   },
@@ -520,11 +534,11 @@ export const useSongStore = create<SongState>((set, get) => ({
       return { ...m, chords: fill.chords.map((chord) => chord ? analyzeChord(chord, state.song.key) : null) as [Chord | null, Chord | null] };
     }) : state.song.measures;
     for (const fill of fills) Object.assign(sources[fill.index], fill.source);
-    const song = {
+    const song = withoutImportedContent({
       ...state.song,
       measures,
       importSource: { ...importSource, measures: sources, ...(fills.length ? { analysisSource: 'mixed' as const } : {}) },
-    };
+    });
     return fills.length
       ? { ...interruptIfPlaying(state), editHistory: recorded(state), song }
       : { song };

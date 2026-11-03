@@ -39,7 +39,7 @@ test('verified reading requires comparison evidence and preserves review notes',
   assert.equal(scoreImportRequestBody('score.pdf', 'application/pdf', 'data', 'chord_symbols', 'verified').engine, 'verified');
   const parsed = readScoreImportResponse(verified, 'chord_symbols', 'verified');
   const draft = createScoreImportDraft(parsed, 'score.pdf');
-  assert.deepEqual(draft.verification, verified.verification);
+  assert.deepEqual(draft.verification, { ...verified.verification, notes: [] });
   assert.match(scoreImportReadyStatus(draft, 'verified'), /2 bars; 1 differences flagged/);
   assert.throws(() => readScoreImportResponse(response(), 'chord_symbols', 'verified'));
   assert.throws(() => readScoreImportResponse({ ...verified, verification: { ...verified.verification, disputedMeasures: [2] } }, 'chord_symbols', 'verified'));
@@ -79,7 +79,8 @@ test('Meta failure opens the local reading with unresolved bars ready for editor
   const song = buildScoreImportForEditor(draft);
   assert.equal(song.measures.length, 2);
   assert.deepEqual(song.measures[1].chords, [null, null]);
-  assert.match(scoreImportReadyStatus(draft, 'verified'), /Meta was unavailable. Ready to import/);
+  assert.equal(scoreImportReadyStatus(draft, 'verified'), 'Meta reading was unavailable. The local reader recovered this score.');
+  assert.deepEqual(draft.verification?.notes, ['Meta reading was unavailable. The local reader recovered this score.']);
   assert.throws(() => readScoreImportResponse({ ...raw, analysisSource: 'meta' }, 'chord_symbols', 'verified'));
 });
 
@@ -145,10 +146,10 @@ test('single chords fill both slots, two chords stay distinct and imports get fr
   assert.equal(song.measures[1].chords[1]?.root, 'G');
   assert.equal(new Set([song.id, ...song.measures.map((m) => m.id), ...song.sections!.map((s) => s.id)]).size, 4);
   assert.deepEqual(song.importSource, {
-    filename: 'chart.pdf', model: 'muse-spark-1.3', requestId: 'request-test', mode: 'chord_symbols', analysisSource: 'meta',
+    filename: '', model: 'muse-spark-1.3', requestId: 'request-test', mode: 'chord_symbols', analysisSource: 'meta',
     measures: [
-      { chordBasis: 'printed', confidence: 'high', evidence: '', originalChords: ['Cmaj7'], sourceMeasureIndex: 0, analysisSource: 'meta', model: 'muse-spark-1.3', requestId: null, notes: [], writtenNotes: [], bassNotes: [], originalNoChord: false, userNoChord: false, timeSignature: null },
-      { chordBasis: 'printed', confidence: 'high', evidence: '', originalChords: ['Dm7', 'G7'], sourceMeasureIndex: 1, analysisSource: 'meta', model: 'muse-spark-1.3', requestId: null, notes: [], writtenNotes: [], bassNotes: [], originalNoChord: false, userNoChord: false, timeSignature: null },
+      { chordBasis: 'printed', confidence: 'high', evidence: '', originalChords: ['Cmaj7'], sourceMeasureIndex: 0, analysisSource: 'meta', model: 'muse-spark-1.3', requestId: null, originalNoChord: false, userNoChord: false, timeSignature: null },
+      { chordBasis: 'printed', confidence: 'high', evidence: '', originalChords: ['Dm7', 'G7'], sourceMeasureIndex: 1, analysisSource: 'meta', model: 'muse-spark-1.3', requestId: null, originalNoChord: false, userNoChord: false, timeSignature: null },
     ],
   });
   assert.equal(JSON.stringify(song).includes('dataBase64'), false);
@@ -259,7 +260,7 @@ test('legacy symbol responses default to printed high confidence without changin
   assert.deepEqual(draft.measures[0].originalChords, ['Cmaj7']);
 });
 
-test('note analysis requires the requested mode to match and keeps the inferred draft evidence after correction', () => {
+test('note analysis keeps inferred chords and status after correction without retaining note evidence', () => {
   const raw = response({ mode: 'infer_harmony', measures: [
     { chords: ['Am', 'E7'], sourceLabel: 'Bass staff, bar 1', needsReview: true, note: 'Visible bass A then E; C natural supports minor.', chordBasis: 'inferred', confidence: 'medium' },
   ], sections: [] });
@@ -275,8 +276,8 @@ test('note analysis requires the requested mode to match and keeps the inferred 
   const song = buildImportedSong(draft);
   assert.deepEqual(song.measures[0].chords.map((chord) => chord?.romanNumeral), ['i', 'iv']);
   assert.deepEqual(song.importSource?.measures?.[0], {
-    chordBasis: 'inferred', confidence: 'medium', evidence: raw.measures[0].note, originalChords: ['Am', 'E7'],
-    sourceMeasureIndex: 0, analysisSource: 'meta', model: 'muse-spark-1.3', requestId: null, notes: [], writtenNotes: [], bassNotes: [], originalNoChord: false, userNoChord: false, timeSignature: null,
+    chordBasis: 'inferred', confidence: 'medium', evidence: '', originalChords: ['Am', 'E7'],
+    sourceMeasureIndex: 0, analysisSource: 'meta', model: 'muse-spark-1.3', requestId: null, originalNoChord: false, userNoChord: false, timeSignature: null,
   });
   draft.measures[0].originalChords[0] = 'C';
   assert.equal(song.importSource?.measures?.[0].originalChords[0], 'Am');
@@ -343,8 +344,8 @@ test('local analysis accepts a null model, real pitch evidence and source meters
   assert.equal(imported.importSource?.analysisSource, 'local');
   assert.equal(imported.importSource?.model, null);
   assert.equal(imported.importSource?.requestId, null);
-  assert.deepEqual(imported.importSource?.measures?.[0].notes, parsed.measures[0].notes);
-  assert.deepEqual(imported.importSource?.measures?.[0].bassNotes, ['C3', 'G2']);
+  assert.equal(imported.importSource?.measures?.[0].notes, undefined);
+  assert.equal(imported.importSource?.measures?.[0].bassNotes, undefined);
   assert.deepEqual(imported.importSource?.measures?.[0].timeSignature, [2, 4]);
   assert.deepEqual(imported.measures[0].chords.map((chord) => chord?.romanNumeral), ['I', 'V7']);
 });
@@ -468,7 +469,7 @@ test('a checked Meta option can open all 129 locally read bars without claiming 
   assert.throws(() => readScoreImportResponse({ ...raw, verification: { ...raw.verification, comparedMeasures: 129 } }, 'chord_symbols', 'verified'));
 });
 
-test('own-model sparse harmonization keeps its model and independent note evidence', () => {
+test('own-model sparse harmonization keeps its model provenance and discards note evidence', () => {
   const parsed = readScoreImportResponse(response({ analysisSource: 'local', model: 'ft_f1', requestId: null,
     mode: 'infer_harmony', sections: [], measures: [{ chords: ['Dm'], sourceLabel: 'Bar 2', needsReview: true,
       note: 'Contextual harmonization, not recovered source chords.', chordBasis: 'inferred', confidence: 'low',
@@ -476,7 +477,7 @@ test('own-model sparse harmonization keeps its model and independent note eviden
   }), 'infer_harmony', 'local');
   const song = buildScoreImportForEditor(createScoreImportDraft(parsed, 'sparse.pdf'));
   assert.equal(song.importSource?.measures[0].model, 'ft_f1');
-  assert.deepEqual(song.importSource?.measures[0].notes, ['D4']);
+  assert.equal(song.importSource?.measures[0].notes, undefined);
   assert.equal(song.measures[0].chords[0]?.root, 'D');
 });
 
@@ -524,8 +525,8 @@ test('original vector-PDF evidence reaches the editor as local tonic analysis wi
     assert.equal(imported.importSource?.model, null);
     assert.equal(imported.importSource?.requestId, null);
     assert.deepEqual(imported.importSource?.measures?.[0].originalChords, fixture.expected_chords);
-    assert.deepEqual(imported.importSource?.measures?.[0].notes, fixture.result.measures[0].notes);
-    assert.deepEqual(imported.importSource?.measures?.[0].bassNotes, fixture.result.measures[0].bassNotes);
+    assert.equal(imported.importSource?.measures?.[0].notes, undefined);
+    assert.equal(imported.importSource?.measures?.[0].bassNotes, undefined);
     assert.equal(imported.importSource?.measures?.[0].originalNoChord, false);
     assert.deepEqual(imported.importSource?.measures?.[0].timeSignature, fixture.result.measures[0].timeSignature);
   }

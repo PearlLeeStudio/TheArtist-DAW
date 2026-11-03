@@ -47,7 +47,8 @@ export function createImportReviewStore(analyze: ScoreAnalyzer = analyzeScoreFil
       controller?.abort();
       const own = new AbortController();
       controller = own;
-      set({ ...idle, phase: 'running', songEpoch, filename: file.name, label: 'Checking the imported score against the original…' });
+      // Pass the File directly to the active request; never keep it or its name in store state.
+      set({ ...idle, phase: 'running', songEpoch, label: 'Checking the imported score against the original…' });
       const finish = beginTiming('import.review', 'verified-background');
       analyze(file, mimeType, 'verified', 'infer_harmony', {
         signal: own.signal,

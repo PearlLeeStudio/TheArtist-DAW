@@ -6,7 +6,7 @@ interface ImportedMeasureReviewProps {
   selectedSlots: SlotAddress[];
 }
 
-/** Source evidence stays separate from the editable chords. Only the selected
+/** Reading status stays separate from the editable chords. Only the selected
  *  bar is shown, so a long imported score does not become another analysis table. */
 export default function ImportedMeasureReview({ song, selectedSlots }: ImportedMeasureReviewProps) {
   const sources = song.importSource?.measures;
@@ -41,11 +41,6 @@ function SourceDetails({ index, source, measure, selectedCount }: SourceDetailsP
   const inferred = source.chordBasis === 'inferred';
   const status = hasUnresolved ? 'Unresolved' : explicitNoChord ? 'N.C.' : inferred ? 'Inferred harmony' : 'Imported chords';
   const sourceChords = source.originalChords.join(' · ') || (source.originalNoChord ? 'N.C.' : 'No chord identified');
-  const notes = source.notes ?? [];
-  const writtenNotes = source.writtenNotes ?? [];
-  // Sounding notes are listed only when they differ from the written ones.
-  const showSoundingNotes = notes.length > 0 &&
-    (writtenNotes.length === 0 || JSON.stringify(writtenNotes) !== JSON.stringify(notes));
 
   return (
     <details style={{ borderLeft: '2px solid var(--border)', paddingLeft: 10 }}>
@@ -53,18 +48,14 @@ function SourceDetails({ index, source, measure, selectedCount }: SourceDetailsP
         Bar {index + 1} · {status} · Source details{selectedCount > 1 ? ` · first of ${selectedCount} selected bars` : ''}
       </summary>
       <div className="mt-2 space-y-1 break-words leading-relaxed">
-        <p>Source details retain the original import order and stay unchanged when you edit the score.</p>
+        <p>Chord reading status retains the import order. Source files and extracted note details are not kept.</p>
         {source.editorReview && <p role="status">Import note: {source.editorReview}</p>}
         <p>
           Original bar {(source.sourceMeasureIndex ?? index) + 1} · {inferred ? 'Proposed' : 'Read'}: {sourceChords} · {source.confidence} confidence.
         </p>
         {source.userNoChord && <p>You chose N.C. at import; the original did not state N.C.</p>}
         {hasUnresolved && <p>Unresolved slots have no chord assigned. They are not marked N.C.; choose their harmony in the editor.</p>}
-        {writtenNotes.length ? <p>Written notes: {writtenNotes.join(' · ')}</p> : null}
-        {showSoundingNotes ? <p>{writtenNotes.length ? 'Sounding notes' : 'Notes'}: {notes.join(' · ')}</p> : null}
-        {source.bassNotes?.length ? <p>Bass: {source.bassNotes.join(' · ')}</p> : null}
         {source.timeSignature && <p>Source meter: {source.timeSignature.join('/')}</p>}
-        {source.evidence && <p>{source.evidence}</p>}
       </div>
     </details>
   );

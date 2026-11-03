@@ -30,6 +30,7 @@ test('the client sends the file once, relays reader stages and returns the valid
   const calls: Array<{ url: string; body: Record<string, unknown>; headers: Record<string, string> }> = [];
   const statuses: string[] = [];
   const fetcher = (async (url: string | URL | Request, init?: RequestInit) => {
+    assert.equal(init?.cache, 'no-store');
     calls.push({ url: String(url), body: JSON.parse(String(init?.body)), headers: init?.headers as Record<string, string> });
     return stream([frame('progress', { label: 'Reading the score…' }), frame('result', reading)]);
   }) as typeof fetch;

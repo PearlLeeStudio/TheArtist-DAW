@@ -49,7 +49,7 @@ function verified(patch: Partial<ScoreImportResponse> = {}): ScoreImportResponse
 
 test('a compared reading flags disputed bars and fills only untouched empty bars that are not N.C.', () => {
   const plan = planImportReview(importedSong(), verified());
-  assert.deepEqual(plan.flags, [{ index: 2, review: 'Check against the original: chord readings differ.', confidence: 'low' }]);
+  assert.deepEqual(plan.flags, [{ index: 2, review: 'Check against the original: the readings differ.', confidence: 'low' }]);
   assert.equal(plan.fills.length, 1);
   assert.equal(plan.fills[0].index, 1);
   assert.deepEqual(plan.fills[0].chords.map((c) => c?.root + c?.quality), ['G7', 'G7']);
@@ -77,8 +77,8 @@ test('unparseable, long or missing Meta proposals leave a bar empty, and agreeme
 test('skipped, unaligned and local-only outcomes change nothing on the staff', () => {
   const song = importedSong();
   for (const [verification, expected] of [
-    [{ status: 'local_only', localMeasures: 5, metaMeasures: 0, comparedMeasures: 0, disputedMeasures: [], notes: ['Meta reads at most 128 bars.'] }, /at most 128/],
-    [{ status: 'local_fallback', localMeasures: 5, metaMeasures: 0, comparedMeasures: 0, disputedMeasures: [], notes: [] }, /skipped/],
+    [{ status: 'local_only', localMeasures: 5, metaMeasures: 0, comparedMeasures: 0, disputedMeasures: [], notes: ['Meta reads at most 128 bars.'] }, /without a Meta comparison/],
+    [{ status: 'local_fallback', localMeasures: 5, metaMeasures: 0, comparedMeasures: 0, disputedMeasures: [], notes: [] }, /^Meta reading was unavailable\. The local reader recovered this score\.$/],
     [{ status: 'unaligned', localMeasures: 5, metaMeasures: 4, comparedMeasures: 0, disputedMeasures: [0, 1, 2, 3, 4], notes: [] }, /4 bars where the score has 5 bars/],
   ] as const) {
     const plan = planImportReview(song, verified({ verification: { ...verification, disputedMeasures: [...verification.disputedMeasures], notes: [...verification.notes] } }));

@@ -1,5 +1,5 @@
 import type { Chord, ImportConfidence, ImportMeasureSource, Song } from '../models/types';
-import { parseImportedChord } from './scoreImport.ts';
+import { LOCAL_SCORE_ONLY_MESSAGE, LOCAL_SCORE_RECOVERY_MESSAGE, parseImportedChord } from './scoreImport.ts';
 import type { ScoreImportResponse } from './scoreImport.ts';
 
 /**
@@ -28,11 +28,8 @@ export interface ImportReviewPlan {
   summary: string;
 }
 
-/** The comparison's own reason, from the note the backend prefixes to a disputed bar. */
-function reviewText(note: string | undefined): string {
-  const reason = /^Local\/Meta comparison: ([^.]+)\./.exec(note ?? '');
-  return reason ? `Check against the original: ${reason[1]}.` : 'Check against the original: the readings differ; compare with the source.';
-}
+/** A fixed status avoids copying reader prose into the retained project. */
+const reviewText = 'Check against the original: the readings differ.';
 
 const bars = (count: number) => `${count} ${count === 1 ? 'bar' : 'bars'}`;
 
@@ -41,7 +38,8 @@ export function planImportReview(song: Song, verified: ScoreImportResponse): Imp
   const sources = song.importSource?.measures ?? [];
   if (!check) return { flags: [], fills: [], summary: 'The check returned no comparison.' };
   if (check.status === 'local_only' || check.status === 'local_fallback') {
-    return { flags: [], fills: [], summary: check.notes[0] ?? 'The check was skipped; the local reading stands.' };
+    return { flags: [], fills: [], summary: check.status === 'local_only'
+      ? LOCAL_SCORE_ONLY_MESSAGE : LOCAL_SCORE_RECOVERY_MESSAGE };
   }
   if (check.status === 'unaligned') {
     return { flags: [], fills: [], summary: `The second reading found ${bars(check.metaMeasures)} where the score has ${bars(check.localMeasures)}; nothing was flagged.` };
@@ -53,7 +51,7 @@ export function planImportReview(song: Song, verified: ScoreImportResponse): Imp
   for (const index of check.disputedMeasures) {
     const measure = verified.measures[index];
     if (!measure || !song.measures[index] || !sources[index]) continue;
-    flags.push({ index, review: reviewText(measure.note), confidence: measure.confidence ?? 'low' });
+    flags.push({ index, review: reviewText, confidence: measure.confidence ?? 'low' });
   }
   const fills: ImportReviewFill[] = [];
   for (let index = 0; index < Math.min(song.measures.length, verified.measures.length, sources.length); index++) {
@@ -72,9 +70,8 @@ export function planImportReview(song: Song, verified: ScoreImportResponse): Imp
       chords: [first, second],
       source: {
         chordBasis: proposed.chordBasis ?? 'inferred', confidence: proposed.confidence ?? 'low',
-        evidence: proposed.note, originalChords: [...proposed.chords], analysisSource: 'meta',
+        evidence: '', originalChords: [...proposed.chords], analysisSource: 'meta',
         model: proposed.model ?? verified.model, requestId: proposed.requestId ?? verified.requestId,
-        notes: [...(proposed.notes ?? [])], writtenNotes: [...(proposed.writtenNotes ?? [])], bassNotes: [...(proposed.bassNotes ?? [])],
         editorReview: 'Proposed from the original after import; the local reader had none.',
       },
     });

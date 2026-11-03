@@ -14,6 +14,7 @@ import { create } from 'zustand';
 import type { SavedSession, SessionGenerationContext, Song } from '../models/types';
 import { computeArrangement } from '../engine/arrangement';
 import { loadAll, removeSavedSessions, saveAll } from './sessionStorage';
+import { withoutImportedContent } from '../engine/importRetention';
 
 interface SessionState {
   sessions: SavedSession[];
@@ -43,8 +44,9 @@ function autoName(song: Song, generation: SessionGenerationContext): string {
 }
 
 function persist(sessions: SavedSession[]): SavedSession[] {
-  saveAll(sessions);
-  return sessions;
+  const cleaned = sessions.map((session) => ({ ...session, song: withoutImportedContent(session.song) }));
+  saveAll(cleaned);
+  return cleaned;
 }
 
 export const useSessionStore = create<SessionState>((set, get) => ({
@@ -56,7 +58,7 @@ export const useSessionStore = create<SessionState>((set, get) => ({
     // per-play computation. Drum & harmony stay rule-based at play time
     // (rhythm patterns + chord block) — only bass + melody are pre-computed
     // here because they depend on the song's chord progression.
-    const songCopy = structuredClone(song);
+    const songCopy = withoutImportedContent(structuredClone(song));
     // Genre on the song drives the arrangement rhythm tables; in case the
     // user's session.generation.genre differs, prefer that for arrangement.
     const songWithGenre = { ...songCopy, genre: generation.genre ?? songCopy.genre };
@@ -108,7 +110,7 @@ export const useSessionStore = create<SessionState>((set, get) => ({
       sessions: persist(
         get().sessions.map((s) => {
           if (s.id !== id) return s;
-          const newSong = patch.song ? structuredClone(patch.song) : s.song;
+          const newSong = patch.song ? withoutImportedContent(structuredClone(patch.song)) : s.song;
           const newGeneration = patch.generation ? { ...patch.generation } : s.generation;
           // Re-compute arrangement when song or generation changed (genre
           // drives the rhythm pattern). Cheap (~ms for typical 16-measure song).

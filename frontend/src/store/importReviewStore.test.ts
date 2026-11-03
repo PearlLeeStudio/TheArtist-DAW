@@ -74,9 +74,12 @@ test('a finished review marks disputed bars, fills the untouched empty bar and r
   store.subscribe((state) => statuses.push(state.phase + ':' + (state.label || state.summary)));
   store.getState().start(file, 'application/pdf', epoch);
   assert.equal(store.getState().phase, 'running');
+  assert.equal(store.getState().filename, '', 'the active review does not retain the source filename');
   await settle();
   const state = store.getState();
   assert.equal(state.phase, 'done');
+  assert.equal(state.filename, '');
+  assert.doesNotMatch(JSON.stringify(state), /score\.pdf|sourceLabel|writtenNotes|bassNotes/);
   assert.deepEqual(state.flagged, [2]);
   assert.equal(state.filled, 1);
   assert.equal(state.requestId, 'req-1');
@@ -85,7 +88,7 @@ test('a finished review marks disputed bars, fills the untouched empty bar and r
   assert.equal(song.measures[1].chords[0]?.root, 'G');
   assert.equal(song.measures[1].chords[0]?.romanNumeral, 'V7');
   assert.equal(song.importSource?.measures?.[1].analysisSource, 'meta');
-  assert.equal(song.importSource?.measures?.[2].editorReview, 'Check against the original: chord readings differ.');
+  assert.equal(song.importSource?.measures?.[2].editorReview, 'Check against the original: the readings differ.');
   assert.equal(song.importSource?.analysisSource, 'mixed');
   assert.equal(useSongStore.getState().editHistory.length, 1, 'a fill is one undo step');
   assert.ok(statuses.includes('running:Meta is reading…'), 'server stage labels are relayed as sent');

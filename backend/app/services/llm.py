@@ -167,6 +167,54 @@ class LLMResponseError(LLMError):
         self.status_code = status_code
 
 
+# These callers send uploaded notation or extracted notes. A provider can echo
+# that input in a refusal, validation error or HTTP diagnostic; none of that
+# prose belongs in the persistent spend ledger, server log or browser error.
+_SCORE_INPUT_LABELS = frozenset({"score.import", "score.form", "harmony.notes"})
+_score_log_scope: ContextVar[bool] = ContextVar("score_input_logging", default=False)
+
+
+class _ScoreSDKLogFilter(logging.Filter):
+    def filter(self, record: logging.LogRecord) -> bool:
+        # SDK debug output includes the complete request and raw exceptions.
+        # The context is local to this request, including concurrent workers.
+        return not _score_log_scope.get()
+
+
+for _sdk_logger in ("openai._base_client", "openai._response", "openai._legacy_response"):
+    logging.getLogger(_sdk_logger).addFilter(_ScoreSDKLogFilter())
+
+
+def _score_error_message(error: BaseException) -> str:
+    if isinstance(error, CreditExhausted):
+        return "Meta is paused on this server: Meta declined the score analysis request."
+    if isinstance(error, LLMResponseError):
+        if error.status_code is not None:
+            return f"The score analysis provider returned HTTP {error.status_code}."
+        return "The score analysis provider did not return an accepted reply."
+    if isinstance(error, LLMTimeout):
+        return "The score analysis provider did not answer within the request time limit."
+    if isinstance(error, LLMConnectionError):
+        return "The score analysis provider could not be reached."
+    return "The score analysis request failed."
+
+
+def _score_safe_error(error: LLMError) -> LLMError:
+    """Keep failure semantics and accounting, without provider prose or its exception chain."""
+    message = _score_error_message(error)
+    if isinstance(error, LLMResponseError):
+        safe = LLMResponseError(message, kind=error.kind, request_id=error.request_id,
+                                status_code=error.status_code)
+    elif isinstance(error, BudgetExceeded):
+        safe = type(error)(message, spent_usd=error.spent_usd, outstanding_usd=error.outstanding_usd,
+                           request_usd=error.request_usd, cap_usd=error.cap_usd)
+        safe.request_id = error.request_id
+    else:
+        safe = type(error)(message, request_id=error.request_id)
+    safe.cost_usd, safe.attempts = error.cost_usd, error.attempts
+    return safe
+
+
 # --- Provider configuration ---
 
 # USD per 1M tokens (input, cached input, output) for Muse Spark 1.x Standard
@@ -1192,6 +1240,7 @@ class LLMClient:
     def _attempt(self, transport: Transport, prepared: PreparedRequest, label: str, attempts: int) -> LLMResult:
         """Reserve, send and settle one request; every failure is settled, then raised as an LLMError."""
         cfg = self.config
+        private_score = label in _SCORE_INPUT_LABELS
         if _no_credit(cfg):
             log.warning("llm refused provider=%s model=%s label=%s: the provider answered within the last %d s "
                         "that the account has no credit; Meta is paused", cfg.provider, cfg.model, label,
@@ -1206,17 +1255,22 @@ class LLMClient:
 
         started = time.perf_counter()
         error: LLMError | None = None
+        log_scope = _score_log_scope.set(private_score)
         try:
             response, headers = transport({**prepared.body, "timeout": prepared.timeout_s})
         except Exception as exc:
-            error, settle_usd = self._transport_failure(exc, prepared)
+            error, settle_usd = self._transport_failure(exc, prepared, private_score=private_score)
         except BaseException as exc:
             self._close(entry_id, label, prepared.reserve_usd, "failed", _elapsed_ms(started), error=exc)
             raise  # KeyboardInterrupt / SystemExit: settled, now re-raised unchanged
+        finally:
+            _score_log_scope.reset(log_scope)
         latency_ms = _elapsed_ms(started)
         if error is not None:
             # Settled and raised outside the handler, so the raw exception is neither the __cause__ nor
             # the __context__ of what propagates: its text and the SDK's request can carry the key
+            if private_score:
+                error = _score_safe_error(error)
             self._close(entry_id, label, settle_usd, "failed", latency_ms, request_id=error.request_id,
                         error=error)
             error.cost_usd, error.attempts = settle_usd, 1
@@ -1250,6 +1304,8 @@ class LLMClient:
                 data=data, text=text, provider=cfg.provider, model=model, request_id=request_id,
                 response_id=response_id, usage=usage or {}, cost_usd=cost, latency_ms=latency_ms, label=label,
                 attempts=attempts)
+        if private_score:
+            error = _score_safe_error(error)
         self._close(entry_id, label, cost, "failed", latency_ms, request_id=request_id,
                     response_id=response_id, usage=usage, error=error)
         error.cost_usd, error.attempts = cost, 1
@@ -1345,7 +1401,8 @@ class LLMClient:
         model = response.get("model")
         return data, text, model if isinstance(model, str) and model else self.config.model
 
-    def _transport_failure(self, exc: Exception, prepared: PreparedRequest) -> tuple[LLMError, float]:
+    def _transport_failure(self, exc: Exception, prepared: PreparedRequest, *,
+                           private_score: bool = False) -> tuple[LLMError, float]:
         """Map a transport exception to (typed error, amount to settle), keeping only scrubbed text of it."""
         full = prepared.reserve_usd
         where = f"{self.config.provider} ({self.config.model})"
@@ -1357,7 +1414,7 @@ class LLMClient:
             # A 5xx, or a 408 request timeout, may have generated tokens first, so it keeps the safe
             # over-count; any other 4xx rejects the request before generation, so nothing is billed.
             billed = full if status >= 500 or status == 408 else 0.0
-            detail = self._scrub(_api_message(exc))
+            detail = "score analysis provider detail omitted" if private_score else self._scrub(_api_message(exc))
             if _reports_no_credit(status, exc.body):
                 # Every request now stops here until the hold ends; the provider's words go to the log only
                 _hold_no_credit(self.config)
@@ -1365,7 +1422,7 @@ class LLMClient:
                             "process for %d s", where, status, detail, CREDIT_REFUSAL_HOLD_S)
                 return CreditExhausted(f"Meta is paused on this server: Meta declined the request (HTTP {status}).",
                                        request_id=_request_id(headers)), billed
-            if status == 429:
+            if status == 429 and not private_score:
                 # The provider's rate-limit headers say when to try again; they go ahead of the provider
                 # text so the ledger note's length cut cannot drop them
                 limits = "; ".join(f"{k}={v}" for k, v in sorted(headers.items()) if k.startswith("x-ratelimit-"))
@@ -1394,7 +1451,8 @@ class LLMClient:
         cfg = self.config
         note = None
         if error is not None:
-            note = self._scrub(f"{getattr(error, 'kind', type(error).__name__)}: {error}")
+            diagnostic = _score_error_message(error) if label in _SCORE_INPUT_LABELS else str(error)
+            note = self._scrub(f"{getattr(error, 'kind', type(error).__name__)}: {diagnostic}")
         elif usage is None:
             note = "usage missing from the response; settled at the reservation"
         try:

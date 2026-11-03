@@ -8,7 +8,6 @@ Geometric tolerances are multiples of a staff's spacing, the gap between its lin
 
 from __future__ import annotations
 
-import hashlib
 import io
 import re
 from bisect import bisect_left, bisect_right
@@ -20,15 +19,12 @@ from typing import Any
 
 import pdfplumber
 
-from app.services.score_cache import ScoreCache
-
 MAX_PDF_BYTES = 8 * 1024 * 1024
 MAX_PDF_PAGES = 50
 MAX_PDF_MEASURES = 512
 MAX_PAGE_OBJECTS = 60_000
 MAX_TOTAL_GLYPHS = 250_000
 _LIMIT_MESSAGE = "The vector score exceeds the bounded glyph/geometry limit."
-_score_cache = ScoreCache()
 
 
 class ScorePDFError(ValueError):
@@ -1131,17 +1127,13 @@ def _parse_pages(pages: Any, *, max_measures: int = MAX_PDF_MEASURES) -> ParsedS
     return _summarize(state)
 
 
-def parse_vector_score(data: bytes, *, max_pages: int = MAX_PDF_PAGES, max_measures: int = MAX_PDF_MEASURES,
-                       use_cache: bool = True) -> ParsedScore:
+def parse_vector_score(data: bytes, *, max_pages: int = MAX_PDF_PAGES,
+                       max_measures: int = MAX_PDF_MEASURES) -> ParsedScore:
+    """Decode in request-local memory; uploaded bytes and notation are never cached."""
     if not isinstance(data, bytes) or not data or len(data) > MAX_PDF_BYTES or not data.startswith(b"%PDF-"):
         raise ScorePDFError("Choose a nonempty PDF up to 8 MiB for local vector analysis.")
     if not 1 <= max_pages <= MAX_PDF_PAGES or not 1 <= max_measures <= MAX_PDF_MEASURES:
         raise ScorePDFError(f"Local vector analysis supports 1..{MAX_PDF_PAGES} pages and 1..{MAX_PDF_MEASURES} measures.")
-    cache_key = (hashlib.sha256(data).digest(), max_pages, max_measures)
-    if use_cache:
-        cached = _score_cache.get(cache_key)
-        if cached is not None:
-            return cached
     try:
         with pdfplumber.open(io.BytesIO(data)) as pdf:
             if not 1 <= len(pdf.pages) <= max_pages:
@@ -1151,6 +1143,4 @@ def parse_vector_score(data: bytes, *, max_pages: int = MAX_PDF_PAGES, max_measu
         raise
     except Exception as exc:
         raise ScorePDFError("The PDF could not be decoded into supported vector geometry.") from exc
-    if use_cache:
-        _score_cache.put(cache_key, score)
     return score

@@ -10,6 +10,8 @@ export const MAX_SCORE_IMPORT_MEASURES = 512;
 export const IMPORT_TIME_SIGNATURES = ['4/4', '3/4', '6/8', '2/4', '5/4', '7/8'] as const;
 export type ScoreMime = 'image/png' | 'image/jpeg' | 'image/webp' | 'application/pdf';
 export type ScoreImportEngine = 'local' | 'meta' | 'auto' | 'verified';
+export const LOCAL_SCORE_RECOVERY_MESSAGE = 'Meta reading was unavailable. The local reader recovered this score.';
+export const LOCAL_SCORE_ONLY_MESSAGE = 'The local reader opened this score without a Meta comparison; unresolved bars remain editable.';
 
 export interface ScoreVerification {
   status: 'compared' | 'local_unavailable' | 'unaligned' | 'local_only' | 'local_fallback';
@@ -200,7 +202,7 @@ export function scoreImportReadyStatus(draft: Pick<ScoreImportDraft, 'measures' 
   if (reader === 'verified') {
     const check = draft.verification;
     if (!check) return 'Comparison result is missing. Analyze again.';
-    if (check.status === 'local_fallback') return `Local analysis ready for all ${check.localMeasures} bars. Meta was unavailable. Ready to import.`;
+    if (check.status === 'local_fallback') return LOCAL_SCORE_RECOVERY_MESSAGE;
     if (check.status === 'local_only') return `Local analysis ready for all ${check.localMeasures} bars. Meta comparison was skipped for this long score.`;
     if (check.status === 'local_unavailable') return 'Meta reading ready. Local cross-checking was unavailable; review every bar.';
     if (check.status === 'unaligned') return 'Bar counts disagree. The local reading was kept; review the score before importing.';
@@ -328,16 +330,19 @@ const copyMeter = (meter: [number, number] | null | undefined): [number, number]
 
 function measureDraft(measure: RecognizedMeasure, index: number, response: ScoreImportResponse): ImportMeasureDraft {
   return {
-    ...measure,
+    needsReview: measure.needsReview,
+    // Recognition is complete. Only its chords and reading status enter the draft.
+    sourceLabel: '',
+    note: '',
     chordBasis: measure.chordBasis ?? 'printed',
     confidence: measure.confidence ?? 'high',
     sourceMeasureIndex: index,
     analysisSource: measure.analysisSource ?? (response.analysisSource === 'local' ? 'local' : 'meta'),
     model: measure.model ?? ((measure.analysisSource ?? response.analysisSource) === 'local' ? null : response.model),
     requestId: measure.requestId ?? null,
-    notes: [...(measure.notes ?? [])],
-    writtenNotes: [...(measure.writtenNotes ?? [])],
-    bassNotes: [...(measure.bassNotes ?? [])],
+    notes: [],
+    writtenNotes: [],
+    bassNotes: [],
     originalNoChord: measure.noChord ?? false,
     timeSignature: copyMeter(measure.timeSignature),
     originalChords: [...measure.chords],
@@ -346,11 +351,13 @@ function measureDraft(measure: RecognizedMeasure, index: number, response: Score
 }
 
 export function createScoreImportDraft(response: ScoreImportResponse, filename: string): ScoreImportDraft {
+  // Older callers pass a filename; it is no longer kept as project content.
+  void filename;
   return {
     mode: response.mode ?? 'chord_symbols',
     analysisSource: response.analysisSource ?? 'meta',
-    filename,
-    title: response.title || filename.replace(/\.[^.]+$/, ''),
+    filename: '',
+    title: response.title || 'Imported harmony',
     key: response.key ?? '',
     timeSignature: response.timeSignature?.join('/') ?? '',
     bpm: '80',
@@ -361,14 +368,16 @@ export function createScoreImportDraft(response: ScoreImportResponse, filename: 
       startBar: String(section.startMeasure + 1),
       endBar: String(section.startMeasure + section.length),
       origin: section.basis,
-      note: section.note,
+      note: '',
     })),
-    warnings: [...response.warnings],
+    warnings: [],
     model: response.model,
     requestId: response.requestId,
     formAnalysis: response.formAnalysis ?? null,
     verification: response.verification ? { ...response.verification,
-      disputedMeasures: [...response.verification.disputedMeasures], notes: [...response.verification.notes] } : null,
+      disputedMeasures: [...response.verification.disputedMeasures],
+      notes: response.verification.status === 'local_fallback' ? [LOCAL_SCORE_RECOVERY_MESSAGE]
+        : response.verification.status === 'local_only' ? [LOCAL_SCORE_ONLY_MESSAGE] : [] } : null,
   };
 }
 
@@ -513,9 +522,9 @@ function importedMeasureSource(measure: ImportMeasureDraft, key: string, deferCh
   const editorReview = deferChordReview ? pendingMeasureReview(measure, key) : undefined;
   return {
     chordBasis: measure.chordBasis, confidence: measure.confidence,
-    evidence: measure.note, originalChords: [...measure.originalChords],
+    evidence: '', originalChords: [...measure.originalChords],
     sourceMeasureIndex: measure.sourceMeasureIndex, analysisSource: measure.analysisSource, model: measure.model, requestId: measure.requestId,
-    notes: [...measure.notes], writtenNotes: [...measure.writtenNotes], bassNotes: [...measure.bassNotes], originalNoChord: measure.originalNoChord,
+    originalNoChord: measure.originalNoChord,
     userNoChord: isNoChordText(measure.chordText) && !measure.originalNoChord,
     timeSignature: copyMeter(measure.timeSignature),
     ...(editorReview ? { editorReview } : {}),
@@ -562,7 +571,7 @@ function buildScoreImport(draft: ScoreImportDraft, makeId: () => string, deferCh
       origin: section.origin,
     })).sort((a, b) => a.startMeasure - b.startMeasure),
     importSource: {
-      filename: draft.filename, model: draft.model, requestId: draft.requestId, mode: draft.mode,
+      filename: '', model: draft.model, requestId: draft.requestId, mode: draft.mode,
       analysisSource: draft.analysisSource,
       measures: draft.measures.map((measure) => importedMeasureSource(measure, key, deferChordReview)),
     },

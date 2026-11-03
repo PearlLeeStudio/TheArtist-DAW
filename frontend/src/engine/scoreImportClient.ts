@@ -65,6 +65,7 @@ export async function analyzeScoreFile(file: File, mimeType: ScoreMime, engine: 
   onStatus?.('Uploading the score for analysis…');
   const response = await fetcher('/api/import/score/stream', {
     method: 'POST',
+    cache: 'no-store',
     // A server with Meta limits admits an assisted import per browser session.
     headers: { 'Content-Type': 'application/json', ...(engine !== 'local' ? metaHeaders() : {}) },
     body: JSON.stringify(scoreImportRequestBody(file.name, mimeType, dataBase64, mode, engine)),

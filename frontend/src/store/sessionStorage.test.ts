@@ -4,6 +4,8 @@ import type { SavedSession } from '../models/types.ts';
 import { DEFAULT_PLAY_SETTINGS, enginePlayConfig, playSettingsFromSession } from '../engine/playSettings.ts';
 import { saveAll, loadAll, removeSavedSessions } from './sessionStorage.ts';
 import { readScoreImportResponse, createScoreImportDraft, buildImportedSong, buildScoreImportForEditor } from '../engine/scoreImport.ts';
+import { withoutImportedContent } from '../engine/importRetention.ts';
+import { useImportCleanupStore } from './importCleanupStore.ts';
 
 interface StorageMemory { stored: string; writes: number; failWrites: boolean }
 
@@ -62,7 +64,7 @@ const importedProject: SavedSession = {
       { root: 'F', quality: 'maj', bass: 'C', romanNumeral: 'IV', voicing: [48, 53, 57], extensions: [] }, null,
     ] }],
     sections: [{ id: 'region-1', type: null, label: 'Repeated region', origin: 'inferred', startMeasure: 0, length: 1 }],
-    importSource: { filename: 'score.pdf', model: 'muse-spark-1.3', requestId: 'sample-request' },
+    importSource: { filename: '', model: 'muse-spark-1.3', requestId: 'sample-request' },
   },
   generation: { model: 'ft_f1', genre: 'jazz', ...DEFAULT_PLAY_SETTINGS, bassVolume: 0 },
   arrangement: { bassPattern: [0, 2], bassInstrument: 'contrabass', beatsPerMeasure: 6 },
@@ -122,7 +124,7 @@ test('a failed bulk deletion cannot publish a partial list or lose the previous 
   });
 });
 
-test('note-derived source proposals and evidence survive browser save and reload', () => {
+test('note-derived chord proposals survive browser save while source evidence is discarded', () => {
   const project = structuredClone(importedProject);
   project.song.importSource = {
     filename: 'notes.pdf', model: 'muse-spark-1.3', requestId: 'notes-request', mode: 'infer_harmony',
@@ -135,7 +137,13 @@ test('note-derived source proposals and evidence survive browser save and reload
   } });
   try {
     saveAll([project]);
-    assert.deepEqual(loadAll()[0].song.importSource, project.song.importSource);
+    const source = loadAll()[0].song.importSource!;
+    assert.equal(source.filename, '');
+    assert.equal(source.measures![0].evidence, '');
+    assert.deepEqual(source.measures![0].originalChords, ['C']);
+    assert.equal(source.measures![0].confidence, 'medium');
+    assert.equal(source.requestId, 'notes-request');
+    assert.doesNotMatch(stored, /notes\.pdf|Bass C and notes E G visible/);
   } finally {
     if (descriptor) Object.defineProperty(globalThis, 'localStorage', descriptor);
     else Reflect.deleteProperty(globalThis, 'localStorage');
@@ -149,7 +157,7 @@ test('saved projects with invalid or disguised inferred provenance are skipped',
   };
   for (const source of [
     { ...validSource, mode: 'unknown' }, { ...validSource, measures: undefined },
-    { ...validSource, mode: 'chord_symbols' }, { ...validSource, measures: [{ ...validSource.measures[0], evidence: '' }] },
+    { ...validSource, mode: 'chord_symbols' },
     { ...validSource, measures: [{ ...validSource.measures[0], confidence: 'certain' }] },
     { ...validSource, measures: [{ ...validSource.measures[0], originalChords: [3] }] },
   ]) {
@@ -158,7 +166,7 @@ test('saved projects with invalid or disguised inferred provenance are skipped',
   }
 });
 
-test('local and mixed source evidence including rests and explicit empty choices survives browser reload', () => {
+test('local and mixed reading status, rests and explicit empty choices survive without note evidence', () => {
   const project = structuredClone(importedProject);
   project.song.importSource = {
     filename: 'analysis.pdf', mode: 'infer_harmony', analysisSource: 'mixed', model: 'muse-spark-1.3', requestId: 'batch-request',
@@ -167,12 +175,12 @@ test('local and mixed source evidence including rests and explicit empty choices
       { chordBasis: 'inferred', confidence: 'medium', evidence: 'D F A supports D minor.', originalChords: ['Dm'], sourceMeasureIndex: 1, analysisSource: 'meta', model: 'muse-spark-1.3', requestId: 'passage-request', notes: ['D4', 'F4', 'A4'], bassNotes: ['D3'], originalNoChord: false, userNoChord: false, timeSignature: [4, 4] },
     ],
   };
-  assert.deepEqual(roundTripProjects([project])[0].song.importSource, project.song.importSource);
+  assert.deepEqual(roundTripProjects([project])[0].song.importSource, withoutImportedContent(project.song).importSource);
   project.song.importSource.analysisSource = 'local';
   project.song.importSource.model = null;
   project.song.importSource.requestId = null;
   project.song.importSource.measures = [project.song.importSource.measures![0]];
-  assert.deepEqual(roundTripProjects([project])[0].song.importSource, project.song.importSource);
+  assert.deepEqual(roundTripProjects([project])[0].song.importSource, withoutImportedContent(project.song).importSource);
 });
 
 test('unresolved editor imports retain every source symbol and their review reason through browser reload', () => {
@@ -211,11 +219,13 @@ test('unresolved editor imports retain every source symbol and their review reas
     const invalid = { ...project, song: { ...project.song, importSource: {
       ...source, measures: [{ ...source.measures![0], editorReview }],
     } } };
-    assert.deepEqual(reloadProjects([invalid]), []);
+    const restored = reloadProjects([invalid]);
+    assert.equal(restored.length, 1, 'old prose is removed without dropping the musical project');
+    assert.equal(restored[0].song.importSource?.measures?.[0].editorReview, 'Review imported chords against your source.');
   }
 });
 
-test('ottava written and sounding pitches remain distinct through import and browser save/load', () => {
+test('ottava source pitches are discarded after their chord has been imported', () => {
   const response = readScoreImportResponse({
     title: 'Octave instruction', key: 'C major', timeSignature: [4, 4], sections: [], warnings: [],
     analysisSource: 'local', model: null, requestId: null, mode: 'infer_harmony',
@@ -232,13 +242,58 @@ test('ottava written and sounding pitches remain distinct through import and bro
   try {
     saveAll([project]);
     const source = loadAll()[0].song.importSource?.measures?.[0];
-    assert.deepEqual(source?.writtenNotes, ['C6']);
-    assert.deepEqual(source?.notes, ['C7']);
+    assert.equal(source?.writtenNotes, undefined);
+    assert.equal(source?.notes, undefined);
+    assert.equal(source?.bassNotes, undefined);
+    assert.deepEqual(source?.originalChords, ['C']);
+    assert.doesNotMatch(stored, /C6|C7|8va instruction|octave\.pdf/);
     assert.deepEqual(loadAll()[0].song.importSource, song.importSource);
   } finally {
     if (descriptor) Object.defineProperty(globalThis, 'localStorage', descriptor);
     else Reflect.deleteProperty(globalThis, 'localStorage');
   }
+});
+
+test('legacy stored projects are cleaned and rewritten without losing titles, chords, sections or settings', () => {
+  const project = structuredClone(importedProject);
+  project.song.importSource = {
+    filename: 'private-score.pdf', model: 'muse-spark-1.3', requestId: 'request-accounting', mode: 'infer_harmony',
+    measures: [{ chordBasis: 'inferred', confidence: 'medium', evidence: 'Private pitch-duration evidence', originalChords: ['F/C'],
+      notes: ['C6'], writtenNotes: ['C5'], bassNotes: ['C3'], editorReview: 'Private source prose' }],
+  };
+  withStoredProjects([project], (memory) => {
+    const [restored] = loadAll();
+    assert.equal(memory.writes, 1, 'the legacy browser copy is replaced on read');
+    assert.equal(restored.name, project.name);
+    assert.equal(restored.song.title, project.song.title);
+    assert.deepEqual(restored.song.measures, project.song.measures);
+    assert.deepEqual(restored.song.sections, project.song.sections);
+    assert.deepEqual(restored.generation, project.generation);
+    assert.equal(restored.song.importSource?.requestId, 'request-accounting');
+    assert.deepEqual(restored.song.importSource?.measures?.[0].originalChords, ['F/C']);
+    assert.doesNotMatch(JSON.stringify(restored), /private-score|Private|C6|C5|C3/);
+    assert.doesNotMatch(memory.stored, /private-score|Private|C6|C5|C3/);
+    loadAll();
+    assert.equal(memory.writes, 1, 'a cleaned project does not need another migration');
+  });
+});
+
+test('a denied migration write still recovers clean projects in memory', () => {
+  const project = structuredClone(importedProject);
+  project.song.importSource!.filename = 'legacy-original.pdf';
+  withStoredProjects([project], (memory) => {
+    memory.failWrites = true;
+    const [restored] = loadAll();
+    assert.equal(restored.song.importSource?.filename, '');
+    assert.deepEqual(restored.song.measures, project.song.measures);
+    assert.match(memory.stored, /legacy-original\.pdf/, 'a failed write never overwrites storage with a partial list');
+    assert.ok(useImportCleanupStore.getState().failedTargets.includes('saved projects'));
+    memory.failWrites = false;
+    loadAll();
+    assert.equal(useImportCleanupStore.getState().failedTargets.includes('saved projects'), false,
+      'a successful cleanup clears the error-only status');
+    assert.doesNotMatch(memory.stored, /legacy-original\.pdf/);
+  });
 });
 
 test('an invalid arrangement cache is discarded while the score and settings survive', () => {

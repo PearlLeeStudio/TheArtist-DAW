@@ -6,8 +6,10 @@
  * Schema versioning: a top-level `{ version, sessions }` envelope so a
  * future migration can detect the old shape and upgrade in place.
  */
-import type { SavedSession } from '../models/types';
+import type { SavedSession, Song } from '../models/types';
 import { CHORDS_PER_BAR, isSectionType } from '../engine/songForm.ts';
+import { withoutImportedContent } from '../engine/importRetention.ts';
+import { useImportCleanupStore } from './importCleanupStore.ts';
 
 const STORAGE_KEY = 'theartist-sessions';
 export const SCHEMA_VERSION = 1;
@@ -20,21 +22,36 @@ interface Envelope {
 export function loadAll(): SavedSession[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
+    if (!raw) { useImportCleanupStore.getState().complete('saved projects'); return []; }
     const parsed = JSON.parse(raw) as Envelope;
     if (!parsed || parsed.version !== SCHEMA_VERSION || !Array.isArray(parsed.sessions)) {
       return [];
     }
-    return parsed.sessions.filter(isValidSession).map(withValidArrangement);
+    // Migrate source-bearing projects without dropping their chords, settings or names.
+    const cleaned = parsed.sessions.map((session: unknown) => {
+      if (!isRecord(session) || !isRecord(session.song)) return session;
+      return { ...session, song: withoutImportedContent(session.song as unknown as Song) };
+    });
+    const replacement = JSON.stringify({ ...parsed, sessions: cleaned });
+    if (replacement !== raw) {
+      // A denied storage write must not hide the user's recovered musical work.
+      try {
+        localStorage.setItem(STORAGE_KEY, replacement);
+        useImportCleanupStore.getState().complete('saved projects');
+      } catch { useImportCleanupStore.getState().failed('saved projects'); }
+    } else useImportCleanupStore.getState().complete('saved projects');
+    return cleaned.filter(isValidSession).map(withValidArrangement);
   } catch {
     return [];
   }
 }
 
 export function saveAll(sessions: SavedSession[]): void {
-  const envelope: Envelope = { version: SCHEMA_VERSION, sessions };
+  const envelope: Envelope = { version: SCHEMA_VERSION,
+    sessions: sessions.map((session) => ({ ...session, song: withoutImportedContent(session.song) })) };
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(envelope));
+    useImportCleanupStore.getState().complete('saved projects');
   } catch {
     throw new Error('This browser could not save the project. Storage may be full or disabled. Your current score is still open.');
   }
@@ -149,9 +166,9 @@ function isValidImportedMeasure(measure: unknown, importAnalysisSource: unknown,
     (measure.userNoChord === undefined || (typeof measure.userNoChord === 'boolean' &&
       !(measure.userNoChord && measure.originalNoChord))) &&
     (measure.timeSignature === undefined || measure.timeSignature === null || isTimeSignature(measure.timeSignature)) &&
-    // Inferred chords need the infer-harmony mode and stated evidence; an
+    // Inferred chords need the infer-harmony mode; source evidence is discarded. An
     // unreadable bar is low confidence with no chords.
-    (measure.chordBasis !== 'inferred' || (mode === 'infer_harmony' && measure.evidence.trim() !== '')) &&
+    (measure.chordBasis !== 'inferred' || mode === 'infer_harmony') &&
     (measure.chordBasis !== 'unreadable' || (measure.confidence === 'low' && measure.originalChords.length === 0));
 }
 
@@ -169,7 +186,7 @@ function isValidImportSource(importSource: unknown): boolean {
   if (!isTextUpTo(importSource.filename, MAX_FILENAME_LENGTH) || !isOneOf(analysisSource, ANALYSIS_SOURCES) ||
       !modelMatchesSource || !requestIdMatchesSource ||
       (importSource.mode !== undefined && !isOneOf(importSource.mode, IMPORT_MODES))) return false;
-  // Inferred harmony is kept only together with each bar's evidence.
+  // Inferred harmony retains each bar's confidence and reading basis.
   if (importSource.measures === undefined) return importSource.mode !== 'infer_harmony';
   if (!Array.isArray(importSource.measures) || importSource.measures.length > MAX_SCORE_IMPORT_MEASURES) return false;
   return importSource.measures.every((measure) => isValidImportedMeasure(measure, analysisSource, importSource.mode));
