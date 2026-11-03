@@ -10,29 +10,40 @@ JinJu Lee · PearlLeeStudio
 
 From score/chord editor to AI reharmonization agent.
 
-## Timeline and English captions
+## Demo captions
 
-The original timing is retained as a reference. [English SRT](demo-subtitles.en.srt)
-matches this table; `<br>` marks a line break. The contribution and Baseten card copy
-below can be included in the closing section when the final cut is assembled.
+### Import
 
-| Time | Scene | Caption |
-|---|---|---|
-| 00:00–00:04 | Creator and project | JinJu Lee · PearlLeeStudio<br>TheArtist |
-| 00:04–00:08 | Project introduction | From score/chord editor<br>to AI reharmonization agent. |
-| 00:08–00:18 | Import | Import a score PDF as editable chords.<br>The local reader opens it right away. |
-| 00:18–00:23 | Imported harmony | The song keeps its length and sections,<br>so every chord is chosen inside the form. |
-| 00:23–00:28 | Player UX | Redesigned player, refined playback UX.<br>Switch parts and set the mix. |
-| 00:28–00:44 | Instrument and rhythm comparison | No captions; arrangement playback. |
-| 00:44–00:54 | Passage selection and search | Reharmonize agent: up to four chords,<br>three alternatives to compare. |
-| 00:54–01:00.5 | Tool search | Muse Spark decides what to search<br>and calls the search tools. |
-| 01:00.5–01:07 | Context scoring | My model scores each change in context;<br>Muse Spark offers three that differ. |
-| 01:07–01:14 | Run details: model, tool calls and request IDs | Live Meta calls: muse-spark-1.3,<br>request IDs, cost and time. |
-| 01:14–01:21 | Combine and Apply | Compare and combine the alternatives.<br>Apply the changes you want to keep. |
-| 01:21–01:45 | Revised arrangement playback | No captions; revised arrangement playback. |
-| 01:45–01:54 | Score PDF export, then editable Harmony, Bass and Drums in Logic Pro | Export a score PDF, then open<br>editable MIDI tracks in Logic Pro. |
-| 01:54–01:58.5 | Muse Spark comparison table | Why Muse Spark: reading chords from notes,<br>it matched 89.5%; my local analyzer 77.8%. |
-| 01:58.5–02:02.7 | Closing cover | Less setup. More time to make your music.<br>artist-daw.pearlleestudio.co |
+Import a score PDF as editable chords.
+
+The local reader opens it right away.
+
+The song keeps its length and sections, so every chord is chosen inside the form.
+
+### Player
+
+Redesigned the player UX: switch parts, set the mix and hear the arrangement take shape.
+
+### Reharmonize
+
+Reharmonize up to four chords, with three alternatives to compare.
+
+Muse Spark decides what to search and calls the search tools.
+
+My Music Transformer scores each change against the surrounding harmony;
+Muse Spark offers three contrasting alternatives.
+
+Run details show muse-spark-1.3, its tool calls, request IDs, cost and time.
+
+Compare and combine the alternatives. Apply the changes you want to keep.
+
+### Score PDF export
+
+Export the harmonic score as a PDF.
+
+### Logic Pro export
+
+Open Harmony, Bass and Drums in Logic Pro as editable MIDI.
 
 ## Built for this hackathon
 
