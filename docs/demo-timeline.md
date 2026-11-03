@@ -1,7 +1,7 @@
 # Hackathon demo subtitles
 
 Subtitle plan for the [hackathon video](https://youtu.be/Xw3BwB64Jt0), re-cut from the
-existing 1:51 recording. The [English SRT](demo-subtitles.en.srt) follows this fourteen-cue
+existing 1:51 recording. The [English SRT](demo-subtitles.en.srt) follows this fifteen-cue
 plan. Align cue edges to the cuts in the editing project. The two listening passages
 intentionally have no captions, leaving the viewer time to follow the harmony and the
 controls.
@@ -32,10 +32,10 @@ live Meta calls. The musician chooses and applies the changes.
 
 ## English captions and placement
 
-`<br>` marks a line break. Times are placements in the re-cut, which is 2:02.7 long:
-the existing 1:51.2 edit plus a 7 s Run details insert after the search and a 4.5 s
-result card before the closing. If the cut differs, shift the later cues by the same
-amount.
+`<br>` marks a line break. Times are placements in the re-cut, which is 2:06.7 long:
+the existing 1:51.2 edit plus a 7 s Run details insert, a 4 s creativity cue after
+the DAW handoff and a 4.5 s result card before the closing. If the cut differs,
+shift the later cues by the same amount.
 
 | Time | Scene | Caption |
 |---|---|---|
@@ -53,8 +53,9 @@ amount.
 | 01:21–01:45 | Revised arrangement playback | No captions; let the revised arrangement play. |
 | 01:45–01:49 | Exported score PDF | Let's check the chord chart. |
 | 01:49–01:54 | Export menu and Logic Pro tracks | DAW export: Harmony, Bass and Drums<br>open in Logic Pro as editable MIDI. |
-| 01:54–01:58.5 | Result card (new insert) | Why Muse Spark: reading chords from notes,<br>it matched 89.5%; my local analyzer 77.8%. |
-| 01:58.5–02:02.7 | Closing cover | Less setup. More time to make your music.<br>artist-daw.pearlleestudio.co |
+| 01:54–01:58 | Continue creating in the DAW | Unleash your creativity in your DAW. |
+| 01:58–02:02.5 | Result card (new insert) | Why Muse Spark: reading chords from notes,<br>it matched 89.5%; my local analyzer 77.8%. |
+| 02:02.5–02:06.7 | Closing cover | Less setup. More time to make your music.<br>artist-daw.pearlleestudio.co |
 
 ## Editing notes
 
