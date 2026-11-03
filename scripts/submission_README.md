@@ -92,6 +92,30 @@ The automated suites, 687 backend and 320 frontend tests, verify contracts and
 editing behavior, not musical quality. [Architecture](docs/architecture.md) ·
 [model catalog](docs/models.md)
 
+**From push to production.** Every change takes one path
+([automatic deployment](deploy/autodeploy.md), [Pages](deploy/pages.md),
+[walkthrough](docs/web-projects.md#from-docker-to-the-public-domains)). A commit
+pushed to the public branch is built by Cloudflare Pages into the editor at
+artist-daw.pearlleestudio.co, whose worker forwards only `/api` to the model
+server and fails closed. The model server's systemd timer polls the same branch
+about once a minute over anonymous HTTPS, with no deploy token, webhook or paid
+service. A runtime change builds a Docker image labelled with the revision
+(dependency and model layers cached); an offline container imports the app as
+its runtime user and checks the theory assets; Compose then replaces the app and
+waits up to 240 s for health, Caddy is refreshed, all 18 resident models are
+identity-checked, three eight-bar F1 candidates are generated without a paid
+call, and the public HTTPS endpoint is checked. A build or import failure keeps
+the running app; a startup, generation or HTTPS failure restores the previous
+checkout and image. Documentation, test, experiment and frontend-only changes
+advance the checkout without restarting the API; a runtime change costs a short
+interruption while the models reload (not zero-downtime). Secrets live only in
+the server's environment file, never in Git, the image or Pages. The same
+discipline covers this package: the repository's GitHub Actions workflow clones
+it fresh, reconstructs the app with `bootstrap.py`, builds the documented image,
+starts it with the full catalog and runs the PDF → F1 → MIDI workflow over HTTP
+([workflow](.github/workflows/verify-submission.yml),
+[run 41653628490](https://github.com/PearlLeeStudio/TheArtist-Meta-Hackathon/actions/runs/41653628490)).
+
 **Open to other clients over REST and MCP.** Everything the editor does is also a
 REST route (22 endpoints: section and song generation, Complete the form,
 Reharmonize, Second ear, Import, MIDI and Scripter export, DAW handoff,
