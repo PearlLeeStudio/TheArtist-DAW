@@ -1,8 +1,9 @@
 # Hackathon demo subtitles
 
-Subtitle plan for the [hackathon video](https://youtu.be/Xw3BwB64Jt0), re-cut from the
-existing 1:51 recording. The [English SRT](demo-subtitles.en.srt) follows this fifteen-cue
-plan. Align cue edges to the cuts in the editing project. The two listening passages
+Timing reference for the earlier cut of the [original recording](https://youtu.be/Xw3BwB64Jt0).
+The [published hackathon demo](https://youtu.be/wC-dkLfot-c) is the newer edit.
+The [English SRT](demo-subtitles.en.srt) follows this fifteen-cue reference plan;
+its timings are not a transcript of the published edit. Align cue edges to the cuts in the editing project. The two listening passages
 intentionally have no captions, leaving the viewer time to follow the harmony and the
 controls.
 

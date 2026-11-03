@@ -7,7 +7,7 @@
 <p align="center">
   <a href="https://artist-daw.pearlleestudio.co"><img alt="Live demo" src="https://img.shields.io/badge/Live%20demo-artist--daw.pearlleestudio.co-1c1917?style=flat-square"></a>
   <a href="#hackathon-work-and-where-meta-is-used"><img alt="Meta model" src="https://img.shields.io/badge/Meta%20model-muse--spark--1.3-0467DF?style=flat-square"></a>
-  <a href="https://youtu.be/Xw3BwB64Jt0"><img alt="Hackathon demo" src="https://img.shields.io/badge/Hackathon%20demo-YouTube-FF0000?style=flat-square&logo=youtube&logoColor=white"></a>
+  <a href="https://youtu.be/wC-dkLfot-c"><img alt="Hackathon demo" src="https://img.shields.io/badge/Hackathon%20demo-YouTube-FF0000?style=flat-square&logo=youtube&logoColor=white"></a>
   <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/code-MIT-737373?style=flat-square"></a>
   <a href="https://huggingface.co/PearlLeeStudio"><img alt="Weights" src="https://img.shields.io/badge/weights-CC%20BY--NC%204.0-737373?style=flat-square"></a>
   <img alt="Stack" src="https://img.shields.io/badge/stack-React%2019%20%C2%B7%20FastAPI%20%C2%B7%20PyTorch-1c1917?style=flat-square">
@@ -46,19 +46,19 @@ Meta-powered feature are event work; the full split is in
 [Hackathon work](#hackathon-work-and-where-meta-is-used).
 
 **[Open the arrangement workspace](https://artist-daw.pearlleestudio.co)** ·
-[Watch the hackathon demo](https://youtu.be/Xw3BwB64Jt0) ·
+[Watch the hackathon demo](https://youtu.be/wC-dkLfot-c) ·
 [Workflow guide](docs/arrangement-workflow.md) · [Documentation](docs/README.md) ·
 [Local / Meta / hybrid results](docs/model-comparison.md) ·
 [Run with Docker](#getting-started) · [Deploy to a domain](#deploy-to-a-domain)
 
 <p align="center">
-  <a href="https://youtu.be/Xw3BwB64Jt0">
-    <img src="https://i.ytimg.com/vi/Xw3BwB64Jt0/hqdefault.jpg" alt="TheArtist hackathon demo — From Chord Sketch to Your Own Music" width="60%">
+  <a href="https://youtu.be/wC-dkLfot-c">
+    <img src="https://i.ytimg.com/vi/wC-dkLfot-c/hqdefault.jpg" alt="TheArtist hackathon demo — From Chord Sketch to Your Own Music" width="60%">
   </a>
 </p>
 
 <p align="center">
-  <a href="https://youtu.be/Xw3BwB64Jt0"><strong>TheArtist — From Chord Sketch to Your Own Music</strong></a>
+  <a href="https://youtu.be/wC-dkLfot-c"><strong>TheArtist — From Chord Sketch to Your Own Music</strong></a>
 </p>
 
 <p align="center">
@@ -296,7 +296,7 @@ with the gospel adapter as the scorer and *Change up to* 4, on the hosted demo
 The [hackathon work log](HACKATHON.md) separates these additions from the existing
 editor and trained models. This development repository stays intact; a separate
 submission repository will contain event work and patches against a pinned core
-dependency. The [hackathon demo](https://youtu.be/Xw3BwB64Jt0) is the featured
+dependency. The [hackathon demo](https://youtu.be/wC-dkLfot-c) is the featured
 video above; the pre-existing demo is listed separately under [Links](#links).
 The screenshots illustrate their documented flows and predate the latest Import
 controls and theory references. Verified paths and remaining audio/device checks are
@@ -459,7 +459,7 @@ Current Safari interface: section labels, chord staff, Play controls and the alw
 
 | | |
 |---|---|
-| 🎬 **Hackathon demo** | [TheArtist — From Chord Sketch to Your Own Music](https://youtu.be/Xw3BwB64Jt0) |
+| 🎬 **Hackathon demo** | [TheArtist — From Chord Sketch to Your Own Music](https://youtu.be/wC-dkLfot-c) |
 | **Pre-hackathon demo** | [Existing score editor, MIDI input and chord generation](https://youtu.be/iSDj4VK9nKc) — baseline work, not the hackathon submission video |
 | 🎬 **Demo videos** | [youtube.com/@StudioPearlLee](https://www.youtube.com/@StudioPearlLee) |
 | 🤗 **Released models** | [huggingface.co/PearlLeeStudio](https://huggingface.co/PearlLeeStudio) — 7 base checkpoints + 11 LoRA adapters |

@@ -6,7 +6,7 @@ accompaniment and editable DAW delivery. Start with the
 
 | Task | Guide |
 |---|---|
-| Watch the hackathon demo | [TheArtist — From Chord Sketch to Your Own Music](https://youtu.be/Xw3BwB64Jt0) |
+| Watch the hackathon demo | [TheArtist — From Chord Sketch to Your Own Music](https://youtu.be/wC-dkLfot-c) |
 | Prepare the demo's cards and English captions | [Current demo copy](demo-subtitles.md) |
 | Refer to the original timed version | [Original timeline](demo-timeline.md), [Original English SRT](demo-subtitles.en.srt) |
 | Arrange from source material through DAW export | [Arrangement workflow](arrangement-workflow.md) |

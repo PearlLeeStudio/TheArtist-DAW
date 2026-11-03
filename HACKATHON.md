@@ -3,7 +3,7 @@
 Meta Global AI Developer Hackathon — building period Oct 27 – Nov 4, 2026 (ET);
 project submissions due Nov 4, 9:00 PM ET.
 
-[Watch the hackathon demo](https://youtu.be/Xw3BwB64Jt0) ·
+[Watch the hackathon demo](https://youtu.be/wC-dkLfot-c) ·
 [Try the live workspace](https://artist-daw.pearlleestudio.co)
 
 The product is an AI arrangement tool: source score or chord sketch → harmonic
@@ -184,7 +184,7 @@ rows 59 and 64; successful execution alone does not establish musical quality.
 
 Validation details and unchecked browser/audio/DAW cases are in the
 [manual checklist](docs/manual-checks.md). The README features the
-[hackathon demo](https://youtu.be/Xw3BwB64Jt0) and labels the pre-existing baseline
+[hackathon demo](https://youtu.be/wC-dkLfot-c) and labels the pre-existing baseline
 video separately. Safari export opened a sixteen-bar,
 80 BPM arrangement in Logic with Harmony, Bass and Drums visible; this verifies the
 MIDI handoff, not listening quality, GM/CC response or Scripter transport behavior.
