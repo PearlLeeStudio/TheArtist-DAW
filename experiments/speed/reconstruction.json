@@ -16,5 +16,76 @@
   "midiBytes": 20101,
   "midiTracks": 4,
   "midiBars": 64,
-  "scope": "Fresh reconstructed app, in-process HTTP; cached downloads; not browser/DAW/audio or external hosting"
+  "scope": "Native reconstruction, in-process HTTP, shared download caches. Separate Docker and Logic checks are recorded below.",
+  "docker": {
+    "staticUI": true,
+    "health": true,
+    "rag": {
+      "omt": "ready",
+      "berklee": "disabled"
+    },
+    "importedBars": 20,
+    "targetBars": 64,
+    "sourceCounts": {
+      "ai": 5,
+      "reuse": 1
+    },
+    "model": "ft_f1",
+    "metaCalls": 0,
+    "midiBytes": 20101,
+    "midiTracks": 4,
+    "midiBars": 64,
+    "transport": "live HTTP",
+    "scope": "Reconstructed app with real F1; browser/DAW/audio playback requires a separate check",
+    "workflowRun": "https://github.com/PearlLeeStudio/TheArtist-Meta-Hackathon/actions/runs/41653628490",
+    "submissionCommit": "4b639ef59bf47116e5bda596ded0b227a78ae175",
+    "developmentCommit": "867fbc42ee67dad90924b075faf13b6d063b6903",
+    "platform": "Ubuntu 24.04, linux/amd64",
+    "containerCpus": 2,
+    "containerMemoryGiB": 4,
+    "containerHealth": "healthy",
+    "loadedModels": 18,
+    "midiSha256": "36ac7361064be0f621725b46514ae5dac1c239e037a18917f543503607228919"
+  },
+  "logic": {
+    "inputMidiSha256": "36ac7361064be0f621725b46514ae5dac1c239e037a18917f543503607228919",
+    "regions": [
+      "Harmony – acoustic grand piano",
+      "Bass",
+      "Drums"
+    ],
+    "regionStartBar": 1,
+    "regionEndBar": 65,
+    "tempoBpm": 110,
+    "timeSignature": "4/4",
+    "playbackObserved": true,
+    "playheadObservedBars": [
+      1,
+      5
+    ],
+    "activeTrackMeters": 3,
+    "bounce": {
+      "format": "WAVE PCM",
+      "bitsPerSample": 24,
+      "sampleRateHz": 48000,
+      "channels": 2,
+      "durationSeconds": 139.636375,
+      "bytes": 40269786,
+      "sha256": "b60b444c28612dc7d844a17bdb9ddd7f15b8da7f6649245a643ff74536cda9b5",
+      "normalize": "On",
+      "includeAudioTail": false,
+      "nonzeroChannels": 2,
+      "rmsDbfs": -19.566342,
+      "peakDbfs": -0.100467,
+      "channelRmsDbfs": [
+        -19.581042,
+        -19.551691
+      ],
+      "channelPeakDbfs": [
+        -0.346983,
+        -0.100467
+      ]
+    },
+    "scope": "Direct Logic Pro UI observation and complete audio bounce of the Docker-exported MIDI; not a listening-preference study or browser/DAW sound-equivalence test"
+  }
 }

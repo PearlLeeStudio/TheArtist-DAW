@@ -147,9 +147,23 @@ MIDI (metadata plus Harmony/Bass/Drums), with OMT ready and no Meta call. The or
 20 bars retained their chords. Repeat it with `--root` and a new absolute `--out`
 report path using the reconstructed backend environment.
 
-This verifies native reconstruction and that HTTP workflow, not Docker execution,
-browser audio or actual DAW playback. The build retains its chunk-size/deprecated
-option warnings. npm audit reported 12 moderate findings in the ESLint development
+The same workflow also passed over live HTTP in a fresh Docker build from the
+public submission checkout: all 18 released models loaded, OMT was ready and the
+container was healthy. The [Docker run](https://github.com/PearlLeeStudio/TheArtist-Meta-Hackathon/actions/runs/41653628490)
+preserves the build and execution logs. Its exported MIDI opened in Logic Pro as
+three editable Harmony/Bass/Drums regions spanning 64 bars at 110 BPM, 4/4.
+Playback advanced with active track meters; a complete 24-bit, 48 kHz stereo WAV
+bounce lasted 139.636 seconds and contained nonzero audio in both channels.
+The [measurement record](experiments/speed/reconstruction.json) identifies the
+tested revisions, MIDI hash and audio levels. This establishes DAW execution and
+audio rendering, not listening preference or browser-audio equivalence.
+
+To repeat the container check, run the repository's **Verify submission in Docker**
+workflow from GitHub Actions. It reconstructs the selected revision, builds the
+documented image and uploads the report and MIDI for a separate DAW check.
+
+The build retains its chunk-size/deprecated option warnings. npm audit reported
+12 moderate findings in the ESLint development
 dependency chain and no high or critical findings; those dependencies were not
 upgraded as part of packaging.
 

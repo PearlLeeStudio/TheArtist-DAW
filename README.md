@@ -562,6 +562,13 @@ PDF import, local Reharmonize, Genre template and exports work without an API ke
 The image has been deployed on Ubuntu x64 with 2 vCPUs and 4 GiB RAM; that is a
 low-traffic functional check, not a concurrency guarantee.
 
+The separately reconstructed submission also passed a fresh
+[Docker run](https://github.com/PearlLeeStudio/TheArtist-Meta-Hackathon/actions/runs/41653628490)
+with all 18 models and live HTTP import → completion → MIDI. Its exported MIDI
+played in Logic Pro and rendered a full stereo WAV; the
+[measurement record](experiments/speed/reconstruction.json) links the tested
+revisions and distinguishes native, Docker and DAW checks.
+
 ```sh
 curl --fail http://localhost:7860/api/health
 curl --fail http://localhost:7860/api/models/list

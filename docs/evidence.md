@@ -34,6 +34,18 @@ Not measured: listener preference, composer editing time, or end-to-end latency
 with the default OMT retrieval on. [Evaluation framing](evaluation.md) explains
 which question each number answers.
 
+## Submission reconstruction and DAW execution
+
+The [reconstruction record](../experiments/speed/reconstruction.json) covers native
+installation and a fresh Docker build from the public submission. The
+[Docker run](https://github.com/PearlLeeStudio/TheArtist-Meta-Hackathon/actions/runs/41653628490)
+loaded all 18 released models and passed the live HTTP workflow: a 20-bar original
+PDF → F1 completion to 64 bars → MIDI, preserving the source chords, with no Meta
+calls. The exported MIDI opened as three editable parts in Logic Pro; playback
+advanced with active track meters, and a full 139.636-second stereo bounce contained
+audio in both channels. [Manual checks](manual-checks.md#observed-workflow) record
+the scope. This is execution evidence, not a listening study.
+
 ## Score reading and import records
 
 The [local analysis implementation](score-analysis.md) separates PDF glyph

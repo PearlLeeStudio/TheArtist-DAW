@@ -84,6 +84,18 @@ passing unit tests alone does not complete this verification.
 - [x] Logic: Open in Logic produced three editable MIDI regions from bars 1–17,
   80 BPM, 4/4, C major and Intro/Verse/Pre-Chorus/Chorus/Outro markers. This does
   not establish DAW sound equivalence, controller interpretation or Scripter execution.
+- [x] Reconstructed submission in Docker: all 18 released models loaded, the
+  container became healthy, and live HTTP passed local 20-bar PDF import → F1
+  completion to 64 bars → MIDI export, with the original 20 bars preserved and
+  no Meta calls. That exact MIDI opened in Logic as Harmony/Bass/Drums regions
+  from bar 1 to bar 65, at 110 BPM and 4/4. Playback advanced from bar 1 to bar 5
+  with all three track meters active. A full stereo WAV bounce was 139.636 seconds,
+  24-bit/48 kHz, with nonzero signal in both channels (overall RMS −19.566 dBFS,
+  peak −0.100 dBFS, Logic Normalize On). See the
+  [measurement record](../experiments/speed/reconstruction.json) and
+  [Docker run](https://github.com/PearlLeeStudio/TheArtist-Meta-Hackathon/actions/runs/41653628490).
+  This check covers MIDI import, transport and audio rendering; it does not establish
+  browser/DAW sound equivalence, detailed controller cases or listening preference.
 - [x] Safari (build before the MIDI bridge, 2026-10-30): Enable MIDI reported unsupported Web MIDI.
   Current builds open the local bridge window instead ([MIDI input](midi-input.md)).
   Physical keypresses in Chrome and in Safari through the bridge remain untested.
