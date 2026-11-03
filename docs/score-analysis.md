@@ -59,8 +59,11 @@ anything visible: disputed bars receive a Review mark carrying the comparison's
 reason, bars that are still empty and not N.C. take Meta's one- or two-symbol
 proposal with Meta provenance as a single undo step, and `unaligned`,
 `local_only` or failed readings only report a summary. The band above the staff
-shows the stage, the outcome and the request id; replacing the song discards the
-review.
+shows the stage while the check runs, then its outcome: a yellow box when Meta read
+the original (`compared`, `unaligned` or `local_unavailable`), with the model, the
+flagged/filled summary and the request id; a plain box when the local reader stood
+in (`local_fallback`, `local_only`) or the request failed. Replacing the song
+discards the review.
 
 The response's `verification` record reports comparison coverage and zero-based
 disputed bars. Reading checks in the existing review show those bars and structural

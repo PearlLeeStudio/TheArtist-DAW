@@ -196,6 +196,24 @@ the server would refuse Meta (off, no key, or paused at the credit stop line), t
 controls are disabled and say why, without any amount. Reharmonize then picks its three
 alternatives without Meta and says so.
 
+**How the editor tells whether Meta did the work.** Nothing is inferred from prose; every
+result carries fields the editor checks, and the same fields are in the API responses and
+the server ledger. Import's background check returns `verification.status`: `compared`,
+`unaligned` or `local_unavailable` mean Meta read the original (`model` and `requestId`
+name the call), and the band above the staff becomes a yellow **✓ Meta muse-spark-1.3
+checked this score against the original** box with the flagged/filled summary and the
+request id; `local_fallback` or `local_only` mean the local reader stood in, shown in a
+plain box with the fixed recovery text; a request that fails (HTTP 429, 502, 503 or 504)
+is a **Meta check failed** box. A Reharmonize result carries `selection` (`meta` or
+`local`), `metaModel` (`not used` when local), `metaUnavailable` (`disabled`,
+`unconfigured`, `paused` or `limit`), `requestIds`, `toolCalls` and `costUsd`: `meta` gives
+the yellow **✓ Meta muse-spark-1.3 chose these alternatives** box with the tool calls and
+cost, `local` the plain **Picked without Meta** box with the reason, and an error a
+**Meta search failed** box with the server's message. Second ear and Complete the form
+print `provider`, `model`, `requestId` and `costUsd` on every result line, so a judge on
+Muse Spark Open reads `baseten meta-models/muse-spark-open-1026`. A failed call is never
+turned into a result that looks like success.
+
 **Meta capabilities in use.**
 
 | Meta capability | Where it does the work | Recorded result |
@@ -280,8 +298,8 @@ musician meets it most often:
 
 | Place | What the musician does | What Meta does | What appears |
 |---|---|---|---|
-| **Import Score → Use Meta model** | Picks a PDF, ticks the checkbox, clicks **Analyze and import** | Reads the original file once (150 s; default $1.50 cap), independently of the local reading | A status band while the check runs, then **Review** marks for disagreements and fills for untouched empty bars, with source details. Existing chords and user edits stay intact |
-| **Input → Reharmonize → Find 3 alternatives** | Selects written chords, sets *Change up to* and a mode | Explores mathematical substitutions with native tool calls (≤ 4 turns; default $0.15 cap) and picks three candidates scored by the Music Transformer | **Origin / Alter 1 / Alter 2 / Alter 3** cards; **Run details** lists calls, request ids, cost and time; **Apply** keeps the chosen combination |
+| **Import Score → Use Meta model** | Picks a PDF, ticks the checkbox, clicks **Analyze and import** | Reads the original file once (150 s; default $1.50 cap), independently of the local reading | A status band while the check runs, then a yellow **✓ Meta … checked this score** box (plain when the local reader stood in or the check failed) with the flagged/filled summary and request id, **Review** marks for disagreements and fills for untouched empty bars, with source details. Existing chords and user edits stay intact |
+| **Input → Reharmonize → Find 3 alternatives** | Selects written chords, sets *Change up to* and a mode | Explores mathematical substitutions with native tool calls (≤ 4 turns; default $0.15 cap) and picks three candidates scored by the Music Transformer | **Origin / Alter 1 / Alter 2 / Alter 3** cards; a yellow **✓ Meta … chose these alternatives** box with the tool calls and cost (or **Picked without Meta** with the reason); **Run details** lists calls, request ids, cost and time; **Apply** keeps the chosen combination |
 
 <p align="center">
   <img src="screenshot/12-import-use-meta.png" alt="Import Score with Use Meta model ticked for a PDF lead sheet, before Analyze and import" width="80%">
@@ -316,9 +334,10 @@ contents, Voyager's adapter status and the limits:
 - **Import Score** — a supported PDF or image becomes editable harmony with key,
   meter, sections and per-bar reading/review status. A readable vector PDF opens from
   the local reader first; **Review** and **Unresolved** marks stay on the staff. With
-  **Use Meta model**, Meta then reads the original in the background and a band
-  above the staff reports the bars it flagged or filled where the local reader
-  had no chord, without replacing anything already visible.
+  **Use Meta model**, Meta then reads the original in the background and a box
+  above the staff (yellow when Meta read it, plain when the local reader stood in)
+  reports the bars it flagged or filled where the local reader had no chord, without
+  replacing anything already visible.
 - **Select and edit on the staff** — drag to select slots, Ctrl/⌘+A for the whole
   score, Ctrl/⌘+X·C·V to cut, copy and paste (a copied passage that divides the
   selection repeats over it; otherwise it is written forward and bars are added),
@@ -329,8 +348,9 @@ contents, Voyager's adapter status and the limits:
   plus local theory relevance when the OMT corpus is prepared.
 - **Reharmonize** — Meta searches bounded substitutions of 1–4 selected chords with
   the surrounding harmony in view; the Music Transformer scores them in context;
-  **Origin / Alter 1–3** cards combine on the staff, and **Apply** keeps the
-  choice and closes them (undo with Ctrl/⌘+Z).
+  a yellow box says Muse Spark chose the three (or that they were picked without
+  Meta, and why); **Origin / Alter 1–3** cards combine on the staff, and **Apply**
+  keeps the choice and closes them (undo with Ctrl/⌘+Z).
 - **Second ear** — a bounded Meta judge picks among A/B/C on facts the analyzer
   computed, each reason marked *analyzer confirmed* or *model statement*.
 - **New from Song Form** — add a section or complete the form with **Muse Spark

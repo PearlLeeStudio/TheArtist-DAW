@@ -169,8 +169,10 @@ cost and tool call stay in the record.
 
 The response then carries `selection: "local"`, `metaUnavailable` (`disabled`,
 `unconfigured`, `paused` or `limit`) and `metaModel: "not used"`. The controls show
-a line saying the alternatives were picked without Meta. **Run details** start with
-*Picked without Meta*. When Meta is off, not configured or paused, the scorer note
+a plain box titled **Picked without Meta** with the reason, where a Meta-chosen
+result shows a yellow **✓ Meta muse-spark-1.3 chose these alternatives** box with
+the tool calls and cost, and a failed search a **Meta search failed** box with the
+server's message. **Run details** start with *Picked without Meta*. When Meta is off, not configured or paused, the scorer note
 under the model picker says so before a search, and the editor checks the server again
 whenever a search starts or ends. A used-up allowance is known only per request, so
 that reason appears in the result line alone.
