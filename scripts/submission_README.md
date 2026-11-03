@@ -99,15 +99,18 @@ capabilities discovery) and, for the arrangement workflow, one of eleven MCP
 tools (`import_score`, `plan_song`, `validate_plan`, `generate_section`,
 `build_song`, `render_midi`, `export_daw` among them), with the same limits,
 provenance fields and ledger, plus an async Python client
-([client](backend/theartist_client/client.py)). A second live site already
-builds on it: TheVoyager (travel stories with generated music,
-[voyager.pearlleestudio.co](https://voyager.pearlleestudio.co)) sends a genre
-and a length and receives a three-track arrangement through
-`POST /api/generate/song` (the `build_song` MCP tool on a local backend). That
-song endpoint and the `/api/generate*` chord routes predate the event and are
-listed as existing work; the section, plan, review, reharmonize, import and
-export routes, the capabilities contract, the MCP server and the client are this
-week's. [API spec](https://github.com/PearlLeeStudio/TheArtist-DAW/blob/main/API_SPEC.md) ·
+([client](backend/theartist_client/client.py)). The second client is
+TheVoyager (travel stories with generated music,
+[voyager.pearlleestudio.co](https://voyager.pearlleestudio.co)): its Python
+adapter requests an arrangement from this service through
+`POST /api/generate/song` (the `build_song` MCP tool on a local backend) and
+renders it to audio with its own pipeline. The published Voyager plays those
+pre-rendered files rather than calling the service live; browser-triggered
+generation stays off until the generated accompaniment is good enough for that
+use. That song endpoint and the `/api/generate*` chord routes predate the event
+and are listed as existing work; the section, plan, review, reharmonize, import
+and export routes, the capabilities contract, the MCP server and the client are
+this week's. [API spec](https://github.com/PearlLeeStudio/TheArtist-DAW/blob/main/API_SPEC.md) ·
 [MCP](docs/mcp.md) · [Voyager API quick start](docs/voyager-api.md)
 
 ## Measured so far
