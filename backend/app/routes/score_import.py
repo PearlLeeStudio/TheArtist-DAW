@@ -18,6 +18,27 @@ from app.services.score_import import ScoreInputError, import_score
 router = APIRouter()
 PUBLIC_HOST_REASON = ("Meta reading of the whole score file is not available on this public server; choose "
                       "engine \"auto\" (bounded harmony and form analysis with the whole score context) or \"local\".")
+# Why Meta's reading failed, in fixed words: never the provider's own text, which can name a balance
+_READER_FAILURES = {
+    "length": "Meta's answer reached its output limit",
+    "invalid_json": "Meta's answer was not valid JSON",
+    "schema_mismatch": "Meta's answer did not follow the score format",
+    "score_validation": "Meta's reading did not pass the score checks",
+    "empty": "Meta returned an empty answer",
+    "refusal": "Meta declined to read the file",
+    "content_filter": "Meta's content filter stopped the answer",
+    "finish_reason": "Meta stopped before finishing",
+    "bad_response": "Meta's reply could not be read",
+}
+
+
+def _failure_reason(exc: LLMError) -> str:
+    """': <reason>' for a Meta reading failure the editor shows, or '' when there is no known kind."""
+    kind = getattr(exc, "kind", None)
+    if kind == "http" and getattr(exc, "status_code", None):
+        return f": Meta answered HTTP {exc.status_code}"
+    reason = _READER_FAILURES.get(kind) if isinstance(kind, str) else None
+    return f": {reason}" if reason else ""
 
 
 @router.post("/import/score", response_model=ScoreImportResponse)
@@ -74,8 +95,9 @@ def _run_import(req: ScoreImportRequest, caller: Caller | None,
                             "Try a shorter passage or select local analysis.") from None
     except LLMError as exc:
         request = f" Request ID: {exc.request_id}." if exc.request_id else ""
-        raise HTTPException(status_code=502, detail="Meta could not return a valid score or harmony result. "
-                            "Try a shorter passage or select local analysis." + request) from None
+        raise HTTPException(status_code=502, detail="Meta could not return a valid score or harmony result"
+                            f"{_failure_reason(exc)}. Try a shorter passage or select local analysis."
+                            + request) from None
     finally:
         if admission := charge.get("admission"):
             limits.limiter.settle(admission, costs.cost_usd if costs.reliable else admission.estimate_usd)

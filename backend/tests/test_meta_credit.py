@@ -239,6 +239,27 @@ class DiscoveryTests(PausedStateTestCase):
                                    request_id="req_9", status_code=400)
         self.assertEqual(planner._message(refused), "Meta could not complete the request (HTTP 400)")
 
+    def test_a_failed_meta_reading_names_its_kind_but_never_the_providers_words(self):
+        from app.routes import score_import as route
+        cases = [
+            (LLMResponseError("the reply does not match the schema: measures[3] (balance $0.03)", kind="schema_mismatch",
+                              request_id="req_7"), "did not follow the score format"),
+            (LLMResponseError("HTTP 400 from meta (muse-spark-1.3): Your balance is $0.03", kind="http",
+                              request_id="req_8", status_code=400), "Meta answered HTTP 400"),
+            (LLMResponseError("the output hit max_completion_tokens=32768", kind="length", request_id="req_9"),
+             "reached its output limit"),
+            (LLMResponseError("something new", kind="unheard_of", request_id="req_10"), "harmony result. Try"),
+        ]
+        for error, reason in cases:
+            with self.subTest(kind=error.kind), mock.patch.object(route, "import_score", side_effect=error):
+                response = CLIENT.post("/api/import/score", json=body("local"))
+            self.assertEqual(response.status_code, 502, response.text)
+            detail = response.json()["detail"]
+            self.assertIn(reason, detail)
+            self.assertIn(f"Request ID: {error.request_id}.", detail)
+            self.assertNotIn("$", detail)
+            self.assertNotIn("balance", detail)
+
     def test_a_paused_verified_reading_names_the_pause_instead_of_the_file(self):
         env = {"MODEL_API_KEY": KEY, "THEARTIST_META_CREDIT_USD": "0", "THEARTIST_META_LEDGER": str(self.ledger_path)}
         png = {"filename": "score.png", "mimeType": "image/png", "engine": "verified", "dataBase64": PNG_1X1}
