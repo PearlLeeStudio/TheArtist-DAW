@@ -135,9 +135,12 @@ def capabilities() -> ContractEnvelope:
         },
         "limitations": ["build_song returns one arrangement; candidate fan-out is not implemented.",
                         "Score import and the editor default to local vector-PDF reading. The editor's Use Meta model checkbox "
-                        "selects verified: one full-file Meta request first, then local recovery on failure or comparison on success. "
-                        "Comparison flags disagreements "
-                        "without treating agreement as accuracy proof. Unsupported local files are marked local_unavailable. "
+                        "opens readable PDFs locally first, then runs verified reading of the original in the background. "
+                        "The background review flags disagreements and fills untouched empty bars without replacing existing chords or user edits. "
+                        "Images and locally unsupported PDFs use verified reading directly. Verified reading makes at most one full-file Meta "
+                        "request, compares the readings on success, or explicitly reports local recovery when Meta is unavailable. "
+                        "A local reading completed within the two-second head start skips Meta if it exceeds Meta's 128-bar limit. "
+                        "Agreement is not accuracy proof. Unsupported local files are marked local_unavailable. "
                         "Meta/auto/verified requires explicit selection and may incur API cost. Auto reviews up to 16 harmony "
                         "bars with whole-score context and infers uncovered song-form sections, at most three calls/$0.30. "
                         "It never switches an unsupported local file to a whole-file request. A public host requires "
