@@ -42,7 +42,7 @@ amount.
 | 00:00–00:04 | Opening | Before this week: my score editor,<br>its sounds and rhythms, my chord model. |
 | 00:04–00:08 | Opening | New this week: everything shown next.<br>Muse Spark drives the Reharmonize agent. |
 | 00:08–00:18 | Import | Import a score PDF as editable chords.<br>The local reader opens it right away. |
-| 00:18–00:23 | Imported harmony | The song keeps its length and sections,<br>so every chord is chosen inside the form. |
+| 00:18–00:23 | Background Meta check completed | Muse Spark finishes its background check.<br>A confirmation appears above the score. |
 | 00:23–00:28 | Play panel | Play panel: switch parts, set the mix.<br>Hear the arrangement take shape. |
 | 00:28–00:44 | Instrument and rhythm comparison | No captions; let the arrangement play. |
 | 00:44–00:54 | Passage selection and search | Reharmonize agent: up to four chords,<br>three alternatives to compare. |
