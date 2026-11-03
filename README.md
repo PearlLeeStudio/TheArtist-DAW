@@ -175,6 +175,16 @@ the [Muse Spark Open comparison](experiments/review_eval/summary.md) uses Basete
 Voicings, accompaniment and MIDI rendering use application code; Generate's
 chord candidates come from the author's Music Transformer.
 
+**Which model does what.** Baseten is an inference host, not a model: it serves
+Meta's open-weight Muse Spark Open, a sibling of the Muse Spark 1.3 that Meta's own
+API serves. In this product the two Meta models have different jobs:
+
+| Job | Model | Served by | Key |
+|---|---|---|---|
+| Reading a score PDF or image (Import, **Use Meta model**); the Reharmonize tool-call search; planning and writing the song form | **Muse Spark 1.3** (Standard) | Meta Model API, `https://api.meta.ai/v1` | `MODEL_API_KEY` |
+| Judging: Second ear's pick among A/B/C and the hybrid form judge (the hosted demo runs it this way during judging) | **Muse Spark Open**, `meta-models/muse-spark-open-1026` (Meta open weights) | Baseten, `https://inference.baseten.co/v1` | `LLM_JUDGE_API_KEY` with `LLM_JUDGE_PROVIDER=baseten`; left empty, the judge uses Muse Spark 1.3 above |
+| Chord generation and the context score of every candidate (Generate, Reharmonize scoring, the hybrid form's chords) | the author's Music Transformer (Phase 0, F1–F5, F1 v2, 11 genre LoRAs) | this server, CPU | — |
+
 | Path | File | Calls per use | Switch |
 |---|---|---|---|
 | **Use Meta model**, `engine: "verified"`: local PDF opens first when readable; independent Meta reading runs in the background, flags disagreements and fills untouched empty bars. A successfully read local score over Meta's 128-bar limit stays local | [comparison](backend/app/services/score_verification.py), [file reader](backend/app/services/score_import.py) | 1 PDF/image request, 150 s, 32,768 output tokens, default ≤ $1.50; no automatic retry | `THEARTIST_META_ENABLED`; public hosts also require `THEARTIST_PUBLIC_META_READER=1` |
