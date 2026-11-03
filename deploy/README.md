@@ -37,7 +37,10 @@ caps are off (see the README's Running Locally notes); the dollar limits in
 `vps.env.example` apply only without that override. The credit stop line applies
 either way when a value is set; since the evening of 2026-11-03 `compose.yaml` sets no
 line by default (the $50 default was dropped for the judging window).
-Hosted users download MIDI for their own DAW.
+Hosted users can download MIDI for their own DAW, or use **Open in Logic Pro**
+through the [local Mac bridge](../docs/midi-input.md#open-a-hosted-score-in-logic-pro).
+Public-host restrictions apply to launching a DAW on the server, not to the bridge
+running on the musician's Mac.
 
 ## Optional Meta service
 

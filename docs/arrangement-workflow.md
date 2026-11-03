@@ -112,14 +112,16 @@ keeps the arrangement editable in the receiving DAW.
 Project cards can reopen the arrangement or export their own complete score and
 settings. Browser storage is local; there is no account-based cloud sync.
 
-**Export MIDI** produces separate Harmony, Bass and Drums parts with tempo,
+Use **Export ▾ → PDF · Light (print)** to check and share the harmonic score
+before continuing in the DAW. Current-theme and dark PDF versions are also available.
+
+**Export ▾ → Download MIDI** produces separate Harmony, Bass and Drums parts with tempo,
 meter, section markers and mixer information. Continue editing instrumental
 parts, melody and production in the DAW. **Open in Logic Pro** from a hosted
 editor uses the [local Mac bridge](midi-input.md#open-a-hosted-score-in-logic-pro);
 MIDI download works without it. Ableton handoff reveals the MIDI file in Finder (local backend or the bridge).
 
-**Score PDF** shares the harmonic score. The separate
-[Logic Scripter export](../plugin/logic-scripter/README.md) supplies a MIDI FX
+The separate [Logic Scripter export](../plugin/logic-scripter/README.md) supplies a MIDI FX
 script for Harmony and Bass, with its own transport behavior and limitations.
 
 ## AI roles and verification
