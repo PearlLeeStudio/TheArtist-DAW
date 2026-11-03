@@ -109,8 +109,11 @@ at lower cost and latency.
 
 ## What does not run on open weights
 
-- **The Reharmonize agent.** Native tool calls are enabled for Muse Spark only, so
-  the tool loop does not run on an open-weight endpoint in this release.
+- **The Reharmonize agent, on the hosted demo.** The agent is its own client role
+  (`LLM_AGENT_*`): off Meta Standard the two tools are stated in the system message
+  and each turn is one checked strict-JSON call, so it can run on Muse Spark Open.
+  No comparison was recorded there, and the hosted demo keeps the agent on Muse
+  Spark 1.3 unless the operator switches it; Run details name the model either way.
 - **Score reading.** The whole-file PDF/image reading uses the Meta Model API.
 - **Listening quality.** No listening study was run; "same pick" and
   "reasons confirmed" are agreement and consistency measures, not preference.

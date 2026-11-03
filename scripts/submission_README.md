@@ -136,7 +136,9 @@ Not claimed: listener preference or musical superiority (no listening study, and
 the Reharmonize judge is the same model family as the Meta selector); Import
 accuracy on arbitrary PDFs (the local reader supported 0 of 8 Mutopia editions, and
 Meta's Bach reading matched 8/32 bars); time saved for a musician (not measured); a
-Reharmonize run on open weights (native tool calls are enabled for Muse Spark only).
+measured Reharmonize run on open weights (the agent role can run there through
+JSON tool turns, but no comparison was recorded and the hosted demo keeps the agent
+on Muse Spark 1.3 unless switched).
 Conditions, intervals and raw records: [evidence](docs/evidence.md) ·
 [three-way comparison](docs/model-comparison.md) ·
 [evaluation framing](docs/evaluation.md).
