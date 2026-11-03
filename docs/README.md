@@ -15,7 +15,7 @@ accompaniment and editable DAW delivery. Start with the
 | Check the served checkpoints, training data and theory sources | [Models, training data and theory sources](models.md) |
 | Deploy the complete app with Docker, HTTPS and custom domains | [Web projects and deployment](web-projects.md#from-docker-to-the-public-domains) |
 | Call the song service from Voyager or another client | [Voyager API quick start](voyager-api.md) |
-| Review imported chords, note evidence and sections | [Score analysis](score-analysis.md) |
+| Review imported harmony, sections and source-data handling | [Score analysis](score-analysis.md) |
 | Change selected harmony while preserving context | [Reharmonize: up to four changed chords](reharmonization.md) |
 | Enter played chords or open a hosted arrangement in Logic | [MIDI input and Mac bridge](midi-input.md) |
 | Understand related theory excerpts | [Theory retrieval](theory-retrieval.md) |

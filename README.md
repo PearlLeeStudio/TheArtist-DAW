@@ -1,7 +1,7 @@
 <h1 align="center">TheArtist</h1>
 
 <p align="center">
-  <em>An AI arrangement tool with Meta Muse Spark: bring in a score or chord sketch, shape its harmony, form and accompaniment, and continue in your DAW.</em>
+  <em>From score to editable DAW parts, with less preparation: extract chords, explore harmony with Meta Muse Spark and the Music Transformer, and build your accompaniment.</em>
 </p>
 
 <p align="center">
@@ -18,11 +18,17 @@
 
 ## Arrange with TheArtist
 
-TheArtist helps musicians turn an existing score or chord sketch into an editable
-arrangement. Work on the passage that needs attention, compare harmonic options
-in context, shape the song form, choose the accompaniment and take separate
-Harmony, Bass and Drums tracks into a DAW. Chord generation is one step in that
-workflow; the musician chooses what stays in the score.
+TheArtist helps musicians save arrangement preparation time between reading a
+score and starting work in a DAW. Extract chords from a supported score or enter a
+chord sketch, revise the passage that needs attention, audition accompaniment and
+take separate Harmony, Bass and Drums MIDI tracks into the DAW. Reusing the same
+editable harmony across these steps reduces repeated chord entry and setup.
+The musician chooses the substitutions, sounds and rhythms and continues the
+instrumental, melodic and production work in their own DAW.
+
+The time-saving value is this connected workflow. Recorded component timings are
+listed below; no fixed time saving or speedup over a musician's existing workflow
+has been measured.
 
 **[Open the arrangement workspace](https://artist-daw.pearlleestudio.co)** ·
 [Watch the hackathon demo](https://youtu.be/Xw3BwB64Jt0) ·
@@ -54,10 +60,15 @@ making your own music in a DAW such as Logic Pro.
 
 On the [live workspace](https://artist-daw.pearlleestudio.co), in a desktop browser (no sign-in; projects stay in the browser):
 
-1. **New from Song Form → Full form**, Length 32 bars, press **Muse Spark only**. Muse Spark plans the sections and writes every chord; the form lands on the staff in about 25 seconds. Press Play.
-2. Drag across two to four chords, right-click → **Reharmonize** → **Find 3 alternatives** (about 10 seconds). Switch **Alter 1–3** on the staff, listen, then **Apply**; Ctrl/⌘+Z undoes it. Before applying, open **Run details** under the controls to see Muse Spark's tool calls, request ids, cost and time.
-3. **Import Score**, choose a PDF lead sheet, tick **Use Meta model** and press **Analyze and import**. The score opens from the local reading at once; Meta's reading of the original runs in the background (up to 150 seconds), marks the bars where the two readings differ and fills bars the local reader left empty.
-4. **Export ▾ → Download MIDI** for separate Harmony, Bass and Drums tracks, or **PDF · Light (print)** for the score.
+1. **Import Score**: choose a supported PDF you own or have permission to process, optionally tick **Use Meta model**, then press **Analyze and import**. A readable PDF opens from the local reading without waiting for Meta. With Meta selected, the original-file review runs in the background (up to 150 seconds), flags differences and fills untouched empty bars. Check the key, meter and imported chords against your own source.
+2. Drag across two to four existing chords, right-click → **Reharmonize** → **Find 3 alternatives** (about 10 seconds in recorded hosted runs). Switch **Alter 1–3** on the staff, listen and combine alternatives, then **Apply**; Ctrl/⌘+Z undoes it. Before applying, **Run details** shows Muse Spark's tool calls, request ids, cost and time.
+3. In **Play**, choose the instruments, accompaniment rhythm and drums, then adjust the part levels. The harmonic edits feed the same Harmony, Bass and Drums arrangement.
+4. **Export ▾ → Download MIDI**, then import the file into your DAW and continue editing its separate tracks. This download needs no local bridge. **PDF · Light (print)** exports the harmonic score; [Open in Logic Pro](docs/midi-input.md#open-a-hosted-score-in-logic-pro) additionally needs the local Mac bridge.
+
+To start without a source score, first choose **Genre → Pop**, then **New from
+Song Form → Full form**, Length 32 bars, and press **Muse Spark only**. Muse Spark
+plans the sections and writes the chords; the recorded hosted run took about 25
+seconds. Genre selection is required before the button is enabled.
 
 No PDF at hand? Set **Key** to G major and **Time** to 3/4 above the staff, click the first bar and paste
 this chart with Ctrl/⌘+V. It is *Amazing Grace* with the traditional harmonization of the CC0
@@ -72,9 +83,31 @@ analyzing notes. In the recorded external-edition test it supported none of eigh
 Mutopia PDFs. Scans and photos require Meta, whose readings still need review
 (a notes-only PNG fixture matched 1/4 chords). [Reading evidence](docs/model-comparison.md).
 
+**Respecting source material.** The workspace focuses on harmonic decisions and
+accompaniment, rather than publishing the original score. It does not display the
+uploaded PDF/image or export its melody as an editable melody track. Use your own,
+public-domain or appropriately permitted material; analysis does not grant rights
+to arrange or redistribute someone else's work.
+
+**Analyze, extract chords, discard the source.** The selected file is uploaded to
+the TheArtist server for analysis. File bytes and extracted notes are used only
+while analysis and any selected background review are active: the application
+does not cache parsed scores, write uploaded scores to disk, or retain extracted
+note arrays in the editor or saved projects. The retained working material is the
+editable harmony, key, meter, form, playback settings and minimal reading/review
+metadata. When existing browser projects are opened, source-note data is removed
+without discarding musical edits; a blocked storage rewrite is reported so it can
+be retried. Import responses use `Cache-Control:
+no-store`. Normal model-loading and inference caches do not hold uploaded scores.
+
+Checking **Use Meta model** also sends the full selected PDF/image to Meta for
+analysis. Meta's handling of that request is governed by its own service terms;
+the application's source-discard policy does not control the provider's retention.
+See [score processing and retention](docs/score-analysis.md#source-handling-and-retention).
+
 | Step | Work in the editor | Result |
 |---|---|---|
-| Bring in the material | Import Score, MIDI keyboard, manual chords, or New from Song Form | An editable harmonic score with key, meter and section boundaries |
+| Bring in the material | Import Score, MIDI keyboard, manual chords, or New from Song Form | Editable harmony with key, meter and section boundaries, without a retained source-score cache |
 | Shape the harmony | Select existing chords and Reharmonize, or Generate a new passage | Combine Reharmonize alternatives, preview Origin and Apply; each alternative changes up to 1–4 selected chords. Generate retains Original/A/B/C |
 | Develop the form | Extend a sketch, add a section or start a new song | A complete harmonic form; starting fresh first saves the existing score in Projects |
 | Arrange and audition | Adjust voicings, sounds, comping rhythm, drums, tempo and part levels in Play | A playable Harmony/Bass/Drums arrangement |
@@ -90,11 +123,13 @@ track, and the app does not generate vocals or a finished audio master.
 
 ## Hackathon work and where Meta is used
 
-**Build for Your World.** The author's own problem is carrying musical material
-from a score into an arrangement: reviewing harmony, trying substitutions,
-developing sections, choosing accompaniment and transferring it without retyping.
-TheArtist connects those decisions in one workspace and delivers editable parts
-to the DAW. Its existing chord model supplies a harmonic engine for this workflow.
+**Build for Your World.** The author's own problem is the preparation between a
+score and a DAW session: reading and entering chords, trying substitutions,
+developing sections, choosing accompaniment and transferring the result without
+retyping it. TheArtist connects those decisions in one workspace to save this
+preparation time. It keeps the musician's choices editable, discards the source
+data after analysis and delivers accompaniment parts for further DAW work.
+Its existing chord model supplies a harmonic engine for this workflow.
 
 **Who it is for.** Musicians who already have a song on paper (a lead sheet or a chord chart)
 and want to hear harmonic options and take playable parts into their DAW: arrangers, band
@@ -219,8 +254,8 @@ contents, Voyager's adapter status and the limits:
 
 ## What the editor does
 
-- **Import Score** — a supported PDF or image becomes an editable score with key,
-  meter, sections and per-bar source evidence. A readable vector PDF opens from
+- **Import Score** — a supported PDF or image becomes editable harmony with key,
+  meter, sections and per-bar reading/review status. A readable vector PDF opens from
   the local reader first; **Review** and **Unresolved** marks stay on the staff. With
   **Use Meta model**, Meta then reads the original in the background and a band
   above the staff reports the bars it flagged or filled where the local reader

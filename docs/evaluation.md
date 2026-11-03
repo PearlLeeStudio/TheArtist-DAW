@@ -64,8 +64,9 @@ The saved planner and speed measurements deliberately used **RAG off**. Product
 OMT retrieval is now on after setup, so those records do not establish OMT-on
 latency or musical quality. The [KV-cache comparison](../experiments/speed/runtime-performance.md)
 adds 30 pairs with preserved outputs and CPU medians of 1.73–3.89×; it excludes
-model loading, HTTP/browser time, Meta calls and RAG. Local PDF caching and
-concurrent assist scheduling are described there separately. OMT's source-isolation
+model loading, HTTP/browser time, Meta calls and RAG. Historical local PDF caching
+(removed from the source-discard workflow) and concurrent assist scheduling are
+described there separately. OMT's source-isolation
 and attribution checks are functional tests, not a musical benchmark.
 
 ## Chord-interpretation metrics (row 1)

@@ -28,7 +28,7 @@ evidence, not listener preference, and no row is a listening study.
 | Own-model speed with the attention cache | CPU, 4 threads; F1 / F4 / Rock LoRA at 8, 32 and 64 bars; 30 seed-matched pairs | Identical outputs and provenance; 1.73–3.89× faster; F1 64 bars 7.18 → 1.85 s; 32-bar template Song Form 2.39 → 0.99 s | [runtime performance](../experiments/speed/runtime-performance.md) |
 | Model loading and hosted Reharmonize | Three-model local load; hosted Reharmonize, three requests per version | Loading 0.471 → 0.080 s with identical logits; hosted median 13.828 → 10.358 s | [runtime performance](../experiments/speed/runtime-performance.md) |
 | Returning-chorus reuse | 64 bars, 3 conditions × 5 seeds, OMT on | p50 2.276–2.303 s → 1.680–1.698 s (about 25–27% less); the reused chorus slots match exactly | [chorus memory](../experiments/speed/chorus-memory.md) |
-| Local PDF reading cache | 24-page, 465-bar PDF, 5 repetitions | First reading and harmony analysis median 1.565 → 1.485 s; cached reuse 0.159 s; parsing and analysis identical | [runtime performance](../experiments/speed/runtime-performance.md) |
+| Historical local PDF cache (removed from the source-discard workflow) | 24-page, 465-bar PDF, 5 repetitions | First reading and harmony analysis median 1.565 → 1.485 s; cached reuse 0.159 s; parsing and analysis identical. Cached-reuse time is not a current runtime claim | [runtime performance](../experiments/speed/runtime-performance.md) |
 
 Not measured: listener preference, composer editing time, or end-to-end latency
 with the default OMT retrieval on. [Evaluation framing](evaluation.md) explains

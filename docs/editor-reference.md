@@ -9,9 +9,9 @@ the [README](../README.md#what-the-editor-does) keeps the one-line summary.
 notation and proposes note-based harmony; the author's Music Transformer generates
 chord variations and bounded contextual suggestions for sparse read-note passages.
 Fixed following chords now affect candidate ranking as well as preceding harmony.
-The **Use Meta model** checkbox attempts one original-file reading while local
-analysis runs; if Meta fails, the local reading opens instead and is labeled local.
-When both readers succeed, bar counts, key, meter, chords and note evidence are compared.
+With **Use Meta model**, a readable PDF opens locally first and its original-file
+Meta check runs in the background; if Meta fails, the local harmony stays and the
+failure is reported. Bar counts, key, meter, chords and transient note evidence are compared.
 Differences remain review flags; model agreement is not proof
 of correctness. If local reading is unsupported, the result clearly states that
 local cross-checking was unavailable. The unchecked path never calls Meta.
@@ -25,15 +25,17 @@ The musician corrects the import, chooses the passage and keeps the version they
   changing the checkbox during analysis cancels that request. The score opens on the
   staff as soon as it is read: printed chords are preserved, only passages without
   chords receive note-based harmony proposals, and bars to check carry a **Review**
-  or **Unresolved** mark with their source details. Inferred chords are
+  or **Unresolved** mark with their reading/review status. Inferred chords are
   interpretations, not verified original harmony; melody notes and their durations
   are not imported. Unresolved or unsupported chords stay editable without blocking
-  import; their original symbols and evidence are retained. Only an unusable title,
+  import; their original chord symbols are retained, while extracted notes and
+  source-evidence text are discarded after processing. Only an unusable title,
   key, meter, tempo or section range stops in the dialog for correction, with
   **Import reviewed score** to confirm; the footer explains the blocker.
-  The checkbox is off by default. Checked analysis sends the original to Meta while
-  the local reader analyzes it, then compares both readings. A truncated, timed-out or invalid Meta
-  response proceeds to local reading automatically; unresolved bars remain editable.
+  The checkbox is off by default. Every import sends the selected file to the app
+  server for analysis; checking it also sends the full original to Meta. The app
+  keeps no uploaded-score or decoded-score cache. A truncated, timed-out or invalid
+  Meta response leaves the local reading available; unresolved bars remain editable.
   Meta supports up to 128 written bars. A larger or failed Meta reading can still
   open all locally readable bars (up to 512), labeled as local recovery.
   Unequal bar counts retain the complete local reading instead of merging misaligned

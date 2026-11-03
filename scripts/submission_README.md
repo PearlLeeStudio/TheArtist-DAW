@@ -4,10 +4,11 @@
 [Try the live workspace](https://artist-daw.pearlleestudio.co) ·
 [Development repository](https://github.com/PearlLeeStudio/TheArtist-DAW)
 
-TheArtist is an AI arrangement tool: bring in a score or chord sketch, develop
-its harmony and form, audition accompaniment, then export a PDF chord chart or
-continue with editable DAW tracks. Chord generation supplies musical material
-within that workflow; the musician shapes the sketch into their own music.
+TheArtist helps musicians save preparation time between a score and a DAW
+session: extract chords from a supported score or enter a sketch, revise harmony
+in context, audition accompaniment, then continue with separate editable Harmony,
+Bass and Drums MIDI tracks. Reusing the same harmony reduces repeated chord entry
+and setup; the musician shapes the arrangement and finishes it in the DAW.
 
 The existing TheArtist core supplies the score editor, Music Transformer,
 trained weights, music utilities and research code. The event contribution adds
@@ -63,6 +64,15 @@ explicit. To use Meta, provide a private runtime environment file with
 persistent usage configuration, as described in the reconstructed app's
 `README.md` and `deploy/README.md`. Pass that file with Docker `--env-file` and
 keep the ledger volume. No provider key goes in a browser or image.
+
+First choose a **Genre** before using New from Song Form. The source-score path
+is Import Score → review/edit harmony → Reharmonize → Play → Download MIDI → DAW.
+Uploaded scores and parsed notes are used transiently for analysis, not cached
+between requests or retained as source content in the editor's saved projects.
+With **Use Meta model** checked, the full file is also sent to Meta; the app's
+discard policy does not control provider retention. Use your own, public-domain
+or appropriately permitted material. The workflow does not grant rights to
+arrange or redistribute a protected work.
 
 For native development, the bootstrap's `--install --prepare-assets` flags need
 uv and Node/npm and prepare **F1 only** plus OMT. Before running `deploy/serve.py`,

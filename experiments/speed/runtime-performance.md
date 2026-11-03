@@ -156,11 +156,17 @@ inputs, not better musical quality or bitwise equivalence on every device.
 
 ## Import Source
 
-Stem positions, flag/dot lists and shared beam durations are reused within a
-page. Decoded scores use an in-process LRU cache of at most four entries and
-8 MiB of serialized results, with a five-minute TTL checked on access. No PDF
-bytes or disk cache are retained. Keys include the PDF digest and parsing limits;
-each caller gets an independent score. Errors are not cached.
+**Historical cache experiment; the decoded-score cache has been removed.**
+The source-discard workflow reparses each request and releases source/decoded
+data after active analysis. Its timings must not use the reused-document column
+below. Model inference caching is independent of this change.
+
+In this experiment, stem positions, flag/dot lists and shared beam durations were
+reused within a page. Decoded scores used an in-process LRU cache of at most four
+entries and 8 MiB of serialized results, with a five-minute TTL checked on access.
+It did not retain PDF bytes or write a disk cache. Keys included the PDF digest
+and parsing limits; each caller received an independent score. Errors were not
+cached.
 
 Five paired runs in a warm Python process include PDF decoding and local harmony
 analysis. The large local fixture has 24 pages, 465 measures and 5,829 notes;
@@ -177,10 +183,11 @@ analysis match the baseline. Raw timings are in [score_import.json](score_import
 The large private fixture is not distributed, so its measurement cannot be
 reproduced from a clean public checkout.
 
-Meta assist also benefits within its first import: local analysis and note
-assistance previously decoded the same PDF independently. The second read now
-reuses the parsed score. Its two independent eight-bar harmony reviews run
-concurrently against the same frozen synopsis. Form analysis still waits for
+The historical cache also avoided a second decode within a Meta-assisted import.
+That reuse no longer applies: local analysis and note assistance parse per
+request without a shared decoded-score cache. The two independent eight-bar
+harmony reviews still run concurrently against the same request's frozen
+synopsis. Form analysis still waits for
 their results. Request context and thread-safe cost totals cover both workers,
 including failure; the three-call/$0.30 upper bound and per-call timeouts remain.
 Both reviews may already be in flight when one fails. No live Meta latency or

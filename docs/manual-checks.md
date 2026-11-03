@@ -44,6 +44,12 @@ passing unit tests alone does not complete this verification.
 
 ## Observed workflow
 
+- [x] Isolated browser with the built frontend and in-process API, Meta disabled:
+  the authored vector-score C fixture opened as editable C harmony; Save and
+  reload preserved title, key, meter and chords; source details displayed chord
+  provenance without extracted pitches; Download MIDI completed. Storage, legacy
+  migration, undo and background-fill retention are covered by regressions.
+  This does not claim a new live Meta reading, listening pass or actual DAW-host check.
 - [x] Chrome, production API with an isolated local score: F1 generated four bars;
   Reharmonize returned three real candidates. Alter 1 + 2 combined; Alter 3 replaced
   only overlapping Alter 2. Apply kept Alter 1 + 3. Origin preview restored the

@@ -1,9 +1,9 @@
 # Arrange a score or sketch with TheArtist
 
-TheArtist is an AI arrangement tool for developing musical material into an
-editable harmonic score and accompaniment. Start with a score, enter chords,
-or create a song form. Compare changes in context, choose how the parts play,
-and continue the arrangement in a DAW.
+TheArtist connects score analysis, harmonic editing and accompaniment to reduce
+preparation time before a DAW session. Start with a score, enter chords, or create
+a song form. Compare changes in context, choose how the parts play, and transfer
+the editable accompaniment without entering the same harmony again.
 
 ## 1. Bring in the material
 
@@ -24,10 +24,14 @@ an **Unresolved** mark, and key, meter, chords and section boundaries are
 corrected on the staff. Only unusable project fields (key, meter, tempo, section
 ranges) stop in the dialog for correction before **Import reviewed score**.
 
-The imported result is harmonic material. Note evidence can support chord
-interpretation, but melody notes and durations are not imported as a melody
-track. Keep the source available for melodic and instrumental work in the DAW.
-See [score analysis](score-analysis.md) and [MIDI input](midi-input.md).
+The imported result is harmonic material. Extracted notes support interpretation
+only during analysis/comparison; they are not retained in the working score or
+saved project and are not imported as a melody track. The app does not cache or
+save the original file. Keep your own source available for melodic and
+instrumental work in the DAW. **Use Meta model** sends that original file to Meta;
+use material you own or are permitted to process. See
+[source handling](score-analysis.md#source-handling-and-retention) and
+[MIDI input](midi-input.md).
 
 ## 2. Shape harmony in context
 

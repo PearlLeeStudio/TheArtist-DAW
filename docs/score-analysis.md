@@ -1,11 +1,13 @@
 # Score import, harmony and form
 
 Import prepares source material for the [arrangement workflow](arrangement-workflow.md).
-Its output is an editable harmonic score and form draft. Note evidence supports
-interpretation; melody notes and durations are not imported as a melody track.
+Its output is editable harmony and a form draft, ready for accompaniment and DAW
+preparation. Note evidence is used transiently to interpret chords and compare
+readings; the editor does not retain extracted notes after that processing or
+import them as a melody track.
 
 In **Import Score**, choose the file and optionally check **Use Meta model**, then click
-**Analyze score**. File selection validates size/type and prepares a local preview;
+**Analyze and import**. File selection validates size/type and shows the filename;
 it does not submit analysis. The checkbox remains selectable while checking a file or
 analyzing. Changing it clears the review and aborts an old browser request;
 an earlier result cannot populate the new selection. Start the new analysis explicitly.
@@ -89,7 +91,7 @@ analysis now calls the served `ft_f1` checkpoint. Three candidate variations use
 fixed sampling seed. Read-note pitch-class overlap ranks them, with the whole-context
 model ordering breaking ties. Existing printed/inferred chords and N.C. are retained.
 The result says contextual harmonization, keeps low confidence, records `model: ft_f1`,
-and retains the read notes. Missing weights, unsupported context and bounds are
+and uses the read notes only during analysis. Missing weights, unsupported context and bounds are
 reported; unread notation never becomes a successful transcription.
 
 The served tokenizer and dataset are causal next-token sequences, without a trained
@@ -114,13 +116,42 @@ source details remain available there. Only unusable project fields stop in the
 dialog for correction before Import reviewed score.
 There is no song-name lookup or stored answer for a particular score.
 
-The file is sent to the configured TheArtist backend. Local vector-PDF analysis
-needs no model key or external provider call. Meta assist sends bounded musical
-text to Meta; Full file sends the chosen attachment. Uploaded file bytes are not
-stored in the project. Parsed local results have a bounded in-memory cache
-(four entries, 8 MiB total, five-minute TTL), keyed by PDF digest and parsing
-limits; each caller gets an independent result. Raw bytes are not retained by
-that cache. See [performance measurements](../experiments/speed/runtime-performance.md).
+## Source handling and retention
+
+Use score material you own, that is in the public domain, or that you have
+permission to process. The workflow reduces repeated chord entry and preparation
+before the DAW; it does not grant arrangement or redistribution rights.
+
+The selected PDF/image is uploaded to the configured TheArtist backend, including
+when the reader is called `local`. Here, local means the server's vector-PDF and
+harmony analysis without a Meta call; it does not mean browser-only processing.
+Checking **Use Meta model** additionally sends the full selected file to Meta.
+The separate `auto` API mode sends bounded musical text. Provider handling and
+retention remain subject to that provider's terms.
+
+The application's original file and extracted-note data live only for the active
+analysis or background comparison. Uploaded files are not written to disk; parsed
+scores are not cached between requests. The local reader reparses each upload.
+JSON and streaming import responses, including failures, use `Cache-Control:
+no-store`. Score-related provider failures retain fixed diagnostics and accounting
+metadata rather than provider prose that could repeat the source.
+
+The editor keeps chords, key, meter, section boundaries, playback choices and
+minimal reading/review metadata. It removes extracted note arrays and source
+evidence from the working Song and saved Projects; existing browser saves are
+sanitized while preserving the user's musical work. If the browser refuses the
+storage rewrite, the recovered in-memory score remains available and the failed
+cleanup is reported; old stored bytes cannot be changed until writes are allowed.
+The original PDF/image is
+not shown in the editor or saved with the project. Temporary file references are
+released after analysis/review, cancellation or close. This is an application
+retention policy, not a claim of secure memory erasure or control over a provider's
+copy of a request. Model-loading and inference caches are separate and do not
+cache uploaded scores.
+
+The earlier decoded-score cache measurements remain in the
+[historical performance results](../experiments/speed/runtime-performance.md#import-source);
+their cached-reuse speedup is not part of the source-discard workflow.
 
 ## Reading notation
 
