@@ -47,6 +47,7 @@ Meta-powered feature are event work; the full split is in
 
 **[Open the arrangement workspace](https://artist-daw.pearlleestudio.co)** ·
 [Watch the hackathon demo](https://youtu.be/wC-dkLfot-c) ·
+[Submission repository](https://github.com/PearlLeeStudio/TheArtist-Meta-Hackathon) ·
 [Workflow guide](docs/arrangement-workflow.md) · [Documentation](docs/README.md) ·
 [Local / Meta / hybrid results](docs/model-comparison.md) ·
 [Run with Docker](#getting-started) · [Deploy to a domain](#deploy-to-a-domain)
@@ -294,9 +295,9 @@ with the gospel adapter as the scorer and *Change up to* 4, on the hosted demo
 - Alter 2 and Alter 3 change different chords, so the musician can combine them before Apply.
 
 The [hackathon work log](HACKATHON.md) separates these additions from the existing
-editor and trained models. This development repository stays intact; a separate
-submission repository will contain event work and patches against a pinned core
-dependency. The [hackathon demo](https://youtu.be/wC-dkLfot-c) is the featured
+editor and trained models. This development repository stays intact. The separate
+[submission repository](https://github.com/PearlLeeStudio/TheArtist-Meta-Hackathon)
+contains the cumulative event diff and a bootstrap against a pinned core dependency. The [hackathon demo](https://youtu.be/wC-dkLfot-c) is the featured
 video above; the pre-existing demo is listed separately under [Links](#links).
 The screenshots illustrate their documented flows and predate the latest Import
 controls and theory references. Verified paths and remaining audio/device checks are

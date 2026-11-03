@@ -1,8 +1,10 @@
 # TheArtist · Meta hackathon contribution
 
 [Watch the hackathon demo](https://youtu.be/wC-dkLfot-c) ·
-[Try the live workspace](https://artist-daw.pearlleestudio.co) ·
-[Development repository](https://github.com/PearlLeeStudio/TheArtist-DAW)
+[Live app — artist-daw.pearlleestudio.co](https://artist-daw.pearlleestudio.co) ·
+[Development repository — TheArtist-DAW](https://github.com/PearlLeeStudio/TheArtist-DAW)
+
+[![Watch TheArtist's hackathon demo](https://i.ytimg.com/vi/wC-dkLfot-c/hqdefault.jpg)](https://youtu.be/wC-dkLfot-c)
 
 TheArtist helps musicians save preparation time between a score and a DAW
 session: extract chords from a supported score or enter a sketch, revise harmony
@@ -19,13 +21,18 @@ the hosted app and Safari–Logic bridge; source attribution and performance wor
 These are development claims. Listening evaluation is planned and will be reported
 in a paper; the recorded automated measurements do not establish musical preference.
 
-This package contains event changes as a patch, not a copy of the pre-event
-checkout or its git history. `manifest.json` pins the original public core and
+This package contains the cumulative diff from `baseline` to the development
+commit pinned in `manifest.json`. `changes.patch` includes event-added files,
+modifications and deletions, without copying the pre-event checkout or git history. `manifest.json` pins the original public core and
 the development snapshot, verifies the core tree and hashes every changed file.
 `provenance-review.json` flags added files that overlap earlier code; being new
 to git does not make all of a file's content a new contribution. The complete
 feature history and evaluation limitations are in the reconstructed app's
 `HACKATHON.md` and `experiments/` directory.
+Browse the [contribution record](https://github.com/PearlLeeStudio/TheArtist-DAW/blob/main/HACKATHON.md)
+and [evaluation evidence](https://github.com/PearlLeeStudio/TheArtist-DAW/blob/main/docs/evidence.md)
+in the development repository; this package's exact revision is pinned in
+`manifest.json`.
 
 Reviewed pre-event derivations include `scoreSurface.ts` (staff rendering),
 `drumPatterns.ts` (drum patterns), `genres.ts` (genre settings) and
@@ -113,21 +120,24 @@ performs the full download. For public hosting, the reconstructed
 `docs/web-projects.md` explains Docker → Caddy HTTPS → API domain → Cloudflare
 Pages → editor domain. Local startup alone does not configure those services.
 
-### Recorded reconstruction scope
+### Reconstruction verification
 
-The development snapshot `53a9c72` was reconstructed from the `baseline` tag in a
-new checkout, with fresh environments and shared download caches. All 510 changed
-file hashes, frozen installs, the frontend build and the app import passed, and the
-reconstruction's `scripts/verify_reconstruction.py` passed its in-process HTTP path:
-original 20-bar PDF import → actual F1 completion to 64 bars → four-track MIDI
-(metadata plus Harmony/Bass/Drums), with OMT ready and no Meta call. In that run the
-build machine's network sandbox cut Python downloads, so the seven OMT pages were
-fetched with curl and passed to the reconstruction's own setup code, which still
-checked every reviewed paragraph's hash, and the released F1 directory was copied
-from an earlier download of the same release. This does not verify a Docker image,
-external hosting, actual browser audio or human preference. The reconstructed
-`scripts/verify_reconstruction.py` can repeat that path with `--root` and a new
-absolute `--out` report path.
+Native setup was exercised from the public pinned core in a new checkout with
+fresh Python/npm environments and shared download caches. Manifest hashes, frozen
+installs, frontend build and app import passed. OMT setup prepared 29 reviewed
+passages and the public F1 checkpoint downloaded successfully.
+
+The reconstruction's `scripts/verify_reconstruction.py` passed its in-process HTTP
+workflow: original 20-bar PDF import → actual F1 completion to 64 bars → four-track
+MIDI (metadata plus Harmony/Bass/Drums), with OMT ready and no Meta call. The original
+20 bars retained their chords. Repeat it with `--root` and a new absolute `--out`
+report path using the reconstructed backend environment.
+
+This verifies native reconstruction and that HTTP workflow, not Docker execution,
+browser audio or actual DAW playback. The build retains its chunk-size/deprecated
+option warnings. npm audit reported 12 moderate findings in the ESLint development
+dependency chain and no high or critical findings; those dependencies were not
+upgraded as part of packaging.
 
 ## Rights and scope
 
