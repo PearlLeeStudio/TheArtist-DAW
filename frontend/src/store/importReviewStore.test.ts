@@ -83,6 +83,8 @@ test('a finished review marks disputed bars, fills the untouched empty bar and r
   assert.deepEqual(state.flagged, [2]);
   assert.equal(state.filled, 1);
   assert.equal(state.requestId, 'req-1');
+  assert.equal(state.outcome, 'meta');
+  assert.equal(state.model, 'muse-spark-1.3');
   assert.match(state.summary, /1 bar flagged.*1 bar filled/);
   const song = useSongStore.getState().song;
   assert.equal(song.measures[1].chords[0]?.root, 'G');
@@ -126,6 +128,7 @@ test('failures and cancellation are visible without touching the score', async (
   failing.getState().start(file, 'application/pdf', epoch);
   await settle();
   assert.equal(failing.getState().phase, 'failed');
+  assert.equal(failing.getState().outcome, null);
   assert.match(failing.getState().summary, /did not finish: Meta did not finish/);
   assert.equal(useSongStore.getState().song.measures[1].chords[0], null);
   const cancelled = createImportReviewStore((_f, _m, _e, _mode, options) => new Promise((_resolve, reject) => {
@@ -135,4 +138,22 @@ test('failures and cancellation are visible without touching the score', async (
   cancelled.getState().cancel();
   await settle();
   assert.equal(cancelled.getState().phase, 'idle');
+});
+
+test('a local recovery finishes as not Meta-checked and fills nothing', async () => {
+  useSongStore.getState().importSong(imported());
+  const epoch = useSongStore.getState().songEpoch;
+  const recovered = createImportReviewStore(async () => ({
+    ...verifiedReading(), analysisSource: 'local', model: null, requestId: null,
+    measures: verifiedReading().measures.map((bar) => ({ ...bar, analysisSource: 'local', model: null, requestId: null })),
+    verification: { status: 'local_fallback', localMeasures: 3, metaMeasures: 0, comparedMeasures: 0, disputedMeasures: [], notes: [] },
+  }) as ScoreImportResponse);
+  recovered.getState().start(file, 'application/pdf', epoch);
+  await settle();
+  const state = recovered.getState();
+  assert.equal(state.phase, 'done');
+  assert.equal(state.outcome, 'local');
+  assert.equal(state.model, null);
+  assert.match(state.summary, /Meta reading was unavailable/);
+  assert.equal(useSongStore.getState().song.measures[1].chords[0], null, 'nothing is filled without a Meta reading');
 });

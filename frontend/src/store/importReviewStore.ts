@@ -29,6 +29,11 @@ export interface ImportReviewState {
   flagged: number[];
   filled: number;
   requestId: string | null;
+  /** meta: Meta read the original and the check ran. local: the local reader stood in (Meta
+   *  unavailable, or skipped for a long score). null: no comparison, or the check failed. */
+  outcome: 'meta' | 'local' | null;
+  /** The Meta model that read the original, for the band. */
+  model: string | null;
   start: (file: File, mimeType: ScoreMime, songEpoch: number) => void;
   cancel: () => void;
   dismiss: () => void;
@@ -37,7 +42,8 @@ export interface ImportReviewState {
 export type ScoreAnalyzer = (file: File, mimeType: ScoreMime, engine: ScoreImportEngine, mode: ScoreImportMode,
   options?: AnalyzeScoreOptions) => Promise<ScoreImportResponse>;
 
-const idle = { phase: 'idle' as const, songEpoch: null, filename: '', label: '', summary: '', flagged: [], filled: 0, requestId: null };
+const idle = { phase: 'idle' as const, songEpoch: null, filename: '', label: '', summary: '', flagged: [], filled: 0, requestId: null,
+  outcome: null, model: null };
 
 export function createImportReviewStore(analyze: ScoreAnalyzer = analyzeScoreFile) {
   let controller: AbortController | null = null;
@@ -61,8 +67,12 @@ export function createImportReviewStore(analyze: ScoreAnalyzer = analyzeScoreFil
         const plan = planImportReview(songs.song, verified);
         songs.applyImportReview(songEpoch, plan);
         finish();
+        const status = verified.verification?.status ?? null;
+        const outcome: ImportReviewState['outcome'] = status === null ? null
+          : status === 'local_only' || status === 'local_fallback' ? 'local' : 'meta';
         set({ phase: 'done', summary: plan.summary, flagged: plan.flags.map((flag) => flag.index),
-          filled: plan.fills.length, requestId: verified.requestId ?? null, label: '' });
+          filled: plan.fills.length, requestId: verified.requestId ?? null, label: '',
+          outcome, model: outcome === 'meta' ? verified.model ?? null : null });
       }).catch((error: unknown) => {
         if (controller !== own) return;
         controller = null;

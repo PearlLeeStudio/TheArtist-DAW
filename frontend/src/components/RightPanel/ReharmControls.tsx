@@ -3,9 +3,19 @@ import OperationProgress from '../OperationProgress';
 import { useSongStore } from '../../store/songStore';
 import { useReharmonizeStore } from '../../store/reharmonizeStore';
 import { useGenerationStore } from '../../store/generationStore';
-import { REHARM_CHANGE_LIMITS, REHARM_MODES, reharmLocalNote, reharmRunDetails, reharmSelectionError, reharmTargets } from '../../engine/reharmonize';
+import { REHARM_CHANGE_LIMITS, REHARM_MODES, reharmMetaOutcome, reharmRunDetails, reharmSelectionError, reharmTargets } from '../../engine/reharmonize';
 import type { ReharmChangeLimit, ReharmMode } from '../../engine/reharmonize';
 import { hasPendingReharmSelection } from '../../engine/reharmonizeSession';
+
+/** The Meta verdict of a search: a yellow box when Muse Spark chose the alternatives, a plain one when not. */
+function MetaOutcomeBox({ meta, title, detail }: { meta: boolean; title: string; detail: string }) {
+  return <p role="status" className="px-3 py-2 text-xs" style={meta
+    ? { background: 'var(--brand-yellow)', color: '#1a1a1a' }
+    : { border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
+    <strong className="block text-sm">{meta ? '✓ ' : ''}{title}</strong>
+    {detail}
+  </p>;
+}
 
 export default function ReharmControls({ modelKey }: { modelKey: string }) {
   const song = useSongStore(s => s.song);
@@ -76,8 +86,7 @@ export default function ReharmControls({ modelKey }: { modelKey: string }) {
         : pending ? `${selectionLabel} selected. Apply to keep ${selected.length ? 'these changes' : 'the original chords'}.`
           : 'Choose an alternative on the score to enable Apply.'}
     </p>}
-    {result && !loading && !error && reharmLocalNote(result) && <p role="status" className="text-xs"
-      style={{ color: 'var(--text-muted)' }}>{reharmLocalNote(result)}</p>}
+    {result && !loading && !error && <MetaOutcomeBox {...reharmMetaOutcome(result)} />}
     {result && !loading && !error && <details className="text-xs" style={{ color: 'var(--text-muted)' }}>
       <summary className="cursor-pointer">Run details</summary>
       <ul className="mt-1 space-y-0.5 break-words">
@@ -87,7 +96,9 @@ export default function ReharmControls({ modelKey }: { modelKey: string }) {
     {!result && !loading && notice && <p role="status" className="text-xs" style={{ color: 'var(--text-muted)' }}>{notice}</p>}
     {problem && <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{problem}</p>}
     {loading && <OperationProgress label="Comparing substitutions against the surrounding chords…" />}
-    {error && <p role="alert" className="text-xs">{error}</p>}
+    {error && <p role="alert" className="px-3 py-2 text-xs" style={{ border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
+      <strong className="block text-sm">{/Meta/.test(error) ? 'Meta search failed' : 'Search failed'}</strong>{error}
+    </p>}
     {comparison && <button className="text-xs underline" onClick={() => {
       document.getElementById('reharmonization-comparison')?.scrollIntoView({ block: 'center', behavior: 'smooth' });
     }}>{result ? 'View 3 alternatives on the score' : 'View search on the score'}</button>}

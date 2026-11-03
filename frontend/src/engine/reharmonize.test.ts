@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import type { Song, SlotAddress } from '../models/types.ts';
 import { parseChordName } from './chordParser.ts';
-import { reharmLocalNote, reharmRunDetails, reharmSymbol, reharmSelectionError, requestReharmonization, validateReharmResult } from './reharmonize.ts';
+import { reharmLocalNote, reharmMetaOutcome, reharmRunDetails, reharmSymbol, reharmSelectionError, requestReharmonization, validateReharmResult } from './reharmonize.ts';
 import type { ReharmCandidate, ReharmResult } from './reharmonize.ts';
 import { emptyReharmState, hasPendingReharmSelection, reharmActions } from './reharmonizeSession.ts';
 import type { ReharmState } from './reharmonizeSession.ts';
@@ -325,6 +325,19 @@ test('a result picked without Meta says so, keeps any Meta record and rejects un
     const r = structuredClone(local); mutate(r);
     assert.throws(() => validateReharmResult(r, score(), slots, 1), /invalid reharmonization/);
   }
+});
+
+test('the verdict box says whether Meta chose the alternatives and lists its record', () => {
+  const chosen = validateReharmResult({ ...result(), requestIds: ['req-1', 'req-2'], costUsd: 0.0123,
+    toolCalls: ['search_substitutions', 'search_substitutions', 'offer_candidates'] }, score(), slots, 1);
+  assert.deepEqual(reharmMetaOutcome(chosen), { meta: true, title: 'Meta muse-spark-1.3 chose these alternatives',
+    detail: '3 tool calls: search_substitutions → search_substitutions → offer_candidates · $0.0123' });
+  assert.deepEqual(reharmMetaOutcome(result()), { meta: true, title: 'Meta muse-spark-1.3 chose these alternatives',
+    detail: 'tool calls not reported' });
+  const local: ReharmResult = { ...result(), metaModel: 'not used', selection: 'local', metaUnavailable: 'disabled',
+    requestIds: [], costUsd: 0, toolCalls: [] };
+  assert.deepEqual(reharmMetaOutcome(validateReharmResult(local, score(), slots, 1)), { meta: false, title: 'Picked without Meta',
+    detail: 'Meta is off on this server, so the best-scoring alternative of each substitution family was picked without Meta.' });
 });
 
 test('manual tension and explicit bass are preserved in the search request symbol', () => {

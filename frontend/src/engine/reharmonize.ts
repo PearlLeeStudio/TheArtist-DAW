@@ -56,6 +56,17 @@ export function reharmLocalNote(result: ReharmResult): string | null {
   return `${why}, so the best-scoring alternative of each substitution family was picked without Meta.`;
 }
 
+/** The verdict box above Run details: whether Muse Spark chose the alternatives, with its call record. */
+export function reharmMetaOutcome(result: ReharmResult): { meta: boolean; title: string; detail: string } {
+  if (result.selection === 'local') return { meta: false, title: 'Picked without Meta', detail: reharmLocalNote(result) ?? '' };
+  const calls = result.toolCalls ?? [];
+  const detail = [
+    calls.length ? `${calls.length} tool ${calls.length === 1 ? 'call' : 'calls'}: ${calls.join(' → ')}` : 'tool calls not reported',
+    result.costUsd === undefined ? null : `$${result.costUsd.toFixed(4)}`,
+  ].filter((part): part is string => part !== null).join(' · ');
+  return { meta: true, title: `Meta ${result.metaModel} chose these alternatives`, detail };
+}
+
 /** Include manually added tensions; unsupported combinations must fail rather than disappear. */
 export function reharmSymbol(chord: Chord): string {
   const quality = chord.quality === 'maj' ? '' : chord.quality === 'min' ? 'm' : chord.quality;
