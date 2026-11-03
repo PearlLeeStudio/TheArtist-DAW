@@ -1,6 +1,7 @@
 # TheArtist · Meta hackathon contribution
 
 [Watch the hackathon demo](https://youtu.be/wC-dkLfot-c) ·
+[Demo on X](https://x.com/pearlmedicilee/status/2117606784819249170) ·
 [Live app — artist-daw.pearlleestudio.co](https://artist-daw.pearlleestudio.co) ·
 [Development repository — TheArtist-DAW](https://github.com/PearlLeeStudio/TheArtist-DAW)
 

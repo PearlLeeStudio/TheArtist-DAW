@@ -461,6 +461,7 @@ Current Safari interface: section labels, chord staff, Play controls and the alw
 | | |
 |---|---|
 | 🎬 **Hackathon demo** | [TheArtist — From Chord Sketch to Your Own Music](https://youtu.be/wC-dkLfot-c) |
+| **Demo on X** | [Hackathon demo post](https://x.com/pearlmedicilee/status/2117606784819249170) |
 | **Pre-hackathon demo** | [Existing score editor, MIDI input and chord generation](https://youtu.be/iSDj4VK9nKc) — baseline work, not the hackathon submission video |
 | 🎬 **Demo videos** | [youtube.com/@StudioPearlLee](https://www.youtube.com/@StudioPearlLee) |
 | 🤗 **Released models** | [huggingface.co/PearlLeeStudio](https://huggingface.co/PearlLeeStudio) — 7 base checkpoints + 11 LoRA adapters |
