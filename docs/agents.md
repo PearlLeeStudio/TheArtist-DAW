@@ -5,8 +5,8 @@ tool calls or a plan that code validates, and stops when it has a result or hits
 a limit. This page describes each loop, its limits, what the musician sees, and
 what was measured. By default both run on Standard `muse-spark-1.3` through the
 Meta Model API; the judge inside the second loop, and the Reharmonize agent through
-its own `agent` client role, can run on Meta open weights
-([open weights](open-weights.md)).
+its own `agent` client role, can run on Meta open weights, and the hosted demo runs
+both there during judging ([open weights](open-weights.md)).
 
 ## Reharmonize: a tool-call search over substitutions
 

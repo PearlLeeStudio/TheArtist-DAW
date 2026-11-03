@@ -47,8 +47,8 @@ each of the 128 additions to its commits, tests and limits.
 
 | Role | Model | Served by | What it does |
 |---|---|---|---|
-| Reader, planner, agent | **Muse Spark 1.3** (`muse-spark-1.3`, Standard Meta Model API) | `api.meta.ai` | reads a whole score PDF or image and is compared bar by bar with the local reader; plans a song form as strict JSON; drives the Reharmonize search through native tool calls |
-| Judge | **Muse Spark Open** (`meta-models/muse-spark-open-1026`, Meta open weights) | **Baseten** | Second ear's pick among A/B/C and the hybrid form review; the hosted app runs the judge this way through the judging window |
+| Reader, planner | **Muse Spark 1.3** (`muse-spark-1.3`, Standard Meta Model API) | `api.meta.ai` | reads a whole score PDF or image and is compared bar by bar with the local reader; plans a song form as strict JSON; drives the Reharmonize search through native tool calls when the agent role is left on it (the default) |
+| Judge and Reharmonize agent | **Muse Spark Open** (`meta-models/muse-spark-open-1026`, Meta open weights) | **Baseten** | Second ear's pick among A/B/C and the hybrid form review; since 2026-11-04 also the Reharmonize search, with the two tools stated as JSON and one checked call per turn; the hosted app runs both roles this way through the judging window |
 | Scorer | my Music Transformer (Phase 0, F1–F5, F1 v2, 11 genre LoRAs) | the app server, CPU | generates chords and scores every candidate against the surrounding bars |
 
 **Two bounded agents** ([page](docs/agents.md)).
@@ -73,10 +73,14 @@ reservation; its request id, tokens and cost go to a persistent ledger and onto 
 screen (**Run details** for the agent, the result line of every judge call). A credit
 stop line pauses Meta before the balance runs out. A failed call is shown as a
 failure, never as a result that looks like success. Moving the judge to open weights
-is four environment lines; the result line then reads
+is four environment lines and the agent five; the result line then reads
 `baseten meta-models/muse-spark-open-1026 · <request id> · $<cost>`, and the first
 hosted review did (request `54ca701a…`, $0.0045, 5.4 s, every reason confirmed by
-the analyzer). What runs on open weights and how to verify it:
+the analyzer). The hosted agent followed on 2026-11-04: its first three searches on
+open weights each completed `search_substitutions → search_substitutions →
+offer_candidates` with three candidates, at $0.0121, $0.0096 and $0.0048 and 11.5,
+9.3 and 7.7 s ([record](experiments/meta/reharmonize_open_weights_live.json)).
+What runs on open weights and how to verify it:
 [open weights](docs/open-weights.md).
 
 **Hosted, instrumented, reproducible.** Docker → Caddy HTTPS → API domain →
@@ -160,9 +164,9 @@ Not claimed: listener preference or musical superiority (no listening study, and
 the Reharmonize judge is the same model family as the Meta selector); Import
 accuracy on arbitrary PDFs (the local reader supported 0 of 8 Mutopia editions, and
 Meta's Bach reading matched 8/32 bars); time saved for a musician (not measured); a
-measured Reharmonize run on open weights (the agent role can run there through
-JSON tool turns, but no comparison was recorded and the hosted demo keeps the agent
-on Muse Spark 1.3 unless switched).
+measured Reharmonize comparison on open weights (the hosted demo has run the agent
+on Muse Spark Open since 2026-11-04 and three searches are recorded, but the blinded
+selector comparison was run with the agent on Muse Spark 1.3 only).
 Conditions, intervals and raw records: [evidence](docs/evidence.md) ·
 [three-way comparison](docs/model-comparison.md) ·
 [evaluation framing](docs/evaluation.md).
@@ -242,9 +246,9 @@ persistent usage configuration, as described in the reconstructed app's
 `README.md` and `deploy/README.md`. Pass that file with Docker `--env-file` and
 keep the ledger volume. No provider key goes in a browser or image.
 
-To reproduce the hosted open-weight judge, add the following to that same private
-runtime environment file. The key is a Baseten key; the reader, planner and
-Reharmonize agent continue to use Standard `muse-spark-1.3` with `MODEL_API_KEY`.
+To reproduce the hosted open-weight judge and agent, add the following to that same
+private runtime environment file. The keys are Baseten keys; the reader and planner
+continue to use Standard `muse-spark-1.3` with `MODEL_API_KEY`.
 
 ```dotenv
 LLM_JUDGE_PROVIDER=baseten
@@ -252,10 +256,16 @@ LLM_JUDGE_MODEL=meta-models/muse-spark-open-1026
 LLM_JUDGE_API_KEY=YOUR_BASETEN_KEY
 LLM_JUDGE_REASONING_EFFORT=low
 THEARTIST_JUDGE_LEDGER=/data/judge_ledger.json
+LLM_AGENT_PROVIDER=baseten
+LLM_AGENT_API_KEY=YOUR_BASETEN_KEY
+LLM_AGENT_REASONING_EFFORT=low
+THEARTIST_AGENT_BUDGET_USD=10
+THEARTIST_AGENT_LEDGER=/data/agent_ledger.json
 ```
 
-Second ear and hybrid form results identify the provider, model, request ID and
-cost. Omitting `LLM_JUDGE_PROVIDER` uses the default Meta service for these jobs.
+Second ear, hybrid form and Reharmonize results identify the provider, model,
+request ID and cost. Omitting `LLM_JUDGE_PROVIDER` or `LLM_AGENT_PROVIDER` uses the
+default Meta service for that role.
 
 First choose a **Genre** before using New from Song Form. The source-score path
 is Import Score → review/edit harmony → Reharmonize → Play → score PDF → MIDI/DAW.

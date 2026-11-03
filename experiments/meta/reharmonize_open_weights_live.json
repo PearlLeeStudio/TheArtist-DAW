@@ -1,0 +1,712 @@
+{
+ "purpose": "Three hosted Reharmonize runs with the agent role on Meta open weights (Muse Spark Open on Baseten), the same Amazing Grace bars 5-8 request as reharmonize_amazing_grace.json; recorded right after the hosted agent role was switched with LLM_AGENT_PROVIDER=baseten",
+ "date": "2026-11-04",
+ "host": "https://music-api.pearlleestudio.co",
+ "agentRole": {
+  "provider": "baseten",
+  "model": "meta-models/muse-spark-open-1026",
+  "reasoningEffort": "low",
+  "toolTurns": "JSON tool turns (tools stated in the system message), not native tool calls"
+ },
+ "judgeRole": {
+  "provider": "baseten",
+  "model": "meta-models/muse-spark-open-1026"
+ },
+ "comparisonRun": "2026-11-01",
+ "comparisonMetaModel": "muse-spark-1.3",
+ "comparisonCostUsd": 0.019658,
+ "comparisonElapsedSeconds": 12.52,
+ "chart": "G | G D7 | Em C | G | G | G D7 | G | G | G | G | C | G | Em G/D | D7 | G | G",
+ "request": {
+  "key": "G major",
+  "timeSignature": [
+   3,
+   4
+  ],
+  "context": [
+   {
+    "measure": 0,
+    "chords": [
+     "G",
+     "G"
+    ]
+   },
+   {
+    "measure": 1,
+    "chords": [
+     "G",
+     "D7"
+    ]
+   },
+   {
+    "measure": 2,
+    "chords": [
+     "Em",
+     "C"
+    ]
+   },
+   {
+    "measure": 3,
+    "chords": [
+     "G",
+     "G"
+    ]
+   },
+   {
+    "measure": 4,
+    "chords": [
+     "G",
+     "G"
+    ]
+   },
+   {
+    "measure": 5,
+    "chords": [
+     "G",
+     "D7"
+    ]
+   },
+   {
+    "measure": 6,
+    "chords": [
+     "G",
+     "G"
+    ]
+   },
+   {
+    "measure": 7,
+    "chords": [
+     "G",
+     "G"
+    ]
+   },
+   {
+    "measure": 8,
+    "chords": [
+     "G",
+     "G"
+    ]
+   },
+   {
+    "measure": 9,
+    "chords": [
+     "G",
+     "G"
+    ]
+   },
+   {
+    "measure": 10,
+    "chords": [
+     "C",
+     "C"
+    ]
+   },
+   {
+    "measure": 11,
+    "chords": [
+     "G",
+     "G"
+    ]
+   },
+   {
+    "measure": 12,
+    "chords": [
+     "Em",
+     "G/D"
+    ]
+   },
+   {
+    "measure": 13,
+    "chords": [
+     "D7",
+     "D7"
+    ]
+   },
+   {
+    "measure": 14,
+    "chords": [
+     "G",
+     "G"
+    ]
+   },
+   {
+    "measure": 15,
+    "chords": [
+     "G",
+     "G"
+    ]
+   }
+  ],
+  "selectedSlots": [
+   {
+    "measureIndex": 4,
+    "slotIndex": 0
+   },
+   {
+    "measureIndex": 4,
+    "slotIndex": 1
+   },
+   {
+    "measureIndex": 5,
+    "slotIndex": 0
+   },
+   {
+    "measureIndex": 5,
+    "slotIndex": 1
+   },
+   {
+    "measureIndex": 6,
+    "slotIndex": 0
+   },
+   {
+    "measureIndex": 6,
+    "slotIndex": 1
+   },
+   {
+    "measureIndex": 7,
+    "slotIndex": 0
+   },
+   {
+    "measureIndex": 7,
+    "slotIndex": 1
+   }
+  ],
+  "maxChanges": 4,
+  "mode": "auto",
+  "modelKey": "ft_f1_lora_gospel"
+ },
+ "runs": [
+  {
+   "run": 1,
+   "elapsedSeconds": 11.54,
+   "httpStatus": 200,
+   "metaModel": "meta-models/muse-spark-open-1026",
+   "selection": "meta",
+   "metaUnavailable": null,
+   "modelUsed": "F1 + LoRA: gospel",
+   "toolCalls": [
+    "search_substitutions",
+    "search_substitutions",
+    "offer_candidates"
+   ],
+   "requestIds": [
+    "54ca701a1a25bb2ec7b958feb5bb855ccd76a",
+    "54ca701a1a25bbfc77bd29d7af8dd3a9a9f03",
+    "54ca701a1a25bc72474cab32fbc005edb6fc5"
+   ],
+   "costUsd": 0.012135,
+   "candidates": [
+    {
+     "id": "13:G7",
+     "family": "modal",
+     "changes": [
+      {
+       "measureIndex": 6,
+       "slotIndex": 1,
+       "before": "G",
+       "after": "G7"
+      }
+     ]
+    },
+    {
+     "id": "11:D7b9",
+     "family": "dominant",
+     "changes": [
+      {
+       "measureIndex": 5,
+       "slotIndex": 1,
+       "before": "D7",
+       "after": "D7b9"
+      }
+     ]
+    },
+    {
+     "id": "11:Ab7#11",
+     "family": "dominant",
+     "changes": [
+      {
+       "measureIndex": 5,
+       "slotIndex": 1,
+       "before": "D7",
+       "after": "Ab7#11"
+      }
+     ]
+    }
+   ],
+   "response": {
+    "candidates": [
+     {
+      "id": "13:G7",
+      "family": "modal",
+      "changes": [
+       {
+        "address": {
+         "measureIndex": 6,
+         "slotIndex": 1
+        },
+        "before": "G",
+        "after": "G7",
+        "commonTones": 3,
+        "modes": [
+         "mixolydian"
+        ],
+        "conventions": []
+       }
+      ],
+      "pitchDistance": 0.25,
+      "originalPitchDistance": 0.0,
+      "bassMotion": 0.0,
+      "originalBassMotion": 0.0,
+      "mathScore": 1.75,
+      "conventionScore": 0.0,
+      "modelScore": -1.50011
+     },
+     {
+      "id": "11:D7b9",
+      "family": "dominant",
+      "changes": [
+       {
+        "address": {
+         "measureIndex": 5,
+         "slotIndex": 1
+        },
+        "before": "D7",
+        "after": "D7b9",
+        "commonTones": 4,
+        "modes": [],
+        "conventions": [
+         "Dominant resolution",
+         "V7♭9 resolving to tonic"
+        ]
+       }
+      ],
+      "pitchDistance": 0.833,
+      "originalPitchDistance": 0.833,
+      "bassMotion": 5.0,
+      "originalBassMotion": 5.0,
+      "mathScore": 1.0167,
+      "conventionScore": 0.45,
+      "modelScore": -1.69549
+     },
+     {
+      "id": "11:Ab7#11",
+      "family": "dominant",
+      "changes": [
+       {
+        "address": {
+         "measureIndex": 5,
+         "slotIndex": 1
+        },
+        "before": "D7",
+        "after": "Ab7#11",
+        "commonTones": 3,
+        "modes": [],
+        "conventions": [
+         "Resolving tritone substitute"
+        ]
+       }
+      ],
+      "pitchDistance": 0.733,
+      "originalPitchDistance": 0.833,
+      "bassMotion": 1.0,
+      "originalBassMotion": 5.0,
+      "mathScore": 1.1467,
+      "conventionScore": 0.5,
+      "modelScore": -2.02633
+     }
+    ],
+    "modelUsed": "F1 + LoRA: gospel",
+    "contextMeasures": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     14,
+     15
+    ],
+    "metaModel": "meta-models/muse-spark-open-1026",
+    "requestIds": [
+     "54ca701a1a25bb2ec7b958feb5bb855ccd76a",
+     "54ca701a1a25bbfc77bd29d7af8dd3a9a9f03",
+     "54ca701a1a25bc72474cab32fbc005edb6fc5"
+    ],
+    "costUsd": 0.012135,
+    "toolCalls": [
+     "search_substitutions",
+     "search_substitutions",
+     "offer_candidates"
+    ],
+    "modelApproximations": [],
+    "selection": "meta",
+    "metaUnavailable": null
+   }
+  },
+  {
+   "run": 2,
+   "elapsedSeconds": 9.3,
+   "httpStatus": 200,
+   "metaModel": "meta-models/muse-spark-open-1026",
+   "selection": "meta",
+   "metaUnavailable": null,
+   "modelUsed": "F1 + LoRA: gospel",
+   "toolCalls": [
+    "search_substitutions",
+    "search_substitutions",
+    "offer_candidates"
+   ],
+   "requestIds": [
+    "54ca701a1a25bd7a37acdba5cc35f2af7fa5a",
+    "54ca701a1a25be3957cca815ed9c171d2f7bd",
+    "54ca701a1a25bebf1742cab235d8b9b5406a6"
+   ],
+   "costUsd": 0.009626,
+   "candidates": [
+    {
+     "id": "13:G7",
+     "family": "modal",
+     "changes": [
+      {
+       "measureIndex": 6,
+       "slotIndex": 1,
+       "before": "G",
+       "after": "G7"
+      }
+     ]
+    },
+    {
+     "id": "15:Gmaj7",
+     "family": "common_tones",
+     "changes": [
+      {
+       "measureIndex": 7,
+       "slotIndex": 1,
+       "before": "G",
+       "after": "Gmaj7"
+      }
+     ]
+    },
+    {
+     "id": "11:D7b9",
+     "family": "dominant",
+     "changes": [
+      {
+       "measureIndex": 5,
+       "slotIndex": 1,
+       "before": "D7",
+       "after": "D7b9"
+      }
+     ]
+    }
+   ],
+   "response": {
+    "candidates": [
+     {
+      "id": "13:G7",
+      "family": "modal",
+      "changes": [
+       {
+        "address": {
+         "measureIndex": 6,
+         "slotIndex": 1
+        },
+        "before": "G",
+        "after": "G7",
+        "commonTones": 3,
+        "modes": [
+         "mixolydian"
+        ],
+        "conventions": []
+       }
+      ],
+      "pitchDistance": 0.25,
+      "originalPitchDistance": 0.0,
+      "bassMotion": 0.0,
+      "originalBassMotion": 0.0,
+      "mathScore": 1.75,
+      "conventionScore": 0.0,
+      "modelScore": -1.50011
+     },
+     {
+      "id": "15:Gmaj7",
+      "family": "common_tones",
+      "changes": [
+       {
+        "address": {
+         "measureIndex": 7,
+         "slotIndex": 1
+        },
+        "before": "G",
+        "after": "Gmaj7",
+        "commonTones": 3,
+        "modes": [
+         "ionian",
+         "lydian"
+        ],
+        "conventions": []
+       }
+      ],
+      "pitchDistance": 0.125,
+      "originalPitchDistance": 0.0,
+      "bassMotion": 0.0,
+      "originalBassMotion": 0.0,
+      "mathScore": 1.875,
+      "conventionScore": 0.0,
+      "modelScore": -1.60814
+     },
+     {
+      "id": "11:D7b9",
+      "family": "dominant",
+      "changes": [
+       {
+        "address": {
+         "measureIndex": 5,
+         "slotIndex": 1
+        },
+        "before": "D7",
+        "after": "D7b9",
+        "commonTones": 4,
+        "modes": [],
+        "conventions": [
+         "Dominant resolution",
+         "V7♭9 resolving to tonic"
+        ]
+       }
+      ],
+      "pitchDistance": 0.833,
+      "originalPitchDistance": 0.833,
+      "bassMotion": 5.0,
+      "originalBassMotion": 5.0,
+      "mathScore": 1.0167,
+      "conventionScore": 0.45,
+      "modelScore": -1.69549
+     }
+    ],
+    "modelUsed": "F1 + LoRA: gospel",
+    "contextMeasures": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     14,
+     15
+    ],
+    "metaModel": "meta-models/muse-spark-open-1026",
+    "requestIds": [
+     "54ca701a1a25bd7a37acdba5cc35f2af7fa5a",
+     "54ca701a1a25be3957cca815ed9c171d2f7bd",
+     "54ca701a1a25bebf1742cab235d8b9b5406a6"
+    ],
+    "costUsd": 0.009626,
+    "toolCalls": [
+     "search_substitutions",
+     "search_substitutions",
+     "offer_candidates"
+    ],
+    "modelApproximations": [],
+    "selection": "meta",
+    "metaUnavailable": null
+   }
+  },
+  {
+   "run": 3,
+   "elapsedSeconds": 7.67,
+   "httpStatus": 200,
+   "metaModel": "meta-models/muse-spark-open-1026",
+   "selection": "meta",
+   "metaUnavailable": null,
+   "modelUsed": "F1 + LoRA: gospel",
+   "toolCalls": [
+    "search_substitutions",
+    "search_substitutions",
+    "offer_candidates"
+   ],
+   "requestIds": [
+    "54ca701a1a25bfc407655ab2b298ecea978f4",
+    "54ca701a1a25c06b2766f8e1bdbd4083e9273",
+    "54ca701a1a25c114c79feb816e0f75c566f20"
+   ],
+   "costUsd": 0.004779,
+   "candidates": [
+    {
+     "id": "13:G7",
+     "family": "modal",
+     "changes": [
+      {
+       "measureIndex": 6,
+       "slotIndex": 1,
+       "before": "G",
+       "after": "G7"
+      }
+     ]
+    },
+    {
+     "id": "11:D7b9",
+     "family": "dominant",
+     "changes": [
+      {
+       "measureIndex": 5,
+       "slotIndex": 1,
+       "before": "D7",
+       "after": "D7b9"
+      }
+     ]
+    },
+    {
+     "id": "11:Ab7#11",
+     "family": "dominant",
+     "changes": [
+      {
+       "measureIndex": 5,
+       "slotIndex": 1,
+       "before": "D7",
+       "after": "Ab7#11"
+      }
+     ]
+    }
+   ],
+   "response": {
+    "candidates": [
+     {
+      "id": "13:G7",
+      "family": "modal",
+      "changes": [
+       {
+        "address": {
+         "measureIndex": 6,
+         "slotIndex": 1
+        },
+        "before": "G",
+        "after": "G7",
+        "commonTones": 3,
+        "modes": [
+         "mixolydian"
+        ],
+        "conventions": []
+       }
+      ],
+      "pitchDistance": 0.25,
+      "originalPitchDistance": 0.0,
+      "bassMotion": 0.0,
+      "originalBassMotion": 0.0,
+      "mathScore": 1.75,
+      "conventionScore": 0.0,
+      "modelScore": -1.50011
+     },
+     {
+      "id": "11:D7b9",
+      "family": "dominant",
+      "changes": [
+       {
+        "address": {
+         "measureIndex": 5,
+         "slotIndex": 1
+        },
+        "before": "D7",
+        "after": "D7b9",
+        "commonTones": 4,
+        "modes": [],
+        "conventions": [
+         "Dominant resolution",
+         "V7♭9 resolving to tonic"
+        ]
+       }
+      ],
+      "pitchDistance": 0.833,
+      "originalPitchDistance": 0.833,
+      "bassMotion": 5.0,
+      "originalBassMotion": 5.0,
+      "mathScore": 1.0167,
+      "conventionScore": 0.45,
+      "modelScore": -1.69549
+     },
+     {
+      "id": "11:Ab7#11",
+      "family": "dominant",
+      "changes": [
+       {
+        "address": {
+         "measureIndex": 5,
+         "slotIndex": 1
+        },
+        "before": "D7",
+        "after": "Ab7#11",
+        "commonTones": 3,
+        "modes": [],
+        "conventions": [
+         "Resolving tritone substitute"
+        ]
+       }
+      ],
+      "pitchDistance": 0.733,
+      "originalPitchDistance": 0.833,
+      "bassMotion": 1.0,
+      "originalBassMotion": 5.0,
+      "mathScore": 1.1467,
+      "conventionScore": 0.5,
+      "modelScore": -2.02633
+     }
+    ],
+    "modelUsed": "F1 + LoRA: gospel",
+    "contextMeasures": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     14,
+     15
+    ],
+    "metaModel": "meta-models/muse-spark-open-1026",
+    "requestIds": [
+     "54ca701a1a25bfc407655ab2b298ecea978f4",
+     "54ca701a1a25c06b2766f8e1bdbd4083e9273",
+     "54ca701a1a25c114c79feb816e0f75c566f20"
+    ],
+    "costUsd": 0.004779,
+    "toolCalls": [
+     "search_substitutions",
+     "search_substitutions",
+     "offer_candidates"
+    ],
+    "modelApproximations": [],
+    "selection": "meta",
+    "metaUnavailable": null
+   }
+  }
+ ],
+ "totals": {
+  "calls": 3,
+  "costUsd": 0.02654,
+  "meanElapsedSeconds": 9.5
+ },
+ "notClaimed": "No blinded comparison of the agent on open weights against Muse Spark 1.3 was run; these are hosted runs showing that the search completes on open weights with the same tool sequence and three candidates."
+}

@@ -6,21 +6,21 @@ measured, and what does not run on open weights.
 
 ## What runs on open weights
 
-The product's LLM work is split into roles. The **judge role** runs on Meta's
-open-weight **Muse Spark Open** (`meta-models/muse-spark-open-1026`), served by
-Baseten at `https://inference.baseten.co/v1`. The hosted demo
+The product's LLM work is split into roles. The **judge role** and the **agent
+role** run on Meta's open-weight **Muse Spark Open** (`meta-models/muse-spark-open-1026`),
+served by Baseten at `https://inference.baseten.co/v1`. The hosted demo
 ([artist-daw.pearlleestudio.co](https://artist-daw.pearlleestudio.co)) has run
-the judge this way since the evening of 2026-11-03 and keeps it that way through
-the judging window.
+the judge this way since the evening of 2026-11-03 and the Reharmonize agent since
+2026-11-04, and keeps both that way through the judging window.
 
-| Feature | What the judge decides | Code |
+| Feature | What the open-weight model decides | Code |
 |---|---|---|
 | **Second ear** (after Generate) | picks one of the A/B/C candidates on facts the analyzer computed (chords outside the key, repetition of the previous section, mean Sethares roughness, changed slots, rules-written slots); each reason is checked against the analyzer's value and marked *analyzer confirmed* or *model statement* | [review.py](../backend/app/services/review.py) |
 | **Complete the form → Music Transformer + Meta review** | one observe-then-act judgment per pass over the generated sections, at most two passes, sending back at most two sections for regeneration | [planner.py](../backend/app/services/planner.py) |
+| **Reharmonize** (agent role) | drives the substitution search: chooses which families to search, calls `search_substitutions` and `offer_candidates` as checked strict-JSON tool turns (at most 4 turns, 6 calls, 100 s), and offers three contrasting alternatives that the Music Transformer scored in context | [reharmonize_agent.py](../backend/app/services/reharmonize_agent.py) |
 
 The other roles stay on Standard **Muse Spark 1.3** through the Meta Model API:
-reading a score PDF or image, planning and writing the song form, and the
-Reharmonize tool-call search. [Which model does what](https://github.com/PearlLeeStudio/TheArtist-DAW/blob/main/README.md#hackathon-work-and-where-meta-is-used).
+reading a score PDF or image, and planning and writing the song form. [Which model does what](https://github.com/PearlLeeStudio/TheArtist-DAW/blob/main/README.md#hackathon-work-and-where-meta-is-used).
 
 ## How to verify it
 
@@ -32,22 +32,30 @@ of each judgment in Complete the form reads
 baseten meta-models/muse-spark-open-1026 · <request id> · $<cost>
 ```
 
+Under the Reharmonize cards the yellow box reads `Meta meta-models/muse-spark-open-1026
+chose these alternatives` and **Run details** list every call with its request id and
+cost; `Picked without Meta` names the reason when Meta could not take the request, and
+a failed search says `Meta search failed` with the provider's status.
+
 On the live app: choose a **Genre**, drag across a few bars, **Generate**, then
-**Second ear**. The result line names the provider and model. A failed call is
+**Second ear**. The result line names the provider and model. For the agent, select
+one to four chords and **Reharmonize**: the yellow box and Run details name the model. A failed call is
 shown as a failure with the provider's status; it is never turned into a result
 that looks like success.
 
 **In the API.** The same fields are in the responses: `provider`, `model`,
-`requestId` and `costUsd` on a review result and on every call of a plan trace
-(`calls.*.provider`, `calls.*.model`, `calls.*.requestId`).
+`requestId` and `costUsd` on a review result, on every call of a plan trace
+(`calls.*.provider`, `calls.*.model`, `calls.*.requestId`), and `metaModel`,
+`requestIds`, `toolCalls`, `costUsd` and `selection` on a Reharmonize result.
 
 **On the server.** The judge role has its own ledger (`THEARTIST_JUDGE_LEDGER`)
 with one line per request: request id (Baseten's `x-baseten-request-id` header),
 prompt and completion tokens, settled cost and latency. Its cap is
 `THEARTIST_JUDGE_BUDGET_USD` (default $10), separate from the Muse Spark ledger.
+The agent role has the same: `THEARTIST_AGENT_LEDGER` and `THEARTIST_AGENT_BUDGET_USD`.
 
 **How it is switched.** Four lines in the server environment move the judge role
-to open weights; nothing else changes and no code is rebuilt
+to open weights and five move the agent; nothing else changes and no code is rebuilt
 ([runtime settings](../deploy/env.example)):
 
 ```bash
@@ -55,9 +63,15 @@ LLM_JUDGE_PROVIDER=baseten            # base URL and model default to Baseten's
 LLM_JUDGE_API_KEY=...                 # Baseten API key, server side only
 LLM_JUDGE_REASONING_EFFORT=low        # the setting the comparison used
 THEARTIST_JUDGE_BUDGET_USD=10         # the judge's own cap
+LLM_AGENT_PROVIDER=baseten            # the Reharmonize agent role
+LLM_AGENT_API_KEY=...
+LLM_AGENT_REASONING_EFFORT=low
+THEARTIST_AGENT_BUDGET_USD=10         # the agent's own cap
+THEARTIST_AGENT_LEDGER=/data/agent_ledger.json
 ```
 
-Leaving `LLM_JUDGE_PROVIDER` empty makes the judge the default Muse Spark client.
+Leaving `LLM_JUDGE_PROVIDER` or `LLM_AGENT_PROVIDER` empty makes that role the
+default Muse Spark client.
 The client is the same OpenAI-compatible transport for both providers
 ([llm.py](../backend/app/services/llm.py)); Baseten's list price for Muse Spark Open
 is built in, so the worst-case cost reservation and the ledger work the same way.
@@ -68,6 +82,13 @@ judge call on open weights is doubled to cover it ([review.py](../backend/app/se
 **First hosted review on open weights** (2026-11-03): request
 `54ca701a1a106f7d176838a17f443fb7df547`, $0.0045, 5.4 s, both reasons confirmed by
 the analyzer ([record](../HACKATHON.md), row 127).
+
+**First hosted Reharmonize searches on open weights** (2026-11-04): the README's
+Amazing Grace bars 5–8 request, three times in a row right after the switch. Each
+search completed `search_substitutions → search_substitutions → offer_candidates`
+with three candidates (G7 / D7♭9 / A♭7♯11; G7 / Gmaj7 / D7♭9; G7 / D7♭9 / A♭7♯11),
+at $0.0121, $0.0096 and $0.0048 and 11.5, 9.3 and 7.7 s, every request id recorded
+([record](../experiments/meta/reharmonize_open_weights_live.json)).
 
 ## How it was measured
 
@@ -103,21 +124,24 @@ same task the product's note interpretation uses.
 
 Where Muse Spark Open answered, it was as exact as Muse Spark; the lost calls put
 its overall agreement below the local analyzer. That is why the product ships
-reading, planning and the agent on Muse Spark 1.3 and the judge on open weights:
-the judge is the role where the open weights matched the hosted model's choices
-at lower cost and latency.
+reading and planning on Muse Spark 1.3 and the judge on open weights: the judge is
+the role where the open weights matched the hosted model's choices at lower cost
+and latency. The Reharmonize agent joined it on the hosted demo on 2026-11-04 after
+the three recorded searches above; its blinded comparison was run on Muse Spark 1.3.
 
 ## What does not run on open weights
 
-- **The Reharmonize agent, on the hosted demo.** The agent is its own client role
-  (`LLM_AGENT_*`): off Meta Standard the two tools are stated in the system message
-  and each turn is one checked strict-JSON call, so it can run on Muse Spark Open.
-  No comparison was recorded there, and the hosted demo keeps the agent on Muse
-  Spark 1.3 unless the operator switches it; Run details name the model either way.
+- **The Reharmonize comparison.** The agent is its own client role (`LLM_AGENT_*`):
+  off Meta Standard the two tools are stated in the system message and each turn is
+  one checked strict-JSON call, and the hosted demo runs it on Muse Spark Open
+  (above). The blinded selector comparison, however, was run with the agent on Muse
+  Spark 1.3; `agent/compare_reharmonization.py --selector-provider baseten` runs it
+  on open weights with the blinded judge still on Muse Spark, and no such number is
+  claimed. Run details name the model either way.
 - **Score reading.** The whole-file PDF/image reading uses the Meta Model API.
 - **Listening quality.** No listening study was run; "same pick" and
   "reasons confirmed" are agreement and consistency measures, not preference.
 
-If Baseten is unavailable during judging, Second ear and the hybrid form review
-show that failure with the provider's status; Generate, Import, Reharmonize and
+If Baseten is unavailable during judging, Second ear, the hybrid form review and
+Reharmonize show that failure with the provider's status; Generate, Import and
 Muse Spark only continue on Muse Spark 1.3.

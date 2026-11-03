@@ -145,7 +145,9 @@ set to an open-weight endpoint (Muse Spark Open on Baseten), the same tools are 
 the system message and each turn is one strict-JSON reply `{"name", "arguments"}` whose
 arguments are checked against the tool's schema; tool results return as user messages, a
 reply that is not a valid call earns exactly one retry, and `metaModel` names the
-open-weight model. Each search is
+open-weight model. The hosted demo runs the agent this way since 2026-11-04
+([three recorded searches](../experiments/meta/reharmonize_open_weights_live.json)).
+Each search is
 bounded by four API turns, six function calls, three distinct family searches,
 six shortlisted candidates per family, a 30-second per-call timeout, a 100-second
 loop deadline, low reasoning effort, 4,096 output tokens per call (including reasoning),

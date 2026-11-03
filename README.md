@@ -193,8 +193,8 @@ API serves. In this product the two Meta models have different jobs:
 
 | Job | Model | Served by | Key |
 |---|---|---|---|
-| Reading a score PDF or image (Import, **Use Meta model**); the Reharmonize tool-call search; planning and writing the song form | **Muse Spark 1.3** (Standard) | Meta Model API, `https://api.meta.ai/v1` | `MODEL_API_KEY` |
-| Judging: Second ear's pick among A/B/C and the hybrid form judge (the hosted demo runs it this way during judging) | **Muse Spark Open**, `meta-models/muse-spark-open-1026` (Meta open weights) | Baseten, `https://inference.baseten.co/v1` | `LLM_JUDGE_API_KEY` with `LLM_JUDGE_PROVIDER=baseten`; left empty, the judge uses Muse Spark 1.3 above |
+| Reading a score PDF or image (Import, **Use Meta model**); planning and writing the song form; the Reharmonize tool-call search when the agent role is left on it (the default) | **Muse Spark 1.3** (Standard) | Meta Model API, `https://api.meta.ai/v1` | `MODEL_API_KEY` |
+| Judging: Second ear's pick among A/B/C and the hybrid form judge; since 2026-11-04 also the Reharmonize tool-call search, with the tools stated as JSON (the hosted demo runs both roles this way during judging) | **Muse Spark Open**, `meta-models/muse-spark-open-1026` (Meta open weights) | Baseten, `https://inference.baseten.co/v1` | `LLM_JUDGE_API_KEY` with `LLM_JUDGE_PROVIDER=baseten` and `LLM_AGENT_API_KEY` with `LLM_AGENT_PROVIDER=baseten`; left empty, that role uses Muse Spark 1.3 above |
 | Chord generation and the context score of every candidate (Generate, Reharmonize scoring, the hybrid form's chords) | the author's Music Transformer (Phase 0, F1–F5, F1 v2, 11 genre LoRAs) | this server, CPU | — |
 
 | Path | File | Calls per use | Switch |
@@ -245,7 +245,7 @@ turned into a result that looks like success.
 | Agentic plan → validate → revise loop with strict JSON | Complete the form: code validates each plan and sends errors back for up to 2 revisions, then Meta composes (**Muse Spark only**) or judges (hybrid) | empty score → 32 bars / 6 sections on the hosted demo: 23.7 s, $0.020 |
 | Reasoning held to computed facts | Second ear: each reason cites an analyzer fact and is marked *analyzer confirmed* or *model statement* | 115/115 reasons confirmed in 60 reviews; $0.0041, 2.8 s per review |
 | Reading harmony from notes | The note-interpretation task behind Import assist (API `engine: "auto"`) | exact chords: Muse Spark 89.5%, local analyzer 77.8% (640 slots of real progressions rendered as notes) |
-| Meta open weights | The judge role (`LLM_JUDGE_*`) and the Reharmonize agent (`LLM_AGENT_*`, tools stated as JSON) can run on Muse Spark Open through Baseten; the notes → chords task was also run on it | Second ear: same pick as Muse Spark in 52/60 reviews at $0.0028 per review. Notes → chords: 89.4% exact where answered (73.8% of all 640 slots; 7 of 40 calls failed). Reharmonize: not measured on open weights |
+| Meta open weights | The judge role (`LLM_JUDGE_*`) and the Reharmonize agent (`LLM_AGENT_*`, tools stated as JSON) run on Muse Spark Open through Baseten on the hosted demo; the notes → chords task was also run on it | Second ear: same pick as Muse Spark in 52/60 reviews at $0.0028 per review. Notes → chords: 89.4% exact where answered (73.8% of all 640 slots; 7 of 40 calls failed). Reharmonize: three hosted searches on open weights completed with three tool calls and three candidates each ($0.0121, $0.0096, $0.0048; 11.5, 9.3, 7.7 s); the blinded comparison was not run on open weights |
 
 Reasoning effort is set per role, for example low for file reading and tool turns and medium
 for the form plan. Measurements and their limits are under [Evidence](#evidence).
@@ -279,15 +279,17 @@ LLM_JUDGE_PROVIDER=baseten            # base URL and model default to Baseten's
 LLM_JUDGE_API_KEY=...                 # Baseten API key
 LLM_JUDGE_REASONING_EFFORT=low        # the setting the comparison used
 THEARTIST_JUDGE_BUDGET_USD=10         # the judge's own cap
-LLM_AGENT_PROVIDER=baseten            # optional: the Reharmonize agent too
+LLM_AGENT_PROVIDER=baseten            # the Reharmonize agent too (on, in the hosted demo)
 LLM_AGENT_API_KEY=...
+LLM_AGENT_REASONING_EFFORT=low
+THEARTIST_AGENT_BUDGET_USD=10         # the agent's own cap
 ```
 
 With the judge switched, every Second ear result line in the editor reads
 `baseten meta-models/muse-spark-open-1026 · <request id> · $<cost>`, and the judge
 ledger records the same ids, so the switch is verifiable from the screen and the
-server. **The hosted demo runs the judge this way through the judging window:**
-its first hosted review answered from
+server. **The hosted demo runs the judge and the agent this way through the judging
+window:** its first hosted review answered from
 `baseten meta-models/muse-spark-open-1026` (request `54ca701a1a106f7d176838a17f443fb7df547`,
 $0.0045, 5.4 s) with every reason confirmed by the analyzer.
 The [comparison](experiments/review_eval/summary.md) ran the same 60 reviews
@@ -300,12 +302,16 @@ The Reharmonize agent can be switched the same way (`LLM_AGENT_PROVIDER=baseten`
 has no native function calls, so the two tools are stated in the system message and each
 turn is one strict-JSON call, `{"name", "arguments"}`, whose arguments are checked
 against the tool's schema (one retry, then a visible failure); tool results go back as
-user messages, and Run details name the open-weight model. The Reharmonize comparison
-was not run on open weights, so no open-weight Reharmonize number is claimed;
-`agent/compare_reharmonization.py --selector-provider baseten` runs it with the blinded
-judge still on Muse Spark. On the hosted demo the agent runs on Muse Spark 1.3 unless the
-operator switches it. What runs on open weights, how to verify it on the screen and in
-the ledger, and both measurements: [Meta open weights in TheArtist](docs/open-weights.md).
+user messages, and Run details name the open-weight model. The hosted demo switched
+the agent to open weights on 2026-11-04: its first three searches, on the Amazing Grace
+request below, each completed `search_substitutions → search_substitutions →
+offer_candidates` with three candidates at $0.0121, $0.0096 and $0.0048 and 11.5, 9.3
+and 7.7 s ([record](experiments/meta/reharmonize_open_weights_live.json)). The blinded
+Reharmonize comparison was not run on open weights, so no open-weight comparison number
+is claimed; `agent/compare_reharmonization.py --selector-provider baseten` runs it with
+the blinded judge still on Muse Spark. What runs on open weights, how to verify it on
+the screen and in the ledger, and both measurements:
+[Meta open weights in TheArtist](docs/open-weights.md).
 
 **One Reharmonize run, recorded.** *Amazing Grace* bars 5–8 (`G | G D7 | G | G`, G major, 3/4)
 with the gospel adapter as the scorer and *Change up to* 4, on the hosted demo
@@ -448,11 +454,11 @@ fallback also adds diversity beyond the tested local baseline.
 answered 82.5% of the slots and was exact on **89.4%** of those it answered, level with
 Muse Spark; 7 of its 40 calls failed (3 harmony validation, 4 length), so its exact
 agreement over all slots is 73.8%, below the local analyzer's 77.8%. Median call
-agreement over all slots is 73.8%, below the local analyzer's 77.8%. Median call
 8.0 s, $0.63 in total. So the open weights were measured, not skipped: they can carry
 the judge role (above) but read notes less reliably, and the product ships on Muse
-Spark 1.3 for that reason. The Reharmonize rows have no open-weight column: the agent can
-run on open weights (tools stated as JSON), but that comparison has not been run on them.
+Spark 1.3 for that reason. The Reharmonize rows have no open-weight column: the hosted agent
+runs on open weights (tools stated as JSON) since 2026-11-04, but that comparison has not
+been run on them.
 
 Definitions, confidence intervals, coverage, costs, failures, raw results and
 differences from the current code: **[three-way model comparison](docs/model-comparison.md)**.
