@@ -1,5 +1,8 @@
 # 문맥 기반 리하모니제이션 비교 결과
 
+[Local / Meta / Hybrid 통합 비교](model-comparison.md)에서 F4·F2·F3의 세 방식
+점수, 비용과 구간 추정, Import Score의 별도 비교를 함께 볼 수 있다.
+
 AI 편곡 흐름 중 기존 화성을 수정하는 단계의 평가다.
 [편곡 사용 가이드](arrangement-workflow.md)와 [제품 리하모니제이션](reharmonization.md)을
 함께 참고한다. 아래 실험은 당시의 최대 2개 변경 조건을 유지하며,

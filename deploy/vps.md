@@ -115,9 +115,11 @@ docker compose --env-file /srv/theartist.env -f /srv/TheArtist-DAW/deploy/compos
 The hosted **Use Meta model** checkbox and direct full-file PDF/image API are enabled with
 `THEARTIST_PUBLIC_META_READER=1`. It uses one Standard Meta call, at most 150 seconds,
 32,768 completion tokens, low reasoning effort and a default $1.50 request cap.
-The checkbox attempts Meta first, then compares locally or recovers an explicitly
-labeled local result after Meta failure. Printed local symbols and disagreements
-are preserved. Unavailable local reading is reported explicitly. The session
+For a supported PDF, the checkbox opens the local reading first and runs independent
+Meta verification in the background. Disagreements are marked and untouched empty
+bars may be filled; visible chords and user edits are preserved. If local reading
+is unsupported, the verified path attempts Meta directly. Meta failure can recover
+an explicitly labeled local result. Unavailable local reading is reported explicitly. The session
 allowance must accommodate the worst-case reservation when dollar limits are
 enabled; the amounts above are template defaults, not a claim about a host with
 the explicit development budget override enabled. The separate

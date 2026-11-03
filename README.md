@@ -27,7 +27,8 @@ workflow; the musician chooses what stays in the score.
 **[Open the arrangement workspace](https://artist-daw.pearlleestudio.co)** ·
 [Watch the hackathon demo](https://youtu.be/Xw3BwB64Jt0) ·
 [Workflow guide](docs/arrangement-workflow.md) · [Documentation](docs/README.md) ·
-[Hackathon work log](HACKATHON.md) · [Run locally](#getting-started)
+[Local / Meta / hybrid results](docs/model-comparison.md) ·
+[Run with Docker](#getting-started) · [Deploy to a domain](#deploy-to-a-domain)
 
 <p align="center">
   <a href="https://youtu.be/Xw3BwB64Jt0">
@@ -49,7 +50,7 @@ Import a score, try and combine harmonic alternatives, and listen again as the
 sketch takes shape. Export a PDF chord chart or editable MIDI tracks to continue
 making your own music in a DAW such as Logic Pro.
 
-### Try it in two minutes
+### Try the core workflow
 
 On the [live workspace](https://artist-daw.pearlleestudio.co), in a desktop browser (no sign-in; projects stay in the browser):
 
@@ -66,9 +67,10 @@ this chart with Ctrl/⌘+V. It is *Amazing Grace* with the traditional harmoniza
 G | G D7 | Em C | G | G | G D7 | G | G | G | G | C | G | Em G/D | D7 | G | G
 ```
 
-The local reader handles vector PDFs, reading printed chord symbols or analyzing the notes. It read
-none of eight Mutopia editions, and scans or photos go to Meta only, whose readings need checking
-(a notes-only PNG matched 1/4 chords).
+The local reader handles supported vector PDFs, reading printed chord symbols or
+analyzing notes. In the recorded external-edition test it supported none of eight
+Mutopia PDFs. Scans and photos require Meta, whose readings still need review
+(a notes-only PNG fixture matched 1/4 chords). [Reading evidence](docs/model-comparison.md).
 
 | Step | Work in the editor | Result |
 |---|---|---|
@@ -96,15 +98,10 @@ to the DAW. Its existing chord model supplies a harmonic engine for this workflo
 
 **Who it is for.** Musicians who already have a song on paper (a lead sheet or a chord chart)
 and want to hear harmonic options and take playable parts into their DAW: arrangers, band
-leaders, accompanists and students. Producers mostly want assistive AI rather than generated
-songs: in Tracklib's 2025 survey of 1,734 producers, 6% used generative tools regularly and 82%
-opposed full-song generation from text prompts
-([MusicTech](https://musictech.com/news/industry/music-producers-are-rejecting-ai-study-reveals-over-80-of-producers-are-against-ai-generated-songs)).
-TheArtist keeps the musician's score and choices and hands over editable MIDI, not finished audio.
-Each piece exists elsewhere: Logic's Session Players follow a chord track, Scaler 3 suggests
-substitutions from MIDI or audio, and Band-in-a-Box has arranged typed chords for decades. What is
-new here is the chain from the printed score to contextual alternatives the musician chooses, a
-completed form and editable parts in the DAW.
+leaders, accompanists and students. TheArtist keeps their source material and
+editing decisions connected: printed score → contextual harmonic alternatives →
+song form → accompaniment → editable MIDI. The musician can audition, combine,
+apply and undo proposals before continuing production in a DAW.
 
 | | Pre-existing (tag `baseline`) | Hackathon work (commits after the tag) |
 |---|---|---|
@@ -112,22 +109,36 @@ completed form and editable parts in the DAW.
 | Editor | staff, voicings, Roman numerals, MIDI input, playback, saved-sessions page | Import Score, Original/A/B/C, Reharmonize (Origin / Alter 1–3), Second ear, Complete the form, Projects rework (first-row previews, full Export menu, bulk delete, preserve current work), the Play panel and mixer, Safari MIDI bridge and Logic handoff |
 | Service | `/api/generate*`, basic `midi_b64` render | local vector-PDF reader and harmony analyzer, editable three-part MIDI export (`/api/export/midi`, replacing the baseline's basic MIDI download), score PDF, DAW handoff, Logic Scripter script, REST + MCP contract, Meta client with ledger, planner, Second-ear review, Reharmonize |
 
-Since the `baseline` tag: more than 250 commits and more than 120 entries in the [work log](HACKATHON.md),
-each with its tests and limits.
+The [hackathon work log](HACKATHON.md) links each addition to its implementation,
+tests and limits. The trained model assets remain pre-existing dependencies.
 
-**Where Meta is used.** These six paths are the only Meta calls in the product; voicings, accompaniment, MIDI rendering and the local score reader are application code, and Generate's chord candidates come from the author's Music Transformer. Every call uses the Standard model `muse-spark-1.3` through the Meta Model API and records its timeout, request id, token count and cost in the ledger; Import labels a recovered local result as local.
+**Where Meta is used.** The default service calls Standard **`muse-spark-1.3`** at
+**`https://api.meta.ai/v1`**, using the server-side **`MODEL_API_KEY`**. The
+OpenAI-compatible SDK is the transport; it does not call an OpenAI model.
+The six paths below account for the product's Meta integration. Request IDs,
+token usage and costs are recorded in a persistent ledger, with time and call
+bounds. The judge role can separately use Meta open weights through `LLM_JUDGE_*`;
+the [Muse Spark Open comparison](experiments/review_eval/summary.md) uses Baseten.
+Voicings, accompaniment and MIDI rendering use application code; Generate's
+chord candidates come from the author's Music Transformer.
 
 | Path | File | Calls per use | Switch |
 |---|---|---|---|
-| **Use Meta model** checkbox, `engine: "verified"`, run in the background after the local reading has opened the PDF: concurrent Meta/local reading, explicit local recovery on failure, comparison when both succeed; disputed bars are marked and still-empty bars filled on the staff; a score over Meta's 128-bar limit opens from the local reader without a Meta call | `score_verification.py`, `score_import.py` | 1 PDF/image request, default ≤ $1.50; no automatic Meta retry | `THEARTIST_META_ENABLED`; public hosts also require `THEARTIST_PUBLIC_META_READER=1` |
-| Direct full-file API reading, `engine: "meta"` | `score_import.py` | 1 request, default ≤ $1.50 | same |
-| Bounded API assist, `engine: "auto"` | `score_assistance.py`, `harmony_meta.py`, `score_form.py` | ≤ 2 × 8-bar harmony reviews + 1 form analysis, ≤ $0.30 total | `THEARTIST_META_ENABLED` only (public hosts do not require the reader flag); leave the editor checkbox off for no Meta calls |
-| Complete the form planner (plan, validate, revise, judge) | `backend/app/services/planner.py`, `routes/plan.py` | ≤ 5 calls per run (1 plan, ≤ 2 revisions, then either 1 Muse Spark composition call in **Muse Spark only** mode or ≤ 2 judgments in the hybrid mode) | `THEARTIST_META_ENABLED` only; judge role via `LLM_JUDGE_*` |
-| Second ear: pick one of a Generate's A/B/C on analyzer facts, each reason checked | `backend/app/services/review.py`, `routes/review.py` | 1 judge call | `THEARTIST_META_ENABLED` only; judge role via `LLM_JUDGE_*` |
-| [Reharmonize](docs/reharmonization.md): search sparse substitutions, compare learned context scores, offer three persistent score previews | `backend/app/services/reharmonize_agent.py`, `reharmonize.py` | ≤ 4 native tool turns, ≤ $0.15 per search | `THEARTIST_META_ENABLED`; selected Music Transformer must be available; [without Meta](docs/reharmonization.md#without-meta) the best score of each family is offered, marked *picked without Meta* |
+| **Use Meta model**, `engine: "verified"`: local PDF opens first when readable; independent Meta reading runs in the background, flags disagreements and fills untouched empty bars. A successfully read local score over Meta's 128-bar limit stays local | [comparison](backend/app/services/score_verification.py), [file reader](backend/app/services/score_import.py) | 1 PDF/image request, 150 s, 32,768 output tokens, default ≤ $1.50; no automatic retry | `THEARTIST_META_ENABLED`; public hosts also require `THEARTIST_PUBLIC_META_READER=1` |
+| Direct full-file API reading, `engine: "meta"` | [file reader](backend/app/services/score_import.py) | Same one-call file limits | Same |
+| Bounded API assist, `engine: "auto"`: review locally inferred/unresolved harmony with complete score context, preserve printed chords and N.C. | [assist](backend/app/services/score_assistance.py), [harmony](backend/app/services/harmony_meta.py), [form](backend/app/services/score_form.py) | ≤ 2 × 8-bar harmony reviews + 1 form analysis, default ≤ $0.30 total | `THEARTIST_META_ENABLED`; this API mode is separate from the checkbox |
+| Complete the form: plan → validate → revise, then compose or generate and judge | [planner](backend/app/services/planner.py) | ≤ 5 calls: 1 plan, ≤ 2 revisions, then 1 Meta composition (**Muse Spark only**) or ≤ 2 judgments (hybrid with own-model chords) | `THEARTIST_META_ENABLED`; judge role via `LLM_JUDGE_*` |
+| Second ear: choose among Generate's A/B/C using analyzer facts, with checked reasons | [review](backend/app/services/review.py) | 1 Standard Meta judge call | `THEARTIST_META_ENABLED`; judge role via `LLM_JUDGE_*` |
+| [Reharmonize](docs/reharmonization.md): Meta calls `search_substitutions` on bounded mathematical families, sees Music Transformer context scores, then calls `offer_candidates` | [agent](backend/app/services/reharmonize_agent.py), [own-model scorer](backend/app/services/reharmonize.py) | ≤ 4 model turns, 6 tool calls, 100 s; default ≤ $0.15 per search | Selected own model must be available; [local recovery](docs/reharmonization.md#without-meta) is marked *picked without Meta* |
 
-Reharmonize, both Meta modes of Complete the form, Second ear and Import's Meta check run on
-Muse Spark, and a failed call is shown as a failure. There is no hidden substitute. When
+Dollar values are default application limits. The hosted demo's explicit
+`THEARTIST_META_UNLIMITED=1` setting bypasses dollar caps while preserving time
+and call bounds, accounting and the configured credit stop line. It does not
+represent an unlimited provider balance. [Runtime settings](deploy/env.example).
+
+Reharmonize, both Meta modes of Complete the form, Second ear and Import's Meta check use
+the configured Meta service. If Import recovers locally, it says **“Meta reading was
+unavailable. The local reader recovered this score.”** and keeps local provenance. When
 the server would refuse Meta (off, no key, or paused at the credit stop line), the Meta
 controls are disabled and say why, without any amount. Reharmonize then picks its three
 alternatives without Meta and says so.
@@ -175,8 +186,8 @@ musician meets it most often:
 
 | Place | What the musician does | What Meta does | What appears |
 |---|---|---|---|
-| **Import Score → Use Meta model** | Picks a PDF, ticks the checkbox, clicks **Analyze and import** | Reads the original file once (≤ $1.50, 150 s) after the local reading has already opened the score | A one-line status above the staff while the check runs, then **Review** marks on bars where the two readings differ and chords filled into bars the local reader left empty, each with its request id in the bar's source details |
-| **Input → Reharmonize → Find 3 alternatives** | Selects written chords, sets *Change up to* and a mode | Explores the mathematical substitution search with native tool calls (≤ 4 turns, ≤ $0.15) and picks three contrasting candidates scored by the Music Transformer | **Origin / Alter 1 / Alter 2 / Alter 3** cards under the passage; **Run details** under the controls list the tool calls, request ids, cost and time; **Apply** keeps a combination and closes them |
+| **Import Score → Use Meta model** | Picks a PDF, ticks the checkbox, clicks **Analyze and import** | Reads the original file once (150 s; default $1.50 cap), independently of the local reading | A status band while the check runs, then **Review** marks for disagreements and fills for untouched empty bars, with source details. Existing chords and user edits stay intact |
+| **Input → Reharmonize → Find 3 alternatives** | Selects written chords, sets *Change up to* and a mode | Explores mathematical substitutions with native tool calls (≤ 4 turns; default $0.15 cap) and picks three candidates scored by the Music Transformer | **Origin / Alter 1 / Alter 2 / Alter 3** cards; **Run details** lists calls, request ids, cost and time; **Apply** keeps the chosen combination |
 
 <p align="center">
   <img src="screenshot/12-import-use-meta.png" alt="Import Score with Use Meta model ticked for a PDF lead sheet, before Analyze and import" width="80%">
@@ -208,9 +219,9 @@ contents, Voyager's adapter status and the limits:
 
 ## What the editor does
 
-- **Import Score** — one PDF or image becomes an editable score with key, meter,
-  sections and per-bar source evidence. A PDF opens from the local reader in a
-  second or two; **Review** and **Unresolved** marks stay on the staff. With
+- **Import Score** — a supported PDF or image becomes an editable score with key,
+  meter, sections and per-bar source evidence. A readable vector PDF opens from
+  the local reader first; **Review** and **Unresolved** marks stay on the staff. With
   **Use Meta model**, Meta then reads the original in the background and a band
   above the staff reports the bars it flagged or filled where the local reader
   had no chord, without replacing anything already visible.
@@ -245,22 +256,46 @@ Exact controls, limits and provenance rules: [editor reference](docs/editor-refe
 Every number comes from a recorded run whose calls, costs and failures are kept.
 Automatic judge scores are not listener preference, and no row is a listening study.
 
+### Local vs Meta vs hybrid
+
+| Task and metric | Local / own model | Meta only | Hybrid, one pass |
+|---|---:|---:|---:|
+| Reharmonize, F4 — mean blind judge score / 4 | 2.464 | **2.671** | 2.624 |
+| Reharmonize, F2 — same material, score / 4 | 2.516 | 2.589 | **2.688** |
+| Reharmonize, F3 — same material, score / 4 | 2.524 | 2.565 | **2.644** |
+| Import, notes → chords — exact agreement across 640 slots | 77.8% | **89.5%** | 83.9% |
+| Import, original PDF → complete score — five-file diagnostic | 3/5 | 3/5 | **4/5** |
+
+**Reharmonize:** each run uses the same 40 passages from 16 tunes, with a shared
+candidate pool. Hybrid exceeds local in all three runs; Meta versus hybrid
+depends on the checkpoint/run, with no clear F4 winner. Muse Spark also supplies
+the blinded judge, so these scores are not independent human preference evidence.
+
+**Import:** the 640-slot comparison tests the deterministic local harmony analyzer,
+not the Music Transformer or PDF recognition. Meta improves exact agreement by
+**11.7 percentage points** and the historical unresolved-only hybrid by **6.1**.
+The separate five-PDF hybrid combines a local reading with one Meta read.
+Both Import experiments predate the current background verification flow; their
+scores are not a benchmark of the current checkbox. The present local Reharmonize
+fallback also adds diversity beyond the tested local baseline.
+
+Definitions, confidence intervals, coverage, costs, failures, raw results and
+differences from the current code: **[three-way model comparison](docs/model-comparison.md)**.
+
+### Other recorded evidence
+
 | Evaluation | Material | Result |
 |---|---|---|
-| Chord reading from notes | 40 real-progression excerpts rendered as notes, 640 slots; Muse Spark 40 calls, $0.338 | Exact: local analyzer 77.8%, Muse Spark 89.5% (answers every slot), local-then-Meta 83.9% for $0.050, Muse Spark Open 73.8%; local is more precise where it answers (95.4%); one real PDF 18.9 / 29.7 / 21.6% |
 | Second ear: a judge picks one of A/B/C | 20 candidate lists × 3 orders, 60 reviews per model | Muse Spark: 115/115 reasons confirmed by the analyzer; most in-key pick in diatonic genres 33/36 (R1 order 67%); same pick in all orders 17/20; $0.0041, 2.8 s. Muse Spark Open: 112/112, same pick 52/60, $0.0028, 2.1 s |
 | Full-form planner, fixed seeds | 60 Muse+F1 vs template pairs, $1.02 | Structure 60/60 both; section variety 2.75 → 3.48; out-of-key slots 19.4% → 14.7%; judge still asked regeneration in 21/60 |
-| Reharmonization selectors (own F4 model / Meta / hybrid ×1 / hybrid ×2) | JAZZVAR jazz-standard passages, 40; 200 Meta calls, $2.465 | A Muse Spark judge with sources hidden (the same model family as the Meta selector) gave means 2.464 / 2.671 / 2.624 / 2.649 of 4; no clear winner among Meta and hybrids; a second pass changes 5/40 sets |
-| F2 vs F3 checkpoints | Same 40 passages, 200 calls each | Rank differences include 0 in all four methods; top-2 unions keep the overall best in 35/40 |
-| Score readers (local / Meta / hybrid ×1 / ×2) | 5 PDFs, 14 calls, $0.272 | Completed 3/5, 3/5, 4/5, 3/5 |
 | Import: own fixtures and published editions | 20-bar vector score; notes-only PNG; 8 Mutopia PDFs | 20/20 chords and 8/8/4 sections; PNG 1/4; local reader 0/8 on Mutopia, Meta Bach pitch sets 8/32 |
 | Own-model speed, identical outputs | CPU 4 threads, F1/F4/Rock LoRA, 30 pairs | 1.73–3.89× faster; F1 64 bars 7.18 → 1.85 s; loading 0.471 → 0.080 s; hosted Reharmonize median 13.8 → 10.4 s |
 
 F1–F5 are checkpoints of the author's Music Transformer (F4 serves jazz); R1 orders candidates
 by Sethares roughness; OMT is the Open Music Theory text behind the attributed excerpts.
-Automated checks on 2026-11-01: 641 backend tests (`python -m unittest discover -s tests -t .`
-in `backend/`; the MIDI-bridge test needs permission to open a local port) and 304 frontend
-tests (`node --test "frontend/src/**/*.test.ts"`).
+Automated behavior checks live in [backend/tests](backend/tests) and alongside
+the frontend modules. They verify contracts and editing behavior; they do not
+establish musical quality. [Validation commands](#validation).
 
 Conditions, costs, failures and every record: [evaluation evidence](docs/evidence.md) ·
 [evaluation framing](docs/evaluation.md) · [manual checks](docs/manual-checks.md).
@@ -354,90 +389,160 @@ state machine and the module layout: [architecture](docs/architecture.md).
 
 ## Getting Started
 
-### Prerequisites
+### Docker: complete local app
 
-- Node.js 22.12+ (the locked Vite package also supports 20.19+)
-- Python 3.12+ with [uv](https://docs.astral.sh/uv/)
-- (Optional) NVIDIA GPU with CUDA 12.1 — inference also runs CPU-only
+Install Git and Docker with a running engine. Replace `/absolute/path` with your
+chosen absolute directory. The first build needs network access for dependencies,
+about 2.2 GB of released weights, and reviewed OMT text. No host Python, Node,
+CUDA or Hugging Face token is required for this route.
 
-### Installation
-
-```bash
-# Clone the repository
+```sh
 git clone https://github.com/PearlLeeStudio/TheArtist-DAW.git /absolute/path/TheArtist-DAW
-
-# Frontend
-npm --prefix /absolute/path/TheArtist-DAW/frontend ci
-
-# Backend
-uv sync --frozen --directory /absolute/path/TheArtist-DAW/backend
-# Prepare the default OMT corpus once (downloads the reviewed Open Music Theory pages; retrieval itself runs offline afterwards).
-uv run --frozen --directory /absolute/path/TheArtist-DAW/backend python /absolute/path/TheArtist-DAW/backend/scripts/setup_omt.py
-
-# Model checkpoints — download trained weights from HuggingFace so the backend
-# serves real models (skip this and it falls back to a rule-based generator).
-# Public repos (CC BY-NC, no token). --smoke fetches F1 only into ai/checkpoints/.
-uv run --frozen --directory /absolute/path/TheArtist-DAW/backend python /absolute/path/TheArtist-DAW/model/_download.py --smoke
-# Omit --smoke to download all 18 checkpoints for the genre adapters and model picker.
+docker build -f /absolute/path/TheArtist-DAW/deploy/Dockerfile -t theartist-demo /absolute/path/TheArtist-DAW
+docker run --rm --name theartist-demo -p 127.0.0.1:7860:7860 --mount type=volume,source=theartist-ledger,target=/data theartist-demo
 ```
+
+Open [localhost:7860](http://localhost:7860). Docker builds the frontend, installs
+the frozen CPU runtime, downloads **all seven base checkpoints and eleven LoRA
+adapters**, prepares OMT, and serves UI/API together as an unprivileged user.
+Startup checks the complete model catalog and OMT readiness before serving.
+The image defaults to Meta off and public-host restrictions. Generate, local
+PDF import, local Reharmonize, Genre template and exports work without an API key.
+The image has been deployed on Ubuntu x64 with 2 vCPUs and 4 GiB RAM; that is a
+low-traffic functional check, not a concurrency guarantee.
+
+```sh
+curl --fail http://localhost:7860/api/health
+curl --fail http://localhost:7860/api/models/list
+curl --fail http://localhost:7860/api/capabilities
+```
+
+Expect health `ok`, all 18 models available, OMT `ready` and Berklee `disabled`.
+Meta is unavailable until explicitly configured. A health response alone does
+not test inference: generate a passage and export MIDI in the editor too.
+
+### Enable the Meta features
+
+Create a private environment file outside the checkout, for example
+`/absolute/private/theartist.env`, from the container-oriented
+[deploy/vps.env.example](deploy/vps.env.example). Its session allowance accommodates
+the file reader's $1.50 worst-case reservation. Set these fields there; replace
+the key placeholder only in that private file:
+
+```dotenv
+THEARTIST_META_ENABLED=1
+THEARTIST_PUBLIC_META_READER=1
+LLM_PROVIDER=meta
+LLM_MODEL=muse-spark-1.3
+MODEL_API_KEY=your-meta-standard-api-key
+THEARTIST_META_LEDGER=/data/meta_ledger.json
+THEARTIST_JUDGE_LEDGER=/data/judge_ledger.json
+```
+
+The broader [environment reference](deploy/env.example) also contains native-dev
+defaults that turn static serving/public-host mode off; do not copy those defaults
+over the Docker settings. The container must retain `THEARTIST_SERVE_FRONTEND=1`
+and `THEARTIST_PUBLIC_HOST=1` for this recipe.
+
+Stop the previous local container with Ctrl+C, then run the same image with the
+private file and persistent ledger volume:
+
+```sh
+docker run --rm --name theartist-demo -p 127.0.0.1:7860:7860 --env-file /absolute/private/theartist.env --mount type=volume,source=theartist-ledger,target=/data theartist-demo
+```
+
+The key stays on the Python server, never in a `VITE_*` variable, frontend bundle
+or Pages build setting. `/api/capabilities` reports feature availability without
+the key or credit amount. `THEARTIST_META_ENABLED=0` disables paid actions;
+supported local operations remain available with explicit source labels.
+Persistent usage accounting and deployment-specific limits are documented in
+[the server guide](deploy/README.md#optional-meta-service).
 
 ### Running Locally
 
-Start the backend and frontend in separate terminals:
+For development with hot reload, use Python 3.12 and uv, plus a supported Node
+version (the Docker/Pages builds pin Node 26.13.0). This native route is separate
+from Docker:
 
-```bash
-# Terminal 1 — Backend (port 8000)
-uv run --directory /absolute/path/TheArtist-DAW/backend uvicorn app.main:app --reload
+```sh
+npm --prefix /absolute/path/TheArtist-DAW/frontend ci
+uv sync --frozen --directory /absolute/path/TheArtist-DAW/backend
+uv run --frozen --directory /absolute/path/TheArtist-DAW/backend python /absolute/path/TheArtist-DAW/backend/scripts/setup_omt.py
+uv run --frozen --directory /absolute/path/TheArtist-DAW/backend python /absolute/path/TheArtist-DAW/model/_download.py
+```
 
-# Terminal 2 — Frontend (port 5173)
+The download command deliberately omits `--smoke`: that option fetches only F1
+and is insufficient for the complete-catalog launcher. Start these in separate
+terminals:
+
+```sh
+# Backend, port 8000
+uv run --frozen --directory /absolute/path/TheArtist-DAW/backend uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
+# Frontend, port 5173
 npm --prefix /absolute/path/TheArtist-DAW/frontend run dev
 ```
 
-Vite proxies `/api` requests to the backend automatically. Open `http://localhost:5173` in your browser.
+Open [localhost:5173](http://localhost:5173); Vite proxies `/api` to port 8000.
+For one process without Docker, first build the frontend and then run
+[deploy/serve.py](deploy/serve.py) as described in the [server guide](deploy/README.md).
+Its full-catalog requirement is the same as Docker's. The
+[submission bootstrap](scripts/submission_README.md) reconstructs the pinned core
+plus event changes, then uses the Docker route for the complete app.
 
-For one process serving the built UI and API, see the [single-origin server](deploy/README.md).
-The [submission extraction tools](scripts/submission_README.md) reconstruct the app
-from a pinned external core plus verified event changes. Neither setup configures a domain.
+### Deploy to a domain
 
-To preload AI models on startup:
+The live deployment separates the static editor from CPU model serving:
 
-```bash
-THEARTIST_WARMUP=1 uv run --directory /absolute/path/TheArtist-DAW/backend uvicorn app.main:app --reload
-THEARTIST_WARMUP_KEYS=ft_f1,ft_f4 uv run --directory /absolute/path/TheArtist-DAW/backend uvicorn app.main:app
+```mermaid
+flowchart LR
+  Git["TheArtist-DAW / main"] --> Pages["Cloudflare Pages · frontend build"]
+  Pages --> UI["artist-daw.pearlleestudio.co"]
+  Git --> Timer["DigitalOcean · systemd Git poll"]
+  Timer --> Docker["Docker · FastAPI + 18 own models + OMT"]
+  UI -->|"/api/* · Pages worker"| TLS["music-api.pearlleestudio.co · Caddy HTTPS"]
+  TLS --> Docker
+  Docker -->|"server-only MODEL_API_KEY"| Meta["Meta Model API · muse-spark-1.3"]
+  Docker --> Ledger["Persistent /data cost ledger"]
 ```
 
-For a public judge server, `THEARTIST_PUBLIC_HOST=1` turns off DAW handoff, the warmup
-route and MCP, and puts Meta calls behind per-session and daily spend limits.
-Whole-file reading (`engine: "meta"` or the checkbox's `verified`) also needs
-`THEARTIST_PUBLIC_META_READER=1`; the hosted Artist service enables that option.
-The file reader has a 150-second timeout, one Meta call, low reasoning effort and
-32,768 output tokens so a complete score can fit beside reasoning tokens.
-`THEARTIST_META_UNLIMITED=1` explicitly disables session, daily, ledger, per-request
-and per-run dollar caps; the shared hosted demo server (`music-api.pearlleestudio.co`)
-runs with it through judging so that no visitor is stopped by a session or daily limit,
-while per-call timeouts, call counts, the ledger and the credit stop line below stay on.
-Request IDs, token usage, costs, timeouts and finite call counts remain recorded.
-Without that opt-in, the configured dollar caps apply; see `deploy/env.example`.
-`THEARTIST_META_CREDIT_USD` is a credit stop line that holds even with
-`THEARTIST_META_UNLIMITED=1`. Set it to a little less than the API credit the
-provider's console shows. The hosted server's `deploy/compose.yaml` sets a fixed stop
-line of 50 instead, so that server stops Meta after $50 of spend recorded from the
-line's first call; a value in its env file replaces it.
-The ledger notes its total when it first sees the value. From then on it refuses,
-before any network request, every Meta call whose estimated worst case would take the
-spend recorded since past that value, and every call once less than $0.05 is left. The
-estimate counts every character outside ASCII at its UTF-8 bytes. A judge
-on the meta provider counts against the same line. HTTP 402, or a 4xx whose error
-code says the account has no credit, pauses Meta for 10 minutes the same way. While
-paused, `/api/capabilities` reports `meta.available: false` with
-`unavailableReason: "paused"` and no amount; `meta.creditStop` says whether a line is
-set. Refusal texts name no amount, cap, ledger path or provider wording either.
-With `THEARTIST_META_ENABLED=0` a direct Meta call answers HTTP 503 "disabled", and a
-paused Meta does the same. Both Meta modes of Complete the form report it in the
-run's error, Second ear stops there, and Import opens a vector PDF from the local
-reader with a note (an image, which needs Meta, gets the 503). Reharmonize picks its
-alternatives without Meta. Generate with the author's model, the Genre template and
-every export keep working.
+1. **Server:** install Docker Engine/Compose on the Linux host, clone to
+   `/srv/TheArtist-DAW`, and keep runtime settings in `/srv/theartist.env` outside
+   Git. [compose.yaml](deploy/compose.yaml) runs the app and Caddy, with named
+   volumes for the ledger and HTTPS certificates.
+2. **API domain:** point the API hostname's DNS A record at the server's public
+   IPv4, set `API_HOST=music-api.pearlleestudio.co` (or your hostname), and allow
+   ports 80/443. Caddy handles HTTPS and proxies to internal port 7860.
+3. **Start Docker:** run `docker compose --env-file /srv/theartist.env -f
+   /srv/TheArtist-DAW/deploy/compose.yaml up -d --build`, then verify HTTPS health,
+   all 18 models, and actual generation.
+4. **Frontend domain:** connect the GitHub repo to Cloudflare Pages, branch `main`,
+   root `frontend`, build `npm run build`, output `dist`, Node `26.13.0`. Set
+   Production runtime `BACKEND_ORIGIN=https://music-api.pearlleestudio.co`, choose
+   **Fail closed**, redeploy, and attach the editor hostname through **Custom
+   domains**. The worker forwards `/api/*`; model inference stays on the server.
+5. **Updates:** Git pushes build Pages. The separately installed server timer
+   polls public `main`, builds runtime changes, checks the catalog and F1
+   generation, and rolls back failures. Documentation/frontend-only changes do
+   not restart the model server. App replacement can briefly interrupt the API.
+
+The public-release editor uses its own Pages project and domain with the same
+backend. A complete command sequence, DNS/Pages steps, acceptance checks and
+deployment file map are in **[web projects and deployment](docs/web-projects.md)**.
+
+### Validation
+
+From a normal checkout, the commands are:
+
+```sh
+npm --prefix /absolute/path/TheArtist-DAW/frontend run build
+npm --prefix /absolute/path/TheArtist-DAW/frontend run lint
+node --test "/absolute/path/TheArtist-DAW/frontend/src/**/*.test.ts"
+uv run --frozen --directory /absolute/path/TheArtist-DAW/backend python -c "import app.main; print('import app.main: ok')"
+uv run --frozen --directory /absolute/path/TheArtist-DAW/backend python -m unittest discover -s /absolute/path/TheArtist-DAW/backend/tests -t /absolute/path/TheArtist-DAW/backend
+```
+
+The MIDI-bridge tests need a local listening port. Live Meta evaluation requires
+separate credentials and paid calls; it is not part of ordinary build/lint checks.
 
 ## Models and data
 
@@ -486,7 +591,8 @@ follow the endpoint schemas.
 MCP `import_score` requires explicit attachment confirmation. `export_daw` requires
 a direct loopback connection, server opt-in and per-call confirmation. Public-host
 restrictions also disable DAW handoff. Whole-file Meta reading needs explicit
-server opt-in; it and bounded Import assist retain their spend limits. See [API_SPEC.md](API_SPEC.md)
+server opt-in; configured spend limits apply unless explicitly bypassed by the
+deployment's unlimited setting. See [API_SPEC.md](API_SPEC.md)
 and [docs/mcp.md](docs/mcp.md) for the full contracts and the
 [async client](backend/theartist_client/client.py).
 

@@ -32,37 +32,53 @@ provenance heuristic cannot establish absence of smaller copied fragments.
 
 ## Reproduce
 
-Install Git, Python 3.12, uv and Node/npm (tested with Node 25.9.0). Use absolute
-paths for the downloaded submission directory and a **new, separate** app directory:
+Install Git, Python 3.12 and Docker with a running engine. Use absolute paths for
+the downloaded submission directory and a **new, separate** app directory.
+First reconstruct the source, then let Docker install and prepare the full app:
 
 ```sh
-python3 /absolute/submission/bootstrap.py --target /absolute/theartist-app --install --prepare-assets
+python3 /absolute/submission/bootstrap.py --target /absolute/theartist-app
+docker build -f /absolute/theartist-app/deploy/Dockerfile -t theartist-submission /absolute/theartist-app
+docker run --rm --name theartist-submission -p 127.0.0.1:7860:7860 --mount type=volume,source=theartist-submission-ledger,target=/data theartist-submission
 ```
 
 The bootstrap acquires the fixed core from the `baseline` tag of
 `PearlLeeStudio/TheArtist-DAW`, which holds the public TheArtist snapshot of
 2026-10-27 (`PearlLeeStudio/TheArtist` commit `f043e53`) unchanged, and checks its
 tree hash. The public TheArtist repository keeps only its latest snapshot, so that
-commit is no longer served there. The bootstrap then applies the verified patch,
-installs the locked Python/npm dependencies, builds the frontend, checks the app
-import and downloads F1 plus reviewed OMT prose.
+commit is no longer served there. The bootstrap applies the verified patch and
+checks changed-file hashes. Docker installs locked dependencies, builds the
+frontend, downloads **all seven base checkpoints and eleven genre LoRA adapters**,
+and prepares reviewed OMT prose. Startup validates the complete catalog and OMT.
 Network access is required. Cached dependencies are permitted; weights and
 theory texts are not distributed in this package. An existing local core mirror
 can be specified with `--core-source /absolute/core-mirror` for an offline
 **code reconstruction**; dependency and asset installation may still need network.
 
-Run the built application without a paid API:
-
-```sh
-uv run --frozen --directory /absolute/theartist-app/backend python /absolute/theartist-app/deploy/serve.py
-```
-
 Open `http://localhost:7860`. Leave **Use Meta model** unchecked for a supported vector PDF
 and **Genre template** for full-form creation. The own F1 model and OMT references
-are active; unavailable Meta actions remain explicit. To use Meta, set the
-server-side `MODEL_API_KEY`, `THEARTIST_META_ENABLED=1`, and the persistent budget
-configuration described in `deploy/README.md`. No provider key goes in a browser.
-This starts a local server; it does not purchase hosting or configure a domain.
+and the other released model choices are active; unavailable Meta actions remain
+explicit. To use Meta, provide a private runtime environment file with
+`MODEL_API_KEY`, `THEARTIST_META_ENABLED=1`, `THEARTIST_PUBLIC_META_READER=1` and
+persistent usage configuration, as described in the reconstructed app's
+`README.md` and `deploy/README.md`. Pass that file with Docker `--env-file` and
+keep the ledger volume. No provider key goes in a browser or image.
+
+For native development, the bootstrap's `--install --prepare-assets` flags need
+uv and Node/npm and prepare **F1 only** plus OMT. Before running `deploy/serve.py`,
+download the complete catalog without `--smoke`:
+
+```sh
+uv run --frozen --directory /absolute/theartist-app/backend python /absolute/theartist-app/model/_download.py
+HOST=127.0.0.1 uv run --frozen --directory /absolute/theartist-app/backend python /absolute/theartist-app/deploy/serve.py
+```
+
+The complete-catalog launcher refuses an F1-only installation. Docker already
+performs the full download. For public hosting, the reconstructed
+`docs/web-projects.md` explains Docker → Caddy HTTPS → API domain → Cloudflare
+Pages → editor domain. Local startup alone does not configure those services.
+
+### Recorded reconstruction scope
 
 The development snapshot `53a9c72` was reconstructed from the `baseline` tag in a
 new checkout, with fresh environments and shared download caches. All 510 changed

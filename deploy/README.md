@@ -3,6 +3,12 @@
 The built frontend and API can run in one Python process on port 7860. This
 package does not provision a hosting account, publish an app or configure DNS.
 
+For the complete app, start with the [Docker quick start](../README.md#getting-started).
+Docker prepares all 18 models and OMT. For public hosting, follow the complete
+[Docker → HTTPS → API domain → Pages → editor domain sequence](../docs/web-projects.md#from-docker-to-the-public-domains).
+The native alternative below requires the same complete catalog; an F1-only
+`--smoke` installation cannot start this launcher.
+
 Prepare the locked backend environment, build the frontend, run
 `backend/scripts/setup_omt.py`, and download all 18 model choices with `model/_download.py`
 (without `--smoke`).
@@ -67,7 +73,7 @@ The launcher accepts the same boolean switch spellings as the API.
 
 ```sh
 docker build -f /absolute/TheArtist-DAW/deploy/Dockerfile -t theartist-demo /absolute/TheArtist-DAW
-docker run --rm -p 7860:7860 theartist-demo
+docker run --rm -p 127.0.0.1:7860:7860 --mount type=volume,source=theartist-ledger,target=/data theartist-demo
 ```
 
 The recipe builds assets separately, uses the frozen CPU runtime/npm locks, downloads

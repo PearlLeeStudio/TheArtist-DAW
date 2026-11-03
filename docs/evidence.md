@@ -3,6 +3,11 @@
 Numbers behind the product's claims, with their conditions and what they do not
 show. The [README](../README.md#evidence) keeps a shorter table.
 
+For **local / Meta / hybrid** side by side, start with the
+[three-way comparison](model-comparison.md). It separates Reharmonize selection,
+note-to-chord interpretation and whole-PDF completion, and identifies the
+differences between each recorded experiment and the current editor.
+
 ## Recorded evaluations
 
 Each row is a recorded run whose calls, costs and failures are kept in the
@@ -11,7 +16,7 @@ evidence, not listener preference, and no row is a listening study.
 
 | Evaluation | Material | Result | Record |
 |---|---|---|---|
-| Reharmonization selectors: F4 / Meta only / one-pass hybrid / two-pass hybrid | JAZZVAR, 40 passages in 16 tune groups; 200 Meta calls, $2.465, no failure in the main run | Blinded automatic judge (Muse Spark, the same model family as the Meta selector) means 2.464 / 2.671 / 2.624 / 2.649 on a 4-point scale; no clear winner among Meta and the hybrids; the second pass changes the candidate set in 5/40 passages at about twice the time and cost | [protocol](../experiments/reharmonization/README.md), [results](../experiments/reharmonization/results.md) |
+| Reharmonization selectors: F4 / Meta only / one-pass hybrid / two-pass hybrid | JAZZVAR, 40 passages in 16 tune groups; main run 200 Meta calls / $2.35408405, no failures; separate pilot 10 calls / $0.11096150 | Blinded automatic judge (Muse Spark, the same model family as the Meta selector) means 2.464 / 2.671 / 2.624 / 2.649 on a 0–4 scale; no clear winner among Meta and the hybrids; the second pass changes the candidate set in 5/40 passages at about twice the time and cost | [protocol](../experiments/reharmonization/README.md), [results](../experiments/reharmonization/results.md) |
 | F2 vs F3 checkpoints in the same four selectors | Same 40 passages, 200 successful calls per model | The first-two-candidate F2−F3 difference includes 0 in all four methods; each method's top-2 union keeps the all-twelve best in 35/40; deduplicating all top-3 lists leaves at most 8 versions per passage | [Korean synthesis](reharmonization-evaluation.md), [paired ranks](../experiments/reharmonization/f2-f3-rank-results.md) |
 | Full-form planner with fixed seeds, Muse plan + F1 vs template | 20 requests × 3 seeds = 60 pairs; 152 calls, $1.02 | Structure and length pass 60/60 on both sides; section-type variety 2.75 → 3.48; out-of-key slots in diatonic genres 19.4% → 14.7%; rule-corrected slots 22.4% → 19.8%; the final judge still asked for regeneration in 21/60 | [comparison](../experiments/agent_eval/fixed-seed/comparison.md) |
 | Second ear: a judge picks one of A/B/C | 20 candidate lists from the planner run, each in 3 orders: 60 reviews per judge; Muse Spark $0.244, Muse Spark Open on Baseten $0.168 | Reasons confirmed by the analyzer 115/115 (Muse Spark) and 112/112 (Muse Spark Open); in genres that stay in key both picked the most in-key candidate in 33/36 reviews (R1 pick 67%); same pick in all three orders 17/20 and 16/20; Muse Spark Open agreed with Muse Spark in 52/60 at $0.0028 vs $0.0041 per review (p50 2.1 s vs 2.8 s) | [Second-ear evaluation](../experiments/review_eval/summary.md) |

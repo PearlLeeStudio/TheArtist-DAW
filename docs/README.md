@@ -10,9 +10,10 @@ accompaniment and editable DAW delivery. Start with the
 | Arrange from source material through DAW export | [Arrangement workflow](arrangement-workflow.md) |
 | Look up a control, its limits and provenance rules | [Editor reference](editor-reference.md), [screenshots](walkthrough.md) |
 | Read the recorded evaluation numbers and their conditions | [Evaluation evidence](evidence.md) |
+| Compare local, Meta and hybrid on Reharmonize and Import | [Three-way model comparison: scores, costs and current-code limits](model-comparison.md) |
 | See how the editor, backend and models fit together | [Architecture and module layout](architecture.md) |
 | Check the served checkpoints, training data and theory sources | [Models, training data and theory sources](models.md) |
-| Find the hosted sites and deployment pipeline | [Web projects and deployment](web-projects.md) |
+| Deploy the complete app with Docker, HTTPS and custom domains | [Web projects and deployment](web-projects.md#from-docker-to-the-public-domains) |
 | Call the song service from Voyager or another client | [Voyager API quick start](voyager-api.md) |
 | Review imported chords, note evidence and sections | [Score analysis](score-analysis.md) |
 | Change selected harmony while preserving context | [Reharmonize: up to four changed chords](reharmonization.md) |

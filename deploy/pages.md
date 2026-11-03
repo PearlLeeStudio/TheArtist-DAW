@@ -19,6 +19,12 @@ set `BACKEND_ORIGIN` and redeploy Pages. Keep Meta credentials on that server,
 never in the frontend or Pages build variables. Streaming responses and session
 budget headers pass through; browser cookies and credentials do not.
 
+Associate the frontend hostname through the Pages project's **Custom domains**
+flow before completing DNS. A DNS record alone does not register the hostname
+with Pages. The [complete deployment walkthrough](../docs/web-projects.md#from-docker-to-the-public-domains)
+covers the server's API-domain A record, Caddy HTTPS, Pages runtime settings and
+verification through the frontend domain.
+
 Both production Pages projects use
 `BACKEND_ORIGIN=https://music-api.pearlleestudio.co` and **Fail closed**. The
 setting is saved separately for `theartist-daw` and `theartist`; each was
