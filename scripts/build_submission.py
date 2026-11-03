@@ -11,8 +11,13 @@ import shutil
 import subprocess
 
 ROOT = Path(__file__).resolve().parents[1]
-CORE_COMMIT = "f043e538facd7a2f133a35f577904ac34eff1dc6"
+# The pre-event core: this repository's public `baseline` tag, which holds the public TheArtist snapshot
+# f043e53 of 2026-10-27 unchanged (same tree). The public TheArtist repository keeps only its latest
+# snapshot, so that commit is no longer served there.
+CORE_REPOSITORY = "https://github.com/PearlLeeStudio/TheArtist-DAW.git"
+CORE_COMMIT = "852204b7b3ba1a610d623c84625c86143298b23d"
 CORE_TREE = "76d0cff342da3d47cfd8250feea0e9ea37cd8823"
+CORE_SNAPSHOT = "https://github.com/PearlLeeStudio/TheArtist f043e538facd7a2f133a35f577904ac34eff1dc6"
 EXCLUDE = ("AGENTS.md", "CLAUDE.md")
 
 
@@ -39,6 +44,8 @@ def main():
         parser.error("Commit the development working tree before extraction")
     if git("rev-parse", "baseline^{tree}").decode().strip() != CORE_TREE:
         raise SystemExit("Baseline no longer matches the pinned public core")
+    if git("rev-parse", "baseline^{commit}").decode().strip() != CORE_COMMIT:
+        raise SystemExit("The baseline tag no longer points at the pinned core commit")
     head = git("rev-parse", "HEAD").decode().strip()
     paths = [".", *(f":(exclude){name}" for name in EXCLUDE)]
     patch = git("diff", "--binary", "--full-index", "--no-renames", "baseline", head, "--", *paths)
@@ -69,8 +76,8 @@ def main():
         added.append(dict(path=name, candidates=sorted(matches, key=lambda x: -x["sharedBlocks"])[:5]))
     args.out.mkdir(parents=True)
     (args.out / "changes.patch").write_bytes(patch)
-    manifest = dict(version=1, core=dict(repository="https://github.com/PearlLeeStudio/TheArtist.git",
-                    commit=CORE_COMMIT, tree=CORE_TREE),
+    manifest = dict(version=1, core=dict(repository=CORE_REPOSITORY, ref="baseline",
+                    commit=CORE_COMMIT, tree=CORE_TREE, snapshotOf=CORE_SNAPSHOT),
                     development=dict(repository="https://github.com/PearlLeeStudio/TheArtist-DAW", commit=head),
                     patchSha256=hashlib.sha256(patch).hexdigest(), files=manifest_files)
     (args.out / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")

@@ -39,9 +39,13 @@ paths for the downloaded submission directory and a **new, separate** app direct
 python3 /absolute/submission/bootstrap.py --target /absolute/theartist-app --install --prepare-assets
 ```
 
-The bootstrap acquires the fixed core from `PearlLeeStudio/TheArtist`, applies
-the verified patch, installs the locked Python/npm dependencies, builds the
-frontend, checks the app import and downloads F1 plus reviewed OMT prose.
+The bootstrap acquires the fixed core from the `baseline` tag of
+`PearlLeeStudio/TheArtist-DAW`, which holds the public TheArtist snapshot of
+2026-10-27 (`PearlLeeStudio/TheArtist` commit `f043e53`) unchanged, and checks its
+tree hash. The public TheArtist repository keeps only its latest snapshot, so that
+commit is no longer served there. The bootstrap then applies the verified patch,
+installs the locked Python/npm dependencies, builds the frontend, checks the app
+import and downloads F1 plus reviewed OMT prose.
 Network access is required. Cached dependencies are permitted; weights and
 theory texts are not distributed in this package. An existing local core mirror
 can be specified with `--core-source /absolute/core-mirror` for an offline
