@@ -5,6 +5,11 @@ dollar cap or a provider with no credit left, or the caller's Meta allowance use
 search runs without it: every family is searched, the trained Music Transformer scores the shortlist,
 and code offers the best-scoring candidate of each family. The response says so (selection "local",
 metaUnavailable and metaModel "not used"), so a local choice never passes for Meta's.
+
+The agent is the "agent" client role: with LLM_AGENT_PROVIDER unset it is the default Meta Standard
+client with native function calls; set to an open-weight endpoint (Muse Spark Open on Baseten) the
+same two tools are stated as JSON and each turn is one checked call (llm.LLMClient.chat_tools), with
+the limits below unchanged. metaModel then names the open-weight model.
 """
 from __future__ import annotations
 
@@ -93,10 +98,10 @@ def propose(req: ReharmRequest, *, client=None, scorer=None, meta_allowed: bool 
     approximations = model_approximations(req)
     unavailable = unavailable_reason or (None if meta_allowed else "limit")
     if unavailable is None and client is None:
-        unavailable = llm.meta_availability()
+        unavailable = llm.meta_availability("agent")
         if unavailable is None:
             try:
-                client = llm.get_client()
+                client = llm.get_client("agent")
             except llm.LLMDisabled:  # switched off since the check
                 unavailable = "disabled"
             except llm.LLMConfigError:

@@ -356,3 +356,75 @@ class ManualSpellingTests(unittest.TestCase):
             with self.subTest(symbol=symbol):
                 self.assertEqual(set(chord(symbol)[1]), tones)
                 self.assertEqual(model_symbol(symbol), projected)
+
+
+
+OPEN_WEIGHT = dict(provider="baseten", base_url="https://inference.baseten.co/v1",
+                   model="meta-models/muse-spark-open-1026", key_source="BASETEN_API_KEY")
+
+
+def json_call(name, args):
+    """What Muse Spark Open answers on Baseten: the native call's shape as one JSON object."""
+    return {"id": "completion-2", "model": "meta-models/muse-spark-open-1026",
+            "choices": [{"finish_reason": "stop", "message": {
+                "role": "assistant", "content": json.dumps({"name": name, "arguments": json.dumps(args)})}}],
+            "usage": {"prompt_tokens": 100, "completion_tokens": 100}}
+
+
+class OpenWeightAgentTests(LLMTestCase):
+    def test_open_weights_run_the_same_bounded_search_through_json_calls(self):
+        req = request()
+        calls = []
+
+        def transport(body):
+            calls.append(body)
+            if len(calls) == 1:
+                return json_call('search_substitutions', {'families': ['common_tones', 'modal']}), {'x-request-id': 'ow-1'}
+            results = [m['content'].split('\n', 1)[1] for m in body['messages']
+                       if m['role'] == 'user' and m['content'].startswith('Result of ')]
+            pool = [c for text in results for c in json.loads(text).get('candidates', [])]
+            ids = list(dict.fromkeys(c['id'] for c in pool))[:3]
+            return json_call('offer_candidates', {'candidateIds': ids}), {'x-request-id': f'ow-{len(calls)}'}
+
+        client = self.client(transport, **OPEN_WEIGHT)
+        with llm.track_call_costs() as costs:
+            result = agent.propose(req, client=client, scorer=FakeScorer())
+        self.assertEqual(len(result.candidates), 3)
+        self.assertEqual(result.toolCalls, ['search_substitutions', 'offer_candidates'])
+        self.assertEqual((result.selection, result.metaModel), ('meta', 'meta-models/muse-spark-open-1026'))
+        self.assertEqual(result.requestIds, ['ow-1', 'ow-2'])
+        self.assertAlmostEqual(result.costUsd, costs.cost_usd)
+        self.assertEqual(len(calls), 2)
+        for body in calls:
+            self.assertNotIn('tools', body)
+            self.assertEqual((body['max_tokens'], body['reasoning_effort']), (4096, 'low'))
+            self.assertEqual(body['response_format']['type'], 'json_schema')
+        system = calls[0]['messages'][0]['content']
+        self.assertTrue(system.startswith(agent.SYSTEM.rstrip()))
+        self.assertIn('"minItems": 2', system)  # the first turn's two-family rule is stated to the model
+        self.assertNotIn('offer_candidates:', system)  # and offer_candidates is not offered before a search
+        self.assertIn('offer_candidates:', calls[1]['messages'][0]['content'])
+        self.assertEqual([m['role'] for m in calls[1]['messages']], ['system', 'user', 'assistant', 'user'])
+        self.assertTrue(calls[1]['messages'][-1]['content'].startswith('Result of reharmonize:turn-1:search_substitutions:'))
+        offered = {c['id']: c for text in [calls[1]['messages'][-1]['content'].split('\n', 1)[1]]
+                   for c in json.loads(text)['candidates']}
+        self.assertTrue(all(c.model_dump() == offered[c.id] for c in result.candidates))
+
+    def test_open_weights_get_no_fallback_either(self):
+        transport = FakeTransport(json_call('offer_candidates', {'candidateIds': ['fake-a', 'fake-b', 'fake-c']}))
+        with self.assertRaises(llm.LLMResponseError):
+            agent.propose(request(), client=self.client(transport, **OPEN_WEIGHT), scorer=FakeScorer())
+        self.assertEqual(len(transport.calls), 2)  # the first reply was not a valid call for the first turn: one retry
+        transport = FakeTransport(json_call('search_substitutions', {'families': ['common_tones', 'modal']}))
+        with self.assertRaisesRegex(llm.LLMResponseError, 'four-turn'):
+            agent.propose(request(), client=self.client(transport, **OPEN_WEIGHT), scorer=FakeScorer())
+        self.assertEqual(len(transport.calls), 4)
+
+    def test_propose_and_the_route_use_the_agent_role(self):
+        transport = FakeTransport(tool_response('search_substitutions', {'families': ['common_tones', 'modal']}))
+        with patch.object(agent.llm, 'meta_availability', return_value=None) as availability, \
+                patch.object(agent.llm, 'get_client', return_value=self.client(transport)) as get_client, \
+                self.assertRaisesRegex(llm.LLMResponseError, 'four-turn'):
+            agent.propose(request(), scorer=FakeScorer())
+        availability.assert_called_once_with('agent')
+        get_client.assert_called_once_with('agent')

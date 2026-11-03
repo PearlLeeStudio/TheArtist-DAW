@@ -1118,3 +1118,113 @@ class ScoreInputPrivacyTests(LLMTestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+OPEN_WEIGHT = dict(provider="baseten", base_url="https://inference.baseten.co/v1",
+                   model="meta-models/muse-spark-open-1026", key_source="BASETEN_API_KEY")
+TOOLS = [
+    {"type": "function", "function": {"name": "search_substitutions", "description": "Search families.",
+                                      "parameters": {"type": "object", "properties": {"families": {
+                                          "type": "array", "minItems": 1, "maxItems": 3,
+                                          "items": {"type": "string", "enum": ["common_tones", "modal", "dominant"]}}},
+                                          "required": ["families"], "additionalProperties": False}}},
+    {"type": "function", "function": {"name": "offer_candidates", "description": "Finish with three ids.",
+                                      "parameters": {"type": "object", "properties": {"candidateIds": {
+                                          "type": "array", "items": {"type": "string"}, "minItems": 3, "maxItems": 3}},
+                                          "required": ["candidateIds"], "additionalProperties": False}}},
+]
+
+
+def json_call(name, arguments):
+    """An open-weight reply: the native call's shape as one JSON object, arguments as JSON text."""
+    return response(json.dumps({"name": name, "arguments": json.dumps(arguments)}))
+
+
+class AgentRoleTests(LLMTestCase):
+    def test_get_client_builds_the_agent_role_from_its_own_variables_and_ledger(self):
+        agent_path = self.ledger_path.with_name("agent_ledger.json")
+        env = {"MODEL_API_KEY": KEY, "THEARTIST_META_LEDGER": str(self.ledger_path), "LLM_AGENT_PROVIDER": "baseten",
+               "BASETEN_API_KEY": KEY, "THEARTIST_AGENT_LEDGER": str(agent_path), "THEARTIST_AGENT_BUDGET_USD": "4"}
+        with mock.patch.dict(os.environ, env, clear=True), mock.patch.object(llm, "_clients", {}):
+            client, agent = llm.get_client(), llm.get_client("agent")
+            self.assertIs(llm.get_client("agent"), agent)
+            self.assertIsNone(llm.meta_availability("agent"))
+        self.assertEqual((client.config.provider, client.ledger.path), ("meta", self.ledger_path.resolve()))
+        self.assertEqual((agent.config.provider, agent.config.model, agent.config.role),
+                         ("baseten", "meta-models/muse-spark-open-1026", "agent"))
+        self.assertEqual((agent.ledger.path, agent.ledger.cap_usd), (agent_path.resolve(), 4.0))
+        with mock.patch.dict(os.environ, {"MODEL_API_KEY": KEY, "THEARTIST_META_LEDGER": str(self.ledger_path)},
+                             clear=True), mock.patch.object(llm, "_clients", {}):
+            self.assertIs(llm.get_client("agent"), llm.get_client())  # no provider of its own: the default client
+        own = Ledger.from_env({"LLM_AGENT_PROVIDER": "baseten"}, role="agent")
+        self.assertEqual((own.path, own.cap_usd), (llm.DEFAULT_AGENT_LEDGER_PATH, 10.0))
+        self.assertEqual(own.path.name, "agent_ledger.json")
+        shared = Ledger.from_env({"THEARTIST_META_BUDGET_USD": "40"}, role="agent")
+        self.assertEqual((shared.path, shared.cap_usd), (llm.DEFAULT_LEDGER_PATH, 40.0))
+
+
+class JsonToolTurnTests(LLMTestCase):
+    """Tool turns on an endpoint without native function calls: Meta open weights on Baseten."""
+
+    def test_the_tools_are_stated_and_the_turn_is_one_checked_json_call(self):
+        transport = FakeTransport(json_call("search_substitutions", {"families": ["modal", "dominant"]}))
+        client = self.client(transport, **OPEN_WEIGHT)
+        history = [{"role": "system", "content": "Search the passage."}, {"role": "user", "content": "Compare chords."},
+                   {"role": "assistant", "content": "{\"name\": \"search_substitutions\"}"},
+                   {"role": "tool", "tool_call_id": "t:search_substitutions", "content": "{\"candidates\": []}"}]
+        with llm.track_call_costs() as costs:
+            reply = client.chat_tools(history, TOOLS, label="t", max_request_usd=.15)
+        self.assertEqual(reply.data["calls"], [{"name": "search_substitutions", "callId": "t:search_substitutions",
+                                                "arguments": {"families": ["modal", "dominant"]}}])
+        self.assertEqual(reply.data["assistant"]["role"], "assistant")
+        self.assertEqual(json.loads(reply.data["assistant"]["content"])["name"], "search_substitutions")
+        self.assertEqual((reply.attempts, reply.cost_usd), (1, costs.cost_usd))
+        self.assertGreater(costs.cost_usd, 0)
+        body = transport.calls[0]
+        self.assertNotIn("tools", body)
+        self.assertNotIn("tool_choice", body)
+        self.assertEqual((body["max_tokens"], body["reasoning_effort"]), (1600, "low"))
+        self.assertIn("response_format", body)
+        self.assertEqual([m["role"] for m in body["messages"]], ["system", "user", "assistant", "user"])
+        self.assertIn("offer_candidates: Finish with three ids.", body["messages"][0]["content"])
+        self.assertIn('"minItems": 1', body["messages"][0]["content"])
+        self.assertTrue(body["messages"][-1]["content"].startswith("Result of t:search_substitutions:\n{"))
+        self.assertEqual(json.loads(self.ledger_path.read_text())["entries"][0]["status"], "settled")
+
+    def test_a_call_that_is_not_valid_earns_one_retry_then_fails_as_a_tool_call(self):
+        bad = json_call("search_substitutions", {"families": ["invented"]})
+        good = json_call("offer_candidates", {"candidateIds": ["a", "b", "c"]})
+        transport = Replies(bad, good)
+        reply = self.client(transport, **OPEN_WEIGHT).chat_tools([{"role": "user", "content": "Go."}], TOOLS,
+                                                               label="retry", max_request_usd=.15)
+        self.assertEqual((reply.data["calls"][0]["name"], reply.attempts), ("offer_candidates", 2))
+        self.assertIn("rejected", transport.calls[1]["messages"][-1]["content"])
+        self.assertEqual(transport.calls[1]["messages"][-1]["role"], "user")
+        self.assertEqual(len(json.loads(self.ledger_path.read_text())["entries"]), 2)
+        for first, second in ((bad, bad), (json_call("write_score", {}), json_call("write_score", {})),
+                              (response(json.dumps({"name": "offer_candidates", "arguments": "not json"})), bad)):
+            transport = Replies(first, second)
+            with self.subTest(first=first["choices"][0]["message"]["content"][:40]), \
+                    llm.track_call_costs() as costs, self.assertRaises(LLMResponseError) as ctx:
+                self.client(transport, **OPEN_WEIGHT).chat_tools([{"role": "user", "content": "Go."}], TOOLS,
+                                                                label="twice", max_request_usd=.15)
+            self.assertEqual(len(transport.calls), 2)  # one retry, never a third call
+            self.assertIn(ctx.exception.kind, ("tool_call", "schema_mismatch"))
+            self.assertEqual((ctx.exception.attempts, ctx.exception.cost_usd), (2, costs.cost_usd))
+            self.assertGreater(costs.cost_usd, 0)
+
+    def test_meta_standard_keeps_native_function_calls(self):
+        native = {"id": "c", "model": "muse-spark-1.3", "usage": USAGE,
+                  "choices": [{"finish_reason": "tool_calls", "message": {"role": "assistant", "content": None, "tool_calls": [
+                      {"id": "call-1", "type": "function", "function": {"name": "search_substitutions",
+                                                                         "arguments": json.dumps({"families": ["modal"]})}}]}}]}
+        transport = FakeTransport(native)
+        reply = self.client(transport).chat_tools([{"role": "user", "content": "Go."}], TOOLS, label="n", max_request_usd=.15)
+        self.assertEqual(reply.data["calls"][0]["callId"], "call-1")
+        self.assertEqual(len(transport.calls[0]["tools"]), 2)
+        self.assertNotIn("response_format", transport.calls[0])
+
+    def test_schema_errors_check_string_lengths(self):
+        self.assertEqual(llm.schema_errors("ab", {"type": "string", "minLength": 3}), ["$: shorter than 3 characters"])
+        self.assertEqual(llm.schema_errors("abcd", {"type": "string", "maxLength": 3}), ["$: longer than 3 characters"])
+        self.assertEqual(llm.schema_errors("abc", {"type": "string", "minLength": 3, "maxLength": 3}), [])

@@ -31,7 +31,7 @@ def _detail(exc: llm.LLMError) -> str:
 @router.post("/reharmonize", response_model=ReharmResponse)
 def reharmonize_route(req: ReharmRequest, caller: Annotated[Caller | None, Depends(limits.caller)] = None):
     admission, meta_allowed, reason = None, True, None
-    if llm.meta_availability() is None:
+    if llm.meta_availability("agent") is None:
         try:
             admission = limits.limiter.admit(caller, estimate_usd=reharmonize_agent.MAX_USD)
         except HTTPException as refusal:

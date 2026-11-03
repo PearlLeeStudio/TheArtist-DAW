@@ -190,7 +190,9 @@ def prepare_case(case):
             'searchSeconds': search_seconds, 'localScoreSeconds': local_seconds}
 
 
-def run_case(prepared, client):
+def run_case(prepared, client, selector=None):
+    """One case: the three selection arms on `selector` (default: `client`), the blinded judge on `client`."""
+    selector = selector or client
     case, candidates = prepared['case'], prepared['candidates']
     ids = [c.id for c in candidates]
     record = {**case, 'pool': [c.model_dump() for c in candidates], 'modelUsed': prepared['modelUsed'],
@@ -207,10 +209,10 @@ def run_case(prepared, client):
         try:
             previous = record['arms']['hybrid1']['response']['data'] if arm == 'hybrid2' else None
             payload = selector_payload(case, candidates, learned=arm != 'meta', previous=previous)
-            response = client.chat_json([{'role': 'system', 'content': SELECT_SYSTEM},
-                                         {'role': 'user', 'content': json.dumps(payload)}],
-                                        choice_schema(ids), name='reharm_select', label=f"reharm-eval:{case['id']}:{arm}",
-                                        max_completion_tokens=4096, timeout_s=60, max_request_usd=.12)
+            response = selector.chat_json([{'role': 'system', 'content': SELECT_SYSTEM},
+                                           {'role': 'user', 'content': json.dumps(payload)}],
+                                          choice_schema(ids), name='reharm_select', label=f"reharm-eval:{case['id']}:{arm}",
+                                          max_completion_tokens=4096, timeout_s=60, max_request_usd=.12)
             chosen = validate_choices(response.data, ids)
             record['arms'][arm] = {'status': 'ok', 'ids': chosen, 'response': response.to_dict(),
                                    'costUsd': response.cost_usd, 'seconds': time.perf_counter() - started}
@@ -259,13 +261,16 @@ def main():
     parser.add_argument('--limit', type=int, default=48)
     parser.add_argument('--workers', type=int, choices=(1, 2), default=2)
     parser.add_argument('--model-key', choices=('ft_f1', 'ft_f1_v2', 'ft_f2', 'ft_f3', 'ft_f4', 'ft_f5'))
+    parser.add_argument('--selector-provider', choices=('meta', 'baseten'), default='meta',
+                        help='endpoint of the three selection arms: Meta Standard muse-spark-1.3 (default) or Muse Spark '
+                             'Open on Baseten (BASETEN_API_KEY, Baseten list prices); the blinded judge stays on Meta')
     args = parser.parse_args()
     if not all(getattr(args, name).is_absolute() for name in ('backend', 'dataset', 'output', 'ledger', 'raw')):
         parser.error('All paths must be absolute')
     if args.output.exists() or args.raw.exists():
         parser.error('Preserve prior results: use new output and raw paths')
     sys.path.insert(0, str(args.backend))
-    from app.services.llm import LLMClient, LLMConfig, Ledger, OpenAITransport
+    from app.services.llm import BASETEN_PRICES, LLMClient, LLMConfig, Ledger, OpenAITransport, PROVIDERS
     import torch
     torch.set_num_threads(2)
     dataset = json.loads(args.dataset.read_text())
@@ -274,27 +279,42 @@ def main():
         parser.error('No selected cases')
     cfg = LLMConfig(provider='meta', base_url='https://api.meta.ai/v1', model='muse-spark-1.3',
                     api_key=os.environ['MODEL_API_KEY'], key_source='MODEL_API_KEY', timeout_s=60)
-    transport, lock, turns = OpenAITransport(cfg), threading.Lock(), 0
+    if args.selector_provider == 'meta':
+        selector_cfg = cfg
+    else:
+        spec = PROVIDERS[args.selector_provider]
+        selector_cfg = LLMConfig(provider=args.selector_provider, base_url=spec.base_url, model=spec.model,
+                                 api_key=os.environ[spec.key_env], key_source=spec.key_env, timeout_s=60,
+                                 reasoning_effort='low', price_input_per_m=BASETEN_PRICES[0],
+                                 price_cached_per_m=BASETEN_PRICES[1], price_output_per_m=BASETEN_PRICES[2],
+                                 price_source='Baseten list price')
+    lock, turns = threading.Lock(), 0
     stopped = threading.Event()
     for signal_number in (signal.SIGINT, signal.SIGTERM):
         signal.signal(signal_number, lambda *_: stopped.set())
-    def recorded(body):
-        nonlocal turns
-        with lock:
-            if turns >= 5 * len(selected):
-                raise RuntimeError('Experiment call cap reached')
-            turns += 1
-        completion, headers = transport(body)
-        with lock, args.raw.open('a') as stream:
-            stream.write(json.dumps({'request': body, 'completion': completion,
-                                     'requestId': headers.get('x-request-id')}) + '\n')
-        return completion, headers
-    client = LLMClient(cfg, Ledger(args.ledger, 10.0), recorded)
+    def recording(transport):
+        def recorded(body):
+            nonlocal turns
+            with lock:
+                if turns >= 5 * len(selected):
+                    raise RuntimeError('Experiment call cap reached')
+                turns += 1
+            completion, headers = transport(body)
+            with lock, args.raw.open('a') as stream:
+                stream.write(json.dumps({'request': body, 'completion': completion,
+                                         'requestId': headers.get('x-request-id')}) + '\n')
+            return completion, headers
+        return recorded
+    ledger = Ledger(args.ledger, 10.0)  # one ledger object for both endpoints: one cap, one lock
+    client = LLMClient(cfg, ledger, recording(OpenAITransport(cfg)))
+    selector_client = client if selector_cfg is cfg else LLMClient(selector_cfg, ledger, recording(OpenAITransport(selector_cfg)))
     cancellable = StoppableClient(client, stopped)
+    cancellable_selector = cancellable if selector_client is client else StoppableClient(selector_client, stopped)
     report = {'datasetSha256': hashlib.sha256(args.dataset.read_bytes()).hexdigest(), 'source': dataset['source'],
               'protocol': 'shared math pool; local-checkpoint top3 / Meta top3 / local+Meta top3 / same hybrid first pass plus one review; two blinded orderings',
               'protocolVersion': 2, 'selectionMaxTokens': 4096, 'judgeMaxTokens': 8192, 'callTimeoutSeconds': 60,
-              'reasoningEffort': cfg.reasoning_effort,
+              'reasoningEffort': cfg.reasoning_effort, 'judgeModel': cfg.model,
+              'selectorProvider': selector_cfg.provider, 'selectorModel': selector_cfg.model,
               'modelKeyOverride': args.model_key, 'status': 'running', 'notStartedCases': [],
               'ledgerCapUsd': 10, 'maxCalls': 5 * len(selected), 'cases': [], 'preparationFailures': []}
     prepared = []
@@ -311,7 +331,7 @@ def main():
     args.output.write_text(json.dumps(report, ensure_ascii=False, indent=2) + '\n')
     print(f'Prepared {len(prepared)}/{len(selected)} real paired passages; starting bounded comparison', flush=True)
     def run_if_active(item):
-        return None if stopped.is_set() else run_case(item, cancellable)
+        return None if stopped.is_set() else run_case(item, cancellable, cancellable_selector)
     with ThreadPoolExecutor(max_workers=args.workers) as executor:
         futures = {executor.submit(run_if_active, item): item['case']['id'] for item in prepared}
         for future in as_completed(futures):
