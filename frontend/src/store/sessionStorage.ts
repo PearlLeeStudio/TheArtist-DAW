@@ -127,10 +127,14 @@ function isOptionalNoteList(value: unknown): boolean {
   return value === undefined || isTextList(value, MAX_MEASURE_NOTES, MAX_NOTE_NAME_LENGTH);
 }
 
+function isLocalImportModel(model: unknown): boolean {
+  return model === null || model === 'ft_f1';
+}
+
 /**
  * Every bar of a mixed import names its own analysis source, local or Meta;
- * a bar of any other import may only repeat the import's. A locally analyzed
- * bar names no model or request.
+ * a bar of any other import may only repeat the import's. Local deterministic
+ * reading names no model; local sparse harmonization names F1. Neither names an API request.
  */
 function hasValidProvenance(measure: Record<string, unknown>, importAnalysisSource: unknown): boolean {
   const namesValidSource = measure.analysisSource === undefined
@@ -140,7 +144,7 @@ function hasValidProvenance(measure: Record<string, unknown>, importAnalysisSour
   if (!namesValidSource) return false;
   const analyzedLocally = (measure.analysisSource ?? importAnalysisSource) === 'local';
   if (measure.model !== undefined &&
-      !(analyzedLocally ? measure.model === null : isTextUpTo(measure.model, MAX_ID_LENGTH))) return false;
+      !(analyzedLocally ? isLocalImportModel(measure.model) : isTextUpTo(measure.model, MAX_ID_LENGTH))) return false;
   return measure.requestId === undefined || measure.requestId === null ||
     (isTextUpTo(measure.requestId, MAX_ID_LENGTH) && !analyzedLocally);
 }
@@ -176,10 +180,10 @@ function isValidImportSource(importSource: unknown): boolean {
   if (!isRecord(importSource)) return false;
   // Sources saved before local analysis existed have none: Meta read them.
   const analysisSource = importSource.analysisSource ?? 'meta';
-  // A local analysis names no model or request; a Meta or mixed one names
-  // its model and may name its request.
+  // A local analysis can name F1 for sparse harmonization, never an API request;
+  // a Meta or mixed one names its model and may name its request.
   const modelMatchesSource = analysisSource === 'local'
-    ? importSource.model === null
+    ? isLocalImportModel(importSource.model)
     : isTextUpTo(importSource.model, MAX_ID_LENGTH);
   const requestIdMatchesSource = importSource.requestId === null ||
     (isTextUpTo(importSource.requestId, MAX_ID_LENGTH) && analysisSource !== 'local');

@@ -17,6 +17,8 @@ import {
   validateScoreImportForEditor,
 } from './scoreImport.ts';
 import type { ScoreImportResponse } from './scoreImport.ts';
+import { withoutImportedContent } from './importRetention.ts';
+import { needsSourceReview } from '../components/ScoreEditor/importedBars.ts';
 
 const response = (patch: Partial<ScoreImportResponse> = {}): ScoreImportResponse => ({
   title: 'Paper sketch',
@@ -212,6 +214,31 @@ test('opening a valid score in the editor preserves the strict import result exa
   assert.deepEqual(buildScoreImportForEditor(draft, ids()), buildImportedSong(draft, ids()));
 });
 
+test('printed chords and N.C. retain reader review flags without retaining source prose', () => {
+  const parsed = readScoreImportResponse(response({ sections: [], measures: [
+    { chords: ['C'], sourceLabel: 'Private source label', needsReview: true, note: 'Private reading ambiguity.',
+      chordBasis: 'printed', confidence: 'high' },
+    { chords: [], noChord: true, sourceLabel: '', needsReview: true, note: 'Private rest ambiguity.',
+      chordBasis: 'printed', confidence: 'high' },
+    { chords: ['G7'], sourceLabel: '', needsReview: false, note: '', chordBasis: 'printed', confidence: 'high' },
+  ] }));
+  const draft = createScoreImportDraft(parsed, 'private-score.pdf');
+  for (const build of [buildScoreImportForEditor, buildImportedSong]) {
+    const song = withoutImportedContent(build(draft));
+    const sources = song.importSource!.measures!;
+    assert.equal(sources[0].editorReview, 'Review imported chords against your source.');
+    assert.equal(sources[1].editorReview, 'Review imported chords against your source.');
+    assert.equal(sources[2].editorReview, undefined);
+    assert.equal(needsSourceReview(sources[0]), true, 'readable printed chords still show Review');
+    assert.equal(needsSourceReview(sources[1]), true, 'N.C. does not suppress a reader review flag');
+    assert.equal(needsSourceReview(sources[2]), false);
+    assert.equal(song.measures[0].chords[0]?.root, 'C');
+    assert.deepEqual(song.measures[1].chords, [null, null]);
+    assert.equal(sources[1].originalNoChord, true);
+    assert.doesNotMatch(JSON.stringify(song), /Private|private-score/);
+  }
+});
+
 test('unknown key or unsupported meter requires an explicit correction', () => {
   const draft = createScoreImportDraft(response({ key: null, timeSignature: [9, 8] }), 'chart.png');
   assert.equal(draft.key, '');
@@ -278,6 +305,7 @@ test('note analysis keeps inferred chords and status after correction without re
   assert.deepEqual(song.importSource?.measures?.[0], {
     chordBasis: 'inferred', confidence: 'medium', evidence: '', originalChords: ['Am', 'E7'],
     sourceMeasureIndex: 0, analysisSource: 'meta', model: 'muse-spark-1.3', requestId: null, originalNoChord: false, userNoChord: false, timeSignature: null,
+    editorReview: 'Review imported chords against your source.',
   });
   draft.measures[0].originalChords[0] = 'C';
   assert.equal(song.importSource?.measures?.[0].originalChords[0], 'Am');

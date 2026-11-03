@@ -183,6 +183,65 @@ test('local and mixed reading status, rests and explicit empty choices survive w
   assert.deepEqual(roundTripProjects([project])[0].song.importSource, withoutImportedContent(project.song).importSource);
 });
 
+test('F1 import drafts and safe reading review flags survive save and reload in local and mixed scores', () => {
+  for (const source of ['local', 'mixed'] as const) {
+    const response = readScoreImportResponse({
+      title: 'Sparse harmony', key: 'C major', timeSignature: [4, 4], sections: [], warnings: [],
+      analysisSource: source, model: source === 'local' ? 'ft_f1' : 'muse-spark-1.3',
+      requestId: source === 'local' ? null : 'comparison-request', mode: 'infer_harmony',
+      measures: [
+        { chords: ['C'], sourceLabel: 'Bar 1', needsReview: true, chordBasis: 'printed', confidence: 'high',
+          note: 'Private reading ambiguity.', analysisSource: 'local', model: null, requestId: null },
+        { chords: ['Dm'], sourceLabel: 'Bar 2', needsReview: true, chordBasis: 'inferred', confidence: 'low',
+          note: 'Private note evidence: D4 F4 A4.', notes: ['D4', 'F4', 'A4'],
+          analysisSource: 'local', model: 'ft_f1', requestId: null },
+        { chords: [], noChord: true, sourceLabel: 'Bar 3', needsReview: true, chordBasis: 'printed', confidence: 'high',
+          note: 'Private rest ambiguity.', analysisSource: 'local', model: null, requestId: null },
+        { chords: ['G7'], sourceLabel: 'Bar 4', needsReview: false, chordBasis: 'printed', confidence: 'high',
+          note: '', analysisSource: source === 'mixed' ? 'meta' : 'local',
+          model: source === 'mixed' ? 'muse-spark-1.3' : null,
+          requestId: source === 'mixed' ? 'comparison-request' : null },
+      ],
+    }, 'infer_harmony', source === 'local' ? 'local' : 'auto');
+    const song = buildScoreImportForEditor(createScoreImportDraft(response, 'private-sparse.pdf'));
+    const project = { ...structuredClone(importedProject), song };
+    withStoredProjects([], (memory) => {
+      saveAll([project]);
+      const restored = loadAll();
+      assert.equal(restored.length, 1, `${source} F1 project stays available after reload`);
+      assert.deepEqual(restored[0].song, JSON.parse(JSON.stringify(song)));
+      assert.deepEqual(restored[0].generation, project.generation);
+      assert.equal(restored[0].song.importSource?.measures?.[1].model, 'ft_f1');
+      assert.equal(restored[0].song.importSource?.measures?.[1].requestId, null);
+      assert.deepEqual(restored[0].song.measures.map((measure) => measure.chords[0]?.root), ['C', 'D', undefined, 'G']);
+      assert.equal(restored[0].song.importSource?.measures?.[0].editorReview, 'Review imported chords against your source.');
+      assert.equal(restored[0].song.importSource?.measures?.[2].editorReview, 'Review imported chords against your source.');
+      assert.equal(restored[0].song.importSource?.measures?.[2].originalNoChord, true);
+      assert.doesNotMatch(memory.stored, /private-sparse|Private|D4|F4|A4/);
+    });
+  }
+});
+
+test('local F1 provenance still rejects other model names and API request IDs', () => {
+  const measure = { chordBasis: 'inferred', confidence: 'low', evidence: '', originalChords: ['Dm'],
+    analysisSource: 'local', model: 'ft_f1', requestId: null };
+  const source = { filename: '', analysisSource: 'local', model: 'ft_f1', requestId: null,
+    mode: 'infer_harmony', measures: [measure] };
+  for (const invalid of [
+    { ...source, model: 'muse-spark-1.3' },
+    { ...source, model: 'another-local-model' },
+    { ...source, requestId: 'local-api-request' },
+    { ...source, measures: [{ ...measure, model: 'another-local-model' }] },
+    { ...source, measures: [{ ...measure, requestId: 'local-api-request' }] },
+    { ...source, analysisSource: 'mixed', model: 'muse-spark-1.3', requestId: 'meta-request',
+      measures: [{ ...measure, requestId: 'local-api-request' }] },
+  ]) {
+    const project = { ...structuredClone(importedProject), id: 'invalid-local',
+      song: { ...structuredClone(importedProject.song), importSource: invalid } };
+    assert.deepEqual(reloadProjects([project, importedProject]), [importedProject]);
+  }
+});
+
 test('unresolved editor imports retain every source symbol and their review reason through browser reload', () => {
   const response = readScoreImportResponse({
     title: 'Unfinished import', key: 'C major', timeSignature: [4, 4], sections: [], warnings: [],

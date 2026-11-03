@@ -519,7 +519,8 @@ function importedMeasureChords(measure: ImportMeasureDraft, key: string): [Chord
 }
 
 function importedMeasureSource(measure: ImportMeasureDraft, key: string, deferChordReview: boolean): ImportMeasureSource {
-  const editorReview = deferChordReview ? pendingMeasureReview(measure, key) : undefined;
+  const editorReview = (deferChordReview ? pendingMeasureReview(measure, key) : undefined)
+    ?? (measure.needsReview ? 'Review imported chords against your source.' : undefined);
   return {
     chordBasis: measure.chordBasis, confidence: measure.confidence,
     evidence: '', originalChords: [...measure.originalChords],
