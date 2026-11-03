@@ -555,11 +555,14 @@ def _json_type(value: Any) -> str:
     return type(value).__name__
 
 
-def schema_errors(value: Any, schema: Mapping[str, Any], path: str = "$") -> list[str]:
+def schema_errors(value: Any, schema: Mapping[str, Any], path: str = "$", *, lengths: bool = False) -> list[str]:
     """Check a parsed reply against the schema keywords strict mode uses.
 
     Covers type, enum, const, properties / required / additionalProperties,
-    items and the min/max bounds; returns readable errors, empty when it fits.
+    items and the numeric and item bounds; returns readable errors, empty when it fits.
+    String minLength / maxLength are checked only with `lengths=True`: the JSON tool turn
+    of an open-weight endpoint uses it, while replies on the native Meta path are checked
+    exactly as before that turn existed (Meta enforces its strict schema server-side).
     """
     types = schema.get("type")
     if types is not None:
@@ -578,7 +581,7 @@ def schema_errors(value: Any, schema: Mapping[str, Any], path: str = "$") -> lis
             errors += [f"{path}: unexpected key {key!r}" for key in value if key not in props]
         for key, child in props.items():
             if key in value:
-                errors += schema_errors(value[key], child, f"{path}.{key}")
+                errors += schema_errors(value[key], child, f"{path}.{key}", lengths=lengths)
     if isinstance(value, list):
         if len(value) < schema.get("minItems", 0):
             errors.append(f"{path}: fewer than {schema['minItems']} items")
@@ -586,8 +589,8 @@ def schema_errors(value: Any, schema: Mapping[str, Any], path: str = "$") -> lis
             errors.append(f"{path}: more than {schema['maxItems']} items")
         if isinstance(schema.get("items"), dict):
             for index, item in enumerate(value):
-                errors += schema_errors(item, schema["items"], f"{path}[{index}]")
-    if isinstance(value, str):
+                errors += schema_errors(item, schema["items"], f"{path}[{index}]", lengths=lengths)
+    if lengths and isinstance(value, str):
         if "minLength" in schema and len(value) < schema["minLength"]:
             errors.append(f"{path}: shorter than {schema['minLength']} characters")
         if "maxLength" in schema and len(value) > schema["maxLength"]:
@@ -1263,7 +1266,7 @@ class LLMClient:
             except (TypeError, ValueError):
                 problems = ["arguments is not JSON"]
             else:
-                problems = (schema_errors(arguments, definition['parameters']) if isinstance(arguments, dict)
+                problems = (schema_errors(arguments, definition['parameters'], lengths=True) if isinstance(arguments, dict)
                             else ["arguments is not a JSON object"])
             if not problems:
                 call_id = f"{label}:{name}"

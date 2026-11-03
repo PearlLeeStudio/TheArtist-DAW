@@ -1225,6 +1225,10 @@ class JsonToolTurnTests(LLMTestCase):
         self.assertNotIn("response_format", transport.calls[0])
 
     def test_schema_errors_check_string_lengths(self):
-        self.assertEqual(llm.schema_errors("ab", {"type": "string", "minLength": 3}), ["$: shorter than 3 characters"])
-        self.assertEqual(llm.schema_errors("abcd", {"type": "string", "maxLength": 3}), ["$: longer than 3 characters"])
-        self.assertEqual(llm.schema_errors("abc", {"type": "string", "minLength": 3, "maxLength": 3}), [])
+        self.assertEqual(llm.schema_errors("ab", {"type": "string", "minLength": 3}, lengths=True), ["$: shorter than 3 characters"])
+        self.assertEqual(llm.schema_errors("abcd", {"type": "string", "maxLength": 3}, lengths=True), ["$: longer than 3 characters"])
+        self.assertEqual(llm.schema_errors("abc", {"type": "string", "minLength": 3, "maxLength": 3}, lengths=True), [])
+        # The native Meta path never checks string lengths (its strict schema is enforced server-side)
+        self.assertEqual(llm.schema_errors("abcd", {"type": "string", "maxLength": 3}), [])
+        self.assertEqual(llm.schema_errors({"r": "abcd"}, {"type": "object", "properties": {"r": {"type": "string", "maxLength": 3}},
+                                                       "required": ["r"], "additionalProperties": False}), [])
