@@ -93,11 +93,13 @@ $10, daily global spend at $2 and daily session spend at $2. These are applicati
 limits, not the provider's balance or an automatic credit-expiry detector.
 
 `THEARTIST_META_CREDIT_USD` is a stop line that holds even with
-`THEARTIST_META_UNLIMITED=1`. `compose.yaml` sets it to 50 for this server, and the
-automatic deployment applies it with no operator step. The ledger notes its total at
-the first call under the value. From then on it refuses any call that would take the
-spend recorded since past $50, and every call once less than $0.05 is left, before
-sending anything. The editor's Meta controls are disabled meanwhile, and Reharmonize
+`THEARTIST_META_UNLIMITED=1`. `compose.yaml` set it to 50 for this server from the
+morning of 2026-11-03; that evening the owner dropped the default for the submission
+and judging window, so the compose default is now empty (no line) and a non-empty
+value in `/srv/theartist.env` is the only way to hold one. With a value set, the
+ledger notes its total at the first call under it. From then on it refuses any call
+that would take the spend recorded since past the value, and every call once less
+than $0.05 is left, before sending anything. The editor's Meta controls are disabled meanwhile, and Reharmonize
 picks without Meta. A no-credit answer from the provider (HTTP 402) pauses Meta for
 10 minutes on its own. `/api/capabilities` reports `meta.creditStop: true` while a line
 is set, never its value. To tie the line to the provider's console instead, put a

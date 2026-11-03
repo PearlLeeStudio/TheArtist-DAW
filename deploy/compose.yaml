@@ -13,10 +13,10 @@ services:
       THEARTIST_SERVE_FRONTEND: "1"
       THEARTIST_META_LEDGER: /data/meta_ledger.json
       THEARTIST_JUDGE_LEDGER: /data/meta_ledger.json
-      # Meta stop line of this hosted demo: no Meta call once this server has spent this many USD
-      # past the ledger total at the line's first call (vps.md). A non-empty value of the same name
-      # in /srv/theartist.env replaces it.
-      THEARTIST_META_CREDIT_USD: ${THEARTIST_META_CREDIT_USD:-50}
+      # Meta stop line of this hosted demo (vps.md): a non-empty value of the same name in
+      # /srv/theartist.env holds one; the empty default sets no line (the $50 default was dropped
+      # on 2026-11-03 for the submission and judging window at the owner's request).
+      THEARTIST_META_CREDIT_USD: ${THEARTIST_META_CREDIT_USD:-}
       THEARTIST_RAG_BERKLEE_ENABLED: "0"
       OMP_NUM_THREADS: "2"
       MKL_NUM_THREADS: "2"
