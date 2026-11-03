@@ -220,13 +220,15 @@ export default function SongFormDialog({ onClose, onGenerated, onEditSections, o
     return () => { alive = false; };
   }, []);
 
+  // Asked again after a failed run, so a pause that began meanwhile turns the Meta modes off
+  const [metaCheck, setMetaCheck] = useState(0);
   useEffect(() => {
     const controller = new AbortController();
     fetchMetaCapability(controller.signal)
       .then((capability) => setMeta(capability))
       .catch(() => { /* unknown: the primary button stays enabled and a run reports the server's answer */ });
     return () => controller.abort();
-  }, []);
+  }, [metaCheck]);
 
   const check = checkBarCount(barsText);
   // While generating, the song already holds the new section, so a live
@@ -237,12 +239,16 @@ export default function SongFormDialog({ onClose, onGenerated, onEditSections, o
   const generateDisabled = !check.ok || busy;
 
   const blocker = planBlocker(song);
-  // Off while the server would refuse Meta (off, no key, or paused); Genre template needs no Meta call
-  const metaOffText = metaUnavailableText(meta);
+  // Off while the server would refuse Meta (off, no key, or paused); Genre template needs no Meta call.
+  // Music Transformer + Meta review also needs the judge role, which may run on another provider
+  const judgeOffText = chordSource === 'own' && metaUnavailableText(meta) === null
+    ? metaUnavailableText(meta, 'judge') : null;
+  const metaOffText = metaUnavailableText(meta) ?? judgeOffText;
   const metaOff = metaOffText !== null;
-  const metaNotice = !meta || meta.available || !meta.enabled ? null
-    : meta.unavailableReason === 'paused' ? 'Muse Spark is paused on this server. Use Genre template.'
-      : 'Muse Spark is not configured. Use Genre template.';
+  const metaNotice = judgeOffText ? 'Meta review is not available on this server right now. Use Muse Spark only or Genre template.'
+    : !meta || meta.available || !meta.enabled ? null
+      : meta.unavailableReason === 'paused' ? 'Muse Spark is paused on this server. Use Genre template.'
+        : 'Muse Spark is not configured. Use Genre template.';
   const planDisabled = blocker !== null || targetBars === null || metaOff || busy;
   const sectionCount = song.sections?.length ?? 0;
 
@@ -298,6 +304,7 @@ export default function SongFormDialog({ onClose, onGenerated, onEditSections, o
     if (!planRunningRef.current) return;
     planRunningRef.current = false;
     const result = usePlanStore.getState();
+    if (result.status === 'failed' && planner === 'meta') setMetaCheck((count) => count + 1);
     if (result.status !== 'done') return;
     result.applyPlan();
     // Applying can reject an obsolete result if the score changed during the run.
@@ -697,7 +704,7 @@ export default function SongFormDialog({ onClose, onGenerated, onEditSections, o
                   }}
                   title={metaOffText ?? (chordSource === 'meta' ? 'Muse Spark writes the form and every chord' : 'Muse Spark plans and reviews Music Transformer chords')}
                 >
-                  {planning ? 'Generating…' : metaOff ? 'Muse Spark unavailable' : chordSource === 'meta' ? 'Muse Spark only' : 'Meta + Music Transformer'}
+                  {planning ? 'Generating…' : judgeOffText ? 'Meta review unavailable' : metaOff ? 'Muse Spark unavailable' : chordSource === 'meta' ? 'Muse Spark only' : 'Meta + Music Transformer'}
                 </button>
               </div>
             </div>

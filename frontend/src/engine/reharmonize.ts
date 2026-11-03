@@ -23,11 +23,12 @@ export interface ReharmCandidate {
   conventionScore?: number;
   modelScore: number;
 }
-/** Why the server picked the three without Meta: switched off, no key, paused, or the Meta allowance used up. */
+/** Why the server picked the three without Meta: switched off, not configured (no key, or a setting the
+ *  server refuses), paused, or the Meta allowance used up. */
 export type ReharmMetaUnavailable = 'disabled' | 'unconfigured' | 'paused' | 'limit';
 const REHARM_META_UNAVAILABLE: Record<ReharmMetaUnavailable, string> = {
   disabled: 'Meta is off on this server',
-  unconfigured: 'No Meta key is configured on this server',
+  unconfigured: 'Meta is not configured on this server',
   paused: 'Meta is paused on this server',
   limit: 'The Meta allowance is used up for today',
 };

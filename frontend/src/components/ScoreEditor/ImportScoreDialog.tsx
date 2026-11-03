@@ -126,8 +126,11 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
   const [metaAttempt, setMetaAttempt] = useState(0);
   // False also while Meta is paused on the server: the checkbox stays off and the local reader is used
   const metaAvailable = !!meta?.available;
-  const readerEngine: ScoreImportEngine = useMeta ? 'verified' : 'local';
   const fullFileAvailable = metaAvailable && meta?.fullFileScoreImport === true;
+  // The box counts only while the server offers Meta file reading: when a later check finds it paused,
+  // the checkbox reads unchecked and the local reader runs, instead of a ticked box nobody can untick
+  const metaChosen = useMeta && fullFileAvailable;
+  const readerEngine: ScoreImportEngine = metaChosen ? 'verified' : 'local';
 
   useEffect(() => {
     const controller = new AbortController();
@@ -265,6 +268,8 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
       setError(timedOut ? 'Analysis timed out. Try a smaller file.'
         : controller.signal.aborted ? 'Analysis cancelled.'
           : caught instanceof Error ? caught.message : 'The score could not be analyzed. Try again.');
+      // Ask the server again after a failed Meta reading, so a pause that began meanwhile turns the box off
+      if (engine !== 'local' && !controller.signal.aborted) setMetaAttempt((attempt) => attempt + 1);
     } finally {
       window.clearTimeout(timer);
       finish(timedOut ? 'timeout' : controller.signal.aborted ? 'cancelled' : 'error');
@@ -279,12 +284,9 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
   const startAnalysis = () => {
     const selected = sourceRef.current;
     if (!selected || runningRef.current || reading) return;
-    if (selected.mimeType !== 'application/pdf' && !useMeta) {
-      setError('Enable Use Meta model to analyze an image.');
-      return;
-    }
-    if (useMeta && !fullFileAvailable) {
-      setError('Meta verification is not available on this server.');
+    if (selected.mimeType !== 'application/pdf' && !metaChosen) {
+      setError(fullFileAvailable ? 'Enable Use Meta model to analyze an image.'
+        : 'Images need Meta file reading, which is not available on this server right now. A vector PDF can still be read locally.');
       return;
     }
     void recognize(selected, ++sequenceRef.current, readerEngine);
@@ -383,7 +385,7 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
                 <legend className="mb-4 font-display text-xl font-bold" style={{ color: 'var(--text-heading)' }}>Reader</legend>
                 <p className="mb-2 text-sm">TheArtist</p>
                 <label className="flex min-h-12 cursor-pointer items-center gap-3 text-sm has-[:disabled]:cursor-default has-[:disabled]:opacity-50">
-                  <input type="checkbox" checked={useMeta} disabled={!fullFileAvailable}
+                  <input type="checkbox" checked={metaChosen} disabled={!fullFileAvailable}
                     onChange={(event) => selectMeta(event.target.checked)}
                     className="h-4 w-4 shrink-0" style={{ accentColor: 'var(--brand-yellow)' }} />
                   Use Meta model
@@ -396,13 +398,18 @@ export default function ImportScoreDialog({ onClose, onImported }: ImportScoreDi
                   setMetaConnectionError(false); setCheckingMeta(true); setMetaAttempt(attempt => attempt + 1);
                 }}>Retry connection</button>
               </div>}
-              {useMeta && <p className="text-xs" style={mutedStyle}>The score opens right away; the original is then checked in the background, differing bars are marked for review and empty bars filled.</p>}
+              {metaChosen && <p className="text-xs" style={mutedStyle}>The score opens right away; the original is then checked in the background, differing bars are marked for review and empty bars filled.</p>}
               {meta && !metaAvailable && (
                 <p className="text-xs" style={mutedStyle}>
                   {!meta.enabled ? 'Meta is off on this server: TheArtist only is available.'
                     : meta.unavailableReason === 'paused' ? 'Meta is paused on this server: TheArtist only is available.'
                       : !meta.configured ? 'No Meta key is configured on this server: TheArtist only is available.'
                         : 'Meta is not configured on this server: TheArtist only is available.'}
+                </p>
+              )}
+              {meta && metaAvailable && !fullFileAvailable && (
+                <p className="text-xs" style={mutedStyle}>
+                  Meta file reading is not available on this server right now: TheArtist only is available.
                 </p>
               )}
               <div className="flex flex-wrap gap-2">
