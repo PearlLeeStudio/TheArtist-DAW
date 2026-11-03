@@ -241,7 +241,11 @@ THEARTIST_JUDGE_BUDGET_USD=10         # the judge's own cap
 With the judge switched, every Second ear result line in the editor reads
 `baseten meta-models/muse-spark-open-1026 · <request id> · $<cost>`, and the judge
 ledger records the same ids, so the switch is verifiable from the screen and the
-server. The [comparison](experiments/review_eval/summary.md) ran the same 60 reviews
+server. **The hosted demo runs the judge this way through the judging window (switched
+on November 3, 2026):** its first hosted review answered from
+`baseten meta-models/muse-spark-open-1026` (request `54ca701a1a106f7d176838a17f443fb7df547`,
+$0.0045, 5.4 s) with every reason confirmed by the analyzer.
+The [comparison](experiments/review_eval/summary.md) ran the same 60 reviews
 on both models: same pick in 52/60, every reason confirmed by the analyzer, $0.0028
 and 2.1 s per review on Muse Spark Open. The notes → chords task was run on the same
 open weights too ([Evidence](#evidence)). Reharmonize's tool loop is not: native tool
