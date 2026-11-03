@@ -12,9 +12,12 @@ and setup; the musician shapes the arrangement and finishes it in the DAW.
 
 The existing TheArtist core supplies the score editor, Music Transformer,
 trained weights, music utilities and research code. The event contribution adds
-Meta score interpretation, context-aware form planning and bounded reharmonization,
-Original/A/B/C editing, arrangement export, source attribution and performance
-improvements. These are development claims; musical preference requires listening.
+Muse Spark score interpretation, form planning and tool-driven reharmonization;
+Muse Spark Open on Baseten for Second ear and hybrid form review; Origin/Alter 1–3
+editing; the redesigned player and mixer; score PDF and arrangement MIDI export;
+the hosted app and Safari–Logic bridge; source attribution and performance work.
+These are development claims. Listening evaluation is planned and will be reported
+in a paper; the recorded automated measurements do not establish musical preference.
 
 This package contains event changes as a patch, not a copy of the pre-event
 checkout or its git history. `manifest.json` pins the original public core and
@@ -44,8 +47,8 @@ docker run --rm --name theartist-submission -p 127.0.0.1:7860:7860 --mount type=
 ```
 
 The bootstrap acquires the fixed core from the `baseline` tag of
-`PearlLeeStudio/TheArtist-DAW`, which holds the public TheArtist snapshot of
-2026-10-27 (`PearlLeeStudio/TheArtist` commit `f043e53`) unchanged, and checks its
+`PearlLeeStudio/TheArtist-DAW`, which holds the public TheArtist snapshot
+(`PearlLeeStudio/TheArtist` commit `f043e53`) unchanged, and checks its
 tree hash. The public TheArtist repository keeps only its latest snapshot, so that
 commit is no longer served there. The bootstrap applies the verified patch and
 checks changed-file hashes. Docker installs locked dependencies, builds the
@@ -65,8 +68,25 @@ persistent usage configuration, as described in the reconstructed app's
 `README.md` and `deploy/README.md`. Pass that file with Docker `--env-file` and
 keep the ledger volume. No provider key goes in a browser or image.
 
+To reproduce the hosted open-weight judge, add the following to that same private
+runtime environment file. The key is a Baseten key; the reader, planner and
+Reharmonize agent continue to use Standard `muse-spark-1.3` with `MODEL_API_KEY`.
+
+```dotenv
+LLM_JUDGE_PROVIDER=baseten
+LLM_JUDGE_MODEL=meta-models/muse-spark-open-1026
+LLM_JUDGE_API_KEY=YOUR_BASETEN_KEY
+LLM_JUDGE_REASONING_EFFORT=low
+THEARTIST_JUDGE_LEDGER=/data/judge_ledger.json
+```
+
+Second ear and hybrid form results identify the provider, model, request ID and
+cost. Omitting `LLM_JUDGE_PROVIDER` uses the default Meta service for these jobs.
+
 First choose a **Genre** before using New from Song Form. The source-score path
-is Import Score → review/edit harmony → Reharmonize → Play → Download MIDI → DAW.
+is Import Score → review/edit harmony → Reharmonize → Play → score PDF → MIDI/DAW.
+**Open in Logic Pro** from a hosted app additionally needs the local Mac bridge;
+**Download MIDI** works without it. See `docs/midi-input.md` in the reconstructed app.
 Uploaded scores and parsed notes are used transiently for analysis, not cached
 between requests or retained as source content in the editor's saved projects.
 With **Use Meta model** checked, the full file is also sent to Meta; the app's

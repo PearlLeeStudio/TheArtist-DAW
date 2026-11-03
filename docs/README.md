@@ -25,7 +25,7 @@ accompaniment and editable DAW delivery. Start with the
 | Run the application | [Local setup](../README.md#getting-started), [backend](../backend/README.md), [hosting](../deploy/README.md) |
 | Use the Logic MIDI FX export | [Logic Scripter](../plugin/logic-scripter/README.md) |
 | Assess results and limits | [Evaluation](evaluation.md), [Reharmonization comparisons](reharmonization-evaluation.md), [score-reader comparisons](score-reader-comparison.md) |
-| Verify an editing-to-DAW change | [Manual checks](manual-checks.md), [repository contracts](repository-checks.md) |
+| Verify an editing-to-DAW change | [Manual checks](manual-checks.md), [REST contracts](../API_SPEC.md), [MCP contracts](mcp.md) |
 
 The product uses the author's Music Transformer and Meta models for harmonic
 proposals, reading and decisions. Accompaniment patterns, voicings and file

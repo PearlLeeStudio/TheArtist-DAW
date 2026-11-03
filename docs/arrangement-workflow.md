@@ -127,7 +127,8 @@ script for Harmony and Bass, with its own transport behavior and limitations.
 | Component | Role in the arrangement |
 |---|---|
 | Music Transformer and genre LoRAs | Generate chord material and score substitution candidates in context |
-| Meta Standard Muse Spark | Read an attached score when requested, plan harmonic form, compare substitutions and review candidates |
+| Meta Standard Muse Spark 1.3 | Read an attached score when requested, plan and compose harmonic form, and search substitutions with tools |
+| Muse Spark Open on Baseten | Choose among Second ear candidates and review the hybrid song form; configured through `LLM_JUDGE_*`, otherwise these judgments use the default Meta model |
 | Application music engine | Validate edits, compute voicings, apply accompaniment patterns, mix playback and render MIDI |
 | Musician | Review imported evidence, choose harmony and form, audition the parts and finish the arrangement |
 

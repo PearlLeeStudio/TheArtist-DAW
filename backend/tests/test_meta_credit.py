@@ -296,14 +296,17 @@ class TokenEstimateTests(unittest.TestCase):
 class HostedStopLineTests(unittest.TestCase):
     COMPOSE = Path(__file__).resolve().parents[2] / "deploy" / "compose.yaml"
 
-    def test_the_hosted_app_carries_a_stop_line_that_the_server_env_file_can_replace(self):
+    def test_the_hosted_stop_line_is_opt_in_and_accepts_a_server_override(self):
         app_service = self.COMPOSE.read_text(encoding="utf-8").split("\n  https:\n")[0]
-        found = re.search(r"^      THEARTIST_META_CREDIT_USD: \$\{THEARTIST_META_CREDIT_USD:-([^}]+)\}$",
+        found = re.search(r"^      THEARTIST_META_CREDIT_USD: \$\{THEARTIST_META_CREDIT_USD:-([^}]*)\}$",
                           app_service, re.M)
-        self.assertIsNotNone(found, "the hosted app service must set a default credit stop line")
-        default = float(found.group(1))
-        Ledger(self.COMPOSE.with_name("never-written.json"), credit_usd=default)  # the server's own value check
-        self.assertGreater(default, 1.45)  # room for a whole-file read's worst case, so the reader is offered
+        self.assertIsNotNone(found, "the hosted app must pass through the optional server stop line")
+        self.assertEqual(found.group(1), "")
+        for raw, expected in ((found.group(1), None), ("12.5", 12.5), ("0", 0.0)):
+            with self.subTest(value=raw):
+                ledger = Ledger.from_env({"THEARTIST_META_CREDIT_USD": raw,
+                                          "THEARTIST_META_LEDGER": str(self.COMPOSE.with_name("never-written.json"))})
+                self.assertEqual(ledger.credit_usd, expected)
 
 
 def candidate(id, family, after, score, slot=0):

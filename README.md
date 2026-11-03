@@ -18,9 +18,9 @@
 **Why I built it.** The chord helpers I used in DAWs suggest the next chord while the
 song just keeps growing: no set length, no verses or choruses, no idea where a phrase
 has to land. A chord that does not know the song form cannot be suggested well.
-TheArtist starts from the form. The song has its length and sections first, read from
-the score or planned by Muse Spark, and every chord is generated, reharmonized and
-scored inside that form, against the bars around it.
+TheArtist keeps song length and sections visible, imported from a score or planned
+by Muse Spark. The planner uses that structure; Reharmonize preserves it while the
+Music Transformer scores alternatives against surrounding harmony.
 
 **Built October 27 – November 4, 2026 with Meta Muse Spark (`muse-spark-1.3`), on
 top of my own score editor and chord model.** Bring a lead sheet, select the bars that
@@ -29,10 +29,12 @@ feel flat and hear alternatives in context:
 - **Reharmonize agent.** Muse Spark runs a bounded substitution search through native
   tool calls, my Music Transformer scores each change against the surrounding bars,
   and the musician combines and applies the alternatives on the staff. Run details
-  show the live calls: hosted median 10.4 s, about $0.02 per search.
-- **Import.** A score PDF or image opens as editable chords, and Muse Spark checks the
-  reading in the background. Reading chords from notes in a 640-slot test, Muse Spark
-  matched exactly 89.5% of slots against 77.8% for the local analyzer.
+  show the completed calls: hosted median 10.4 s, about $0.02 per search.
+- **Import.** A supported vector PDF opens as editable chords from the local reader;
+  with **Use Meta model**, Muse Spark checks the original in the background. Images
+  need Meta reading before they can open. In a separate 640-slot notes-to-chords
+  benchmark, Muse Spark matched exactly 89.5% against the local analyzer's 77.8%.
+  That benchmark predates the current full-file Import workflow.
 - **DAW export.** Separate Harmony, Bass and Drums MIDI tracks go to Logic Pro or any
   DAW, so the harmony is never typed twice.
 
@@ -76,7 +78,7 @@ On the [live workspace](https://artist-daw.pearlleestudio.co), in a desktop brow
 1. **Import Score**: choose a supported PDF you own or have permission to process, optionally tick **Use Meta model**, then press **Analyze and import**. A readable PDF opens from the local reading without waiting for Meta. With Meta selected, the original-file review runs in the background (up to 150 seconds), flags differences and fills untouched empty bars. Check the key, meter and imported chords against your own source.
 2. Drag across two to four existing chords, right-click → **Reharmonize** → **Find 3 alternatives** (about 10 seconds in recorded hosted runs). Switch **Alter 1–3** on the staff, listen and combine alternatives, then **Apply**; Ctrl/⌘+Z undoes it. Before applying, **Run details** shows Muse Spark's tool calls, request ids, cost and time.
 3. In **Play**, choose the instruments, accompaniment rhythm and drums, then adjust the part levels. The harmonic edits feed the same Harmony, Bass and Drums arrangement.
-4. **Export ▾ → Download MIDI**, then import the file into your DAW and continue editing its separate tracks. This download needs no local bridge. **PDF · Light (print)** exports the harmonic score; [Open in Logic Pro](docs/midi-input.md#open-a-hosted-score-in-logic-pro) additionally needs the local Mac bridge.
+4. **Export ▾ → PDF · Light (print)** to check the harmonic score. Then **Download MIDI** and continue editing its separate tracks in your DAW, or use [Open in Logic Pro](docs/midi-input.md#open-a-hosted-score-in-logic-pro). The Logic handoff needs the local Mac bridge; the MIDI download does not.
 
 To start without a source score, first choose **Genre → Pop**, then **New from
 Song Form → Full form**, Length 32 bars, and press **Muse Spark only**. Muse Spark
@@ -191,7 +193,7 @@ API serves. In this product the two Meta models have different jobs:
 | Direct full-file API reading, `engine: "meta"` | [file reader](backend/app/services/score_import.py) | Same one-call file limits | Same |
 | Bounded API assist, `engine: "auto"`: review locally inferred/unresolved harmony with complete score context, preserve printed chords and N.C. | [assist](backend/app/services/score_assistance.py), [harmony](backend/app/services/harmony_meta.py), [form](backend/app/services/score_form.py) | ≤ 2 × 8-bar harmony reviews + 1 form analysis, default ≤ $0.30 total | `THEARTIST_META_ENABLED`; this API mode is separate from the checkbox |
 | Complete the form: plan → validate → revise, then compose or generate and judge | [planner](backend/app/services/planner.py) | ≤ 5 calls: 1 plan, ≤ 2 revisions, then 1 Meta composition (**Muse Spark only**) or ≤ 2 judgments (hybrid with own-model chords) | `THEARTIST_META_ENABLED`; judge role via `LLM_JUDGE_*` |
-| Second ear: choose among Generate's A/B/C using analyzer facts, with checked reasons | [review](backend/app/services/review.py) | 1 Standard Meta judge call | `THEARTIST_META_ENABLED`; judge role via `LLM_JUDGE_*` |
+| Second ear: choose among Generate's A/B/C using analyzer facts, with checked reasons | [review](backend/app/services/review.py) | 1 configured judge call (Muse Spark Open on Baseten in the hosted demo) | `THEARTIST_META_ENABLED`; judge role via `LLM_JUDGE_*` |
 | [Reharmonize](docs/reharmonization.md): Meta calls `search_substitutions` on bounded mathematical families, sees Music Transformer context scores, then calls `offer_candidates` | [agent](backend/app/services/reharmonize_agent.py), [own-model scorer](backend/app/services/reharmonize.py) | ≤ 4 model turns, 6 tool calls, 100 s; default ≤ $0.15 per search | Selected own model must be available; [local recovery](docs/reharmonization.md#without-meta) is marked *picked without Meta* |
 
 Dollar values are default application limits. The hosted demo's explicit
@@ -251,9 +253,10 @@ validates, and stops when it has a result or hits a limit.
   section lengths, recurrence and key and returns the errors; Muse Spark revises (at
   most twice) and then writes every chord of the plan.
 
-Every run has a timeout, a turn limit, a per-call cost reservation against the spend
-cap and a ledger line with its request id, tokens and cost, so a judge can read what the
-agent did and what it cost. Both loops are measured under [Evidence](#evidence).
+Every run has a timeout, a turn limit and a ledger line with its request id,
+tokens and cost. Cost reservations enforce the configured caps unless the explicit
+unlimited setting above is active. A judge can inspect what the agent did and what
+it cost. Both loops are measured under [Evidence](#evidence).
 
 **Running the judge on Meta open weights.** The Second ear judge is one role with its
 own provider, ledger and cap. Four lines in the server environment move it to Muse
@@ -269,8 +272,8 @@ THEARTIST_JUDGE_BUDGET_USD=10         # the judge's own cap
 With the judge switched, every Second ear result line in the editor reads
 `baseten meta-models/muse-spark-open-1026 · <request id> · $<cost>`, and the judge
 ledger records the same ids, so the switch is verifiable from the screen and the
-server. **The hosted demo runs the judge this way through the judging window (switched
-on November 3, 2026):** its first hosted review answered from
+server. **The hosted demo runs the judge this way through the judging window:**
+its first hosted review answered from
 `baseten meta-models/muse-spark-open-1026` (request `54ca701a1a106f7d176838a17f443fb7df547`,
 $0.0045, 5.4 s) with every reason confirmed by the analyzer.
 The [comparison](experiments/review_eval/summary.md) ran the same 60 reviews
@@ -298,8 +301,8 @@ video above; the pre-existing demo is listed separately under [Links](#links).
 The screenshots illustrate their documented flows and predate the latest Import
 controls and theory references. Verified paths and remaining audio/device checks are
 separated in the [manual checklist](docs/manual-checks.md).
-The [repository consistency report](docs/repository-checks.md) records the
-file, contract and test coverage, fixes, and remaining verification limits.
+Runtime contracts are documented in [API_SPEC](API_SPEC.md) and the
+[MCP guide](docs/mcp.md); verification limits stay in the manual checklist.
 
 ### Where Meta appears in the editor
 

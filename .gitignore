@@ -4,6 +4,9 @@ __pycache__/
 .venv/
 *.pyc
 
+# Local demo recordings and editing assets
+/video/
+
 # Datasets, caches, training artifacts — not redistributed (see README → Datasets)
 ai/checkpoints/
 ai/data/raw/

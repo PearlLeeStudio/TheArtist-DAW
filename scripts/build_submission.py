@@ -12,7 +12,7 @@ import subprocess
 
 ROOT = Path(__file__).resolve().parents[1]
 # The pre-event core: this repository's public `baseline` tag, which holds the public TheArtist snapshot
-# f043e53 of 2026-10-27 unchanged (same tree). The public TheArtist repository keeps only its latest
+# f043e53 unchanged (same tree). The public TheArtist repository keeps only its latest
 # snapshot, so that commit is no longer served there.
 CORE_REPOSITORY = "https://github.com/PearlLeeStudio/TheArtist-DAW.git"
 CORE_COMMIT = "852204b7b3ba1a610d623c84625c86143298b23d"

@@ -18,7 +18,9 @@ Import a score PDF as editable chords.
 
 The local reader opens it right away.
 
-The song keeps its length and sections, so every chord is chosen inside the form.
+Muse Spark finishes its background check. A confirmation appears above the score.
+
+The imported song keeps its length and sections while you revise its harmony.
 
 ### Player
 
@@ -39,11 +41,13 @@ Compare and combine the alternatives. Apply the changes you want to keep.
 
 ### Score PDF export
 
-Export the harmonic score as a PDF.
+Let's check the chord chart. Export the harmonic score as a PDF.
 
 ### Logic Pro export
 
 Open Harmony, Bass and Drums in Logic Pro as editable MIDI.
+
+Unleash your creativity in your DAW.
 
 ## Built for this hackathon
 
@@ -83,7 +87,7 @@ Second ear's result identifies the actual provider and model:
 
 Less setup. More time to make your music.
 
-artist-daw.pearlleestudio.co
+Put the app, GitHub and model links in the video description.
 
 ## Project context
 

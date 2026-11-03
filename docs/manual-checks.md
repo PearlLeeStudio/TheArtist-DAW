@@ -195,7 +195,8 @@ failures are recorded in [evaluation.md](evaluation.md).
 
 - [ ] Importing a score or editing another project preserves current work in
   Projects. Save, refresh and choose the card's Edit action to return to the
-  editor. Chords, sections, Roman labels, source evidence and mixer levels survive.
+  editor. Chords, sections, Roman labels, safe source provenance and mixer levels survive;
+  extracted pitches, filenames and evidence prose do not.
   Storage errors remain visible without replacing current work. Project-file
   download and import controls are absent.
 - [ ] Select individual project checkboxes, then Select all; every card can be

@@ -23,8 +23,8 @@ and `modelUsed` on generation responses.
 
 `POST /api/reharmonize` returns three contextual patches, each changing at most
 1–4 selected existing chords. Meta chooses among bounded searches scored by the
-Music Transformer. The endpoint never applies edits. Browser A/B/C preview and
-Original restoration own that transition. Accompaniment and MIDI rendering use
+Music Transformer. The endpoint never applies edits. Browser Origin/Alter 1–3
+preview, combination and Apply own that transition. Accompaniment and MIDI rendering use
 the resulting score plus explicit playback settings; they are rule-based parts.
 
 Set server variables in your terminal or hosting environment; the app does not

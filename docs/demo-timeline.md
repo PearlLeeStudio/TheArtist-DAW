@@ -20,15 +20,16 @@ remain with the musician in the DAW. This is an intentional scope choice, not an
 unfinished melody feature. Respecting the source does not mean the tool grants
 permission to arrange or redistribute protected material.
 
-Every feature the video demonstrates was built during the event: Import, the Play
+The event contributions demonstrated on the existing editor are: Import, the Play
 panel with its mixer and corrected playback timing, Reharmonize and the DAW export to
 Logic Pro ([HACKATHON.md](../HACKATHON.md)). What existed before is named once, on the
-opening card: the score editor, the sound, rhythm and drum-pattern content that the
-Play panel plays, and the Music Transformer. The same card says once that everything
-shown next was built this week, so later captions name the feature without a "new"
-label. During Reharmonize, Muse Spark searches with tools and the Music
-Transformer scores candidates against neighboring harmony; Run details then show the
-live Meta calls. The musician chooses and applies the changes.
+opening card: the score editor and the Music Transformer. The sounds, rhythms and
+drum patterns also predate the event, as detailed in the description. The opening
+distinguishes the existing editor/model from the hackathon agent, so later captions
+can name the feature without repeating a "new" label. During Reharmonize, Muse Spark
+searches with tools and the Music Transformer scores candidates against neighboring
+harmony; Run details then show the completed Meta calls. The musician chooses and
+applies the changes.
 
 ## English captions and placement
 
@@ -39,8 +40,8 @@ shift the later cues by the same amount.
 
 | Time | Scene | Caption |
 |---|---|---|
-| 00:00–00:04 | Opening | Before this week: my score editor,<br>its sounds and rhythms, my chord model. |
-| 00:04–00:08 | Opening | New this week: everything shown next.<br>Muse Spark drives the Reharmonize agent. |
+| 00:00–00:04 | Opening | From my score/chord editor<br>to an AI reharmonization agent. |
+| 00:04–00:08 | Opening | Built for this hackathon with Muse Spark.<br>The editor and chord model came first. |
 | 00:08–00:18 | Import | Import a score PDF as editable chords.<br>The local reader opens it right away. |
 | 00:18–00:23 | Background Meta check completed | Muse Spark finishes its background check.<br>A confirmation appears above the score. |
 | 00:23–00:28 | Play panel | Play panel: switch parts, set the mix.<br>Hear the arrangement take shape. |
@@ -48,14 +49,14 @@ shift the later cues by the same amount.
 | 00:44–00:54 | Passage selection and search | Reharmonize agent: up to four chords,<br>three alternatives to compare. |
 | 00:54–01:00.5 | Tool search | Muse Spark decides what to search<br>and calls the search tools. |
 | 01:00.5–01:07 | Context scoring | My existing model scores each change;<br>Muse Spark offers three that differ. |
-| 01:07–01:14 | Run details (new insert) | Live Meta calls: muse-spark-1.3,<br>request ids, cost and time. |
+| 01:07–01:14 | Run details (new insert) | Meta run details: muse-spark-1.3,<br>request ids, cost and time. |
 | 01:14–01:21 | Combine and Apply | Compare and combine the alternatives.<br>Apply the changes you want to keep. |
 | 01:21–01:45 | Revised arrangement playback | No captions; let the revised arrangement play. |
 | 01:45–01:49 | Exported score PDF | Let's check the chord chart. |
 | 01:49–01:54 | Export menu and Logic Pro tracks | DAW export: Harmony, Bass and Drums<br>open in Logic Pro as editable MIDI. |
 | 01:54–01:58 | Continue creating in the DAW | Unleash your creativity in your DAW. |
 | 01:58–02:02.5 | Result card (new insert) | Why Muse Spark: reading chords from notes,<br>it matched 89.5%; my local analyzer 77.8%. |
-| 02:02.5–02:06.7 | Closing cover | Less setup. More time to make your music.<br>artist-daw.pearlleestudio.co |
+| 02:02.5–02:06.7 | Closing cover | Less setup. More time to make your music. |
 
 ## Editing notes
 
@@ -67,14 +68,10 @@ shift the later cues by the same amount.
   the 13 s search scene are split into two cues each to stay within that limit.
 - Use the cues as scene-level explanations. The visible controls already show
   selection, Play and Apply, so they do not each need a separate instruction.
-- **Import scene.** During the recording the Meta read failed, so the footage shows the
-  app's notice **Meta reading was unavailable. The local reader recovered this score.**
-  The notice stays in the product (a failed Meta call is reported, never hidden behind a
-  fallback that looks like success), but it does not belong in the demo. Either cover or
-  cut those frames in the edit and keep the caption as written (the local reader does
-  open the score first), or re-record the 10 s Import scene with Use Meta model on and
-  Meta working, cut the wait, and change the second caption line to
-  `Muse Spark checks the reading bar by bar.`
+- **Import scene.** Cue 4 requires footage of a successful background check and
+  its completion box. If the take shows local recovery or a failed Meta call,
+  use another take or describe that outcome accurately; do not cover a failure
+  notice while the caption claims that Meta completed the check.
 - **Play panel scene.** The panel, its part switches, the four faders and the timing
   fixes are event work (HACKATHON.md rows 6, 8, 13 and 24–26). The 31 sounds, the
   genre comping rhythms and the drum patterns it plays existed before; the opening
@@ -98,3 +95,5 @@ shift the later cues by the same amount.
   than presented as a newly demonstrated action in this footage.
 - The closing states the preparation-time benefit without an unmeasured numeric
   speedup or a claim of universal musical superiority.
+
+App, code and model links belong in the video description; the closing card stays text-only.
