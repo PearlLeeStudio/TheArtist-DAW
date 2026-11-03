@@ -11,7 +11,7 @@ from app.models.export import MAX_EXPORT_BYTES, MAX_EXPORT_MEASURES, MIN_MIDI_BY
 from app.models.plan import MAX_PLAN_SECTION_BARS, MIN_PLAN_SECTION_BARS, TARGET_BARS
 from app.models.score_import import MAX_SCORE_BYTES, MAX_SCORE_MEASURES
 from app.services.env_flags import meta_enabled, meta_budget_unlimited
-from app.services.llm import LLMConfig, meta_availability
+from app.services.llm import LLMConfig, credit_stop_set, meta_availability
 from app.services.planner import MAX_META_CALLS, MAX_RUN_USD, RUN_BUDGET_S
 from app.services import theory_rag
 
@@ -67,8 +67,8 @@ def contract_result(data: BaseModel | dict) -> ContractEnvelope:
 
 def _meta_status() -> dict[str, Any]:
     """Whether Meta-backed features can run here: the flag, a key's presence, whether a request would be
-    taken now (available, with the reason when not), the provider and model, and the same for the
-    judge role that Second ear runs on.
+    taken now (available, with the reason when not), whether a credit stop line is set, the provider
+    and model, and the same for the judge role that Second ear runs on.
 
     Never the key, where it came from, an error or a spend amount: discovery must answer even on a
     broken configuration, which then shows as configured false with no provider.
@@ -95,7 +95,7 @@ def _meta_status() -> dict[str, Any]:
     reader = (unavailable is None and reader_usd is not None and provider == "meta" and model == "muse-spark-1.3"
               and full_file_score_import_allowed() and meta_availability(need_usd=reader_usd) is None)
     return {"enabled": enabled, "configured": configured, "available": unavailable is None,
-            "unavailableReason": unavailable, "provider": provider, "model": model,
+            "unavailableReason": unavailable, "creditStop": credit_stop_set(), "provider": provider, "model": model,
             "judge": {"available": judge is None, "unavailableReason": judge},
             "fullFileScoreImport": reader}
 
@@ -149,7 +149,8 @@ def capabilities() -> ContractEnvelope:
                         "is left on the THEARTIST_META_CREDIT_USD credit stop line (or under the dollar cap with caps on), the "
                         "ledger cannot be read, or the provider answered that the account has no credit. Under the credit line "
                         "or that answer, calls are refused before any network request with HTTP 503, and Reharmonize picks its "
-                        "three alternatives without Meta (selection local). No amount is reported.",
+                        "three alternatives without Meta (selection local). meta.creditStop says whether such a line is set. "
+                        "No amount is reported.",
                         "Note-based harmony analysis is opt-in and returns reviewable interpretations, not verified original chords or imported melody notes.",
                         "export_daw requires a loopback request, server opt-in, and explicit per-call confirmation.",
                         "plan_song plans only: section chords come from generate_section, and the observe-then-act judgment runs "

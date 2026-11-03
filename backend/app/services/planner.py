@@ -56,7 +56,9 @@ from app.services.env_flags import meta_budget_unlimited
 from app.services.key_anchor import _chord_pcs
 from app.services.chorus_memory import reuse_chorus
 from app.services.llm import (
+    PAUSED_TEXT,
     BudgetExceeded,
+    CreditExhausted,
     LedgerError,
     LLMClient,
     LLMCancelled,
@@ -526,8 +528,11 @@ class _Run:
         # spend never passes the cap, while unspent reservations no longer crowd out later calls
         worst_case = prepared.reserve_usd * (1 if client.config.provider == "meta" else 2)
         if not meta_budget_unlimited() and self.spend_usd + worst_case > MAX_RUN_USD + 1e-9:
-            raise PlanFailure("budget", f"reserving ${worst_case:.4f} for {step} could take the run past its "
-                                        f"${MAX_RUN_USD:.2f} cap (${self.spend_usd:.4f} spent so far)")
+            # The editor shows this text, so the figures go to the server log only
+            log.info("plan run cap: reserving $%.4f for %s could pass $%.2f ($%.4f spent so far)",
+                     worst_case, step, MAX_RUN_USD, self.spend_usd)
+            raise PlanFailure("budget", f"the run stopped before its {step} call, which could take it past the "
+                                        "run's Meta cost limit")
         started = time.perf_counter()
         try:
             result = client.chat_json(messages, schema, label=f"plan.{step}", cancelled=self.cancelled, **options)
@@ -540,7 +545,10 @@ class _Run:
                 self.meta_ms += latency
                 self.reserved_usd += prepared.reserve_usd * max(1, exc.attempts)
                 self._record(step, attempt, client, exc.request_id, cost, latency, sent_effort, ok=False)
-            raise PlanFailure(_kind(exc), _message(exc), exc.request_id) from None
+            message = _message(exc)
+            if isinstance(exc, CreditExhausted) and message == PAUSED_TEXT and self.calls:
+                message = "Meta is paused on this server; nothing more was sent to Meta"  # earlier calls were
+            raise PlanFailure(_kind(exc), message, exc.request_id) from None
         latency = round((time.perf_counter() - started) * 1000)
         self.meta_ms += latency
         self.reserved_usd += prepared.reserve_usd * result.attempts
@@ -584,15 +592,17 @@ def _kind(exc: LLMError) -> str:
 
 
 def _message(exc: LLMError) -> str:
-    """The failure's text for the trace: never a ledger path, and the request id kept apart. The ledger's
-    own cap names no amount, since the editor shows this text (the figures are in the server log)."""
+    """The failure's text for the trace: never a ledger path, and the request id kept apart. No cap, spend or
+    the provider's own words either, since the editor shows this text (they are in the server log)."""
     if isinstance(exc, SpendCapReached):
         return "Meta's spending cap on this server is reached; nothing more was sent to Meta"
     if isinstance(exc, BudgetExceeded):
-        return (f"Meta budget: spent ${exc.spent_usd:.4f} + outstanding ${exc.outstanding_usd:.4f} + this "
-                f"request ${exc.request_usd:.4f} would pass the cap ${exc.cap_usd:.2f}")
+        return "this request would pass its Meta cost limit; it was not sent to Meta"
     if isinstance(exc, LedgerError):
         return "the spend ledger cannot be read or written; check THEARTIST_META_LEDGER"
+    if isinstance(exc, LLMResponseError) and exc.kind == "http" and exc.status_code:
+        # A provider's error message can name a balance; the request id still identifies the call
+        return f"Meta could not complete the request (HTTP {exc.status_code})"
     return str(exc.args[0]) if exc.args else type(exc).__name__
 
 

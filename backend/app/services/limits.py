@@ -44,8 +44,8 @@ DEFAULT_DAILY_LIMIT_USD = 10.0
 DEFAULT_JUDGE_LIMIT_USD = 5.0
 MAX_SESSION_CHARS = 128
 _TOLERANCE_USD = 1e-9  # as the ledger's cap check: a request that exactly fills an allowance still fits
-_LEDGER_UNREADABLE = ("The Meta spend ledger cannot be read; check THEARTIST_META_LEDGER and "
-                      "THEARTIST_META_BUDGET_USD.")
+LEDGER_UNREADABLE = ("The Meta spend ledger cannot be read; check THEARTIST_META_LEDGER, "
+                     "THEARTIST_META_BUDGET_USD and THEARTIST_META_CREDIT_USD.")
 
 
 def public_host(env: Mapping[str, str] | None = None) -> bool:
@@ -113,7 +113,8 @@ def _usd(env: Mapping[str, str], name: str, default: float) -> float:
     except ValueError:
         value = math.nan
     if not (math.isfinite(value) and value >= 0):
-        raise ValueError(f"{name} must be a non-negative number, got {raw!r}")
+        # Named without its value: the refusal reaches the browser, and the value is a dollar amount
+        raise ValueError(f"{name} must be a non-negative number")
     return value
 
 
@@ -197,7 +198,7 @@ class SpendLimiter:
         try:
             day_usd = _DayLedger.from_env(env).day_usd(day)
         except LLMError:
-            raise HTTPException(status_code=503, detail=_LEDGER_UNREADABLE) from None
+            raise HTTPException(status_code=503, detail=LEDGER_UNREADABLE) from None
         # The refusal text reaches the browser, so the figures go to the server log only
         if day_usd + estimate_usd > limits.daily_usd + _TOLERANCE_USD:
             log.warning("Meta daily cap: $%.2f spent or reserved today + this request's worst case $%.2f would pass "

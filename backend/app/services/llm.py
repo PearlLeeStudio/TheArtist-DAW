@@ -43,8 +43,9 @@ Environment (names in deploy/env.example):
                         the same settings for the judge role (get_client("judge")); an
                         empty LLM_JUDGE_PROVIDER makes the judge the default client
   THEARTIST_JUDGE_BUDGET_USD  the judge's own cap in USD (default 10), so partner credits
-                        never mix with the Meta cap; shared with the default client only
-                        when LLM_JUDGE_PROVIDER is empty
+                        never mix with the Meta cap. The judge uses the default client's
+                        ledger and cap instead when LLM_JUDGE_PROVIDER is empty, or when it
+                        is meta while THEARTIST_META_CREDIT_USD is set (one account, one line)
   THEARTIST_JUDGE_LEDGER      judge ledger path (default backend/.ledger/judge_ledger.json)
 """
 
@@ -242,7 +243,9 @@ def _env_float(env: Mapping[str, str], name: str) -> float | None:
     try:
         return float(raw)
     except ValueError:
-        raise LLMConfigError(f"{name} must be a number, got {raw!r}") from None
+        # The variable is named but not its value: these texts can reach the browser, and a value
+        # here can be a dollar amount (a cap or the credit line)
+        raise LLMConfigError(f"{name} must be a number") from None
 
 
 def _host(url: str) -> str:
@@ -639,10 +642,10 @@ class Ledger:
         self.cap_usd = DEFAULT_BUDGET_USD if cap_usd is None else float(cap_usd)
         self.unlimited = unlimited
         if not (math.isfinite(self.cap_usd) and self.cap_usd >= 0):
-            raise LLMConfigError(f"the budget cap must be a non-negative number, got {cap_usd!r}")
+            raise LLMConfigError("the budget cap must be a non-negative number")
         self.credit_usd = None if credit_usd is None else float(credit_usd)
         if self.credit_usd is not None and not (math.isfinite(self.credit_usd) and self.credit_usd >= 0):
-            raise LLMConfigError(f"{CREDIT_VAR} must be a non-negative number of USD, got {credit_usd!r}")
+            raise LLMConfigError(f"{CREDIT_VAR} must be a non-negative number of USD")
         self._lock_path = self.path.with_name(self.path.name + ".lock")
         self._lock = threading.Lock()
 
@@ -986,9 +989,13 @@ def _has_media(messages: Sequence[Mapping[str, Any]]) -> bool:
 
 
 def _estimated_text_tokens(messages: list[dict[str, Any]], schema: dict[str, Any]) -> int:
-    """Input tokens of a text-only request, estimated from the characters of its messages and schema."""
-    chars = len(json.dumps(messages, ensure_ascii=False)) + len(json.dumps(schema, ensure_ascii=False))
-    return math.ceil(chars / CHARS_PER_TOKEN)
+    """Input tokens of a text-only request: ASCII at CHARS_PER_TOKEN characters a token, and every other
+    character at its UTF-8 bytes. A byte-level tokenizer never needs more than a token per byte, so Korean,
+    CJK or emoji text in a request cannot bill more than its reservation (chat_tools bounds all bytes)."""
+    text = json.dumps(messages, ensure_ascii=False) + json.dumps(schema, ensure_ascii=False)
+    ascii_chars = sum(1 for ch in text if ch < "\x80")
+    other_bytes = len(text.encode("utf-8", "surrogatepass")) - ascii_chars
+    return math.ceil(ascii_chars / CHARS_PER_TOKEN) + other_bytes
 
 
 def _token_count(mapping: Any, key: str) -> int | None:
@@ -1488,3 +1495,9 @@ def meta_availability(role: str = "default", need_usd: float = CREDIT_FLOOR_USD)
     if left is not None and left < max(CREDIT_FLOOR_USD, need_usd) - _CAP_TOLERANCE_USD:
         return "paused"
     return None
+
+
+def credit_stop_set(env: Mapping[str, str] | None = None) -> bool:
+    """Whether a credit stop line (THEARTIST_META_CREDIT_USD) is set for the default account. A value
+    that is not a number counts too, since it refuses every request. Never the amount."""
+    return bool(_env_str(os.environ if env is None else env, CREDIT_VAR))

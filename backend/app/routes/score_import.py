@@ -61,11 +61,11 @@ def _run_import(req: ScoreImportRequest, caller: Caller | None,
         raise HTTPException(status_code=429, detail="Score import would exceed the Meta API cost limit. "
                             "Check the request limit and remaining API budget.") from None
     except CreditExhausted:  # before its base class LLMDisabled
-        raise HTTPException(status_code=503, detail="Meta is paused on this server; "
-                            "the local reader is still available.") from None
+        raise HTTPException(status_code=503, detail="Meta is paused on this server; the local reader still "
+                            "opens vector PDFs, while images need Meta.") from None
     except LLMDisabled:  # before its base class LLMConfigError, which keeps the configuration message
-        raise HTTPException(status_code=503, detail="Meta features are disabled on this server; "
-                            "the local reader is still available.") from None
+        raise HTTPException(status_code=503, detail="Meta features are disabled on this server; the local "
+                            "reader still opens vector PDFs, while images need Meta.") from None
     except (LLMConfigError, LedgerError):
         raise HTTPException(status_code=503, detail="Meta assistance is not configured: check MODEL_API_KEY, "
                             "Meta Standard settings and the cost ledger, or select local analysis.") from None

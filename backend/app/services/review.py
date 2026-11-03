@@ -12,6 +12,7 @@ kinds; nothing falls back to the R1 order.
 from __future__ import annotations
 
 import json
+import logging
 import math
 import re
 import time
@@ -31,6 +32,8 @@ from app.services.llm import LLMClient, LLMError, LLMResult, get_client
 from app.services.env_flags import meta_budget_unlimited
 from app.services.planner import DIATONIC_GENRES, _in_key, _key_collection, _kind, _message, _symbol
 from app.services.song_form import rule_slots
+
+log = logging.getLogger(__name__)
 
 REVIEW_LABEL = "review"
 REVIEW_SCHEMA_NAME = "candidate_review"
@@ -229,8 +232,10 @@ def _call(client: LLMClient, messages: list[dict[str, str]], schema: dict[str, A
     # The limiter admitted REVIEW_MAX_USD; an open-weight provider may reserve twice (its one JSON-guard retry)
     worst_case = prepared.reserve_usd * (1 if cfg.provider == "meta" else 2)
     if not meta_budget_unlimited() and worst_case > REVIEW_MAX_USD + 1e-9:
-        raise ReviewFailure("budget", f"the review's worst case ${worst_case:.4f} would pass its "
-                                      f"${REVIEW_MAX_USD:.2f} cap", provider=cfg.provider, model=cfg.model)
+        # The editor shows this text, so the figures go to the server log only
+        log.info("review cap: worst case $%.4f would pass $%.2f", worst_case, REVIEW_MAX_USD)
+        raise ReviewFailure("budget", "this review would pass its Meta cost limit; it was not sent to Meta",
+                            provider=cfg.provider, model=cfg.model)
     started = time.perf_counter()
     try:
         result = client.chat_json(messages, schema, label=REVIEW_LABEL, **options)

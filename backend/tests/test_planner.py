@@ -452,17 +452,30 @@ class PlannerRunTest(unittest.TestCase):
         self.assertEqual([(j.decision, j.targets) for j in trace.judge], [("accept", [])])
         self.assertEqual(len(trace.calls), 2)
 
+    def test_a_credit_line_reached_mid_run_says_nothing_more_was_sent(self):
+        # The plan call is admitted (more than the $0.05 floor is left); its spend leaves less than the floor,
+        # so the judge call is refused before sending, after one paid call
+        transport = Replies(completion(VALID_PLAN), completion(ACCEPT))
+        client = self.client(transport)
+        client.ledger = Ledger(self.ledger.path, 25.0, unlimited=True, credit_usd=0.052)
+        trace = planner.complete_form(request())
+        self.assertEqual((trace.status, trace.error.kind, len(transport.calls)), ("error", "disabled", 1))
+        self.assertEqual(trace.error.message, "Meta is paused on this server; nothing more was sent to Meta")
+        self.assertEqual([c.step for c in trace.calls], ["plan_song"])
+
     def test_budget_limits_stop_the_run_before_any_call(self):
         transport = Replies(completion(VALID_PLAN))
         self.client(transport)
         with mock.patch.object(planner, "MAX_RUN_USD", 0.001):
             trace = planner.complete_form(request())
         self.assertEqual((trace.status, trace.error.kind), ("error", "budget"))
-        self.assertIn("could take the run past its", trace.error.message)
+        self.assertIn("could take it past the run's Meta cost limit", trace.error.message)
+        self.assertNotIn("$", trace.error.message)  # the editor shows it: the figures are in the server log
         self.assertEqual((trace.calls, trace.spendUsd, transport.calls), ([], 0.0, []))
         with mock.patch.object(planner, "MAX_REQUEST_USD", 0.0001):
             trace = planner.complete_form(request())
         self.assertEqual((trace.status, trace.error.kind, trace.calls), ("error", "budget", []))
+        self.assertNotIn("$", trace.error.message)
         self.client(transport, cap=0.001)  # the ledger's own cap
         trace = planner.complete_form(request())
         self.assertEqual((trace.status, trace.error.kind, trace.calls, transport.calls), ("error", "budget", [], []))

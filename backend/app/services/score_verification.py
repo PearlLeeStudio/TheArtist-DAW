@@ -14,7 +14,7 @@ from fastapi import HTTPException
 from app.models.score_import import ScoreImportRequest, ScoreImportResponse, ScoreVerification
 from app.services.score_analysis import LocalScoreUnsupported, analyze_local_score
 from app.services.score_context import ScoreContextError, score_context
-from app.services.llm import LLMError
+from app.services.llm import CreditExhausted, LLMDisabled, LLMError
 from app.services.score_import import (
     MAX_META_SCORE_MEASURES, SCORE_MAX_REQUEST_USD, ScoreInputError, _import_meta_score,
 )
@@ -147,6 +147,21 @@ def import_verified_score(req: ScoreImportRequest, attachment: dict, *,
         progress("Meta is reading the original score while the local reader checks its notation…")
         checked = _import_meta_score(req, attachment)
         local = local_future.result()
+    except LLMDisabled as off:
+        # Meta is paused or switched off: nothing was read by Meta, which is not a problem with the file.
+        # Without a local reading the route names the pause (503); with one, the score opens and says why
+        state = "paused" if isinstance(off, CreditExhausted) else "switched off"
+        logging.getLogger(__name__).warning("Meta score reading skipped: Meta is %s", state)
+        local = local_future.result() if local_future is not None else read_local()
+        if local is None:
+            raise
+        local.verification = ScoreVerification(
+            status="local_fallback", localMeasures=len(local.measures), metaMeasures=0,
+            comparedMeasures=0, disputedMeasures=[],
+            notes=[f"Meta is {state} on this server, so the local reader opened this score without a Meta "
+                   "comparison; unresolved bars remain editable."])
+        progress("Local analysis is ready. You can import the reviewed score.")
+        return local
     except (LLMError, ScoreInputError, HTTPException) as failure:
         logging.getLogger(__name__).warning("Meta score reading failed; using local reader: kind=%s request_id=%s",
                                             getattr(failure, "kind", type(failure).__name__),

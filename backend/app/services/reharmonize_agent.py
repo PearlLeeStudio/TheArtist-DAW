@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 import copy
+import logging
 import time
 from dataclasses import dataclass, field
 
@@ -17,6 +18,8 @@ from app.models.reharmonize import ReharmCandidate, ReharmRequest, ReharmRespons
 from app.services import llm
 from app.services.env_flags import meta_budget_unlimited
 from app.services.reharmonize import ContextScorer, chord, context_window, model_approximations, search, validate_context
+
+log = logging.getLogger(__name__)
 
 MAX_USD = .15
 MAX_TURNS = 4
@@ -76,17 +79,19 @@ class _MetaRecord:
     tool_calls: list[str] = field(default_factory=list)
 
 
-def propose(req: ReharmRequest, *, client=None, scorer=None, meta_allowed: bool = True) -> ReharmResponse:
+def propose(req: ReharmRequest, *, client=None, scorer=None, meta_allowed: bool = True,
+            unavailable_reason: str | None = None) -> ReharmResponse:
     """Three alternatives: chosen by Meta's bounded tool search, or by code when Meta cannot take the request.
 
-    meta_allowed=False (the caller's Meta allowance is used up) skips Meta. An explicit client
-    (tests, evaluation scripts) is used as given; otherwise the server's Meta state decides first,
-    so a paused or disabled Meta is never called.
+    meta_allowed=False (the caller's Meta allowance is used up) skips Meta, and so does an
+    unavailable_reason the caller already knows (the limiter's ledger cannot be read). An explicit
+    client (tests, evaluation scripts) is used as given; otherwise the server's Meta state decides
+    first, so a paused or disabled Meta is never called.
     """
     started = time.monotonic()
     validate_context(req)
     approximations = model_approximations(req)
-    unavailable = None if meta_allowed else "limit"
+    unavailable = unavailable_reason or (None if meta_allowed else "limit")
     if unavailable is None and client is None:
         unavailable = llm.meta_availability()
         if unavailable is None:
@@ -103,9 +108,15 @@ def propose(req: ReharmRequest, *, client=None, scorer=None, meta_allowed: bool 
     if unavailable is None:
         try:
             return _meta_choice(req, client, scorer, approximations, started, record)
-        except (llm.CreditExhausted, llm.SpendCapReached):
-            # Refused before sending (credit line or the ledger's dollar cap), or Meta answered that the
-            # credit is used up. The search's own $0.15 cap and every other failure stay errors
+        except (llm.CreditExhausted, llm.SpendCapReached, llm.LedgerError) as exc:
+            # Refused before sending (credit line or the ledger's dollar cap), Meta answered that the credit
+            # is used up, or the spend ledger cannot be written (so no Meta call may be made). The search's
+            # own $0.15 cap and every other failure stay errors. A refused request still names its id
+            if isinstance(exc, llm.LedgerError):
+                log.warning("Reharmonize continues without Meta: %s", exc)
+            if exc.request_id and exc.request_id not in record.request_ids:
+                record.request_ids.append(exc.request_id)
+            record.cost_usd += getattr(exc, "cost_usd", 0.0) or 0.0
             unavailable = "paused"
     return _local_choice(req, scorer, approximations, unavailable, record)
 
