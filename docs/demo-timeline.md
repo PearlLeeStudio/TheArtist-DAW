@@ -1,7 +1,7 @@
 # Hackathon demo subtitles
 
 Subtitle plan for the [hackathon video](https://youtu.be/Xw3BwB64Jt0), re-cut from the
-existing 1:51 recording. The [English SRT](demo-subtitles.en.srt) follows this thirteen-cue
+existing 1:51 recording. The [English SRT](demo-subtitles.en.srt) follows this fourteen-cue
 plan. Align cue edges to the cuts in the editing project. The two listening passages
 intentionally have no captions, leaving the viewer time to follow the harmony and the
 controls.
@@ -51,7 +51,8 @@ amount.
 | 01:07–01:14 | Run details (new insert) | Live Meta calls: muse-spark-1.3,<br>request ids, cost and time. |
 | 01:14–01:21 | Combine and Apply | Compare and combine the alternatives.<br>Apply the changes you want to keep. |
 | 01:21–01:45 | Revised arrangement playback | No captions; let the revised arrangement play. |
-| 01:45–01:54 | Export menu and Logic Pro tracks | DAW export: Harmony, Bass and Drums<br>open in Logic Pro as editable MIDI. |
+| 01:45–01:49 | Exported score PDF | Let's check the chord chart. |
+| 01:49–01:54 | Export menu and Logic Pro tracks | DAW export: Harmony, Bass and Drums<br>open in Logic Pro as editable MIDI. |
 | 01:54–01:58.5 | Result card (new insert) | Why Muse Spark: reading chords from notes,<br>it matched 89.5%; my local analyzer 77.8%. |
 | 01:58.5–02:02.7 | Closing cover | Less setup. More time to make your music.<br>artist-daw.pearlleestudio.co |
 
