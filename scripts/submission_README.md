@@ -87,7 +87,7 @@ with 11 tools ([MCP](docs/mcp.md)); a Safari–Logic Pro bridge
 ([MIDI input and Mac bridge](docs/midi-input.md)) and a Logic Scripter MIDI FX
 script ([plugin](plugin/logic-scripter/README.md)); a GitHub Actions workflow that
 rebuilds the app from this package in Docker and runs the PDF → F1 → MIDI workflow
-over HTTP ([run 41653628490](https://github.com/PearlLeeStudio/TheArtist-Meta-Hackathon/actions/runs/41653628490)).
+over HTTP ([run 41678059725](https://github.com/PearlLeeStudio/TheArtist-Meta-Hackathon/actions/runs/41678059725)).
 The automated suites, 687 backend and 320 frontend tests, verify contracts and
 editing behavior, not musical quality. [Architecture](docs/architecture.md) ·
 [model catalog](docs/models.md)
@@ -114,7 +114,7 @@ discipline covers this package: the repository's GitHub Actions workflow clones
 it fresh, reconstructs the app with `bootstrap.py`, builds the documented image,
 starts it with the full catalog and runs the PDF → F1 → MIDI workflow over HTTP
 ([workflow](.github/workflows/verify-submission.yml),
-[run 41653628490](https://github.com/PearlLeeStudio/TheArtist-Meta-Hackathon/actions/runs/41653628490)).
+[run 41678059725](https://github.com/PearlLeeStudio/TheArtist-Meta-Hackathon/actions/runs/41678059725)).
 
 **Open to other clients over REST and MCP.** Everything the editor does is also a
 REST route (22 endpoints: section and song generation, Complete the form,
