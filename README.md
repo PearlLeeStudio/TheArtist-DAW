@@ -236,7 +236,7 @@ turned into a result that looks like success.
 | Agentic plan → validate → revise loop with strict JSON | Complete the form: code validates each plan and sends errors back for up to 2 revisions, then Meta composes (**Muse Spark only**) or judges (hybrid) | empty score → 32 bars / 6 sections on the hosted demo: 23.7 s, $0.020 |
 | Reasoning held to computed facts | Second ear: each reason cites an analyzer fact and is marked *analyzer confirmed* or *model statement* | 115/115 reasons confirmed in 60 reviews; $0.0041, 2.8 s per review |
 | Reading harmony from notes | The note-interpretation task behind Import assist (API `engine: "auto"`) | exact chords: Muse Spark 89.5%, local analyzer 77.8% (640 slots of real progressions rendered as notes) |
-| Meta open weights | The judge role can run on Muse Spark Open through Baseten (`LLM_JUDGE_*`); the notes → chords task was also run on it | Second ear: same pick as Muse Spark in 52/60 reviews at $0.0028 per review. Notes → chords: 89.4% exact where answered (73.8% of all 640 slots; 4 of 40 calls failed) |
+| Meta open weights | The judge role can run on Muse Spark Open through Baseten (`LLM_JUDGE_*`); the notes → chords task was also run on it | Second ear: same pick as Muse Spark in 52/60 reviews at $0.0028 per review. Notes → chords: 89.4% exact where answered (73.8% of all 640 slots; 7 of 40 calls failed) |
 
 Reasoning effort is set per role, for example low for file reading and tool turns and medium
 for the form plan. Measurements and their limits are under [Evidence](#evidence).
@@ -422,7 +422,7 @@ fallback also adds diversity beyond the tested local baseline.
 
 **Meta open weights on the same 640 slots.** Muse Spark Open on Baseten (effort high)
 answered 82.5% of the slots and was exact on **89.4%** of those it answered, level with
-Muse Spark; 4 of its 40 calls failed (3 harmony validation, 1 length), so its exact
+Muse Spark; 7 of its 40 calls failed (3 harmony validation, 4 length), so its exact
 agreement over all slots is 73.8%, below the local analyzer's 77.8%. Median call
 8.0 s, $0.63 in total. So the open weights were measured, not skipped: they can carry
 the judge role (above) but read notes less reliably, and the product ships on Muse

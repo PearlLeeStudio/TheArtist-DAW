@@ -70,7 +70,7 @@ Notes → chords · 640 reference slots
 
 **11.7 percentage points higher exact agreement.**
 
-This benchmark predates the current Import workflow. [Evidence](https://github.com/PearlLeeStudio/TheArtist-DAW/blob/6ed1b50914c78c205ee7aabdde924c648caf292d/README.md#evidence).
+This benchmark predates the current Import workflow. [Evidence](evidence.md).
 
 ## Meta open weights on Baseten
 

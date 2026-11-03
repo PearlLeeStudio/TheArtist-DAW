@@ -128,7 +128,7 @@ proposal exists; “exact where answered” excludes unanswered slots.
 | Local analyzer | 77.8% | 81.6% | **95.4%** | 0 | $0 |
 | Meta only | **89.5%** | **100.0%** | 89.5% | 40 | $0.3380 |
 | Hybrid, unresolved-only assist | 83.9% | 95.3% | 88.0% | 6 | $0.0501 |
-| Meta open weights (Muse Spark Open, Baseten, effort high) | 73.8% | 82.5% | 89.4% | 40 (4 failed) | $0.6329 |
+| Meta open weights (Muse Spark Open, Baseten, effort high) | 73.8% | 82.5% | 89.4% | 40 (7 failed) | $0.6329 |
 
 Meta improves overall exact agreement by **11.7 percentage points** over local;
 the hybrid improves it by **6.1 points** with fewer paid calls. Local is more
@@ -137,8 +137,8 @@ to 47.3% Meta, while inversions fall from 100% local to 96.9% Meta. More answers
 do not guarantee a correct interpretation of every bar.
 
 Muse Spark Open, given the same notes through the open-weight endpoint, is as exact as
-Muse Spark where it answers (89.4% against 89.5%) but lost 4 of 40 calls (3 replies
-failed harmony validation, 1 hit the length limit), which leaves 17.5% of the slots
+Muse Spark where it answers (89.4% against 89.5%) but lost 7 of 40 calls (3 replies
+failed harmony validation, 4 hit the length limit), which leaves 17.5% of the slots
 unanswered and its overall exact agreement below the local analyzer. Its median call
 is 8.0 s against Meta's 5.1 s. Rootless voicings are its weakest variant (23.2% exact
 overall), as they are for every engine.
