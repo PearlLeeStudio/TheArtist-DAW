@@ -88,7 +88,7 @@ with 11 tools ([MCP](docs/mcp.md)); a Safari–Logic Pro bridge
 script ([plugin](plugin/logic-scripter/README.md)); a GitHub Actions workflow that
 rebuilds the app from this package in Docker and runs the PDF → F1 → MIDI workflow
 over HTTP ([run 41653628490](https://github.com/PearlLeeStudio/TheArtist-Meta-Hackathon/actions/runs/41653628490)).
-The automated suites, 679 backend and 320 frontend tests, verify contracts and
+The automated suites, 687 backend and 320 frontend tests, verify contracts and
 editing behavior, not musical quality. [Architecture](docs/architecture.md) ·
 [model catalog](docs/models.md)
 
