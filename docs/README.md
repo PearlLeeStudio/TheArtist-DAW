@@ -7,7 +7,7 @@ accompaniment and editable DAW delivery. Start with the
 | Task | Guide |
 |---|---|
 | Watch the hackathon demo | [TheArtist — From Chord Sketch to Your Own Music](https://youtu.be/Xw3BwB64Jt0) |
-| Prepare the demo's cards and English captions | [Demo copy](demo-subtitles.md) |
+| Prepare the demo's cards and English captions | [Demo copy and timeline](demo-subtitles.md), [English SRT](demo-subtitles.en.srt) |
 | Arrange from source material through DAW export | [Arrangement workflow](arrangement-workflow.md) |
 | Look up a control, its limits and provenance rules | [Editor reference](editor-reference.md), [screenshots](walkthrough.md) |
 | Read the recorded evaluation numbers and their conditions | [Evaluation evidence](evidence.md) |
