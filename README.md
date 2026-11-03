@@ -7,6 +7,7 @@
 <p align="center">
   <a href="https://artist-daw.pearlleestudio.co"><img alt="Live demo" src="https://img.shields.io/badge/Live%20demo-artist--daw.pearlleestudio.co-1c1917?style=flat-square"></a>
   <a href="#hackathon-work-and-where-meta-is-used"><img alt="Meta model" src="https://img.shields.io/badge/Meta%20model-muse--spark--1.3-0467DF?style=flat-square"></a>
+  <a href="docs/open-weights.md"><img alt="Meta open weights" src="https://img.shields.io/badge/Meta%20open%20weights-Muse%20Spark%20Open%20on%20Baseten-0467DF?style=flat-square"></a>
   <a href="https://youtu.be/wC-dkLfot-c"><img alt="Hackathon demo" src="https://img.shields.io/badge/Hackathon%20demo-YouTube-FF0000?style=flat-square&logo=youtube&logoColor=white"></a>
   <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/code-MIT-737373?style=flat-square"></a>
   <a href="https://huggingface.co/PearlLeeStudio"><img alt="Weights" src="https://img.shields.io/badge/weights-CC%20BY--NC%204.0-737373?style=flat-square"></a>
@@ -257,7 +258,8 @@ validates, and stops when it has a result or hits a limit.
 Every run has a timeout, a turn limit and a ledger line with its request id,
 tokens and cost. Cost reservations enforce the configured caps unless the explicit
 unlimited setting above is active. A judge can inspect what the agent did and what
-it cost. Both loops are measured under [Evidence](#evidence).
+it cost. Both loops are measured under [Evidence](#evidence) and described step by
+step, with their limits, in [two bounded agents](docs/agents.md).
 
 **Running the judge on Meta open weights.** The Second ear judge is one role with its
 own provider, ledger and cap. Four lines in the server environment move it to Muse
@@ -282,6 +284,8 @@ on both models: same pick in 52/60, every reason confirmed by the analyzer, $0.0
 and 2.1 s per review on Muse Spark Open. The notes → chords task was run on the same
 open weights too ([Evidence](#evidence)). Reharmonize's tool loop is not: native tool
 calls are enabled for Muse Spark only, so that agent does not run on open weights.
+What runs on open weights, how to verify it on the screen and in the ledger, and
+both measurements: [Meta open weights in TheArtist](docs/open-weights.md).
 
 **One Reharmonize run, recorded.** *Amazing Grace* bars 5–8 (`G | G D7 | G | G`, G major, 3/4)
 with the gospel adapter as the scorer and *Change up to* 4, on the hosted demo

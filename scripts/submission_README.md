@@ -44,7 +44,7 @@ each of the 127 additions to its commits, tests and limits.
 | Judge | **Muse Spark Open** (`meta-models/muse-spark-open-1026`, Meta open weights) | **Baseten** | Second ear's pick among A/B/C and the hybrid form review; the hosted app runs the judge this way through the judging window |
 | Scorer | my Music Transformer (Phase 0, F1–F5, F1 v2, 11 genre LoRAs) | the app server, CPU | generates chords and scores every candidate against the surrounding bars |
 
-**Two bounded agents.**
+**Two bounded agents** ([page](docs/agents.md)).
 
 - *Reharmonize.* Muse Spark chooses which substitution families to search, calls
   `search_substitutions` as often as it needs (at most 4 turns, 6 tool calls, 100 s),
@@ -69,7 +69,8 @@ failure, never as a result that looks like success. Moving the judge to open wei
 is four environment lines; the result line then reads
 `baseten meta-models/muse-spark-open-1026 · <request id> · $<cost>`, and the first
 hosted review did (request `54ca701a…`, $0.0045, 5.4 s, every reason confirmed by
-the analyzer).
+the analyzer). What runs on open weights and how to verify it:
+[open weights](docs/open-weights.md).
 
 **Hosted, instrumented, reproducible.** Docker → Caddy HTTPS → API domain →
 Cloudflare Pages, with automatic deployment on push, health checks and rollback

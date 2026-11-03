@@ -19,6 +19,8 @@ accompaniment and editable DAW delivery. Start with the
 | Call the song service from Voyager or another client | [Voyager API quick start](voyager-api.md) |
 | Review imported harmony, sections and source-data handling | [Score analysis](score-analysis.md) |
 | Change selected harmony while preserving context | [Reharmonize: up to four changed chords](reharmonization.md) |
+| See what the two agents decide themselves, and their limits | [Two bounded agents](agents.md) |
+| Verify what runs on Meta open weights | [Meta open weights in TheArtist](open-weights.md) |
 | Enter played chords or open a hosted arrangement in Logic | [MIDI input and Mac bridge](midi-input.md) |
 | Understand related theory excerpts | [Theory retrieval](theory-retrieval.md) |
 | Connect another client | [REST API](https://github.com/PearlLeeStudio/TheArtist-DAW/blob/6ed1b50914c78c205ee7aabdde924c648caf292d/API_SPEC.md), [MCP contracts](mcp.md) |
