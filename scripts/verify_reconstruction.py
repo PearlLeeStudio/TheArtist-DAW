@@ -12,13 +12,18 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, required=True)
     parser.add_argument("--out", type=Path, required=True)
+    parser.add_argument("--base-url", help="Exercise an already running server instead of in-process HTTP")
+    parser.add_argument("--midi-out", type=Path, help="Save the actual exported MIDI for DAW playback verification")
     args = parser.parse_args()
     if not args.root.is_absolute() or not args.out.is_absolute() or args.out.exists():
         parser.error("Use an absolute app root and a new absolute report path")
+    if args.midi_out and (not args.midi_out.is_absolute() or args.midi_out.exists()):
+        parser.error("Use a new absolute MIDI output path")
     sys.path[:0] = [str(args.root / "backend"), str(args.root)]
     os.environ.update(THEARTIST_PUBLIC_HOST="1", THEARTIST_SERVE_FRONTEND="1", THEARTIST_META_ENABLED="0",
                       THEARTIST_DISABLE_RAG="0", THEARTIST_RAG_OMT_ENABLED="1", THEARTIST_RAG_BERKLEE_ENABLED="0")
     import app.main
+    import httpx
     import mido
     from fastapi.testclient import TestClient
     from app.models.plan import PlanRequest
@@ -26,7 +31,8 @@ def main():
 
     if not Path(app.main.__file__).is_relative_to(args.root):
         raise SystemExit("Wrong app import; run with the reconstructed backend environment")
-    with TestClient(app.main.app) as client:
+    client = httpx.Client(base_url=args.base_url, timeout=180) if args.base_url else TestClient(app.main.app)
+    with client:
         assert client.get("/").status_code == 200
         assert client.get("/api/health").json() == {"status": "ok"}
         sources = client.get("/api/capabilities").json()["data"]["rag"]["sources"]
@@ -56,10 +62,13 @@ def main():
         decoded = mido.MidiFile(file=io.BytesIO(midi.content))
         ticks = 64 * 4 * decoded.ticks_per_beat
         assert len(decoded.tracks) == 4 and all(sum(e.time for e in t) == ticks for t in decoded.tracks)
+        if args.midi_out:
+            args.midi_out.write_bytes(midi.content)
         report = dict(staticUI=True, health=True, rag=sources, importedBars=len(measures), targetBars=64,
                       sourceCounts={source: sum(s["source"] == source for s in trace["sections"]) for source in ("ai", "reuse")},
                       model="ft_f1", metaCalls=0, midiBytes=len(midi.content), midiTracks=len(decoded.tracks),
-                      midiBars=64, scope="Fresh reconstructed app, in-process HTTP; cached downloads; not browser/DAW/audio or external hosting")
+                      midiBars=64, transport="live HTTP" if args.base_url else "in-process HTTP",
+                      scope="Reconstructed app with real F1; browser/DAW/audio playback requires a separate check")
         args.out.write_text(json.dumps(report, indent=2) + "\n")
         print(json.dumps(report))
 

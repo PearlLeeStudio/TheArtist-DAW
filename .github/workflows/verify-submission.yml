@@ -1,0 +1,60 @@
+name: Verify submission in Docker
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  docker:
+    if: github.repository == 'PearlLeeStudio/TheArtist-Meta-Hackathon'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Acquire this exact submission
+        run: |
+          git clone https://github.com/PearlLeeStudio/TheArtist-Meta-Hackathon.git /home/runner/theartist-submission
+          git -C /home/runner/theartist-submission checkout --detach "$GITHUB_SHA"
+          mkdir /home/runner/theartist-verification
+      - name: Reconstruct the pinned app
+        run: python3 /home/runner/theartist-submission/bootstrap.py --target /home/runner/theartist-app
+      - name: Build the documented Docker image
+        run: docker build --progress=plain -f /home/runner/theartist-app/deploy/Dockerfile -t theartist-submission /home/runner/theartist-app
+      - name: Start the real server with its full model catalog
+        run: |
+          docker run -d --name theartist-submission-check --cpus=2 --memory=4g -p 127.0.0.1:7860:7860 --mount type=volume,source=theartist-submission-check-ledger,target=/data theartist-submission
+          python3 - <<'PY'
+          import time, urllib.request
+          deadline = time.monotonic() + 180
+          while time.monotonic() < deadline:
+              try:
+                  with urllib.request.urlopen('http://127.0.0.1:7860/api/health', timeout=4) as response:
+                      if response.status == 200:
+                          break
+              except OSError:
+                  pass
+              time.sleep(2)
+          else:
+              raise SystemExit('Container did not become ready within 180 seconds')
+          PY
+      - name: Exercise live HTTP and export the Logic test MIDI
+        run: |
+          docker exec theartist-submission-check python /app/scripts/verify_reconstruction.py --root /app --base-url http://127.0.0.1:7860 --out /data/reconstruction.json --midi-out /data/logic-verification.mid
+          docker cp theartist-submission-check:/data/reconstruction.json /home/runner/theartist-verification/reconstruction.json
+          docker cp theartist-submission-check:/data/logic-verification.mid /home/runner/theartist-verification/logic-verification.mid
+      - name: Record container status and logs
+        if: always()
+        run: |
+          docker logs theartist-submission-check > /home/runner/theartist-verification/docker.log 2>&1 || true
+          docker inspect --format '{{json .State}}' theartist-submission-check > /home/runner/theartist-verification/container-state.json || true
+      - name: Retain the verification output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-verification
+          path: /home/runner/theartist-verification
+          retention-days: 14
+      - name: Stop the verification container
+        if: always()
+        run: docker rm -f theartist-submission-check || true
