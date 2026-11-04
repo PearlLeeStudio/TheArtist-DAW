@@ -439,25 +439,31 @@ bounded candidates and the author's F1 Music Transformer scores their surroundin
 harmony. Meta reads that feedback and calls `offer_candidates` with three choices.
 The musician retains the final selection and application in the editor.
 
-**Expanded constraint coverage.** A separate frozen schedule adds 640 authored
-inputs across requested modes, major/minor keys, chord complexity and change limits,
-plus 40 existing regression inputs. Open completed its schedule: **4,186/4,240**
-executions passed every check, and all **12,558 offered candidates** match saved
-tool feedback with finite F1 scores. The 54 failures are six repeats of each of
-nine inputs whose unchanged search had insufficient candidates before paid runs;
-they were retained. Ten extra HTTP attempts occurred within existing tool turns.
+**Expanded constraint coverage: the original 8,480-row schedule is complete.**
+Both providers started all 4,240 scheduled executions: 640 authored inputs repeated
+six times, plus 40 existing regression inputs repeated ten times. These cover all
+128 requested-mode × key-mode × chord-complexity × change-limit cells; repeats are
+not new songs. **Open passed 4,186/4,240; Spark 1.3 passed 4,144/4,240.** All 12,558
+Open and 12,432 Spark offered candidates match saved tool feedback with finite F1
+scores. Each passing execution returns three distinct applied versions, preserves
+unselected chords and respects the change limit.
 
-Spark 1.3 was stopped after scope review: **1,673 passed, 42 failed and one was
-cancelled out of 1,716 started**; 2,524 planned runs were not started. The stop was
-post-hoc, not a statistical rule. The report compares all 1,716 case/repeat rows
-started by both providers, including failures: Open passed 1,680, Spark 1.3 1,673.
-This partial subset is not a random sample or evidence of musical superiority.
+Both arms retain 54 failures on nine inputs whose unchanged search had insufficient
+candidates before paid runs. Spark also retains 27 timeouts, 13 tool-call response
+failures, one HTTP 503 and one original operator cancellation. After a post-hoc
+scope stop at 1,716 Spark executions, the participant explicitly requested finishing
+the schedule; only the 2,524 unstarted rows were continued. No failed or cancelled
+run was replaced. The [partial report](experiments/reharmonize_agent_stress/summary.md)
+remains unchanged. Open recorded ten extra HTTP attempts within existing tool turns.
 
-Observed p50/p95 times were 5.259/8.239 s for Open and 15.222/24.568 s for Spark 1.3.
-Combined configured-price budget accounting was **$48.77397090**, including
-$0.09642150 reserved for unknown usage; this is not a confirmed bill or measured
-credit deduction. Product code, UX, prompts and settings were unchanged.
-[Expanded results, failures and limits](experiments/reharmonize_agent_stress/summary.md) ·
+Observed p50/p95 times were 5.259/8.239 s for Open and 15.553/26.903 s for Spark 1.3.
+Nominal accounting was **Baseten $28.04348590 + Meta $53.21155010 = $81.25503600**,
+including $0.91077275 reserved for unknown Meta usage; these are configured-price
+estimates, not confirmed charges or credit deductions. The temporal break, smaller
+continuation batches and provider/cache differences limit timing comparisons.
+Product code, UX, prompts and settings were unchanged. This measures execution
+on authored fixtures, not musical superiority or the complete browser-to-DAW flow.
+[Completed results, failures and limits](experiments/reharmonize_agent_stress/completion-summary.md) ·
 [Frozen schedule, raw traces and verifier](experiments/reharmonize_agent_stress/README.md).
 
 **Earlier completed paired study, preserved separately:**

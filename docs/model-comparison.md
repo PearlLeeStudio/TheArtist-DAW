@@ -19,15 +19,21 @@ Muse Spark Open passed 440/440 runs and Spark 1.3 passed 439/440 with the same F
 scorer, frozen requests and constraints. That measures execution reliability, not
 the fixed-pool selector scores below or a contest between F1 and Muse.
 
-The [expanded product-agent report](../experiments/reharmonize_agent_stress/summary.md)
-adds requested-mode and constraint coverage without changing the product. Open
-passed 4,186/4,240 executions; all 54 failures were on nine inputs identified as
-capacity-limited before paid calls. Spark 1.3 was stopped after scope review at
-1,716 of 4,240 planned executions, retaining 42 failures and one cancellation.
-On the 1,716 rows started by both, Open passed 1,680 and Spark 1.3 passed 1,673.
-That partial, non-random subset is execution evidence, not a replacement for the
-fixed-pool comparison below. The nominal combined cost accounting is $48.77397090,
-including $0.09642150 reserved for unknown usage; it is not reconciled billing.
+The [completed expanded product-agent report](../experiments/reharmonize_agent_stress/completion-summary.md)
+adds requested-mode and constraint coverage without changing the product. Both
+providers started all 4,240 original case/repeat rows across 680 authored inputs
+and 128 condition cells. Open passed 4,186; Spark 1.3 passed 4,144. Both retain 54
+failures on nine inputs identified as capacity-limited before paid calls. Spark
+also retains 27 timeouts, 13 tool-call response failures, one HTTP 503 and one
+operator cancellation. After a post-hoc stop at 1,716 Spark executions, the
+participant explicitly requested finishing only the 2,524 unstarted rows; no prior
+outcome was replaced. The [partial report](../experiments/reharmonize_agent_stress/summary.md)
+is preserved. Nominal accounting is Baseten $28.04348590 and Meta $53.21155010,
+combined **$81.25503600**, including $0.91077275 reserved for unknown usage;
+it is not reconciled billing. The temporal break, smaller continuation batches
+and provider/cache differences limit timing comparisons. This is execution and
+constraint evidence on authored fixtures, not a replacement for the fixed-pool
+comparison below or a musical-quality ranking.
 
 | Task | Local / own model | Meta only | Hybrid |
 |---|---|---|---|

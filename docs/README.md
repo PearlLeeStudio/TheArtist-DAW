@@ -13,7 +13,7 @@ accompaniment and editable DAW delivery. Start with the
 | Look up a control, its limits and provenance rules | [Editor reference](editor-reference.md), [screenshots](walkthrough.md) |
 | Read the recorded evaluation numbers and their conditions | [Evaluation evidence](evidence.md) |
 | Inspect Meta's actual Reharmonize decisions and the own model's role | [One recorded search → F1 feedback → Meta offer](open-weights.md#follow-one-recorded-reharmonize-decision), [reliability report and raw records](../experiments/reharmonize_agent_eval/extended-summary.md) |
-| Check expanded mode/constraint coverage, failures, cost and the partial stop | [Expanded agent results](../experiments/reharmonize_agent_stress/summary.md), [frozen protocol and raw trace index](../experiments/reharmonize_agent_stress/README.md) |
+| Check completed mode/constraint coverage, failures, cost and stop/continuation history | [Completed agent results](../experiments/reharmonize_agent_stress/completion-summary.md), [frozen protocol and raw trace index](../experiments/reharmonize_agent_stress/README.md) |
 | Compare local, Meta and hybrid on Reharmonize and Import | [Three-way model comparison: scores, costs and current-code limits](model-comparison.md) |
 | See how the editor, backend and models fit together | [Architecture and module layout](architecture.md) |
 | Check the served checkpoints, training data and theory sources | [Models, training data and theory sources](models.md) |

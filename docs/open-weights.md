@@ -147,7 +147,7 @@ at $0.0121, $0.0096 and $0.0048 and 11.5, 9.3 and 7.7 s, every request id record
 
 ## How it was measured
 
-**Expanded mode and constraint coverage, with a documented partial stop.** The
+**Expanded mode and constraint coverage: all 8,480 scheduled rows started.** The
 [frozen protocol](../experiments/reharmonize_agent_stress/README.md) exercises the
 same product agent and real F1 checkpoint across 640 new authored inputs and 40
 existing regression inputs. Requested mode, key mode, chord complexity and change
@@ -155,36 +155,44 @@ limit form 128 planned condition cells. Repeated executions are not new songs.
 
 | Expanded execution measurement | Muse Spark Open / Baseten | Muse Spark 1.3 / Meta Standard |
 |---|---:|---:|
-| Passed / started | **4,186 / 4,240** | **1,673 / 1,716** |
-| Failed / operator-cancelled | 54 / 0 | 42 / 1 |
-| Planned but not started | 0 | 2,524 |
-| Offered candidates matching tool feedback, with finite F1 scores | 12,558 / 12,558 | 5,019 / 5,019 |
-| HTTP attempts / extra attempts within tool turns | 12,504 / 10 | 5,189 / 0 |
-| p50 / p95 seconds, all started runs | 5.259 / 8.239 | 15.222 / 24.568 |
-| Configured-price estimate from returned usage | $28.04348590 | $20.63406350 |
-| Unknown-usage reservation | $0 | $0.09642150 |
+| Passed / started | **4,186 / 4,240** | **4,144 / 4,240** |
+| Failed / operator-cancelled | 54 / 0 | 95 / 1 |
+| Planned but not started | 0 | 0 |
+| Inputs passing every scheduled repeat | 671 / 680 | 635 / 680 |
+| Offered candidates matching tool feedback, with finite F1 scores | 12,558 / 12,558 | 12,432 / 12,432 |
+| HTTP attempts / extra attempts within tool turns | 12,504 / 10 | 12,779 / 0 |
+| p50 / p95 seconds, all started runs | 5.259 / 8.239 | 15.553 / 26.903 |
+| Configured-price estimate from returned usage | $28.04348590 | $52.30077735 |
+| Unknown-usage reservation | $0 | $0.91077275 |
+| Total nominal accounting | $28.04348590 | $53.21155010 |
 
-Open finished all scheduled runs. Its 54 failures are six repeats of each of nine
-inputs whose candidate shortage was detected before paid execution and retained.
-Spark 1.3 was deliberately stopped after reviewing scope and submission priorities;
-it recorded 36 capacity failures, three timeouts, three tool-call response failures
-and one cancellation. The stop was post-hoc, not a preregistered statistical rule.
-The 2,524 unstarted rows remain in the original 8,480-row schedule, separately from
-failures. Both providers reached all 128 condition cells, but Spark did not complete
-the repeat schedule or start regression cases. Full-arm success rates are not a
-head-to-head comparison. On all 1,716 case/repeat rows started by both providers,
-including failures and cancellation, Open passed 1,680 and Spark 1.3 passed 1,673;
-this is a non-random partial subset, not a musical-quality ranking.
+Both providers retain 54 failures: six repeats of each of nine inputs whose
+candidate shortage was detected before paid execution. Spark 1.3 additionally
+records 27 timeouts, 13 tool-call response failures, one HTTP 503 and one original
+operator cancellation. Every passing run completed the offer with three distinct
+applied versions while preserving unselected chords and respecting change limits.
+Both providers reached all 128 cells with at least two distinct inputs each started
+at least twice; all 40 regression inputs also completed their repeat schedules.
 
-Combined nominal accounting is **$48.77397090**, including the unknown-usage
+The operator initially stopped Spark after 1,716 executions during a scope review.
+After the participant explicitly requested completion, only the original 2,524
+unstarted rows were continued. All prior outcomes, including 42 failures and one
+cancellation, remain unchanged; no failed or cancelled run was replaced. The
+[partial report](../experiments/reharmonize_agent_stress/summary.md) and stop record
+remain available. This was a post-hoc stop and continuation, not a preregistered
+statistical rule. The final paired set contains all 4,240 case/repeat rows per arm.
+
+Combined nominal accounting is **$81.25503600**, including the unknown-usage
 reservation. This is not a paid invoice or measured credit deduction. The
-[report](../experiments/reharmonize_agent_stress/summary.md) and
-[numeric evidence](../experiments/reharmonize_agent_stress/summary.json) retain raw
+[completion report](../experiments/reharmonize_agent_stress/completion-summary.md) and
+[numeric evidence](../experiments/reharmonize_agent_stress/completion-summary.json) retain raw
 requests, tool feedback, responses, IDs, usage, retries and failures. Product code,
 UX, prompts, search, scoring, candidate generation and runtime settings are unchanged.
 The study stops at the returned offer and does not test browser interaction,
 application, MIDI export or DAW playback. Related authored templates, repeat
-dependence and provider/cache differences limit generalization. Listening research
+dependence and provider/cache differences limit generalization. The temporal break
+and smaller continuation accounting batches can affect timing and cache behavior;
+this is not an isolated model-capability or musical-quality ranking. Listening research
 is planned separately for a paper.
 
 The studies below retain their separate tasks, inputs and denominators. Provider
