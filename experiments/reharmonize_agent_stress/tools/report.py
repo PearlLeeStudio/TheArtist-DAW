@@ -127,15 +127,40 @@ def arm_summary(rows):
             'runsWhoseEntireOfferMatchesSavedSearchFeedback':sum(r.get('traceObservations',{}).get('completeOfferBackedBySearch',False) for r in rows)}
 
 
+def shared_started_rows(rows):
+    keys=[{(r['caseId'],r['repeat']) for r in runs if r['status']!='not_started'} for runs in rows.values()]
+    common=set.intersection(*keys) if keys else set()
+    return {provider:[r for r in runs if (r['caseId'],r['repeat']) in common] for provider,runs in rows.items()}
+
+
+def input_coverage(rows,case_map):
+    counts=Counter(r['caseId'] for r in rows if r['status']!='not_started')
+    def cell(case):
+        req=case['request']
+        return req.get('mode','auto'),req['key'].split()[-1],case['complexity'],req['maxChanges']
+    cells=Counter(cell(case_map[cid]) for cid in counts if case_map[cid]['cohort']=='new')
+    repeated=Counter(cell(case_map[cid]) for cid,n in counts.items() if n>=2 and case_map[cid]['cohort']=='new')
+    return {'distinctStartedInputs':len(counts),'inputsWithAtLeastTwoStartedRuns':sum(n>=2 for n in counts.values()),
+            'plannedConditionCells':len({cell(case) for case in case_map.values() if case['cohort']=='new'}),
+            'observedConditionCells':len(cells),'conditionCellsWithTwoInputs':sum(n>=2 for n in cells.values()),
+            'conditionCellsWithTwoRepeatedInputs':sum(n>=2 for n in repeated.values())}
+
+
 def render(report):
     arms=report['arms']
     lines=['# Expanded Reharmonize product-agent results','',
         '**Scope: existing product tool loop, real F1 weights and actual provider calls. Product code, UX, prompts and runtime configuration were unchanged.**','',
-        f"Frozen schedule: 640 new authored passages × 6 repeats and 40 existing regression passages × 10 repeats, per provider. {report['scheduledRuns']:,} total scheduled executions. Repeats are not new songs. The original 880-run campaign remains separate.",'',
+        f"Frozen schedule: 640 new authored passages × 6 repeats and 40 existing regression passages × 10 repeats, per provider. {report['scheduledRuns']:,} total scheduled executions. Repeats are not new songs. The original 880-run campaign remains separate.",'']
+    if report['stopDecision']:
+        lines += ['**Partial campaign, deliberately ended after scope review.** '+report['stopDecision']['reason']+' '+report['stopDecision']['decisionTiming'],
+                  '',f"**{report['unstartedRuns']:,} planned executions were not started.** They remain in the original schedule and are not counted as model failures. The unequal full-arm totals below are not a head-to-head success-rate comparison. [Stop decision](stop-decision.json).",'']
+    lines += [
         '| Measurement | Muse Spark Open / Baseten | Muse Spark 1.3 / Meta Standard |','|---|---:|---:|']
     for label,fn in [
         ('Passed / scheduled',lambda a:f"{a['passedRuns']:,} / {a['scheduledRuns']:,}"),
         ('Started',lambda a:f"{a['startedRuns']:,}"),
+        ('Passed / started',lambda a:f"{a['passedRuns']:,} / {a['startedRuns']:,}"),
+        ('Not started',lambda a:f"{a['scheduledRuns']-a['startedRuns']:,}"),
         ('HTTP attempts / extra attempts',lambda a:f"{a['httpAttempts']:,} / {a['extraAttemptsWithinToolTurns']:,}"),
         ('p50 / p95 / p99 seconds',lambda a:' / '.join(str(a['latencySecondsAllStarted'][q]) for q in ('p50','p95','p99'))),
         ('Configured-price estimate from returned usage',lambda a:f"${a['returnedUsageCostUsd']:.8f}"),
@@ -143,6 +168,14 @@ def render(report):
         ('Offers backed by saved tool feedback',lambda a:f"{a['runsWhoseEntireOfferMatchesSavedSearchFeedback']:,}"),
         ('Offered candidates / finite F1 scores',lambda a:f"{a['offeredCandidates']:,} / {a['offeredCandidatesWithFiniteF1Scores']:,}")]:
         lines.append('| '+label+' | '+' | '.join(fn(arms[p]) if p in arms else 'Not scheduled' for p in ('baseten','meta'))+' |')
+    lines += ['','## Comparable started rows and input coverage','',
+              'The following subset retains every outcome for each case/repeat row started by both providers, including failures and operator cancellations. It is selected by execution status, not by success. It remains a partial, non-random prefix of the frozen schedule; it is not evidence of musical superiority.','',
+              '| Shared case/repeat rows | Open | Spark 1.3 |','|---|---:|---:|']
+    for label,field in [('Started on both providers','startedRuns'),('Passed','passedRuns')]:
+        lines.append('| '+label+' | '+' | '.join(str(report['pairedStartedArms'][p][field]) for p in ('baseten','meta'))+' |')
+    lines += ['','| Coverage of authored inputs | Open | Spark 1.3 |','|---|---:|---:|']
+    for label,field in [('Distinct started inputs','distinctStartedInputs'),('Inputs with at least two started runs','inputsWithAtLeastTwoStartedRuns'),('Observed mode × key mode × complexity × change-limit cells (128 planned)','observedConditionCells'),('Cells with two distinct inputs','conditionCellsWithTwoInputs'),('Cells with two distinct inputs each started at least twice','conditionCellsWithTwoRepeatedInputs')]:
+        lines.append('| '+label+' | '+' | '.join(str(report['inputCoverage'][p][field]) for p in ('baseten','meta'))+' |')
     lines+=['','## Cohorts and requested modes','',
             '| Cohort / mode | Open passed / scheduled | Spark 1.3 passed / scheduled |','|---|---:|---:|']
     for name in ['regression']+c.MODES:
@@ -176,6 +209,11 @@ def main():
     args=parser.parse_args()
     design=c.validate_identity()
     plan=c.read_json(c.OUT/'execution-plan.json')
+    stop_path=c.OUT/'stop-decision.json'
+    stop_decision=c.read_json(stop_path) if stop_path.exists() else None
+    for provider in plan['providers']:
+        for shard in (0,1):
+            assert 'finished' in c.read_json(c.OUT/f'{provider}-{shard}-progress.json'), 'Wait for worker exit before reporting'
     assert c.ev.file_hash(HERE/'campaign.py')==plan['runnerSha256']
     assert c.ev.file_hash(c.OUT/'design.json')==plan['designSha256']
     api=c.ev.load_backend(c.ROOT/'backend')
@@ -245,6 +283,9 @@ def main():
             assert used<=plan['workerCapsUsd'][key]+1e-8
             worker_accounting[key]={'usedUsd':used,'capUsd':plan['workerCapsUsd'][key]}
     output={'protocol':design['protocol'],'inputsSha256':design['inputsSha256'],'executionPlanSha256':c.ev.file_hash(c.OUT/'execution-plan.json'),
+            'stopDecision':stop_decision,'stopDecisionSha256':c.ev.file_hash(stop_path) if stop_decision else None,
+            'pairedStartedArms':{p:arm_summary(v) for p,v in shared_started_rows(rows).items()},
+            'inputCoverage':{p:input_coverage(v,case_map) for p,v in rows.items()},
             'newPassages':640,'existingRegressionPassages':40,'scheduledRuns':sum(a['scheduledRuns'] for a in arms.values()),
             'unstartedRuns':sum(a['scheduledRuns']-a['startedRuns'] for a in arms.values()),'arms':arms,'cohorts':cohorts,
             'searchCapacityStrata':capacity_strata,'repeatability':repeats,'providerDetails':details,'pairedOutcomes':dict(paired),
@@ -253,6 +294,7 @@ def main():
             'runs':dict(rows),'artifacts':artifacts,'verification':{'networkCalls':0,'serviceSha256':design['serviceSha256'],'frozenInputsMatch':True,'savedChecksRecomputed':True,'ledgersReconciled':True,'noOutstandingReservations':True},
             'limitations':['Authored related templates, not representative independent songs','Regression cohort selected after previous results','Parallel evaluation and provider cache differences affect timing','No listening preference or musical superiority measure','No browser, hosted admission, user application, MIDI export or DAW playback in this campaign']}
     if not args.allow_incomplete: assert output['unstartedRuns']==0
+    elif output['unstartedRuns']: assert stop_decision, 'Document why the frozen schedule was not completed'
     md=render(output)
     if args.verify_existing:
         assert c.read_json(c.OUT/'summary.json')==output

@@ -1,0 +1,9 @@
+{
+  "kind": "operator_scope_stop",
+  "reason": "After discussion of evaluation scope and submission priorities, the operator ended the remaining Spark 1.3 execution rather than requiring all originally scheduled repetitions. Muse Spark Open had already completed its schedule.",
+  "decisionTiming": "Post-hoc: partial results and coverage had already been inspected. This was not a preregistered statistical stopping rule and does not establish a required sample size or prize likelihood.",
+  "mechanism": "SIGTERM to the existing campaign coordinator; existing handlers prevented further transports and preserved in-flight outcomes and settled reservations. No paid restart or replacement run.",
+  "reporting": "Retain the original 8480-row schedule, every started outcome and all unstarted rows. Report each arm separately and restrict paired descriptive comparisons to case/repeat rows started by both providers. Unstarted rows are not model failures.",
+  "originalExecutionPlanSha256Policy": "The original execution plan and frozen inputs remain unchanged. Their hashes are retained in the summary.",
+  "restartAllowed": false
+}

@@ -59,5 +59,21 @@ class ReportChecks(unittest.TestCase):
         self.assertEqual(observation['finiteF1Scores'],3)
         self.assertEqual(len(observation['musicalPatches']),3)
 
+    def test_paired_started_keeps_failure_excludes_only_unstarted(self):
+        data={'baseten':[row('x',1,'passed'),row('x',2,'passed'),row('y',1,'failed')],
+              'meta':[row('x',1,'failed'),row('x',2,'not_started'),row('y',1,'passed')]}
+        shared=r.shared_started_rows(data)
+        self.assertEqual([x['status'] for x in shared['baseten']],['passed','failed'])
+        self.assertEqual([x['status'] for x in shared['meta']],['failed','passed'])
+
+    def test_repeat_count_does_not_inflate_input_coverage(self):
+        case={'cohort':'new','complexity':'simple','request':{'key':'C major','mode':'auto','maxChanges':1}}
+        data=[row('x',i,'passed') for i in range(1,7)]+[row('y',1,'failed'),row('y',2,'not_started')]
+        coverage=r.input_coverage(data,{'x':case,'y':case})
+        self.assertEqual(coverage['distinctStartedInputs'],2)
+        self.assertEqual(coverage['inputsWithAtLeastTwoStartedRuns'],1)
+        self.assertEqual(coverage['conditionCellsWithTwoInputs'],1)
+        self.assertEqual(coverage['conditionCellsWithTwoRepeatedInputs'],0)
+
 
 if __name__=='__main__': unittest.main()

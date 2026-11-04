@@ -1,0 +1,20 @@
+{
+  "protocol": "reharmonize-agent-stress-v2",
+  "providers": [
+    "baseten",
+    "meta"
+  ],
+  "workerCapsUsd": {
+    "baseten-0": 20.0,
+    "baseten-1": 20.0,
+    "meta-0": 40.0,
+    "meta-1": 40.0
+  },
+  "approvedMaxUsd": 120.0,
+  "scheduledRuns": 8480,
+  "designSha256": "cc5b7cdc9afd445870bfba64af25dc9c0390fbdfff6a9249dab3ec2c9345a60b",
+  "runnerSha256": "36b71d0cb4d1533d261cacd51669191e261cb1184a65db5a84ac799aa8fcd266",
+  "deadlineElapsedSeconds": 75600,
+  "globalCapProof": "Independent non-overlapping worker caps sum to the total cap. A worker allocates each fresh batch only from its unsettled-free remaining amount.",
+  "scope": "Existing product agent and F1 scorer; four evaluation processes at most. No server, UI, provider deployment or prompt changes."
+}

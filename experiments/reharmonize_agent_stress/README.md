@@ -6,6 +6,18 @@ adds no product feature or runtime configuration change. Muse requests searches,
 the tools construct bounded candidates and F1 scores their musical context, Muse
 offers three alternatives, and the musician retains the final choice in the app.
 
+## Recorded outcome and stop
+
+[Results and limits](summary.md) · [Numeric report and raw trace links](summary.json)
+· [Post-hoc scope stop](stop-decision.json)
+
+Open completed 4,240 scheduled executions. Spark 1.3 started 1,716 before the
+remaining calls were stopped after discussion of evaluation scope and submission
+priorities. The original 8,480-row plan is preserved, including 2,524 unstarted
+rows. This was not a preregistered statistical stopping rule. The report separates
+the unequal full arms from the 1,716 case/repeat rows started on both providers;
+every failure and cancellation remains visible. No paid reruns were added.
+
 ## Frozen design
 
 - 640 new authored passages: 80 in each of `auto`, `ionian`, `dorian`, `phrygian`,
