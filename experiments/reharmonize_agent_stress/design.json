@@ -1,0 +1,49 @@
+{
+  "protocol": "reharmonize-agent-stress-v2",
+  "newPassages": 640,
+  "existingRegressionPassages": 40,
+  "prepaidDesignRevision": "The preserved input-only preparation coupled key mode and complexity with change allowance. Before any paid outputs, allowance allocation was corrected to cross these factors: five cases per key-mode/complexity/allowance cell within each request mode. Chords, selections and case membership were not filtered or replaced. Preparation files are not executed evidence.",
+  "repeats": {
+    "new": 6,
+    "regression": 10
+  },
+  "scheduledRunsPerProvider": 4240,
+  "scheduledPairedRuns": 8480,
+  "plannedProviders": [
+    "baseten",
+    "meta"
+  ],
+  "authorizationCeilingUsd": 128,
+  "plannedCombinedCapUsd": 120,
+  "plannedWorkerCapsUsd": {
+    "baseten-0": 20,
+    "baseten-1": 20,
+    "meta-0": 40,
+    "meta-1": 40
+  },
+  "estimatedCostUsdFromPriorCampaign": 97.83,
+  "maximumWorkers": 4,
+  "maximumWorkersPerProvider": 2,
+  "stopAfterElapsedSeconds": 75600,
+  "stopPolicy": "No replacements. Stop before new paid attempts at caps, provider authorization/credit failures, requested stop, or elapsed deadline. Preserve failures and unstarted rows.",
+  "inputsSha256": "685487a9badd6179be5a11697b281c15df949ec8b0b8d0f038d0276cd6a99955",
+  "serviceSha256": "bf861a6dc299e97796a396bb14a42252e785de2021ca4ebf3c4d022c1d55d681",
+  "sourceFiles": {
+    "app/models/reharmonize.py": "49ee9335df305f27450d1722b1bd830eb0a1641b6acb1cbb90eb0446af39d2f2",
+    "app/services/reharmonize_agent.py": "7b8d8ac07533a915f4adf9fb1cbc796d2688f533ce240ff293d2d7f8b93e809f",
+    "app/services/reharmonize.py": "5f0f5f95e0a5ce148de9ca14b621f46c8b84ed5f64f0feb8a96b5dde1e7ad691",
+    "app/services/llm.py": "1f93c7bf6a3273c52a671a751a842ad154349f0f9df3685a5d056f54c100d205",
+    "app/services/chord_context.py": "8b6f56bbea98eba41a73f005c088f93fa07df07cee943945721661b819b23030",
+    "app/services/inference.py": "438971ee6d975dcfa2ae207295b6b735db44988108eb485144462b7dcffaf90b",
+    "app/services/env_flags.py": "3107b3ebf6fd9e4bc70ee1ce8cb15d0d9525e9658104372c7579478f3d1c685f",
+    "ai/training/model.py": "061524d8d222dfb561418881fddbe93edaf414a57bbef5c07a8ccf5539f6a7c3",
+    "ai/training/tokenizer.py": "1625c0fb3cdc5f094128b2533cc810d268da3d0ee4239f77404a791e0d80178e"
+  },
+  "checkpointSha256": "db9c09d5e1c8a5cee33cb391174c41316bbb4f21e807b345cc9933debe52078c",
+  "frozenEvaluatorSha256": "8251d320bf05f7b3f6e0e9a462c3aaccdcc70865d2fa3ba37e79153b390240ac",
+  "generatorSha256": "00ec638e4bf9d676894a078b1a3901ec823e7c9e997ba00bdd5cb555f3dd520d",
+  "priorEvidence": "../reharmonize_agent_eval/extended-summary.json",
+  "timingScope": "Parallel evaluation processes with independent clients and ledgers; not hosted throughput or isolated model capability.",
+  "inputSelection": "Schema and harmonic-window uniqueness only. No candidate count, learned score or paid result was used to select new inputs.",
+  "regressionSelection": "The earlier g-minor-03 timeout plus the first 39 other prior inputs ordered by request SHA-256. Explicitly post-hoc repeatability evidence."
+}
