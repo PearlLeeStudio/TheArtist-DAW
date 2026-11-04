@@ -439,6 +439,29 @@ bounded candidates and the author's F1 Music Transformer scores their surroundin
 harmony. Meta reads that feedback and calls `offer_candidates` with three choices.
 The musician retains the final selection and application in the editor.
 
+**Expanded constraint coverage.** A separate frozen schedule adds 640 authored
+inputs across requested modes, major/minor keys, chord complexity and change limits,
+plus 40 existing regression inputs. Open completed its schedule: **4,186/4,240**
+executions passed every check, and all **12,558 offered candidates** match saved
+tool feedback with finite F1 scores. The 54 failures are six repeats of each of
+nine inputs whose unchanged search had insufficient candidates before paid runs;
+they were retained. Ten extra HTTP attempts occurred within existing tool turns.
+
+Spark 1.3 was stopped after scope review: **1,673 passed, 42 failed and one was
+cancelled out of 1,716 started**; 2,524 planned runs were not started. The stop was
+post-hoc, not a statistical rule. The report compares all 1,716 case/repeat rows
+started by both providers, including failures: Open passed 1,680, Spark 1.3 1,673.
+This partial subset is not a random sample or evidence of musical superiority.
+
+Observed p50/p95 times were 5.259/8.239 s for Open and 15.222/24.568 s for Spark 1.3.
+Combined configured-price budget accounting was **$48.77397090**, including
+$0.09642150 reserved for unknown usage; this is not a confirmed bill or measured
+credit deduction. Product code, UX, prompts and settings were unchanged.
+[Expanded results, failures and limits](experiments/reharmonize_agent_stress/summary.md) ·
+[Frozen schedule, raw traces and verifier](experiments/reharmonize_agent_stress/README.md).
+
+**Earlier completed paired study, preserved separately:**
+
 **220 authored passages × 2 repeats × 2 providers = 880 executions.** Inputs cover
 major/minor keys, simple/complex chords, change limits 1–4, up to 16 selected slots,
 and full requests up to 512 bars. The existing agent/scorer window remains at most

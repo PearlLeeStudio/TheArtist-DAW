@@ -19,6 +19,16 @@ Muse Spark Open passed 440/440 runs and Spark 1.3 passed 439/440 with the same F
 scorer, frozen requests and constraints. That measures execution reliability, not
 the fixed-pool selector scores below or a contest between F1 and Muse.
 
+The [expanded product-agent report](../experiments/reharmonize_agent_stress/summary.md)
+adds requested-mode and constraint coverage without changing the product. Open
+passed 4,186/4,240 executions; all 54 failures were on nine inputs identified as
+capacity-limited before paid calls. Spark 1.3 was stopped after scope review at
+1,716 of 4,240 planned executions, retaining 42 failures and one cancellation.
+On the 1,716 rows started by both, Open passed 1,680 and Spark 1.3 passed 1,673.
+That partial, non-random subset is execution evidence, not a replacement for the
+fixed-pool comparison below. The nominal combined cost accounting is $48.77397090,
+including $0.09642150 reserved for unknown usage; it is not reconciled billing.
+
 | Task | Local / own model | Meta only | Hybrid |
 |---|---|---|---|
 | Reharmonize | The author's Music Transformer ranks a fixed mathematical substitution pool by conditional likelihood | Muse Spark chooses three alternatives from the same pool, without Transformer scores | Muse Spark chooses from the same pool with Transformer scores visible; `hybrid1` is one selection pass |

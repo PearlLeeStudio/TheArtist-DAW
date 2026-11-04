@@ -9,7 +9,7 @@ editor and Music Transformer.
 [Demo on X](https://x.com/pearlmedicilee/status/2117606784819249170) ·
 [Live app — artist-daw.pearlleestudio.co](https://artist-daw.pearlleestudio.co) ·
 [Development repository — TheArtist-DAW](https://github.com/PearlLeeStudio/TheArtist-DAW) ·
-[128 recorded contributions](HACKATHON.md)
+[129 recorded contributions](HACKATHON.md)
 
 **Open weights direct the Reharmonize search.** Muse Spark Open requests substitution
 families, receives the Music Transformer's context scores through the tools, and
@@ -43,7 +43,7 @@ Existing before the event and not claimed as event work: the score editor (staff
 voicings, Roman numerals, MIDI input, playback), the 31 sounds and genre rhythms,
 and the 25M-parameter Music Transformer with its 11 genre adapters. Everything
 below was built during the event; the [contribution record](HACKATHON.md) links
-each of the 128 additions to its commits, tests and limits.
+each of the 129 contributions to its commits, tests and limits.
 
 <p align="center">
   <img src="screenshot/13-reharmonize-alternatives.png" alt="Reharmonize on an imported lead sheet: Origin and Alter 1–3 under the passage, Alter 3 selected, with the Reharmonize controls on the right" width="100%">
@@ -163,6 +163,7 @@ whose calls, costs and failures are kept.
 
 | What was measured | Material | Result |
 |---|---|---|
+| Expanded product-agent constraint coverage; product unchanged | Frozen plan: 640 new inputs × 6 repeats plus 40 regression inputs × 10 repeats per provider; 128 condition cells | Open **4,186/4,240** passed. Spark 1.3 stopped at **1,716 started: 1,673 passed, 42 failed, one cancelled**; 2,524 unstarted retained. On shared started rows: **1,680/1,716 Open, 1,673/1,716 Spark** · [results and limits](experiments/reharmonize_agent_stress/summary.md) |
 | Reharmonize product agent: Open vs Spark 1.3, same F1 scorer | 220 authored passages × 2 repeats × 2 providers = 880 executions | **440/440 Open, 439/440 Spark 1.3** pass every execution and constraint check; one API timeout retained, no retries; Open's 1,320 offers match search feedback and F1 scores · [report](experiments/reharmonize_agent_eval/extended-summary.md) |
 | Reading chords from notes: local analyzer / Muse Spark / hybrid / Muse Spark Open | 40 real progressions in 13 genres, rendered as notes in six voicing variants: 640 slots | exact chords **77.8% → 89.5%** with Muse Spark (+11.7 points, 40 calls, $0.34); hybrid 83.9% for 6 calls / $0.05; Muse Spark Open 89.4% where it answered, 73.8% over all slots (7 of 40 calls failed) · [report](experiments/harmony_eval/summary.md) |
 | Reharmonize selectors under a blinded automatic judge | 40 four-bar passages from 16 JAZZVAR tunes, one shared candidate pool, three checkpoint runs | F4 run: local 2.464 / Meta 2.671 / hybrid 2.624 on 0–4; Meta − local **+0.208**, paired bootstrap 95% CI [+0.042, +0.379]; hybrid above local in all three runs · [results](experiments/reharmonization/results.md) |
@@ -172,12 +173,33 @@ whose calls, costs and failures are kept.
 | Reconstruction and DAW execution | this package → Docker → HTTP workflow → Logic Pro | 18 models loaded; a 20-bar original PDF → F1 completion to 64 bars → MIDI with the source chords preserved; opened in Logic Pro as three editable tracks and bounced to a 139.6 s stereo WAV · [record](experiments/speed/reconstruction.json) |
 
 
-The product-agent campaign measures the actual search → F1 scoring → Meta offer
+The product-agent campaigns measure the actual search → F1 scoring → Meta offer
 loop. The existing agent, prompts, candidate generation, scorer, constraints and
 runtime configuration were unchanged. Coverage includes major/minor keys, chord
 complexity, limits of 1–4 changed slots, up to 16 selected slots and full requests
 up to 512 bars; the agent/scorer still sees at most 24 bars. These are authored
 engineering fixtures with related templates, not representative sampled songs.
+
+In the expanded study, all 12,558 Open and 5,019 Spark 1.3 offered candidates match
+saved tool feedback and finite F1 scores. Nine inputs had insufficient candidates
+in the unchanged search before paid execution; their 54 Open failures and 36
+started Spark failures remain in the results. Spark also had three timeouts,
+three tool-call response failures and one operator cancellation. Open recorded ten
+extra HTTP attempts within existing tool turns; no failed run was replaced.
+The Spark stop was a post-hoc scope decision, not a statistical stopping rule.
+The original schedule and all 2,524 unstarted rows are preserved. The shared-started
+subset includes failures and cancellation but remains non-random; unequal full-arm
+totals are not a head-to-head ranking.
+
+Expanded-run p50/p95 times were 5.259/8.239 s (Open) and 15.222/24.568 s (Spark 1.3).
+Configured-price returned-usage estimates were $28.04348590 and $20.63406350;
+Spark has an additional $0.09642150 unknown-usage reservation, for combined budget
+accounting of **$48.77397090**. These are nominal estimates, not confirmed charges
+or measured credit deductions. [Protocol, stop decision and offline verification](experiments/reharmonize_agent_stress/README.md)
+and [numeric report with raw trace links](experiments/reharmonize_agent_stress/summary.json)
+make the complete evidence inspectable.
+
+The earlier completed 880-execution study remains separate:
 
 | Product-agent execution metric | Muse Spark Open | Muse Spark 1.3 Standard |
 |---|---:|---:|
@@ -219,6 +241,7 @@ installation or patch application is needed to read them.
 | Model comparisons, measured accuracy, cost and time | [Model comparison](https://github.com/PearlLeeStudio/TheArtist-Meta-Hackathon/blob/main/docs/model-comparison.md), [evidence and limits](https://github.com/PearlLeeStudio/TheArtist-Meta-Hackathon/blob/main/docs/evidence.md) |
 | Muse Spark 89.5% vs local 77.8% on 640 notes-to-chords slots | [Benchmark report and raw results](https://github.com/PearlLeeStudio/TheArtist-Meta-Hackathon/tree/main/experiments/harmony_eval) — a separate benchmark, not an Import workflow accuracy claim |
 | Muse Spark Open directing the product agent: 440/440 executions | [Paired report, frozen inputs and complete tool traces](experiments/reharmonize_agent_eval/extended-summary.md) |
+| Expanded product-agent coverage, retained failures and partial stop | [Results](experiments/reharmonize_agent_stress/summary.md), [frozen inputs and verifier](experiments/reharmonize_agent_stress/README.md), [numeric report and raw trace links](experiments/reharmonize_agent_stress/summary.json) |
 | Muse Spark Open on Baseten: 52/60 matching candidate choices | [Second-ear comparison and both result sets](https://github.com/PearlLeeStudio/TheArtist-Meta-Hackathon/tree/main/experiments/review_eval) |
 | System structure, agent flow and model roles | [Architecture](https://github.com/PearlLeeStudio/TheArtist-Meta-Hackathon/blob/main/docs/architecture.md), [Reharmonize](https://github.com/PearlLeeStudio/TheArtist-Meta-Hackathon/blob/main/docs/reharmonization.md), [model catalog](https://github.com/PearlLeeStudio/TheArtist-Meta-Hackathon/blob/main/docs/models.md) |
 | Score → harmony → playback → PDF → DAW | [Workflow](https://github.com/PearlLeeStudio/TheArtist-Meta-Hackathon/blob/main/docs/arrangement-workflow.md), [screenshots](https://github.com/PearlLeeStudio/TheArtist-Meta-Hackathon/blob/main/docs/walkthrough.md) |
