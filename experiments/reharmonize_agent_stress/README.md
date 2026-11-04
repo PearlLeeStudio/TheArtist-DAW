@@ -8,6 +8,13 @@ offers three alternatives, and the musician retains the final choice in the app.
 
 ## Recorded outcome and stop
 
+**Continuation authorized.** After the partial report below was published, the
+participant explicitly requested finishing the original Spark 1.3 schedule.
+Only its 2,524 previously unstarted rows are being executed under the remaining
+original worker budgets. The partial report and all started outcomes remain
+unchanged. See the [continuation plan and repeat mapping](continuation/README.md).
+No additional experiment beyond the original schedule is planned.
+
 [Results and limits](summary.md) · [Numeric report and raw trace links](summary.json)
 · [Post-hoc scope stop](stop-decision.json)
 

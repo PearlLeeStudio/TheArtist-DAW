@@ -36,3 +36,14 @@ unchanged requests, duplicate rejection and remaining-budget accounting.
 
 There is no additional experiment after this original schedule. Final work is
 offline verification, documentation and synchronization of the two public repositories.
+
+After both workers finish, [the completion reporter](../tools/completion_report.py)
+first reproduces the earlier partial report, verifies every continuation trace
+and ledger, then maps each raw batch repeat back to its original scheduled repeat.
+It refuses to replace any started outcome. It writes separate
+`completion-summary.json` and `completion-summary.md` files in the parent directory;
+`--verify-existing` reproduces them without overwriting. If a budget, deadline or
+provider failure leaves rows unstarted, `--allow-incomplete` keeps their original
+denominator and records the worker reasons. No extra paid attempt is made by the
+reporter. [Merge tests](../tools/test_completion_report.py) check preservation,
+duplicate rejection, exact repeat mapping and aggregate reproduction.
