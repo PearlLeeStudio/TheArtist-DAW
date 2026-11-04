@@ -1,9 +1,20 @@
 # Completing the original Spark 1.3 schedule
 
 After the operator stopped the campaign, the participant explicitly requested
-finishing Spark 1.3. This continuation schedules only the original **2,524 unstarted
-rows**. It adds no input, repetition or provider. The completed Open schedule,
+finishing Spark 1.3. This continuation executed only the original **2,524 unstarted
+rows**: 2,471 passed and 53 failed. It added no input, repetition or provider. The completed Open schedule,
 all started Meta results, 42 failures and one cancellation are preserved exactly.
+
+Both workers and the coordinator finished. The combined original schedule has
+**8,480 started rows and zero unstarted rows**. Final totals are Open 4,186/4,240
+passed and Spark 1.3 4,144/4,240 passed, with all 149 failures and the original
+cancellation retained. [Completed report](../completion-summary.md) ·
+[Numeric evidence and raw trace links](../completion-summary.json).
+
+Continuation nominal accounting was **$32.48106510**. Including the original
+campaign, Baseten accounted for **$28.04348590** and Meta **$53.21155010**,
+combined **$81.25503600**. Meta's total includes $0.91077275 reserved for unknown
+usage. These are configured-price estimates, not confirmed bills or credit deductions.
 
 The earlier [partial report](../summary.md) and [stop decision](../stop-decision.json)
 remain historical records. The continuation does not turn the earlier stop into a
@@ -37,7 +48,7 @@ unchanged requests, duplicate rejection and remaining-budget accounting.
 There is no additional experiment after this original schedule. Final work is
 offline verification, documentation and synchronization of the two public repositories.
 
-After both workers finish, [the completion reporter](../tools/completion_report.py)
+[The completion reporter](../tools/completion_report.py)
 first reproduces the earlier partial report, verifies every continuation trace
 and ledger, then maps each raw batch repeat back to its original scheduled repeat.
 It refuses to replace any started outcome. It writes separate

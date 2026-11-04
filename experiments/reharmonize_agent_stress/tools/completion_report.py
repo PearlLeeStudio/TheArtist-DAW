@@ -64,6 +64,24 @@ def refresh_aggregates(output, case_map):
     output.update(pairedOutcomes=dict(paired), pairedSuccessfulCandidateOverlap=overlap)
 
 
+def render_completion(output):
+    text = r.render(output)
+    text = text.replace('**Partial campaign, deliberately ended after scope review.**', '**Incomplete continuation.**')
+    text = text.replace('[Stop decision](stop-decision.json).', '[Continuation outcome](continuation/outcome.json).')
+    text = text.replace('[the numeric report](summary.json)', '[the numeric report](completion-summary.json)')
+    text = text.replace('[Offline verifier](tools/report.py)', '[Offline completion verifier](tools/completion_report.py)')
+    if output['unstartedRuns'] == 0:
+        text = text.replace(
+            'The following subset retains every outcome for each case/repeat row started by both providers, including failures and operator cancellations. It is selected by execution status, not by success. It remains a partial, non-random prefix of the frozen schedule; it is not evidence of musical superiority.',
+            'Every original case/repeat row has now been started by both providers. The comparison retains all failures and the original operator cancellation. These authored, repeated fixtures are not a random sample of music, and the results do not establish musical superiority.')
+    note = ('The participant explicitly requested finishing the original Spark 1.3 schedule after the operator stop. '
+            'Only originally unstarted rows were scheduled; the earlier failure and cancellation records are unchanged. '
+            'The [partial report](summary.md), [earlier stop decision](stop-decision.json) and '
+            '[continuation plan and row mapping](continuation/README.md) remain available. '
+            'The temporal break and smaller accounting batches limit comparisons of timing and caching.\n\n')
+    return text.replace('\n\n', '\n\n' + note, 1)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--verify-existing', action='store_true')
@@ -147,15 +165,7 @@ def main():
                               'additionalAccountedUsd': round(sum(worker_used.values()), 8),
                               'originalStartedRowsPreserved': True, 'originalRepeatMappingVerified': True}
     output['limitations'].append('A user-authorized continuation followed an operator stop; the temporal break and smaller accounting batches can affect timing and provider caching.')
-    text = r.render(output)
-    text = text.replace('**Partial campaign, deliberately ended after scope review.**', '**Incomplete continuation.**')
-    text = text.replace('[Stop decision](stop-decision.json).', '[Continuation outcome](continuation/outcome.json).')
-    note = ('The participant explicitly requested finishing the original Spark 1.3 schedule after the operator stop. '
-            'Only originally unstarted rows were scheduled; the earlier failure and cancellation records are unchanged. '
-            'The [partial report](summary.md), [earlier stop decision](stop-decision.json) and '
-            '[continuation plan and row mapping](continuation/README.md) remain available. '
-            'The temporal break and smaller accounting batches limit comparisons of timing and caching.\n\n')
-    text = text.replace('\n\n', '\n\n' + note, 1)
+    text = render_completion(output)
     output_path = m.BASE / 'completion-summary.json'
     text_path = m.BASE / 'completion-summary.md'
     if args.verify_existing:

@@ -6,24 +6,32 @@ adds no product feature or runtime configuration change. Muse requests searches,
 the tools construct bounded candidates and F1 scores their musical context, Muse
 offers three alternatives, and the musician retains the final choice in the app.
 
-## Recorded outcome and stop
+## Recorded outcome and stop/continuation history
 
-**Continuation authorized.** After the partial report below was published, the
-participant explicitly requested finishing the original Spark 1.3 schedule.
-Only its 2,524 previously unstarted rows are being executed under the remaining
-original worker budgets. The partial report and all started outcomes remain
-unchanged. See the [continuation plan and repeat mapping](continuation/README.md).
+**All 8,480 original scheduled rows have been started; none remain unstarted.**
+Open passed 4,186/4,240, with 54 failures. Spark 1.3 passed 4,144/4,240, with 95
+failures and one original operator cancellation retained. Both arms contain 54
+failures on nine preflight capacity-limited inputs; Spark additionally records
+27 timeouts, 13 tool-call response failures and one HTTP 503. All 12,558 Open and
+12,432 Spark offered candidates match saved F1-scored search feedback.
+
+Nominal accounting is **Baseten $28.04348590 + Meta $53.21155010 = $81.25503600**,
+including $0.91077275 reserved for unknown Meta usage, not reconciled billing.
+Observed p50/p95 seconds are 5.259/8.239 (Open) and 15.553/26.903 (Spark).
+[Completed results and limits](completion-summary.md) ·
+[Completed numeric report and raw trace links](completion-summary.json)
+
+The operator initially stopped Spark after 1,716 executions. After the partial
+report was published, the participant explicitly requested finishing the original
+schedule. Only its 2,524 unstarted rows were continued under the remaining original
+worker budgets; no prior failure or cancellation was replaced. See the
+[continuation plan and repeat mapping](continuation/README.md). The temporal break
+and smaller accounting batches may affect timing and cache conditions. This was
+a post-hoc stop and continuation, not a preregistered statistical stopping rule.
 No additional experiment beyond the original schedule is planned.
 
-[Results and limits](summary.md) · [Numeric report and raw trace links](summary.json)
-· [Post-hoc scope stop](stop-decision.json)
-
-Open completed 4,240 scheduled executions. Spark 1.3 started 1,716 before the
-remaining calls were stopped after discussion of evaluation scope and submission
-priorities. The original 8,480-row plan is preserved, including 2,524 unstarted
-rows. This was not a preregistered statistical stopping rule. The report separates
-the unequal full arms from the 1,716 case/repeat rows started on both providers;
-every failure and cancellation remains visible. No paid reruns were added.
+Historical records remain unchanged: [partial results](summary.md),
+[partial numeric report](summary.json), [post-hoc scope stop](stop-decision.json).
 
 ## Frozen design
 

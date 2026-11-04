@@ -64,6 +64,21 @@ class MergeChecks(unittest.TestCase):
                      'failureCategories', 'pairedOutcomes', 'pairedSuccessfulCandidateOverlap'):
             self.assertEqual(result[name], previous[name], name)
 
+    def test_completed_text_links_to_completed_evidence_and_retains_stop_history(self):
+        report = m.c.read_json(m.m.BASE / 'summary.json')
+        report.update(unstartedRuns=0, stopDecision=None)
+        text = m.render_completion(report)
+        self.assertIn('(completion-summary.json)', text)
+        self.assertIn('(tools/completion_report.py)', text)
+        self.assertIn('[partial report](summary.md)', text)
+        self.assertIn('Every original case/repeat row has now been started', text)
+        self.assertNotIn('partial, non-random prefix', text)
+
+    def test_incomplete_text_keeps_partial_qualification(self):
+        text = m.render_completion(m.c.read_json(m.m.BASE / 'summary.json'))
+        self.assertIn('partial, non-random prefix', text)
+        self.assertIn('(continuation/outcome.json)', text)
+
 
 if __name__ == '__main__':
     unittest.main()
