@@ -21,8 +21,8 @@ offers three alternatives, and the musician retains the final choice in the app.
   Muse Spark 1.3/Meta Standard. The previous 880 executions remain separate.
 - Estimated new accounting from previous observed costs: **$97.83**. Combined
   hard allocation **$120**: two Open workers at $20 each and two Meta workers at
-  $40 each. These are separate services and billing accounts, not one shared
-  provider credit balance. Invoice credits are not inferred from token usage.
+  $40 each. These are internal budget allocations for the two providers;
+  actual credit balances are not inferred from token usage.
   Dollar values are configured-price estimates for budget control, not verified
   charges or credit deductions. Promotional or sponsored access can have a
   different actual charge; account billing is not inferred from API success.
@@ -43,6 +43,20 @@ The unchanged mathematical search has at least three distinct patches for
 671/680 inputs. Nine explicit-mode cases have fewer. They stay in the complete
 schedule and denominator. Capacity-conditioned results, if reported, are labeled
 separately; an impossible three-choice offer does not become a model success.
+
+## Hackathon credit attribution
+
+According to hackathon support guidance supplied by the participant, the Baseten
+key belongs to a separate hackathon workspace, not the participant's personal
+Baseten account. Its $100 credit is attached to the emailed key and expires on
+November 9. The guidance states that this key has no provider-side usage tracking
+or balance view, so its usage and credits do not appear on the personal dashboard.
+
+The evaluator records returned token usage and configured-price estimates locally.
+Those records do not establish actual credit deductions or the remaining balance;
+a personal dashboard showing zero does not establish zero hackathon-key usage.
+Key problems should be raised by replying to the Baseten email that supplied it.
+This clarification does not change the frozen execution schedule or budget caps.
 
 ## Measurements and limits
 
