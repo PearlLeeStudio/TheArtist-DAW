@@ -27,13 +27,13 @@ Music Transformer scores alternatives against surrounding harmony.
 top of my own score editor and chord model.** Bring a lead sheet, select the bars that
 feel flat and hear alternatives in context:
 
-- **Reharmonize agent.** Muse Spark runs a bounded substitution search through native
-  tool calls, my Music Transformer scores each change against the surrounding bars,
-  and the musician combines and applies the alternatives on the staff. Run details
-  show the completed calls. A separate in-process evaluation of the unchanged agent
-  passed **440/440 Muse Spark Open executions** and **439/440 Muse Spark 1.3
-  executions**, on the same 220 authored passages with the same F1 scorer and
-  constraints ([full results](experiments/reharmonize_agent_eval/extended-summary.md)).
+- **Reharmonize agent.** Meta's open-weight Muse Spark Open chooses which substitution
+  families to search, receives my Music Transformer's context scores through the
+  tools, and proposes three validated alternatives. The musician auditions,
+  combines and applies the edits on the staff. Follow the actual search requests,
+  scored candidates and final selection in [one saved tool loop](docs/open-weights.md#follow-one-recorded-reharmonize-decision);
+  [execution results](experiments/reharmonize_agent_eval/extended-summary.md) measure
+  how reliably the unchanged agent completes that work.
 - **Import.** A supported vector PDF opens as editable chords from the local reader;
   with **Use Meta model**, Muse Spark checks the original in the background. Images
   need Meta reading before they can open. In a separate 640-slot notes-to-chords

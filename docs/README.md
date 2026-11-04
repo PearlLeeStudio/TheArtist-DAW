@@ -12,7 +12,7 @@ accompaniment and editable DAW delivery. Start with the
 | Arrange from source material through DAW export | [Arrangement workflow](arrangement-workflow.md) |
 | Look up a control, its limits and provenance rules | [Editor reference](editor-reference.md), [screenshots](walkthrough.md) |
 | Read the recorded evaluation numbers and their conditions | [Evaluation evidence](evidence.md) |
-| Inspect the real Reharmonize search → F1 scoring → Meta offer loop | [220 passages, 880 executions: report and raw records](../experiments/reharmonize_agent_eval/extended-summary.md), [protocol and tools](../experiments/reharmonize_agent_eval/README.md) |
+| Inspect Meta's actual Reharmonize decisions and the own model's role | [One recorded search → F1 feedback → Meta offer](open-weights.md#follow-one-recorded-reharmonize-decision), [reliability report and raw records](../experiments/reharmonize_agent_eval/extended-summary.md) |
 | Compare local, Meta and hybrid on Reharmonize and Import | [Three-way model comparison: scores, costs and current-code limits](model-comparison.md) |
 | See how the editor, backend and models fit together | [Architecture and module layout](architecture.md) |
 | Check the served checkpoints, training data and theory sources | [Models, training data and theory sources](models.md) |

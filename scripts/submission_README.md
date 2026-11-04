@@ -11,11 +11,13 @@ editor and Music Transformer.
 [Development repository — TheArtist-DAW](https://github.com/PearlLeeStudio/TheArtist-DAW) ·
 [128 recorded contributions](HACKATHON.md)
 
-**Open weights driving a real tool loop:** the unchanged Reharmonize agent passed
-**440/440 Muse Spark Open executions**, compared with **439/440 Muse Spark 1.3
-executions**, on the same 220 authored passages and F1 scorer. Meta chooses the
-searches and final three alternatives; the own model scores the tool's candidates;
-the musician chooses what to apply. [Results and complete traces](experiments/reharmonize_agent_eval/extended-summary.md).
+**Open weights direct the Reharmonize search.** Muse Spark Open requests substitution
+families, receives the Music Transformer's context scores through the tools, and
+selects three validated alternatives. The musician auditions and applies the edits;
+the application exports editable accompaniment tracks. Follow [one recorded
+decision, from input to tool feedback to final offer](docs/open-weights.md#follow-one-recorded-reharmonize-decision).
+The separate [execution report](experiments/reharmonize_agent_eval/extended-summary.md)
+measures completion and constraints across frozen inputs; it stops at the offer.
 
 [![Watch TheArtist's hackathon demo](https://i.ytimg.com/vi/wC-dkLfot-c/hqdefault.jpg)](https://youtu.be/wC-dkLfot-c)
 

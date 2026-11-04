@@ -1,8 +1,8 @@
 # Meta open weights in TheArtist
 
-One page for whoever verifies the open-weight bonus: what runs on Meta open
-weights, how to see it on the live app and in the server records, how it was
-measured, and what does not run on open weights.
+Meta open weights direct harmonic search inside the score-to-DAW workflow.
+This page connects that role to a saved decision, the tools and own-model scores
+it uses, the musician's final choice, and the separate reliability measurements.
 
 ## What runs on open weights
 
@@ -21,6 +21,61 @@ the judge this way since the evening of 2026-11-03 and the Reharmonize agent sin
 
 The other roles stay on Standard **Muse Spark 1.3** through the Meta Model API:
 reading a score PDF or image, and planning and writing the song form. [Which model does what](https://github.com/PearlLeeStudio/TheArtist-DAW/blob/main/README.md#hackathon-work-and-where-meta-is-used).
+
+## Follow one recorded Reharmonize decision
+
+The design assigns Meta the search and offer decisions, the author's Music
+Transformer the contextual likelihood scores, and application code the bounded
+candidate construction and validation. This supports the musician's task:
+exploring sparse harmonic changes in an existing sketch before taking editable
+accompaniment into a DAW. The musician retains the apply decision.
+
+The example below is the **first saved execution** in
+[`open-a/results.json`](../experiments/reharmonize_agent_eval/open-a/results.json),
+`caseId: major-01`, `repeat: 1` (`runs[0]`). It was selected by file order to
+illustrate the mechanism, not ranked by musical quality. The provider is Baseten,
+and every reply identifies `meta-models/muse-spark-open-1026`.
+
+Input: `C G | Am F | Dm G | C C`, C major, 4/4. The selected chords are `Am F`
+in the second bar; each alternative may change at most one selected slot.
+
+| Step | Recorded action | What can be checked |
+|---|---|---|
+| 1. Meta chooses the first searches | `search_substitutions({"families":["common_tones","modal"]})` | The reply's tool arguments specify the families; the following request contains their candidates and F1 scores |
+| 2. Meta requests another family after receiving feedback | `search_substitutions({"families":["dominant"]})` | The next model request includes this additional search's feedback alongside the earlier candidates |
+| 3. Meta selects the offer | `offer_candidates({"candidateIds":["3:A7","2:Am7","3:Dm7b5"]})` | All three complete candidate bodies match saved search feedback; each changes one selected slot |
+| 4. Product hands the choice to the musician | Three alternatives are returned with `selection: "meta"`, model identity and three request IDs | The evaluator verifies the returned offer. Audition, Apply and MIDI export belong to the [product workflow](arrangement-workflow.md), outside this execution test |
+
+| Offered edit | Search family | F1 context score | Score rank among the 16 unique candidate IDs in saved feedback |
+|---|---|---:|---:|
+| `F → A7` | Dominant | −2.58818 | 1 |
+| `Am → Am7` | Common tones | −2.66389 | 2 |
+| `F → Dm7b5` | Modal | −3.85039 | 10 |
+
+The offer gives the musician one edit from each of three search families while
+keeping the unselected harmony intact.
+
+The observed offer differs from taking the top three F1 scores, which would have
+included `F → Dm7`. This demonstrates a selection decision beyond a scalar sort;
+it does not establish a better-sounding choice or an advantage over the current
+local selector, which also uses family/root diversity. The saved feedback proves
+the scores were supplied to Meta, not how much each score caused its decision.
+F1 scores are conditional log likelihoods, not quality probabilities.
+
+The run passed all saved execution and constraint checks in 10.666 seconds.
+Returned usage gives a configured-price estimate of $0.01059180, not a reconciled
+charge. The three request IDs and per-call usage are preserved in the source row.
+The [paired report](../experiments/reharmonize_agent_eval/extended-summary.md#model-role-visible-in-the-saved-traces)
+checks the same feedback-to-offer relationship across all 440 Open executions;
+the example is not a substitute for those complete denominators and failures.
+
+**What this establishes.** Meta performs inspectable search and offer decisions
+inside the existing product, while the own model and deterministic tools provide
+distinct services. Reliability runs test whether that division of work completes
+under stated constraints. The [fixed-pool selector comparison](model-comparison.md#reharmonize-same-passages-three-selection-methods)
+provides separate exploratory baseline evidence. Neither study establishes that
+Meta is indispensable, superior to every current local selector, or preferred by
+listeners. Listening research is planned separately for a paper.
 
 ## How to verify it
 

@@ -1,7 +1,21 @@
 # Evaluation evidence
 
-Numbers behind the product's claims, with their conditions and what they do not
-show. Each result below links to its report or recorded measurements.
+Evidence for the product's claims, with their conditions and limits. Start with
+the decision Meta makes in the workflow, then inspect its execution record and
+the conditions under which it was measured.
+
+| Question | Evidence to inspect | Supported conclusion |
+|---|---|---|
+| What does Meta actually decide? | [One recorded Open tool loop](open-weights.md#follow-one-recorded-reharmonize-decision): search arguments, F1-scored feedback and final candidate IDs | Meta chooses searches and the final offer; the tools construct candidates, F1 scores them and the musician decides what to apply |
+| Do the proposals come from the real tools? | [Saved-feedback audit](../experiments/reharmonize_agent_eval/extended-summary.md#model-role-visible-in-the-saved-traces) | All 1,320 Open proposals in the completed paired study match tool feedback and have finite F1 scores |
+| Does that work reliably within the tested constraints? | [Complete paired report and failure](../experiments/reharmonize_agent_eval/extended-summary.md) | Completion, preservation, change limits, latency and token-based cost estimates on the specified authored inputs |
+| What evidence addresses the benefit of Meta selection? | [Separate fixed-pool comparison](model-comparison.md#reharmonize-same-passages-three-selection-methods) | Exploratory automatic-judge results against the recorded baseline; no measured superiority over the current local selector or listener preference |
+
+The product takes a score or chord sketch through user-selected harmonic edits
+to editable MIDI accompaniment. Agent execution evidence stops at the returned
+offer; it does not measure the complete browser-to-DAW workflow or time saved by
+musicians. More repetitions improve the description of repeated execution on the
+same inputs; they do not establish coverage of all musical situations.
 
 For **local / Meta / hybrid** side by side, start with the
 [three-way comparison](model-comparison.md). It separates Reharmonize selection,
