@@ -71,6 +71,10 @@ permitted by the runner.
 
 The [offline tests](tools/test_campaign.py) cover schedule partitioning, crossed
 input cells, the added mode check, budget isolation, cancellation and failures.
+The [reporter](tools/report.py) recomputes saved checks, reconciles ledgers and
+groups repeats by passage without paid calls. Its [tests](tools/test_report.py)
+check denominators and musical-set overlap. The reporter refuses to overwrite
+an existing report; `--verify-existing` verifies its exact reproduction.
 Use the installed backend Python environment and absolute paths; in the owner's
 checkout use the approved `dev.sh py` wrapper with bytecode writes disabled.
 
