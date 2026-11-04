@@ -138,7 +138,7 @@ def render(report):
         ('Started',lambda a:f"{a['startedRuns']:,}"),
         ('HTTP attempts / extra attempts',lambda a:f"{a['httpAttempts']:,} / {a['extraAttemptsWithinToolTurns']:,}"),
         ('p50 / p95 / p99 seconds',lambda a:' / '.join(str(a['latencySecondsAllStarted'][q]) for q in ('p50','p95','p99'))),
-        ('Returned-usage cost',lambda a:f"${a['returnedUsageCostUsd']:.8f}"),
+        ('Configured-price estimate from returned usage',lambda a:f"${a['returnedUsageCostUsd']:.8f}"),
         ('Unknown-usage reservation',lambda a:f"${a['unknownUsageReservationUsd']:.8f}"),
         ('Offers backed by saved tool feedback',lambda a:f"{a['runsWhoseEntireOfferMatchesSavedSearchFeedback']:,}"),
         ('Offered candidates / finite F1 scores',lambda a:f"{a['offeredCandidates']:,} / {a['offeredCandidatesWithFiniteF1Scores']:,}")]:
@@ -158,7 +158,7 @@ def render(report):
         lines.append(f"- {provider}: {value['allScheduledRepeatsPassed']}/{value['passages']} passages passed all scheduled repeats; {value['sameOfferEveryScheduledRepeat']} returned the same musical offer set on every scheduled repeat. Mean per-passage successful-pair Jaccard overlap: {value['meanPassageJaccardWhereTwoSuccesses']}.")
     lines+=['',f"Recorded failed, cancelled, or non-passing started executions: **{len(report['failures'])}**. Unstarted executions: **{report['unstartedRuns']}**. All are retained. No failed result was replaced by a paid rerun.",'',
             'Failure categories, each scheduled row, paired outcomes, request IDs, usage totals and raw-artifact hashes are in [the numeric report](summary.json). Original full requests, provider replies and tool feedback are in the linked compressed JSON trace files. The gzip headers contain no work timestamp.','',
-            f"Combined accounting: **${report['accountedCostUsd']:.8f}**, against the **${report['approvedMaxUsd']:.2f}** combined cap. This includes unknown-usage reservations; it is not a reconciled invoice or an account-balance reading. Meta and Baseten are billed separately.",'',
+            f"Combined budget accounting: **${report['accountedCostUsd']:.8f}**, against the **${report['approvedMaxUsd']:.2f}** combined cap. Returned token usage is multiplied by the configured rates; unknown usage retains its reservation. These are nominal cost estimates, not confirmed charges, paid invoices or measured credit deductions. Provider credits, sponsorships or discounts are not reconciled here. Meta and Baseten usage is recorded separately.",'',
             '## Interpretation and limits','',
             'Muse requests searches; the unchanged tools construct candidates and the author\'s F1 Music Transformer scores their surrounding context. Muse chooses its final three from saved search feedback. The user chooses what to apply in the product. The evaluator stops at the returned offer.','',
             'The data are authored engineering fixtures using related templates. The 40 regression passages include a deliberately targeted earlier timeout and are post-hoc evidence. Input-level and repeat-level denominators remain separate. This is not a population estimate over independent songs.','',

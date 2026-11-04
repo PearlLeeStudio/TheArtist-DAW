@@ -23,6 +23,9 @@ offers three alternatives, and the musician retains the final choice in the app.
   hard allocation **$120**: two Open workers at $20 each and two Meta workers at
   $40 each. These are separate services and billing accounts, not one shared
   provider credit balance. Invoice credits are not inferred from token usage.
+  Dollar values are configured-price estimates for budget control, not verified
+  charges or credit deductions. Promotional or sponsored access can have a
+  different actual charge; account billing is not inferred from API success.
 - At most four evaluation processes, two per provider. Stop after 21 elapsed
   hours, before additional paid attempts, to leave time for reporting. Independent
   worker caps sum to $120; fresh batch caps come only from each worker's remaining
