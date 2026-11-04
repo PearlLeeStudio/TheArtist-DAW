@@ -1,0 +1,29 @@
+{
+  "protocol": "reharmonize-agent-reliability-v1",
+  "origin": "Twenty authored harmonic fixtures, fixed before observing their search outputs. These are not twenty sampled songs or a listening study.",
+  "modelKey": "ft_f1",
+  "mode": "auto",
+  "repeats": 2,
+  "cases": [
+    {"id":"major-01","key":"C major","complexity":"simple","meter":[4,4],"maxChanges":1,"selected":[[1,0],[1,1]],"bars":[["C","G"],["Am","F"],["Dm","G"],["C","C"]]},
+    {"id":"major-02","key":"G major","complexity":"simple","meter":[3,4],"maxChanges":2,"selected":[[1,0],[2,1]],"bars":[["G","Bm"],["C","G"],["Am","D"],["G","Em"],["C","D"],["G","G"]]},
+    {"id":"major-03","key":"F major","complexity":"simple","meter":[4,4],"maxChanges":3,"selected":[[1,0],[1,1],[2,0],[2,1]],"bars":[["F","Dm"],["Bb","C"],["Bb","Bbm"],["F","C"]]},
+    {"id":"major-04","key":"D major","complexity":"simple","meter":[6,8],"maxChanges":4,"selected":[[1,0],[1,1],[2,0],[2,1]],"bars":[["D","G"],["D","A"],["Bm","G"],["Em","A"],["D","D"]]},
+    {"id":"major-05","key":"Bb major","complexity":"simple","meter":[4,4],"maxChanges":1,"selected":[[2,0]],"bars":[["Eb","Dm"],["Cm","F"],["Bb","Gm"],["Cm","F"],["Bb","Bb"]]},
+    {"id":"major-06","key":"C major","complexity":"complex","meter":[4,4],"maxChanges":2,"selected":[[1,0],[1,1]],"bars":[["Cmaj7","Am7"],["Dm9","G13"],["Em7","A7b9"],["Dm7","G7"],["C6/9","Cmaj7"]]},
+    {"id":"major-07","key":"Eb major","complexity":"complex","meter":[4,4],"maxChanges":3,"selected":[[1,0],[1,1],[2,0],[2,1]],"bars":[["Ebmaj7","Cm7"],["Fm7","Bb7"],["Abmaj7","Adim7"],["Eb/Bb","Bb7"],["Ebmaj9","Cm9"],["Fm9","Bb13"]]},
+    {"id":"major-08","key":"A major","complexity":"complex","meter":[5,4],"maxChanges":4,"selected":[[1,0],[1,1],[2,0],[2,1]],"bars":[["Amaj7","C#7"],["F#m9","B9"],["Bm7","E13"],["A6/9","E7#9"]]},
+    {"id":"major-09","key":"Db major","complexity":"complex","meter":[3,4],"maxChanges":1,"selected":[[2,1]],"bars":[["Dbmaj7","Bbm7"],["Ebm9","Ab7b9"],["Gbmaj7","Gbm6"],["Db/Ab","Ab7"]]},
+    {"id":"major-10","key":"F major","complexity":"complex","meter":[4,4],"maxChanges":2,"selected":[[1,1],[2,0]],"bars":[["Fmaj7","D7b9"],["Gm9","C13"],["F/A","Bbmaj7"],["Bdim7","C7#5"]]},
+    {"id":"minor-01","key":"A minor","complexity":"simple","meter":[4,4],"maxChanges":3,"selected":[[1,0],[1,1],[2,0],[2,1]],"bars":[["Am","G"],["F","E"],["Am","Dm"],["E","Am"]]},
+    {"id":"minor-02","key":"D minor","complexity":"simple","meter":[6,8],"maxChanges":4,"selected":[[1,0],[1,1],[2,0],[2,1]],"bars":[["Dm","Bb"],["C","Am"],["Gm","Dm"],["A","Dm"]]},
+    {"id":"minor-03","key":"E minor","complexity":"simple","meter":[3,4],"maxChanges":1,"selected":[[1,1]],"bars":[["Em","C"],["Am","B"],["Em","G"],["C","B"]]},
+    {"id":"minor-04","key":"B minor","complexity":"simple","meter":[4,4],"maxChanges":2,"selected":[[2,0],[3,1]],"bars":[["Bm","A"],["G","F#"],["Em","Bm"],["F#","Bm"],["G","A"],["D","F#"]]},
+    {"id":"minor-05","key":"F# minor","complexity":"simple","meter":[5,4],"maxChanges":3,"selected":[[1,0],[1,1],[2,0],[2,1]],"bars":[["F#m","D"],["Bm","C#"],["E","A"],["Bm","C#"],["F#m","E"],["D","C#"]]},
+    {"id":"minor-06","key":"C minor","complexity":"complex","meter":[4,4],"maxChanges":4,"selected":[[1,0],[1,1],[2,0],[2,1]],"bars":[["Cm9","Fm7"],["Dm7b5","G7b9"],["Cm6","Abmaj7"],["Fm9","Bb13"],["Ebmaj7","G7#5"],["Cm7","G7"]]},
+    {"id":"minor-07","key":"G minor","complexity":"complex","meter":[3,4],"maxChanges":1,"selected":[[1,1]],"bars":[["Gm9","Cm9"],["Am7b5","D7b9"],["Gm6","Ebmaj7"],["Cm7","D7#9"]]},
+    {"id":"minor-08","key":"B minor","complexity":"complex","meter":[4,4],"maxChanges":2,"selected":[[1,0],[2,0]],"bars":[["Bm7","E9"],["C#m7b5","F#7b9"],["Bm9","Gmaj7"],["Em9","F#7#5"]]},
+    {"id":"minor-09","key":"F minor","complexity":"complex","meter":[6,8],"maxChanges":3,"selected":[[1,0],[1,1],[2,0],[2,1]],"bars":[["Fm9","Bb13"],["Gm7b5","C7b9"],["Dbmaj7","C7#9"],["Fm6","C7"]]},
+    {"id":"minor-10","key":"C# minor","complexity":"complex","meter":[4,4],"maxChanges":4,"selected":[[1,0],[1,1],[2,0],[2,1]],"bars":[["C#m9","F#m9"],["D#m7b5","G#7b9"],["C#m7","Amaj7"],["F#m7","B13"],["Emaj7","G#7#5"],["C#m6","G#7"]]}
+  ]
+}

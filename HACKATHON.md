@@ -12,6 +12,17 @@ one component. The [workflow guide](docs/arrangement-workflow.md) describes the
 implemented scope; the event record below preserves each contribution's original
 evidence and separates it from the pre-existing research and trained models.
 
+## Reliability evidence for the existing Reharmonize agent
+
+The [paired product-agent evaluation](experiments/reharmonize_agent_eval/extended-summary.md)
+adds 220 authored passages, two repeats per provider: **440/440 Muse Spark Open**
+and **439/440 Muse Spark 1.3** executions passed, with the same real F1 scorer and
+constraints. One API timeout remains in the results; no replacement run or retry
+was used. The [protocol and tools](experiments/reharmonize_agent_eval/README.md)
+retain frozen inputs, tool traces, usage and limits. This is verification of the
+existing feature, with no product code, UX or runtime-setting change; it is
+separate from the fixed-pool selector study and the 60 Second-ear reviews.
+
 ## Baseline (not hackathon work)
 
 The ongoing [development repository](https://github.com/PearlLeeStudio/TheArtist-DAW)

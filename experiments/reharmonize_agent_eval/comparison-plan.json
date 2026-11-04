@@ -1,0 +1,25 @@
+{
+  "campaign": "reharmonize-agent-comparison-v1",
+  "authorization": "User approved additional experimentation within a $120 total spending ceiling. This comparison allocates $18; the planned input expansion allocates at most $96, for $114 in new reservations.",
+  "provider": "meta",
+  "model": "muse-spark-1.3",
+  "mode": "Standard only",
+  "distinctPassages": 60,
+  "repeatsPerPassage": 2,
+  "scheduledRuns": 120,
+  "capPerBatchUsd": 6,
+  "totalCapUsd": 18,
+  "comparisonReference": "Existing open-a, open-b and open-c results; these are preserved and not rerun.",
+  "batches": [
+    {"id":"a","input":"cases.json","sha256":"1aa3d5e56ffd2f6c9dba64c9109ec2733de27775d2af17a9a2d278fe202bb100","output":"meta-a","runs":40},
+    {"id":"b","input":"cases-b.json","sha256":"e1aed84b3037303031f2e2cbe302d7e122f5964093c74408a59985312437b614","output":"meta-b","runs":40},
+    {"id":"c","input":"cases-c.json","sha256":"533e38a161c2170f2bef8d9b83341dd2dfeff7e6800cfe76d1e4471a5a5ab3f7","output":"meta-c","runs":40}
+  ],
+  "evaluatorSha256": "8251d320bf05f7b3f6e0e9a462c3aaccdcc70865d2fa3ba37e79153b390240ac",
+  "serviceSha256": "bf861a6dc299e97796a396bb14a42252e785de2021ca4ebf3c4d022c1d55d681",
+  "checkpointSha256": "db9c09d5e1c8a5cee33cb391174c41316bbb4f21e807b345cc9933debe52078c",
+  "priceReference": "https://dev.meta.ai/docs/pricing-rate-limits",
+  "pricesPerMillion": {"input":1.25,"cached":0.15,"output":4.25},
+  "execution": "Three sequential invocations of the unchanged evaluator, two full rounds per batch. No additional paid reruns or parameter changes. Failures and unstarted rows remain in the denominator.",
+  "interpretation": "Paired product-path execution reliability. The existing provider adapters differ; this does not isolate model capability or measure listening preference."
+}

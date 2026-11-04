@@ -1,0 +1,103 @@
+{
+  "campaign": "reharmonize-agent-input-expansion-v1",
+  "approvedOverallNewSpendCeilingUsd": 120,
+  "comparisonAllocationUsd": 18,
+  "expansionAllocationUsd": 96,
+  "totalAllocatedUsd": 114,
+  "newPassages": 160,
+  "repeatsPerPassage": 2,
+  "providers": [
+    "baseten",
+    "meta"
+  ],
+  "scheduledNewRuns": 640,
+  "modelKey": "ft_f1",
+  "searchMode": "auto",
+  "batches": [
+    {
+      "id": "d",
+      "axis": "short-boundaries",
+      "input": "cases-d.json",
+      "sha256": "ae6e77dca52e7c3a8b9b670f022052ab4b51026d564fe01df7a315b532755a25",
+      "passages": 20,
+      "runsPerProvider": 40,
+      "capPerProviderUsd": 6
+    },
+    {
+      "id": "e",
+      "axis": "empty-unselected-slots",
+      "input": "cases-e.json",
+      "sha256": "9810bf1c6c7fb91278e976db4b8d78fd09b173bbe01e46e5abe5e45895e2fcd2",
+      "passages": 20,
+      "runsPerProvider": 40,
+      "capPerProviderUsd": 6
+    },
+    {
+      "id": "f",
+      "axis": "sixteen-selected-slots",
+      "input": "cases-f.json",
+      "sha256": "5163cdebb16c9a067d3e075a14a3fccacbeabcc4adf1d3406221f7d641632b8e",
+      "passages": 20,
+      "runsPerProvider": 40,
+      "capPerProviderUsd": 6
+    },
+    {
+      "id": "g",
+      "axis": "full-surrounding-window",
+      "input": "cases-g.json",
+      "sha256": "48a7c8d776f87351179845568ef1640d14bbb181b5fa8389786d9639ae0622c0",
+      "passages": 20,
+      "runsPerProvider": 40,
+      "capPerProviderUsd": 6
+    },
+    {
+      "id": "h",
+      "axis": "long-score-preservation",
+      "input": "cases-h.json",
+      "sha256": "96882578f07a2338b5263ea711d3e83b53b00d059bc21b1b1936b1484a7c22df",
+      "passages": 20,
+      "runsPerProvider": 40,
+      "capPerProviderUsd": 6
+    },
+    {
+      "id": "i",
+      "axis": "notation-and-slash-bass",
+      "input": "cases-i.json",
+      "sha256": "df141c83222ed07656c112be31f5b36bdb543208f3c22e66ceefffc9d7b40d3e",
+      "passages": 20,
+      "runsPerProvider": 40,
+      "capPerProviderUsd": 6
+    },
+    {
+      "id": "j",
+      "axis": "chromatic-mixture",
+      "input": "cases-j.json",
+      "sha256": "02dc23e5726f68960bfbb5b06ed2517f362f23eee09cedf5ced0d41bcdc41a7d",
+      "passages": 20,
+      "runsPerProvider": 40,
+      "capPerProviderUsd": 6
+    },
+    {
+      "id": "k",
+      "axis": "meter-and-ending-selection",
+      "input": "cases-k.json",
+      "sha256": "386f1b98d584bba6efecf22e4537bfdf11afc1fc39ae62e08d2b50cb9ecdadf9",
+      "passages": 20,
+      "runsPerProvider": 40,
+      "capPerProviderUsd": 6
+    }
+  ],
+  "evaluatorSha256": "8251d320bf05f7b3f6e0e9a462c3aaccdcc70865d2fa3ba37e79153b390240ac",
+  "serviceSha256": "bf861a6dc299e97796a396bb14a42252e785de2021ca4ebf3c4d022c1d55d681",
+  "checkpointSha256": "db9c09d5e1c8a5cee33cb391174c41316bbb4f21e807b345cc9933debe52078c",
+  "generatorSha256": "b28aab01f88f87fc8759671258aa363327a502ab7c5f95f7c3ac382a6fe4dd0d",
+  "executionOrder": "d through k; baseten then meta within each batch; two rounds in each unchanged evaluator invocation; no concurrent model executions.",
+  "noReplacementRuns": true,
+  "denominator": "All 640 scheduled expansion rows, including failures and unstarted runs; two repeats grouped under each passage.",
+  "interpretation": "Systematic authored fixtures, not corpus samples. Full-score lengths up to 512 bars do not imply 512-bar model prompts: the unchanged product uses the selection plus eight surrounding bars on each side, at most 24 bars.",
+  "offlineChecks": {
+    "uniqueFullPassagesAcrossOldAndNew": 220,
+    "uniqueEffectiveWindowsAcrossOldAndNew": 220,
+    "networkCalls": 0
+  }
+}

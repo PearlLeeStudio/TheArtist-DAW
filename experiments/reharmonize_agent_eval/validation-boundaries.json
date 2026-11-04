@@ -1,0 +1,3988 @@
+{
+  "scope": "Offline product schema and chord validation only. Not paid agent executions or listening evidence.",
+  "sourceInputHashes": {
+    "cases.json": "1aa3d5e56ffd2f6c9dba64c9109ec2733de27775d2af17a9a2d278fe202bb100",
+    "cases-b.json": "e1aed84b3037303031f2e2cbe302d7e122f5964093c74408a59985312437b614",
+    "cases-c.json": "533e38a161c2170f2bef8d9b83341dd2dfeff7e6800cfe76d1e4471a5a5ab3f7"
+  },
+  "sourceRequests": 60,
+  "mutationsPerRequest": 11,
+  "checks": 660,
+  "rejected": 660,
+  "networkCalls": 0,
+  "mutations": [
+    "duplicate_selection",
+    "selection_outside_context",
+    "non_consecutive_context",
+    "duplicate_measure",
+    "selected_empty_chord",
+    "selection_span_nine_bars",
+    "seventeen_selected_slots",
+    "unsupported_meter",
+    "change_limit_five",
+    "unsupported_chord",
+    "context_513_bars"
+  ],
+  "rows": [
+    {
+      "caseId": "major-01",
+      "mutation": "duplicate_selection",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-01",
+      "mutation": "selection_outside_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-01",
+      "mutation": "non_consecutive_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-01",
+      "mutation": "duplicate_measure",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-01",
+      "mutation": "selected_empty_chord",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-01",
+      "mutation": "selection_span_nine_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-01",
+      "mutation": "seventeen_selected_slots",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-01",
+      "mutation": "unsupported_meter",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-01",
+      "mutation": "change_limit_five",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-01",
+      "mutation": "unsupported_chord",
+      "rejected": true,
+      "errorType": "ValueError"
+    },
+    {
+      "caseId": "major-01",
+      "mutation": "context_513_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-02",
+      "mutation": "duplicate_selection",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-02",
+      "mutation": "selection_outside_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-02",
+      "mutation": "non_consecutive_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-02",
+      "mutation": "duplicate_measure",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-02",
+      "mutation": "selected_empty_chord",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-02",
+      "mutation": "selection_span_nine_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-02",
+      "mutation": "seventeen_selected_slots",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-02",
+      "mutation": "unsupported_meter",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-02",
+      "mutation": "change_limit_five",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-02",
+      "mutation": "unsupported_chord",
+      "rejected": true,
+      "errorType": "ValueError"
+    },
+    {
+      "caseId": "major-02",
+      "mutation": "context_513_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-03",
+      "mutation": "duplicate_selection",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-03",
+      "mutation": "selection_outside_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-03",
+      "mutation": "non_consecutive_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-03",
+      "mutation": "duplicate_measure",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-03",
+      "mutation": "selected_empty_chord",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-03",
+      "mutation": "selection_span_nine_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-03",
+      "mutation": "seventeen_selected_slots",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-03",
+      "mutation": "unsupported_meter",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-03",
+      "mutation": "change_limit_five",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-03",
+      "mutation": "unsupported_chord",
+      "rejected": true,
+      "errorType": "ValueError"
+    },
+    {
+      "caseId": "major-03",
+      "mutation": "context_513_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-04",
+      "mutation": "duplicate_selection",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-04",
+      "mutation": "selection_outside_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-04",
+      "mutation": "non_consecutive_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-04",
+      "mutation": "duplicate_measure",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-04",
+      "mutation": "selected_empty_chord",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-04",
+      "mutation": "selection_span_nine_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-04",
+      "mutation": "seventeen_selected_slots",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-04",
+      "mutation": "unsupported_meter",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-04",
+      "mutation": "change_limit_five",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-04",
+      "mutation": "unsupported_chord",
+      "rejected": true,
+      "errorType": "ValueError"
+    },
+    {
+      "caseId": "major-04",
+      "mutation": "context_513_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-05",
+      "mutation": "duplicate_selection",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-05",
+      "mutation": "selection_outside_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-05",
+      "mutation": "non_consecutive_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-05",
+      "mutation": "duplicate_measure",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-05",
+      "mutation": "selected_empty_chord",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-05",
+      "mutation": "selection_span_nine_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-05",
+      "mutation": "seventeen_selected_slots",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-05",
+      "mutation": "unsupported_meter",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-05",
+      "mutation": "change_limit_five",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-05",
+      "mutation": "unsupported_chord",
+      "rejected": true,
+      "errorType": "ValueError"
+    },
+    {
+      "caseId": "major-05",
+      "mutation": "context_513_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-06",
+      "mutation": "duplicate_selection",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-06",
+      "mutation": "selection_outside_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-06",
+      "mutation": "non_consecutive_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-06",
+      "mutation": "duplicate_measure",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-06",
+      "mutation": "selected_empty_chord",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-06",
+      "mutation": "selection_span_nine_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-06",
+      "mutation": "seventeen_selected_slots",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-06",
+      "mutation": "unsupported_meter",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-06",
+      "mutation": "change_limit_five",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-06",
+      "mutation": "unsupported_chord",
+      "rejected": true,
+      "errorType": "ValueError"
+    },
+    {
+      "caseId": "major-06",
+      "mutation": "context_513_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-07",
+      "mutation": "duplicate_selection",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-07",
+      "mutation": "selection_outside_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-07",
+      "mutation": "non_consecutive_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-07",
+      "mutation": "duplicate_measure",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-07",
+      "mutation": "selected_empty_chord",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-07",
+      "mutation": "selection_span_nine_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-07",
+      "mutation": "seventeen_selected_slots",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-07",
+      "mutation": "unsupported_meter",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-07",
+      "mutation": "change_limit_five",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-07",
+      "mutation": "unsupported_chord",
+      "rejected": true,
+      "errorType": "ValueError"
+    },
+    {
+      "caseId": "major-07",
+      "mutation": "context_513_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-08",
+      "mutation": "duplicate_selection",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-08",
+      "mutation": "selection_outside_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-08",
+      "mutation": "non_consecutive_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-08",
+      "mutation": "duplicate_measure",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-08",
+      "mutation": "selected_empty_chord",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-08",
+      "mutation": "selection_span_nine_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-08",
+      "mutation": "seventeen_selected_slots",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-08",
+      "mutation": "unsupported_meter",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-08",
+      "mutation": "change_limit_five",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-08",
+      "mutation": "unsupported_chord",
+      "rejected": true,
+      "errorType": "ValueError"
+    },
+    {
+      "caseId": "major-08",
+      "mutation": "context_513_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-09",
+      "mutation": "duplicate_selection",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-09",
+      "mutation": "selection_outside_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-09",
+      "mutation": "non_consecutive_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-09",
+      "mutation": "duplicate_measure",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-09",
+      "mutation": "selected_empty_chord",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-09",
+      "mutation": "selection_span_nine_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-09",
+      "mutation": "seventeen_selected_slots",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-09",
+      "mutation": "unsupported_meter",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-09",
+      "mutation": "change_limit_five",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-09",
+      "mutation": "unsupported_chord",
+      "rejected": true,
+      "errorType": "ValueError"
+    },
+    {
+      "caseId": "major-09",
+      "mutation": "context_513_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-10",
+      "mutation": "duplicate_selection",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-10",
+      "mutation": "selection_outside_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-10",
+      "mutation": "non_consecutive_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-10",
+      "mutation": "duplicate_measure",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-10",
+      "mutation": "selected_empty_chord",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-10",
+      "mutation": "selection_span_nine_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-10",
+      "mutation": "seventeen_selected_slots",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-10",
+      "mutation": "unsupported_meter",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-10",
+      "mutation": "change_limit_five",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "major-10",
+      "mutation": "unsupported_chord",
+      "rejected": true,
+      "errorType": "ValueError"
+    },
+    {
+      "caseId": "major-10",
+      "mutation": "context_513_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-01",
+      "mutation": "duplicate_selection",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-01",
+      "mutation": "selection_outside_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-01",
+      "mutation": "non_consecutive_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-01",
+      "mutation": "duplicate_measure",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-01",
+      "mutation": "selected_empty_chord",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-01",
+      "mutation": "selection_span_nine_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-01",
+      "mutation": "seventeen_selected_slots",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-01",
+      "mutation": "unsupported_meter",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-01",
+      "mutation": "change_limit_five",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-01",
+      "mutation": "unsupported_chord",
+      "rejected": true,
+      "errorType": "ValueError"
+    },
+    {
+      "caseId": "minor-01",
+      "mutation": "context_513_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-02",
+      "mutation": "duplicate_selection",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-02",
+      "mutation": "selection_outside_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-02",
+      "mutation": "non_consecutive_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-02",
+      "mutation": "duplicate_measure",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-02",
+      "mutation": "selected_empty_chord",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-02",
+      "mutation": "selection_span_nine_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-02",
+      "mutation": "seventeen_selected_slots",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-02",
+      "mutation": "unsupported_meter",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-02",
+      "mutation": "change_limit_five",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-02",
+      "mutation": "unsupported_chord",
+      "rejected": true,
+      "errorType": "ValueError"
+    },
+    {
+      "caseId": "minor-02",
+      "mutation": "context_513_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-03",
+      "mutation": "duplicate_selection",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-03",
+      "mutation": "selection_outside_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-03",
+      "mutation": "non_consecutive_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-03",
+      "mutation": "duplicate_measure",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-03",
+      "mutation": "selected_empty_chord",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-03",
+      "mutation": "selection_span_nine_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-03",
+      "mutation": "seventeen_selected_slots",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-03",
+      "mutation": "unsupported_meter",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-03",
+      "mutation": "change_limit_five",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-03",
+      "mutation": "unsupported_chord",
+      "rejected": true,
+      "errorType": "ValueError"
+    },
+    {
+      "caseId": "minor-03",
+      "mutation": "context_513_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-04",
+      "mutation": "duplicate_selection",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-04",
+      "mutation": "selection_outside_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-04",
+      "mutation": "non_consecutive_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-04",
+      "mutation": "duplicate_measure",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-04",
+      "mutation": "selected_empty_chord",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-04",
+      "mutation": "selection_span_nine_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-04",
+      "mutation": "seventeen_selected_slots",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-04",
+      "mutation": "unsupported_meter",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-04",
+      "mutation": "change_limit_five",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-04",
+      "mutation": "unsupported_chord",
+      "rejected": true,
+      "errorType": "ValueError"
+    },
+    {
+      "caseId": "minor-04",
+      "mutation": "context_513_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-05",
+      "mutation": "duplicate_selection",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-05",
+      "mutation": "selection_outside_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-05",
+      "mutation": "non_consecutive_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-05",
+      "mutation": "duplicate_measure",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-05",
+      "mutation": "selected_empty_chord",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-05",
+      "mutation": "selection_span_nine_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-05",
+      "mutation": "seventeen_selected_slots",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-05",
+      "mutation": "unsupported_meter",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-05",
+      "mutation": "change_limit_five",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-05",
+      "mutation": "unsupported_chord",
+      "rejected": true,
+      "errorType": "ValueError"
+    },
+    {
+      "caseId": "minor-05",
+      "mutation": "context_513_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-06",
+      "mutation": "duplicate_selection",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-06",
+      "mutation": "selection_outside_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-06",
+      "mutation": "non_consecutive_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-06",
+      "mutation": "duplicate_measure",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-06",
+      "mutation": "selected_empty_chord",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-06",
+      "mutation": "selection_span_nine_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-06",
+      "mutation": "seventeen_selected_slots",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-06",
+      "mutation": "unsupported_meter",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-06",
+      "mutation": "change_limit_five",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-06",
+      "mutation": "unsupported_chord",
+      "rejected": true,
+      "errorType": "ValueError"
+    },
+    {
+      "caseId": "minor-06",
+      "mutation": "context_513_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-07",
+      "mutation": "duplicate_selection",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-07",
+      "mutation": "selection_outside_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-07",
+      "mutation": "non_consecutive_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-07",
+      "mutation": "duplicate_measure",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-07",
+      "mutation": "selected_empty_chord",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-07",
+      "mutation": "selection_span_nine_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-07",
+      "mutation": "seventeen_selected_slots",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-07",
+      "mutation": "unsupported_meter",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-07",
+      "mutation": "change_limit_five",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-07",
+      "mutation": "unsupported_chord",
+      "rejected": true,
+      "errorType": "ValueError"
+    },
+    {
+      "caseId": "minor-07",
+      "mutation": "context_513_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-08",
+      "mutation": "duplicate_selection",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-08",
+      "mutation": "selection_outside_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-08",
+      "mutation": "non_consecutive_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-08",
+      "mutation": "duplicate_measure",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-08",
+      "mutation": "selected_empty_chord",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-08",
+      "mutation": "selection_span_nine_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-08",
+      "mutation": "seventeen_selected_slots",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-08",
+      "mutation": "unsupported_meter",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-08",
+      "mutation": "change_limit_five",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-08",
+      "mutation": "unsupported_chord",
+      "rejected": true,
+      "errorType": "ValueError"
+    },
+    {
+      "caseId": "minor-08",
+      "mutation": "context_513_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-09",
+      "mutation": "duplicate_selection",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-09",
+      "mutation": "selection_outside_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-09",
+      "mutation": "non_consecutive_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-09",
+      "mutation": "duplicate_measure",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-09",
+      "mutation": "selected_empty_chord",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-09",
+      "mutation": "selection_span_nine_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-09",
+      "mutation": "seventeen_selected_slots",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-09",
+      "mutation": "unsupported_meter",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-09",
+      "mutation": "change_limit_five",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-09",
+      "mutation": "unsupported_chord",
+      "rejected": true,
+      "errorType": "ValueError"
+    },
+    {
+      "caseId": "minor-09",
+      "mutation": "context_513_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-10",
+      "mutation": "duplicate_selection",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-10",
+      "mutation": "selection_outside_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-10",
+      "mutation": "non_consecutive_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-10",
+      "mutation": "duplicate_measure",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-10",
+      "mutation": "selected_empty_chord",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-10",
+      "mutation": "selection_span_nine_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-10",
+      "mutation": "seventeen_selected_slots",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-10",
+      "mutation": "unsupported_meter",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-10",
+      "mutation": "change_limit_five",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "minor-10",
+      "mutation": "unsupported_chord",
+      "rejected": true,
+      "errorType": "ValueError"
+    },
+    {
+      "caseId": "minor-10",
+      "mutation": "context_513_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-01",
+      "mutation": "duplicate_selection",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-01",
+      "mutation": "selection_outside_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-01",
+      "mutation": "non_consecutive_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-01",
+      "mutation": "duplicate_measure",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-01",
+      "mutation": "selected_empty_chord",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-01",
+      "mutation": "selection_span_nine_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-01",
+      "mutation": "seventeen_selected_slots",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-01",
+      "mutation": "unsupported_meter",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-01",
+      "mutation": "change_limit_five",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-01",
+      "mutation": "unsupported_chord",
+      "rejected": true,
+      "errorType": "ValueError"
+    },
+    {
+      "caseId": "b-major-01",
+      "mutation": "context_513_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-02",
+      "mutation": "duplicate_selection",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-02",
+      "mutation": "selection_outside_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-02",
+      "mutation": "non_consecutive_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-02",
+      "mutation": "duplicate_measure",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-02",
+      "mutation": "selected_empty_chord",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-02",
+      "mutation": "selection_span_nine_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-02",
+      "mutation": "seventeen_selected_slots",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-02",
+      "mutation": "unsupported_meter",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-02",
+      "mutation": "change_limit_five",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-02",
+      "mutation": "unsupported_chord",
+      "rejected": true,
+      "errorType": "ValueError"
+    },
+    {
+      "caseId": "b-major-02",
+      "mutation": "context_513_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-03",
+      "mutation": "duplicate_selection",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-03",
+      "mutation": "selection_outside_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-03",
+      "mutation": "non_consecutive_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-03",
+      "mutation": "duplicate_measure",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-03",
+      "mutation": "selected_empty_chord",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-03",
+      "mutation": "selection_span_nine_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-03",
+      "mutation": "seventeen_selected_slots",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-03",
+      "mutation": "unsupported_meter",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-03",
+      "mutation": "change_limit_five",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-03",
+      "mutation": "unsupported_chord",
+      "rejected": true,
+      "errorType": "ValueError"
+    },
+    {
+      "caseId": "b-major-03",
+      "mutation": "context_513_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-04",
+      "mutation": "duplicate_selection",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-04",
+      "mutation": "selection_outside_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-04",
+      "mutation": "non_consecutive_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-04",
+      "mutation": "duplicate_measure",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-04",
+      "mutation": "selected_empty_chord",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-04",
+      "mutation": "selection_span_nine_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-04",
+      "mutation": "seventeen_selected_slots",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-04",
+      "mutation": "unsupported_meter",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-04",
+      "mutation": "change_limit_five",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-04",
+      "mutation": "unsupported_chord",
+      "rejected": true,
+      "errorType": "ValueError"
+    },
+    {
+      "caseId": "b-major-04",
+      "mutation": "context_513_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-05",
+      "mutation": "duplicate_selection",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-05",
+      "mutation": "selection_outside_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-05",
+      "mutation": "non_consecutive_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-05",
+      "mutation": "duplicate_measure",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-05",
+      "mutation": "selected_empty_chord",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-05",
+      "mutation": "selection_span_nine_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-05",
+      "mutation": "seventeen_selected_slots",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-05",
+      "mutation": "unsupported_meter",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-05",
+      "mutation": "change_limit_five",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-05",
+      "mutation": "unsupported_chord",
+      "rejected": true,
+      "errorType": "ValueError"
+    },
+    {
+      "caseId": "b-major-05",
+      "mutation": "context_513_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-06",
+      "mutation": "duplicate_selection",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-06",
+      "mutation": "selection_outside_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-06",
+      "mutation": "non_consecutive_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-06",
+      "mutation": "duplicate_measure",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-06",
+      "mutation": "selected_empty_chord",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-06",
+      "mutation": "selection_span_nine_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-06",
+      "mutation": "seventeen_selected_slots",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-06",
+      "mutation": "unsupported_meter",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-06",
+      "mutation": "change_limit_five",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-06",
+      "mutation": "unsupported_chord",
+      "rejected": true,
+      "errorType": "ValueError"
+    },
+    {
+      "caseId": "b-major-06",
+      "mutation": "context_513_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-07",
+      "mutation": "duplicate_selection",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-07",
+      "mutation": "selection_outside_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-07",
+      "mutation": "non_consecutive_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-07",
+      "mutation": "duplicate_measure",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-07",
+      "mutation": "selected_empty_chord",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-07",
+      "mutation": "selection_span_nine_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-07",
+      "mutation": "seventeen_selected_slots",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-07",
+      "mutation": "unsupported_meter",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-07",
+      "mutation": "change_limit_five",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-07",
+      "mutation": "unsupported_chord",
+      "rejected": true,
+      "errorType": "ValueError"
+    },
+    {
+      "caseId": "b-major-07",
+      "mutation": "context_513_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-08",
+      "mutation": "duplicate_selection",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-08",
+      "mutation": "selection_outside_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-08",
+      "mutation": "non_consecutive_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-08",
+      "mutation": "duplicate_measure",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-08",
+      "mutation": "selected_empty_chord",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-08",
+      "mutation": "selection_span_nine_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-08",
+      "mutation": "seventeen_selected_slots",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-08",
+      "mutation": "unsupported_meter",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-08",
+      "mutation": "change_limit_five",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-08",
+      "mutation": "unsupported_chord",
+      "rejected": true,
+      "errorType": "ValueError"
+    },
+    {
+      "caseId": "b-major-08",
+      "mutation": "context_513_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-09",
+      "mutation": "duplicate_selection",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-09",
+      "mutation": "selection_outside_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-09",
+      "mutation": "non_consecutive_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-09",
+      "mutation": "duplicate_measure",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-09",
+      "mutation": "selected_empty_chord",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-09",
+      "mutation": "selection_span_nine_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-09",
+      "mutation": "seventeen_selected_slots",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-09",
+      "mutation": "unsupported_meter",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-09",
+      "mutation": "change_limit_five",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-09",
+      "mutation": "unsupported_chord",
+      "rejected": true,
+      "errorType": "ValueError"
+    },
+    {
+      "caseId": "b-major-09",
+      "mutation": "context_513_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-10",
+      "mutation": "duplicate_selection",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-10",
+      "mutation": "selection_outside_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-10",
+      "mutation": "non_consecutive_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-10",
+      "mutation": "duplicate_measure",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-10",
+      "mutation": "selected_empty_chord",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-10",
+      "mutation": "selection_span_nine_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-10",
+      "mutation": "seventeen_selected_slots",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-10",
+      "mutation": "unsupported_meter",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-10",
+      "mutation": "change_limit_five",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-major-10",
+      "mutation": "unsupported_chord",
+      "rejected": true,
+      "errorType": "ValueError"
+    },
+    {
+      "caseId": "b-major-10",
+      "mutation": "context_513_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-01",
+      "mutation": "duplicate_selection",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-01",
+      "mutation": "selection_outside_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-01",
+      "mutation": "non_consecutive_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-01",
+      "mutation": "duplicate_measure",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-01",
+      "mutation": "selected_empty_chord",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-01",
+      "mutation": "selection_span_nine_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-01",
+      "mutation": "seventeen_selected_slots",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-01",
+      "mutation": "unsupported_meter",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-01",
+      "mutation": "change_limit_five",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-01",
+      "mutation": "unsupported_chord",
+      "rejected": true,
+      "errorType": "ValueError"
+    },
+    {
+      "caseId": "b-minor-01",
+      "mutation": "context_513_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-02",
+      "mutation": "duplicate_selection",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-02",
+      "mutation": "selection_outside_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-02",
+      "mutation": "non_consecutive_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-02",
+      "mutation": "duplicate_measure",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-02",
+      "mutation": "selected_empty_chord",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-02",
+      "mutation": "selection_span_nine_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-02",
+      "mutation": "seventeen_selected_slots",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-02",
+      "mutation": "unsupported_meter",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-02",
+      "mutation": "change_limit_five",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-02",
+      "mutation": "unsupported_chord",
+      "rejected": true,
+      "errorType": "ValueError"
+    },
+    {
+      "caseId": "b-minor-02",
+      "mutation": "context_513_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-03",
+      "mutation": "duplicate_selection",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-03",
+      "mutation": "selection_outside_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-03",
+      "mutation": "non_consecutive_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-03",
+      "mutation": "duplicate_measure",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-03",
+      "mutation": "selected_empty_chord",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-03",
+      "mutation": "selection_span_nine_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-03",
+      "mutation": "seventeen_selected_slots",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-03",
+      "mutation": "unsupported_meter",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-03",
+      "mutation": "change_limit_five",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-03",
+      "mutation": "unsupported_chord",
+      "rejected": true,
+      "errorType": "ValueError"
+    },
+    {
+      "caseId": "b-minor-03",
+      "mutation": "context_513_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-04",
+      "mutation": "duplicate_selection",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-04",
+      "mutation": "selection_outside_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-04",
+      "mutation": "non_consecutive_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-04",
+      "mutation": "duplicate_measure",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-04",
+      "mutation": "selected_empty_chord",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-04",
+      "mutation": "selection_span_nine_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-04",
+      "mutation": "seventeen_selected_slots",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-04",
+      "mutation": "unsupported_meter",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-04",
+      "mutation": "change_limit_five",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-04",
+      "mutation": "unsupported_chord",
+      "rejected": true,
+      "errorType": "ValueError"
+    },
+    {
+      "caseId": "b-minor-04",
+      "mutation": "context_513_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-05",
+      "mutation": "duplicate_selection",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-05",
+      "mutation": "selection_outside_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-05",
+      "mutation": "non_consecutive_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-05",
+      "mutation": "duplicate_measure",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-05",
+      "mutation": "selected_empty_chord",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-05",
+      "mutation": "selection_span_nine_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-05",
+      "mutation": "seventeen_selected_slots",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-05",
+      "mutation": "unsupported_meter",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-05",
+      "mutation": "change_limit_five",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-05",
+      "mutation": "unsupported_chord",
+      "rejected": true,
+      "errorType": "ValueError"
+    },
+    {
+      "caseId": "b-minor-05",
+      "mutation": "context_513_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-06",
+      "mutation": "duplicate_selection",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-06",
+      "mutation": "selection_outside_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-06",
+      "mutation": "non_consecutive_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-06",
+      "mutation": "duplicate_measure",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-06",
+      "mutation": "selected_empty_chord",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-06",
+      "mutation": "selection_span_nine_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-06",
+      "mutation": "seventeen_selected_slots",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-06",
+      "mutation": "unsupported_meter",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-06",
+      "mutation": "change_limit_five",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-06",
+      "mutation": "unsupported_chord",
+      "rejected": true,
+      "errorType": "ValueError"
+    },
+    {
+      "caseId": "b-minor-06",
+      "mutation": "context_513_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-07",
+      "mutation": "duplicate_selection",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-07",
+      "mutation": "selection_outside_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-07",
+      "mutation": "non_consecutive_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-07",
+      "mutation": "duplicate_measure",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-07",
+      "mutation": "selected_empty_chord",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-07",
+      "mutation": "selection_span_nine_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-07",
+      "mutation": "seventeen_selected_slots",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-07",
+      "mutation": "unsupported_meter",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-07",
+      "mutation": "change_limit_five",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-07",
+      "mutation": "unsupported_chord",
+      "rejected": true,
+      "errorType": "ValueError"
+    },
+    {
+      "caseId": "b-minor-07",
+      "mutation": "context_513_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-08",
+      "mutation": "duplicate_selection",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-08",
+      "mutation": "selection_outside_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-08",
+      "mutation": "non_consecutive_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-08",
+      "mutation": "duplicate_measure",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-08",
+      "mutation": "selected_empty_chord",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-08",
+      "mutation": "selection_span_nine_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-08",
+      "mutation": "seventeen_selected_slots",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-08",
+      "mutation": "unsupported_meter",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-08",
+      "mutation": "change_limit_five",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-08",
+      "mutation": "unsupported_chord",
+      "rejected": true,
+      "errorType": "ValueError"
+    },
+    {
+      "caseId": "b-minor-08",
+      "mutation": "context_513_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-09",
+      "mutation": "duplicate_selection",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-09",
+      "mutation": "selection_outside_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-09",
+      "mutation": "non_consecutive_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-09",
+      "mutation": "duplicate_measure",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-09",
+      "mutation": "selected_empty_chord",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-09",
+      "mutation": "selection_span_nine_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-09",
+      "mutation": "seventeen_selected_slots",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-09",
+      "mutation": "unsupported_meter",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-09",
+      "mutation": "change_limit_five",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-09",
+      "mutation": "unsupported_chord",
+      "rejected": true,
+      "errorType": "ValueError"
+    },
+    {
+      "caseId": "b-minor-09",
+      "mutation": "context_513_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-10",
+      "mutation": "duplicate_selection",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-10",
+      "mutation": "selection_outside_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-10",
+      "mutation": "non_consecutive_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-10",
+      "mutation": "duplicate_measure",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-10",
+      "mutation": "selected_empty_chord",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-10",
+      "mutation": "selection_span_nine_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-10",
+      "mutation": "seventeen_selected_slots",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-10",
+      "mutation": "unsupported_meter",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-10",
+      "mutation": "change_limit_five",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "b-minor-10",
+      "mutation": "unsupported_chord",
+      "rejected": true,
+      "errorType": "ValueError"
+    },
+    {
+      "caseId": "b-minor-10",
+      "mutation": "context_513_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-01",
+      "mutation": "duplicate_selection",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-01",
+      "mutation": "selection_outside_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-01",
+      "mutation": "non_consecutive_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-01",
+      "mutation": "duplicate_measure",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-01",
+      "mutation": "selected_empty_chord",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-01",
+      "mutation": "selection_span_nine_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-01",
+      "mutation": "seventeen_selected_slots",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-01",
+      "mutation": "unsupported_meter",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-01",
+      "mutation": "change_limit_five",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-01",
+      "mutation": "unsupported_chord",
+      "rejected": true,
+      "errorType": "ValueError"
+    },
+    {
+      "caseId": "c-major-01",
+      "mutation": "context_513_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-02",
+      "mutation": "duplicate_selection",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-02",
+      "mutation": "selection_outside_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-02",
+      "mutation": "non_consecutive_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-02",
+      "mutation": "duplicate_measure",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-02",
+      "mutation": "selected_empty_chord",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-02",
+      "mutation": "selection_span_nine_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-02",
+      "mutation": "seventeen_selected_slots",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-02",
+      "mutation": "unsupported_meter",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-02",
+      "mutation": "change_limit_five",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-02",
+      "mutation": "unsupported_chord",
+      "rejected": true,
+      "errorType": "ValueError"
+    },
+    {
+      "caseId": "c-major-02",
+      "mutation": "context_513_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-03",
+      "mutation": "duplicate_selection",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-03",
+      "mutation": "selection_outside_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-03",
+      "mutation": "non_consecutive_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-03",
+      "mutation": "duplicate_measure",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-03",
+      "mutation": "selected_empty_chord",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-03",
+      "mutation": "selection_span_nine_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-03",
+      "mutation": "seventeen_selected_slots",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-03",
+      "mutation": "unsupported_meter",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-03",
+      "mutation": "change_limit_five",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-03",
+      "mutation": "unsupported_chord",
+      "rejected": true,
+      "errorType": "ValueError"
+    },
+    {
+      "caseId": "c-major-03",
+      "mutation": "context_513_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-04",
+      "mutation": "duplicate_selection",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-04",
+      "mutation": "selection_outside_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-04",
+      "mutation": "non_consecutive_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-04",
+      "mutation": "duplicate_measure",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-04",
+      "mutation": "selected_empty_chord",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-04",
+      "mutation": "selection_span_nine_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-04",
+      "mutation": "seventeen_selected_slots",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-04",
+      "mutation": "unsupported_meter",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-04",
+      "mutation": "change_limit_five",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-04",
+      "mutation": "unsupported_chord",
+      "rejected": true,
+      "errorType": "ValueError"
+    },
+    {
+      "caseId": "c-major-04",
+      "mutation": "context_513_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-05",
+      "mutation": "duplicate_selection",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-05",
+      "mutation": "selection_outside_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-05",
+      "mutation": "non_consecutive_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-05",
+      "mutation": "duplicate_measure",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-05",
+      "mutation": "selected_empty_chord",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-05",
+      "mutation": "selection_span_nine_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-05",
+      "mutation": "seventeen_selected_slots",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-05",
+      "mutation": "unsupported_meter",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-05",
+      "mutation": "change_limit_five",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-05",
+      "mutation": "unsupported_chord",
+      "rejected": true,
+      "errorType": "ValueError"
+    },
+    {
+      "caseId": "c-major-05",
+      "mutation": "context_513_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-06",
+      "mutation": "duplicate_selection",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-06",
+      "mutation": "selection_outside_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-06",
+      "mutation": "non_consecutive_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-06",
+      "mutation": "duplicate_measure",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-06",
+      "mutation": "selected_empty_chord",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-06",
+      "mutation": "selection_span_nine_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-06",
+      "mutation": "seventeen_selected_slots",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-06",
+      "mutation": "unsupported_meter",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-06",
+      "mutation": "change_limit_five",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-06",
+      "mutation": "unsupported_chord",
+      "rejected": true,
+      "errorType": "ValueError"
+    },
+    {
+      "caseId": "c-major-06",
+      "mutation": "context_513_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-07",
+      "mutation": "duplicate_selection",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-07",
+      "mutation": "selection_outside_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-07",
+      "mutation": "non_consecutive_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-07",
+      "mutation": "duplicate_measure",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-07",
+      "mutation": "selected_empty_chord",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-07",
+      "mutation": "selection_span_nine_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-07",
+      "mutation": "seventeen_selected_slots",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-07",
+      "mutation": "unsupported_meter",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-07",
+      "mutation": "change_limit_five",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-07",
+      "mutation": "unsupported_chord",
+      "rejected": true,
+      "errorType": "ValueError"
+    },
+    {
+      "caseId": "c-major-07",
+      "mutation": "context_513_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-08",
+      "mutation": "duplicate_selection",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-08",
+      "mutation": "selection_outside_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-08",
+      "mutation": "non_consecutive_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-08",
+      "mutation": "duplicate_measure",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-08",
+      "mutation": "selected_empty_chord",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-08",
+      "mutation": "selection_span_nine_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-08",
+      "mutation": "seventeen_selected_slots",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-08",
+      "mutation": "unsupported_meter",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-08",
+      "mutation": "change_limit_five",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-08",
+      "mutation": "unsupported_chord",
+      "rejected": true,
+      "errorType": "ValueError"
+    },
+    {
+      "caseId": "c-major-08",
+      "mutation": "context_513_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-09",
+      "mutation": "duplicate_selection",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-09",
+      "mutation": "selection_outside_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-09",
+      "mutation": "non_consecutive_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-09",
+      "mutation": "duplicate_measure",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-09",
+      "mutation": "selected_empty_chord",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-09",
+      "mutation": "selection_span_nine_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-09",
+      "mutation": "seventeen_selected_slots",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-09",
+      "mutation": "unsupported_meter",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-09",
+      "mutation": "change_limit_five",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-09",
+      "mutation": "unsupported_chord",
+      "rejected": true,
+      "errorType": "ValueError"
+    },
+    {
+      "caseId": "c-major-09",
+      "mutation": "context_513_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-10",
+      "mutation": "duplicate_selection",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-10",
+      "mutation": "selection_outside_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-10",
+      "mutation": "non_consecutive_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-10",
+      "mutation": "duplicate_measure",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-10",
+      "mutation": "selected_empty_chord",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-10",
+      "mutation": "selection_span_nine_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-10",
+      "mutation": "seventeen_selected_slots",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-10",
+      "mutation": "unsupported_meter",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-10",
+      "mutation": "change_limit_five",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-major-10",
+      "mutation": "unsupported_chord",
+      "rejected": true,
+      "errorType": "ValueError"
+    },
+    {
+      "caseId": "c-major-10",
+      "mutation": "context_513_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-01",
+      "mutation": "duplicate_selection",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-01",
+      "mutation": "selection_outside_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-01",
+      "mutation": "non_consecutive_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-01",
+      "mutation": "duplicate_measure",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-01",
+      "mutation": "selected_empty_chord",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-01",
+      "mutation": "selection_span_nine_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-01",
+      "mutation": "seventeen_selected_slots",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-01",
+      "mutation": "unsupported_meter",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-01",
+      "mutation": "change_limit_five",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-01",
+      "mutation": "unsupported_chord",
+      "rejected": true,
+      "errorType": "ValueError"
+    },
+    {
+      "caseId": "c-minor-01",
+      "mutation": "context_513_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-02",
+      "mutation": "duplicate_selection",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-02",
+      "mutation": "selection_outside_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-02",
+      "mutation": "non_consecutive_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-02",
+      "mutation": "duplicate_measure",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-02",
+      "mutation": "selected_empty_chord",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-02",
+      "mutation": "selection_span_nine_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-02",
+      "mutation": "seventeen_selected_slots",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-02",
+      "mutation": "unsupported_meter",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-02",
+      "mutation": "change_limit_five",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-02",
+      "mutation": "unsupported_chord",
+      "rejected": true,
+      "errorType": "ValueError"
+    },
+    {
+      "caseId": "c-minor-02",
+      "mutation": "context_513_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-03",
+      "mutation": "duplicate_selection",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-03",
+      "mutation": "selection_outside_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-03",
+      "mutation": "non_consecutive_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-03",
+      "mutation": "duplicate_measure",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-03",
+      "mutation": "selected_empty_chord",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-03",
+      "mutation": "selection_span_nine_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-03",
+      "mutation": "seventeen_selected_slots",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-03",
+      "mutation": "unsupported_meter",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-03",
+      "mutation": "change_limit_five",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-03",
+      "mutation": "unsupported_chord",
+      "rejected": true,
+      "errorType": "ValueError"
+    },
+    {
+      "caseId": "c-minor-03",
+      "mutation": "context_513_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-04",
+      "mutation": "duplicate_selection",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-04",
+      "mutation": "selection_outside_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-04",
+      "mutation": "non_consecutive_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-04",
+      "mutation": "duplicate_measure",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-04",
+      "mutation": "selected_empty_chord",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-04",
+      "mutation": "selection_span_nine_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-04",
+      "mutation": "seventeen_selected_slots",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-04",
+      "mutation": "unsupported_meter",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-04",
+      "mutation": "change_limit_five",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-04",
+      "mutation": "unsupported_chord",
+      "rejected": true,
+      "errorType": "ValueError"
+    },
+    {
+      "caseId": "c-minor-04",
+      "mutation": "context_513_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-05",
+      "mutation": "duplicate_selection",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-05",
+      "mutation": "selection_outside_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-05",
+      "mutation": "non_consecutive_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-05",
+      "mutation": "duplicate_measure",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-05",
+      "mutation": "selected_empty_chord",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-05",
+      "mutation": "selection_span_nine_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-05",
+      "mutation": "seventeen_selected_slots",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-05",
+      "mutation": "unsupported_meter",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-05",
+      "mutation": "change_limit_five",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-05",
+      "mutation": "unsupported_chord",
+      "rejected": true,
+      "errorType": "ValueError"
+    },
+    {
+      "caseId": "c-minor-05",
+      "mutation": "context_513_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-06",
+      "mutation": "duplicate_selection",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-06",
+      "mutation": "selection_outside_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-06",
+      "mutation": "non_consecutive_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-06",
+      "mutation": "duplicate_measure",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-06",
+      "mutation": "selected_empty_chord",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-06",
+      "mutation": "selection_span_nine_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-06",
+      "mutation": "seventeen_selected_slots",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-06",
+      "mutation": "unsupported_meter",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-06",
+      "mutation": "change_limit_five",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-06",
+      "mutation": "unsupported_chord",
+      "rejected": true,
+      "errorType": "ValueError"
+    },
+    {
+      "caseId": "c-minor-06",
+      "mutation": "context_513_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-07",
+      "mutation": "duplicate_selection",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-07",
+      "mutation": "selection_outside_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-07",
+      "mutation": "non_consecutive_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-07",
+      "mutation": "duplicate_measure",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-07",
+      "mutation": "selected_empty_chord",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-07",
+      "mutation": "selection_span_nine_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-07",
+      "mutation": "seventeen_selected_slots",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-07",
+      "mutation": "unsupported_meter",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-07",
+      "mutation": "change_limit_five",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-07",
+      "mutation": "unsupported_chord",
+      "rejected": true,
+      "errorType": "ValueError"
+    },
+    {
+      "caseId": "c-minor-07",
+      "mutation": "context_513_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-08",
+      "mutation": "duplicate_selection",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-08",
+      "mutation": "selection_outside_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-08",
+      "mutation": "non_consecutive_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-08",
+      "mutation": "duplicate_measure",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-08",
+      "mutation": "selected_empty_chord",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-08",
+      "mutation": "selection_span_nine_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-08",
+      "mutation": "seventeen_selected_slots",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-08",
+      "mutation": "unsupported_meter",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-08",
+      "mutation": "change_limit_five",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-08",
+      "mutation": "unsupported_chord",
+      "rejected": true,
+      "errorType": "ValueError"
+    },
+    {
+      "caseId": "c-minor-08",
+      "mutation": "context_513_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-09",
+      "mutation": "duplicate_selection",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-09",
+      "mutation": "selection_outside_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-09",
+      "mutation": "non_consecutive_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-09",
+      "mutation": "duplicate_measure",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-09",
+      "mutation": "selected_empty_chord",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-09",
+      "mutation": "selection_span_nine_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-09",
+      "mutation": "seventeen_selected_slots",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-09",
+      "mutation": "unsupported_meter",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-09",
+      "mutation": "change_limit_five",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-09",
+      "mutation": "unsupported_chord",
+      "rejected": true,
+      "errorType": "ValueError"
+    },
+    {
+      "caseId": "c-minor-09",
+      "mutation": "context_513_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-10",
+      "mutation": "duplicate_selection",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-10",
+      "mutation": "selection_outside_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-10",
+      "mutation": "non_consecutive_context",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-10",
+      "mutation": "duplicate_measure",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-10",
+      "mutation": "selected_empty_chord",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-10",
+      "mutation": "selection_span_nine_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-10",
+      "mutation": "seventeen_selected_slots",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-10",
+      "mutation": "unsupported_meter",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-10",
+      "mutation": "change_limit_five",
+      "rejected": true,
+      "errorType": "ValidationError"
+    },
+    {
+      "caseId": "c-minor-10",
+      "mutation": "unsupported_chord",
+      "rejected": true,
+      "errorType": "ValueError"
+    },
+    {
+      "caseId": "c-minor-10",
+      "mutation": "context_513_bars",
+      "rejected": true,
+      "errorType": "ValidationError"
+    }
+  ]
+}

@@ -30,7 +30,10 @@ feel flat and hear alternatives in context:
 - **Reharmonize agent.** Muse Spark runs a bounded substitution search through native
   tool calls, my Music Transformer scores each change against the surrounding bars,
   and the musician combines and applies the alternatives on the staff. Run details
-  show the completed calls: hosted median 10.4 s, about $0.02 per search.
+  show the completed calls. A separate in-process evaluation of the unchanged agent
+  passed **440/440 Muse Spark Open executions** and **439/440 Muse Spark 1.3
+  executions**, on the same 220 authored passages with the same F1 scorer and
+  constraints ([full results](experiments/reharmonize_agent_eval/extended-summary.md)).
 - **Import.** A supported vector PDF opens as editable chords from the local reader;
   with **Use Meta model**, Muse Spark checks the original in the background. Images
   need Meta reading before they can open. In a separate 640-slot notes-to-chords
@@ -241,11 +244,11 @@ turned into a result that looks like success.
 | Meta capability | Where it does the work | Recorded result |
 |---|---|---|
 | Whole-document reading of a score PDF or image | Import's **Use Meta model** check, compared bar by bar with the local reader; images are read by Meta only | 52-bar PDF on the hosted demo: 51.4 s, $0.053 |
-| Agentic tool calling over a bounded music search | Reharmonize: up to 4 tool turns drive the substitution search; Meta picks three contrasting patches the Music Transformer has scored in context; **Run details** show the calls | hosted median 10.4 s; $0.014–0.021 per search in recorded runs |
+| Agentic tool calling over a bounded music search | Reharmonize: Meta requests searches, the Music Transformer scores the returned candidates, and Meta offers three alternatives for the musician to choose | 220 authored passages × 2 repeats per provider: **440/440 Open, 439/440 Spark 1.3** passed; one API timeout retained, no retries; [product-agent evidence](experiments/reharmonize_agent_eval/extended-summary.md) |
 | Agentic plan → validate → revise loop with strict JSON | Complete the form: code validates each plan and sends errors back for up to 2 revisions, then Meta composes (**Muse Spark only**) or judges (hybrid) | empty score → 32 bars / 6 sections on the hosted demo: 23.7 s, $0.020 |
 | Reasoning held to computed facts | Second ear: each reason cites an analyzer fact and is marked *analyzer confirmed* or *model statement* | 115/115 reasons confirmed in 60 reviews; $0.0041, 2.8 s per review |
 | Reading harmony from notes | The note-interpretation task behind Import assist (API `engine: "auto"`) | exact chords: Muse Spark 89.5%, local analyzer 77.8% (640 slots of real progressions rendered as notes) |
-| Meta open weights | The judge role (`LLM_JUDGE_*`) and the Reharmonize agent (`LLM_AGENT_*`, tools stated as JSON) run on Muse Spark Open through Baseten on the hosted demo; the notes → chords task was also run on it | Second ear: same pick as Muse Spark in 52/60 reviews at $0.0028 per review. Notes → chords: 89.4% exact where answered (73.8% of all 640 slots; 7 of 40 calls failed). Reharmonize: three hosted searches on open weights completed with three tool calls and three candidates each ($0.0121, $0.0096, $0.0048; 11.5, 9.3, 7.7 s); the blinded comparison was not run on open weights |
+| Meta open weights | The judge role (`LLM_JUDGE_*`) and the Reharmonize agent (`LLM_AGENT_*`, tools stated as JSON) run on Muse Spark Open through Baseten on the hosted demo | Reharmonize: **440/440 in-process executions**, 1,320 offered candidates traceable to actual search feedback and F1 scores. Separate Second ear: 60/60 reviews, 112/112 cited values confirmed, 52/60 picks matching Spark 1.3. The three hosted Amazing Grace repeats and notes → chords results remain separate; [roles and evidence](docs/open-weights.md) |
 
 Reasoning effort is set per role, for example low for file reading and tool turns and medium
 for the form plan. Measurements and their limits are under [Evidence](#evidence).
@@ -306,11 +309,13 @@ user messages, and Run details name the open-weight model. The hosted demo switc
 the agent to open weights on 2026-11-04: its first three searches, on the Amazing Grace
 request below, each completed `search_substitutions → search_substitutions →
 offer_candidates` with three candidates at $0.0121, $0.0096 and $0.0048 and 11.5, 9.3
-and 7.7 s ([record](experiments/meta/reharmonize_open_weights_live.json)). The blinded
-Reharmonize comparison was not run on open weights, so no open-weight comparison number
-is claimed; `agent/compare_reharmonization.py --selector-provider baseten` runs it with
-the blinded judge still on Muse Spark. What runs on open weights, how to verify it on
-the screen and in the ledger, and both measurements:
+and 7.7 s ([record](experiments/meta/reharmonize_open_weights_live.json)). These are
+three repetitions of one passage. The separate
+[880-execution product-agent evaluation](experiments/reharmonize_agent_eval/extended-summary.md)
+compares Open and Spark 1.3 on 220 authored passages with the same F1 scorer.
+The older blinded fixed-pool selector comparison was run on Spark 1.3 only; its
+scores are not the product-agent reliability measurements. What runs on open
+weights, how to verify it on the screen and in the ledger, and the separate studies:
 [Meta open weights in TheArtist](docs/open-weights.md).
 
 **One Reharmonize run, recorded.** *Amazing Grace* bars 5–8 (`G | G D7 | G | G`, G major, 3/4)
@@ -426,6 +431,46 @@ only what can be measured now: agreement with reference chords, constraint check
 cost and time. The full records are in the [evaluation evidence](docs/evidence.md),
 the [evaluation framing](docs/evaluation.md) and the
 [three-way model comparison](docs/model-comparison.md).
+
+### Reharmonize: Meta searches, the own model scores, the musician chooses
+
+The unchanged product agent calls `search_substitutions`; the tools construct
+bounded candidates and the author's F1 Music Transformer scores their surrounding
+harmony. Meta reads that feedback and calls `offer_candidates` with three choices.
+The musician retains the final selection and application in the editor.
+
+**220 authored passages × 2 repeats × 2 providers = 880 executions.** Inputs cover
+major/minor keys, simple/complex chords, change limits 1–4, up to 16 selected slots,
+and full requests up to 512 bars. The existing agent/scorer window remains at most
+24 bars. Inputs were frozen before each cohort's outputs; repeats are grouped by
+passage and are not new songs.
+
+| Product-agent measurement | Muse Spark Open / Baseten | Muse Spark 1.3 / Meta Standard |
+|---|---:|---:|
+| All execution and constraint checks passed | **440/440** | **439/440** |
+| Passages passing both repeats | 220/220 | 219/220 |
+| Offered candidates matching saved search feedback, with F1 scores | 1,320/1,320 | 1,317/1,317 |
+| HTTP attempts / retries | 1,294 / 0 | 1,319 / 0 |
+| p50 / p95 seconds, all started runs | 5.423 / 8.724 | 17.609 / 30.449 |
+| Returned-usage cost | $3.41593040 | $6.70197475 |
+| Unknown-usage reservation | $0 | $0.03380800 |
+
+One Spark 1.3 call timed out before the final offer and remains a failure; no paid
+replacement run was used. Checks cover completion, three distinct applied chord
+versions, valid changes, selection preservation and change limits. All 22 result
+sets retain the inputs, tool turns, responses, request IDs where returned, usage,
+cost and errors. The separate offline checks rejected 660/660 malformed inputs.
+
+These are in-process execution measurements with real provider calls and real F1
+weights. Browser interaction, MIDI export and DAW playback were not exercised by
+this campaign. The adapters and cache conditions differ; these timings do not
+isolate model capability. Automatic validity and F1 scores do not establish
+listening preference or musical superiority. The hosted Amazing Grace repeats and
+the 60 Second-ear reviews remain separate evidence.
+
+[Report and batch results](experiments/reharmonize_agent_eval/extended-summary.md) ·
+[Full numeric evidence](experiments/reharmonize_agent_eval/extended-summary.json) ·
+[Protocol, frozen inputs and tools](experiments/reharmonize_agent_eval/README.md)
 
 ### Local vs Meta vs hybrid
 

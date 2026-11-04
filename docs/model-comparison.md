@@ -13,6 +13,12 @@ use Standard `muse-spark-1.3`, not Muse Spark Open or a Contributor model.
 
 ## What the three conditions mean
 
+For the **actual product tool loop**, see the separate
+[220-passage, 880-execution comparison](../experiments/reharmonize_agent_eval/extended-summary.md):
+Muse Spark Open passed 440/440 runs and Spark 1.3 passed 439/440 with the same F1
+scorer, frozen requests and constraints. That measures execution reliability, not
+the fixed-pool selector scores below or a contest between F1 and Muse.
+
 | Task | Local / own model | Meta only | Hybrid |
 |---|---|---|---|
 | Reharmonize | The author's Music Transformer ranks a fixed mathematical substitution pool by conditional likelihood | Muse Spark chooses three alternatives from the same pool, without Transformer scores | Muse Spark chooses from the same pool with Transformer scores visible; `hybrid1` is one selection pass |

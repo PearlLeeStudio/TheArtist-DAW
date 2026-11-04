@@ -92,8 +92,43 @@ at $0.0121, $0.0096 and $0.0048 and 11.5, 9.3 and 7.7 s, every request id record
 
 ## How it was measured
 
-Both measurements ran the product's own code paths against the same inputs on
-both Meta models, with every request id, cost, latency and failure kept.
+The studies below retain their separate tasks, inputs and denominators. Provider
+request IDs and usage are kept where returned; missing values after a timeout
+remain explicitly unknown.
+
+**Reharmonize product agent, 440 executions per model**
+([paired report](../experiments/reharmonize_agent_eval/extended-summary.md),
+[full evidence](../experiments/reharmonize_agent_eval/extended-summary.json),
+[protocol and tools](../experiments/reharmonize_agent_eval/README.md)):
+220 authored passages, two repeats per provider, using the same unchanged agent,
+real F1 checkpoint and constraints. Meta chooses which searches to request, the
+search tools construct bounded candidates and F1 scores them in context, and Meta
+selects the final three through `offer_candidates`. The musician chooses what to
+apply in the product; this evaluation stops at the agent's returned offer.
+
+| Product-agent measurement | Muse Spark Open / Baseten | Muse Spark 1.3 / Meta Standard |
+|---|---:|---:|
+| All execution and constraint checks passed | **440/440** | **439/440** |
+| Passages passing both repeats | 220/220 | 219/220 |
+| Offered candidates matching saved search feedback, with F1 scores | 1,320/1,320 | 1,317/1,317 |
+| HTTP attempts / retries | 1,294 / 0 | 1,319 / 0 |
+| p50 / p95 seconds | 5.423 / 8.724 | 17.609 / 30.449 |
+| Returned-usage cost | $3.41593040 | $6.70197475 |
+| Unknown-usage reservation | $0 | $0.03380800 |
+
+The one failure is a Spark 1.3 API timeout before the final offer. It remains in
+all scheduled-run denominators; there was no replacement paid run. Checks cover
+three distinct applied chord versions, valid addresses and original values,
+selection preservation, change limits and input immutability. The model's 1,320
+Open proposals all match actual search feedback with finite F1 scores.
+
+These are **in-process product-agent executions**, not browser or DAW trials,
+listener preferences, or an isolated model-capability comparison. The two
+existing provider adapters and cache conditions differ. The authored fixtures
+use related harmonic templates; repeats are not independent songs. Full requests
+reach 512 bars, while the unchanged agent/scorer context remains at most 24 bars.
+The earlier hosted evidence remains three repeats of one Amazing Grace passage.
+The separate 60 Second-ear reviews below are not pooled into this completion rate.
 
 **Second ear, 60 reviews per model** ([report](../experiments/review_eval/summary.md),
 [open-weight results](../experiments/review_eval/results-openweight.json),
@@ -131,13 +166,15 @@ the three recorded searches above; its blinded comparison was run on Muse Spark 
 
 ## What does not run on open weights
 
-- **The Reharmonize comparison.** The agent is its own client role (`LLM_AGENT_*`):
+- **The blinded fixed-pool Reharmonize selector comparison.** The agent is its own client role (`LLM_AGENT_*`):
   off Meta Standard the two tools are stated in the system message and each turn is
   one checked strict-JSON call, and the hosted demo runs it on Muse Spark Open
   (above). The blinded selector comparison, however, was run with the agent on Muse
   Spark 1.3; `agent/compare_reharmonization.py --selector-provider baseten` runs it
   on open weights with the blinded judge still on Muse Spark, and no such number is
-  claimed. Run details name the model either way.
+  claimed for that fixed-pool study. The 880-run product-agent reliability
+  comparison above is a separate measured experiment. Run details name the model
+  either way.
 - **Score reading.** The whole-file PDF/image reading uses the Meta Model API.
 - **Listening quality.** No listening study was run; "same pick" and
   "reasons confirmed" are agreement and consistency measures, not preference.

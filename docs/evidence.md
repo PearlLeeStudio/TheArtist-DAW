@@ -16,6 +16,7 @@ evidence, not listener preference, and no row is a listening study.
 
 | Evaluation | Material | Result | Record |
 |---|---|---|---|
+| Unchanged Reharmonize product agent: Muse Spark Open / Muse Spark 1.3, same F1 scorer | 220 authored passages × 2 repeats per provider, 880 executions; major/minor keys, chord complexity, limits 1–4, selection and context boundaries | **440/440 Open, 439/440 Spark 1.3** passed all completion and constraint checks; one API timeout retained, no retries. p50/p95 5.423/8.724 s and 17.609/30.449 s. Returned-usage costs $3.41593040 and $6.70197475; separate unknown-usage reservation $0.033808 | [paired report](../experiments/reharmonize_agent_eval/extended-summary.md), [full evidence](../experiments/reharmonize_agent_eval/extended-summary.json), [protocol](../experiments/reharmonize_agent_eval/README.md) |
 | Reharmonization selectors: F4 / Meta only / one-pass hybrid / two-pass hybrid | JAZZVAR, 40 passages in 16 tune groups; main run 200 Meta calls / $2.35408405, no failures; separate pilot 10 calls / $0.11096150 | Blinded automatic judge (Muse Spark, the same model family as the Meta selector) means 2.464 / 2.671 / 2.624 / 2.649 on a 0–4 scale; no clear winner among Meta and the hybrids; the second pass changes the candidate set in 5/40 passages at about twice the time and cost | [protocol](../experiments/reharmonization/README.md), [results](../experiments/reharmonization/results.md) |
 | F2 vs F3 checkpoints in the same four selectors | Same 40 passages, 200 successful calls per model | The first-two-candidate F2−F3 difference includes 0 in all four methods; each method's top-2 union keeps the all-twelve best in 35/40; deduplicating all top-3 lists leaves at most 8 versions per passage | [Korean synthesis](reharmonization-evaluation.md), [paired ranks](../experiments/reharmonization/f2-f3-rank-results.md) |
 | Full-form planner with fixed seeds, Muse plan + F1 vs template | 20 requests × 3 seeds = 60 pairs; 152 calls, $1.02 | Structure and length pass 60/60 on both sides; section-type variety 2.75 → 3.48; out-of-key slots in diatonic genres 19.4% → 14.7%; rule-corrected slots 22.4% → 19.8%; the final judge still asked for regeneration in 21/60 | [comparison](../experiments/agent_eval/fixed-seed/comparison.md) |
@@ -30,6 +31,16 @@ evidence, not listener preference, and no row is a listening study.
 | Hosted Reharmonize with the agent role on Meta open weights | The README's Amazing Grace bars 5–8 request, three searches right after the hosted switch to Muse Spark Open on Baseten; $0.0265 in total | Each search completed `search_substitutions → search_substitutions → offer_candidates` with three candidates (G7 / D7♭9 / A♭7♯11 twice, G7 / Gmaj7 / D7♭9 once), 11.5 / 9.3 / 7.7 s; a run record, not a comparison | [record](../experiments/meta/reharmonize_open_weights_live.json) |
 | Returning-chorus reuse | 64 bars, 3 conditions × 5 seeds, OMT on | p50 2.276–2.303 s → 1.680–1.698 s (about 25–27% less); the reused chorus slots match exactly | [chorus memory](../experiments/speed/chorus-memory.md) |
 | Historical local PDF cache (removed from the source-discard workflow) | 24-page, 465-bar PDF, 5 repetitions | First reading and harmony analysis median 1.565 → 1.485 s; cached reuse 0.159 s; parsing and analysis identical. Cached-reuse time is not a current runtime claim | [runtime performance](../experiments/speed/runtime-performance.md) |
+
+The product-agent campaign exercises the real search → F1 scoring → Meta offer
+loop, not the fixed candidate pool in the selector comparison. It verifies three
+distinct applied versions, selected-region preservation and change limits using
+the unchanged product entry point. The 220 inputs are authored engineering
+fixtures with related harmonic templates; repeats are grouped by passage. The
+in-process runs do not exercise the browser, user application, MIDI export or DAW
+playback. Its timings reflect the existing provider adapters and cache conditions,
+not an isolated model-capability comparison. The earlier three hosted Amazing
+Grace repeats and 60 Second-ear reviews are not pooled into its completion rate.
 
 Not measured: listener preference, composer editing time, or end-to-end latency
 with the default OMT retrieval on. [Evaluation framing](evaluation.md) explains

@@ -1,0 +1,31 @@
+{
+  "campaign": "reharmonize-agent-reliability-expanded-v1",
+  "status": "prepared; paid execution requires explicit approval",
+  "method": "Use the unchanged evaluator for three separately frozen batches. Increase input coverage without changing product or evaluator behavior.",
+  "distinctAuthoredPassages": 60,
+  "repeatsPerPassage": 2,
+  "scheduledRunsPerProvider": 120,
+  "provider": "baseten",
+  "model": "meta-models/muse-spark-open-1026",
+  "modelKey": "ft_f1",
+  "evaluatorSha256": "8251d320bf05f7b3f6e0e9a462c3aaccdcc70865d2fa3ba37e79153b390240ac",
+  "serviceSha256": "bf861a6dc299e97796a396bb14a42252e785de2021ca4ebf3c4d022c1d55d681",
+  "checkpointSha256": "db9c09d5e1c8a5cee33cb391174c41316bbb4f21e807b345cc9933debe52078c",
+  "proposedCapPerBatchUsd": 6,
+  "proposedTotalCapUsd": 18,
+  "optionalComparison": {
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "additionalRuns": 120,
+    "additionalProposedCapUsd": 18,
+    "requiresSeparateApproval": true
+  },
+  "batches": [
+    {"id":"a","input":"cases.json","sha256":"1aa3d5e56ffd2f6c9dba64c9109ec2733de27775d2af17a9a2d278fe202bb100","passages":20,"runs":40},
+    {"id":"b","input":"cases-b.json","sha256":"e1aed84b3037303031f2e2cbe302d7e122f5964093c74408a59985312437b614","passages":20,"runs":40},
+    {"id":"c","input":"cases-c.json","sha256":"533e38a161c2170f2bef8d9b83341dd2dfeff7e6800cfe76d1e4471a5a5ab3f7","passages":20,"runs":40}
+  ],
+  "executionOrder": "a, b, c; within each batch, the evaluator's existing two full rounds",
+  "aggregation": "Keep all 120 scheduled rows and failures. Group two repeats under each of 60 unique passage IDs; do not count them as independent songs. Pool observed latency rows before calculating percentiles. Compare providers within corresponding batches.",
+  "noAdditionalPaidReruns": true
+}

@@ -11,6 +11,12 @@ editor and Music Transformer.
 [Development repository — TheArtist-DAW](https://github.com/PearlLeeStudio/TheArtist-DAW) ·
 [128 recorded contributions](HACKATHON.md)
 
+**Open weights driving a real tool loop:** the unchanged Reharmonize agent passed
+**440/440 Muse Spark Open executions**, compared with **439/440 Muse Spark 1.3
+executions**, on the same 220 authored passages and F1 scorer. Meta chooses the
+searches and final three alternatives; the own model scores the tool's candidates;
+the musician chooses what to apply. [Results and complete traces](experiments/reharmonize_agent_eval/extended-summary.md).
+
 [![Watch TheArtist's hackathon demo](https://i.ytimg.com/vi/wC-dkLfot-c/hqdefault.jpg)](https://youtu.be/wC-dkLfot-c)
 
 ## Why I built it
@@ -58,7 +64,9 @@ each of the 128 additions to its commits, tests and limits.
   reads the Music Transformer's context score for every patch the tool returns, and
   ends the run with `offer_candidates`: three patches that differ from each other.
   The musician auditions **Origin / Alter 1–3** on the staff, combines them and
-  applies. Hosted median 10.4 s, about $0.02 per search.
+  applies. The separate 880-execution product-agent evaluation verifies this
+  tool loop and its constraints ([report](experiments/reharmonize_agent_eval/extended-summary.md));
+  the older hosted measurements remain separate.
   [Agent](backend/app/services/reharmonize_agent.py) · [guide](docs/reharmonization.md) ·
   [one recorded run](experiments/meta/reharmonize_amazing_grace.json)
 - *Complete the form.* Muse Spark plans the song form as strict JSON; code checks
@@ -153,6 +161,7 @@ whose calls, costs and failures are kept.
 
 | What was measured | Material | Result |
 |---|---|---|
+| Reharmonize product agent: Open vs Spark 1.3, same F1 scorer | 220 authored passages × 2 repeats × 2 providers = 880 executions | **440/440 Open, 439/440 Spark 1.3** pass every execution and constraint check; one API timeout retained, no retries; Open's 1,320 offers match search feedback and F1 scores · [report](experiments/reharmonize_agent_eval/extended-summary.md) |
 | Reading chords from notes: local analyzer / Muse Spark / hybrid / Muse Spark Open | 40 real progressions in 13 genres, rendered as notes in six voicing variants: 640 slots | exact chords **77.8% → 89.5%** with Muse Spark (+11.7 points, 40 calls, $0.34); hybrid 83.9% for 6 calls / $0.05; Muse Spark Open 89.4% where it answered, 73.8% over all slots (7 of 40 calls failed) · [report](experiments/harmony_eval/summary.md) |
 | Reharmonize selectors under a blinded automatic judge | 40 four-bar passages from 16 JAZZVAR tunes, one shared candidate pool, three checkpoint runs | F4 run: local 2.464 / Meta 2.671 / hybrid 2.624 on 0–4; Meta − local **+0.208**, paired bootstrap 95% CI [+0.042, +0.379]; hybrid above local in all three runs · [results](experiments/reharmonization/results.md) |
 | Second ear judge on both Meta models | 20 A/B/C lists × 3 orders = 60 reviews per model | every reason cites an analyzer value: **115/115** (Muse Spark) and **112/112** (Muse Spark Open); same pick in **52/60**; $0.0028 vs $0.0041 and 2.1 s vs 2.8 s per review · [report](experiments/review_eval/summary.md) |
@@ -160,13 +169,38 @@ whose calls, costs and failures are kept.
 | Own-model speed with an attention cache, identical outputs | CPU, 4 threads; F1 / F4 / Rock LoRA at 8, 32 and 64 bars; 30 seed-matched pairs | **1.73–3.89× faster**; F1 64 bars 7.18 → 1.85 s; model loading 0.471 → 0.080 s; hosted Reharmonize median 13.8 → 10.4 s · [report](experiments/speed/runtime-performance.md) |
 | Reconstruction and DAW execution | this package → Docker → HTTP workflow → Logic Pro | 18 models loaded; a 20-bar original PDF → F1 completion to 64 bars → MIDI with the source chords preserved; opened in Logic Pro as three editable tracks and bounced to a 139.6 s stereo WAV · [record](experiments/speed/reconstruction.json) |
 
+
+The product-agent campaign measures the actual search → F1 scoring → Meta offer
+loop. The existing agent, prompts, candidate generation, scorer, constraints and
+runtime configuration were unchanged. Coverage includes major/minor keys, chord
+complexity, limits of 1–4 changed slots, up to 16 selected slots and full requests
+up to 512 bars; the agent/scorer still sees at most 24 bars. These are authored
+engineering fixtures with related templates, not representative sampled songs.
+
+| Product-agent execution metric | Muse Spark Open | Muse Spark 1.3 Standard |
+|---|---:|---:|
+| Passages passing both repeats | 220/220 | 219/220 |
+| p50 / p95 seconds, all started runs | 5.423 / 8.724 | 17.609 / 30.449 |
+| Returned-usage cost | $3.41593040 | $6.70197475 |
+| Unknown-usage reservation | $0 | $0.03380800 |
+
+One Spark 1.3 API call timed out before the final offer; its missing usage and
+request ID remain unknown. No failed run was replaced. Browser interaction,
+user application, MIDI export and DAW playback were not exercised in this
+campaign. Adapter and cache differences limit interpretation of timing and cost.
+See the [frozen inputs, protocol and offline verification tools](experiments/reharmonize_agent_eval/README.md)
+and [full numeric evidence](experiments/reharmonize_agent_eval/extended-summary.json).
+
 Not claimed: listener preference or musical superiority (no listening study, and
 the Reharmonize judge is the same model family as the Meta selector); Import
 accuracy on arbitrary PDFs (the local reader supported 0 of 8 Mutopia editions, and
-Meta's Bach reading matched 8/32 bars); time saved for a musician (not measured); a
-measured Reharmonize comparison on open weights (the hosted demo has run the agent
-on Muse Spark Open since 2026-11-04 and three searches are recorded, but the blinded
-selector comparison was run with the agent on Muse Spark 1.3 only).
+Meta's Bach reading matched 8/32 bars); time saved for a musician (not measured);
+blinded fixed-pool selector scores on open weights (that study used Spark 1.3).
+The separate 880-execution product-agent comparison does measure Open and Spark
+1.3, with the same F1 scorer, requests and constraints; it does not rank the
+musical quality of those models or compare F1 against Muse. The earlier hosted
+Amazing Grace evidence is three repeats of one passage, and the 60 Second-ear
+reviews remain separate.
 Conditions, intervals and raw records: [evidence](docs/evidence.md) ·
 [three-way comparison](docs/model-comparison.md) ·
 [evaluation framing](docs/evaluation.md).
@@ -182,6 +216,7 @@ installation or patch application is needed to read them.
 | New features and their development commits | [Contribution record](https://github.com/PearlLeeStudio/TheArtist-Meta-Hackathon/blob/main/HACKATHON.md) |
 | Model comparisons, measured accuracy, cost and time | [Model comparison](https://github.com/PearlLeeStudio/TheArtist-Meta-Hackathon/blob/main/docs/model-comparison.md), [evidence and limits](https://github.com/PearlLeeStudio/TheArtist-Meta-Hackathon/blob/main/docs/evidence.md) |
 | Muse Spark 89.5% vs local 77.8% on 640 notes-to-chords slots | [Benchmark report and raw results](https://github.com/PearlLeeStudio/TheArtist-Meta-Hackathon/tree/main/experiments/harmony_eval) — a separate benchmark, not an Import workflow accuracy claim |
+| Muse Spark Open directing the product agent: 440/440 executions | [Paired report, frozen inputs and complete tool traces](experiments/reharmonize_agent_eval/extended-summary.md) |
 | Muse Spark Open on Baseten: 52/60 matching candidate choices | [Second-ear comparison and both result sets](https://github.com/PearlLeeStudio/TheArtist-Meta-Hackathon/tree/main/experiments/review_eval) |
 | System structure, agent flow and model roles | [Architecture](https://github.com/PearlLeeStudio/TheArtist-Meta-Hackathon/blob/main/docs/architecture.md), [Reharmonize](https://github.com/PearlLeeStudio/TheArtist-Meta-Hackathon/blob/main/docs/reharmonization.md), [model catalog](https://github.com/PearlLeeStudio/TheArtist-Meta-Hackathon/blob/main/docs/models.md) |
 | Score → harmony → playback → PDF → DAW | [Workflow](https://github.com/PearlLeeStudio/TheArtist-Meta-Hackathon/blob/main/docs/arrangement-workflow.md), [screenshots](https://github.com/PearlLeeStudio/TheArtist-Meta-Hackathon/blob/main/docs/walkthrough.md) |

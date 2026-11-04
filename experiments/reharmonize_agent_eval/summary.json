@@ -1,0 +1,1540 @@
+{
+  "campaign": "reharmonize-agent-reliability-expanded-v1",
+  "state": "completed",
+  "provider": "baseten",
+  "model": "meta-models/muse-spark-open-1026",
+  "scope": "In-process product agent and real F1 scoring; excludes browser, HTTP admission, deployment and MIDI export.",
+  "approvedMaxUsd": 18,
+  "summary": {
+    "scheduledRuns": 120,
+    "distinctPassages": 60,
+    "startedRuns": 120,
+    "passedRuns": 120,
+    "statusCounts": {
+      "passed": 120
+    },
+    "checksPassedOverAllScheduled": {
+      "modelCompleted": {
+        "passed": 120,
+        "denominator": 120
+      },
+      "threeCandidates": {
+        "passed": 120,
+        "denominator": 120
+      },
+      "threeUniqueIds": {
+        "passed": 120,
+        "denominator": 120
+      },
+      "threeDistinctVersions": {
+        "passed": 120,
+        "denominator": 120
+      },
+      "outsideSelectionPreserved": {
+        "passed": 120,
+        "denominator": 120
+      },
+      "changeBoundsRespected": {
+        "passed": 120,
+        "denominator": 120
+      },
+      "addressesValid": {
+        "passed": 120,
+        "denominator": 120
+      },
+      "beforeValuesMatch": {
+        "passed": 120,
+        "denominator": 120
+      },
+      "inputUnchanged": {
+        "passed": 120,
+        "denominator": 120
+      },
+      "finishedWithOffer": {
+        "passed": 120,
+        "denominator": 120
+      }
+    },
+    "bothRepeatsPassed": 60,
+    "latencySecondsAllStarted": {
+      "n": 120,
+      "p50": 5.429528,
+      "p95": 9.322982
+    },
+    "accountedCostUsd": 0.91954,
+    "httpAttempts": 352,
+    "extraAttemptsWithinToolTurns": 0,
+    "within100SecondsOverAllScheduled": {
+      "passed": 120,
+      "denominator": 120
+    },
+    "returnedUsageCostUsd": 0.91954,
+    "unknownUsageReservationUsd": 0
+  },
+  "ledgerTotals": {
+    "attempts": 352,
+    "accountedCostUsd": 0.91954,
+    "returnedUsageCostUsd": 0.91954,
+    "unknownUsageReservationUsd": 0,
+    "outstandingUsd": 0
+  },
+  "tokenUsage": {
+    "prompt_tokens": 861717,
+    "cached_tokens": 560640,
+    "completion_tokens": 108023,
+    "reasoning_tokens": 94155
+  },
+  "pricesPerMillion": {
+    "input": 1.25,
+    "cached": 0.15,
+    "output": 4.25,
+    "source": "baseten muse-spark-open-1026 list price"
+  },
+  "priceReference": "https://www.baseten.co/pricing/",
+  "modelApproximations": {
+    "runsWithApproximations": 36,
+    "passagesWithApproximations": 18,
+    "scope": "Existing F1 scoring reductions, retained in the product response; not changes to the requested input or user-facing chord symbols."
+  },
+  "requestIdCoverage": {
+    "recorded": 352,
+    "attempts": 352,
+    "distinct": 352
+  },
+  "batches": [
+    {
+      "batch": "a",
+      "summary": {
+        "scheduledRuns": 40,
+        "distinctPassages": 20,
+        "startedRuns": 40,
+        "passedRuns": 40,
+        "statusCounts": {
+          "passed": 40
+        },
+        "checksPassedOverAllScheduled": {
+          "modelCompleted": {
+            "passed": 40,
+            "denominator": 40
+          },
+          "threeCandidates": {
+            "passed": 40,
+            "denominator": 40
+          },
+          "threeUniqueIds": {
+            "passed": 40,
+            "denominator": 40
+          },
+          "threeDistinctVersions": {
+            "passed": 40,
+            "denominator": 40
+          },
+          "outsideSelectionPreserved": {
+            "passed": 40,
+            "denominator": 40
+          },
+          "changeBoundsRespected": {
+            "passed": 40,
+            "denominator": 40
+          },
+          "addressesValid": {
+            "passed": 40,
+            "denominator": 40
+          },
+          "beforeValuesMatch": {
+            "passed": 40,
+            "denominator": 40
+          },
+          "inputUnchanged": {
+            "passed": 40,
+            "denominator": 40
+          },
+          "finishedWithOffer": {
+            "passed": 40,
+            "denominator": 40
+          }
+        },
+        "bothRepeatsPassed": 20,
+        "latencySecondsAllStarted": {
+          "n": 40,
+          "p50": 5.292931,
+          "p95": 8.304852
+        },
+        "accountedCostUsd": 0.29033515,
+        "httpAttempts": 116,
+        "extraAttemptsWithinToolTurns": 0,
+        "within100SecondsOverAllScheduled": {
+          "passed": 40,
+          "denominator": 40
+        },
+        "returnedUsageCostUsd": 0.29033515,
+        "unknownUsageReservationUsd": 0
+      },
+      "inputSha256": "1aa3d5e56ffd2f6c9dba64c9109ec2733de27775d2af17a9a2d278fe202bb100",
+      "resultSha256": "0a8edda6c662a1bc6d6fb72a5681f5afef15c8f1da3e988a8fec725da24f6aa6",
+      "ledgerSha256": "1a38e5c0d3cc88194639b63f9e996a06b9d9f9cbea083206a79d498e550bf5e1"
+    },
+    {
+      "batch": "b",
+      "summary": {
+        "scheduledRuns": 40,
+        "distinctPassages": 20,
+        "startedRuns": 40,
+        "passedRuns": 40,
+        "statusCounts": {
+          "passed": 40
+        },
+        "checksPassedOverAllScheduled": {
+          "modelCompleted": {
+            "passed": 40,
+            "denominator": 40
+          },
+          "threeCandidates": {
+            "passed": 40,
+            "denominator": 40
+          },
+          "threeUniqueIds": {
+            "passed": 40,
+            "denominator": 40
+          },
+          "threeDistinctVersions": {
+            "passed": 40,
+            "denominator": 40
+          },
+          "outsideSelectionPreserved": {
+            "passed": 40,
+            "denominator": 40
+          },
+          "changeBoundsRespected": {
+            "passed": 40,
+            "denominator": 40
+          },
+          "addressesValid": {
+            "passed": 40,
+            "denominator": 40
+          },
+          "beforeValuesMatch": {
+            "passed": 40,
+            "denominator": 40
+          },
+          "inputUnchanged": {
+            "passed": 40,
+            "denominator": 40
+          },
+          "finishedWithOffer": {
+            "passed": 40,
+            "denominator": 40
+          }
+        },
+        "bothRepeatsPassed": 20,
+        "latencySecondsAllStarted": {
+          "n": 40,
+          "p50": 5.357275,
+          "p95": 8.764595
+        },
+        "accountedCostUsd": 0.30808435,
+        "httpAttempts": 118,
+        "extraAttemptsWithinToolTurns": 0,
+        "within100SecondsOverAllScheduled": {
+          "passed": 40,
+          "denominator": 40
+        },
+        "returnedUsageCostUsd": 0.30808435,
+        "unknownUsageReservationUsd": 0
+      },
+      "inputSha256": "e1aed84b3037303031f2e2cbe302d7e122f5964093c74408a59985312437b614",
+      "resultSha256": "04d073a25a420534a23eec7e8d243c9f0eb77bc93229f6503f156c666e670f03",
+      "ledgerSha256": "7de11cc8898eed1b9df8c94f7d5974848174a7ef0ab80c66e6682bd2776e31b7"
+    },
+    {
+      "batch": "c",
+      "summary": {
+        "scheduledRuns": 40,
+        "distinctPassages": 20,
+        "startedRuns": 40,
+        "passedRuns": 40,
+        "statusCounts": {
+          "passed": 40
+        },
+        "checksPassedOverAllScheduled": {
+          "modelCompleted": {
+            "passed": 40,
+            "denominator": 40
+          },
+          "threeCandidates": {
+            "passed": 40,
+            "denominator": 40
+          },
+          "threeUniqueIds": {
+            "passed": 40,
+            "denominator": 40
+          },
+          "threeDistinctVersions": {
+            "passed": 40,
+            "denominator": 40
+          },
+          "outsideSelectionPreserved": {
+            "passed": 40,
+            "denominator": 40
+          },
+          "changeBoundsRespected": {
+            "passed": 40,
+            "denominator": 40
+          },
+          "addressesValid": {
+            "passed": 40,
+            "denominator": 40
+          },
+          "beforeValuesMatch": {
+            "passed": 40,
+            "denominator": 40
+          },
+          "inputUnchanged": {
+            "passed": 40,
+            "denominator": 40
+          },
+          "finishedWithOffer": {
+            "passed": 40,
+            "denominator": 40
+          }
+        },
+        "bothRepeatsPassed": 20,
+        "latencySecondsAllStarted": {
+          "n": 40,
+          "p50": 6.003474,
+          "p95": 9.56188
+        },
+        "accountedCostUsd": 0.3211205,
+        "httpAttempts": 118,
+        "extraAttemptsWithinToolTurns": 0,
+        "within100SecondsOverAllScheduled": {
+          "passed": 40,
+          "denominator": 40
+        },
+        "returnedUsageCostUsd": 0.3211205,
+        "unknownUsageReservationUsd": 0
+      },
+      "inputSha256": "533e38a161c2170f2bef8d9b83341dd2dfeff7e6800cfe76d1e4471a5a5ab3f7",
+      "resultSha256": "da673529c730526b500cedd63f02dc1ca7b9e124926710564ae9701be42d2d11",
+      "ledgerSha256": "5cac3008e72ccaa4d52b0b593305f513501fd007e210a48b1e1e9a7628b80b94"
+    }
+  ],
+  "strata": {
+    "keyMode": {
+      "major": {
+        "scheduledRuns": 60,
+        "distinctPassages": 30,
+        "startedRuns": 60,
+        "passedRuns": 60,
+        "statusCounts": {
+          "passed": 60
+        },
+        "checksPassedOverAllScheduled": {
+          "modelCompleted": {
+            "passed": 60,
+            "denominator": 60
+          },
+          "threeCandidates": {
+            "passed": 60,
+            "denominator": 60
+          },
+          "threeUniqueIds": {
+            "passed": 60,
+            "denominator": 60
+          },
+          "threeDistinctVersions": {
+            "passed": 60,
+            "denominator": 60
+          },
+          "outsideSelectionPreserved": {
+            "passed": 60,
+            "denominator": 60
+          },
+          "changeBoundsRespected": {
+            "passed": 60,
+            "denominator": 60
+          },
+          "addressesValid": {
+            "passed": 60,
+            "denominator": 60
+          },
+          "beforeValuesMatch": {
+            "passed": 60,
+            "denominator": 60
+          },
+          "inputUnchanged": {
+            "passed": 60,
+            "denominator": 60
+          },
+          "finishedWithOffer": {
+            "passed": 60,
+            "denominator": 60
+          }
+        },
+        "bothRepeatsPassed": 30,
+        "latencySecondsAllStarted": {
+          "n": 60,
+          "p50": 5.515874,
+          "p95": 9.322982
+        },
+        "accountedCostUsd": 0.4620147,
+        "httpAttempts": 175,
+        "extraAttemptsWithinToolTurns": 0,
+        "within100SecondsOverAllScheduled": {
+          "passed": 60,
+          "denominator": 60
+        },
+        "returnedUsageCostUsd": 0.4620147,
+        "unknownUsageReservationUsd": 0
+      },
+      "minor": {
+        "scheduledRuns": 60,
+        "distinctPassages": 30,
+        "startedRuns": 60,
+        "passedRuns": 60,
+        "statusCounts": {
+          "passed": 60
+        },
+        "checksPassedOverAllScheduled": {
+          "modelCompleted": {
+            "passed": 60,
+            "denominator": 60
+          },
+          "threeCandidates": {
+            "passed": 60,
+            "denominator": 60
+          },
+          "threeUniqueIds": {
+            "passed": 60,
+            "denominator": 60
+          },
+          "threeDistinctVersions": {
+            "passed": 60,
+            "denominator": 60
+          },
+          "outsideSelectionPreserved": {
+            "passed": 60,
+            "denominator": 60
+          },
+          "changeBoundsRespected": {
+            "passed": 60,
+            "denominator": 60
+          },
+          "addressesValid": {
+            "passed": 60,
+            "denominator": 60
+          },
+          "beforeValuesMatch": {
+            "passed": 60,
+            "denominator": 60
+          },
+          "inputUnchanged": {
+            "passed": 60,
+            "denominator": 60
+          },
+          "finishedWithOffer": {
+            "passed": 60,
+            "denominator": 60
+          }
+        },
+        "bothRepeatsPassed": 30,
+        "latencySecondsAllStarted": {
+          "n": 60,
+          "p50": 5.375044,
+          "p95": 8.764595
+        },
+        "accountedCostUsd": 0.4575253,
+        "httpAttempts": 177,
+        "extraAttemptsWithinToolTurns": 0,
+        "within100SecondsOverAllScheduled": {
+          "passed": 60,
+          "denominator": 60
+        },
+        "returnedUsageCostUsd": 0.4575253,
+        "unknownUsageReservationUsd": 0
+      }
+    },
+    "complexity": {
+      "complex": {
+        "scheduledRuns": 60,
+        "distinctPassages": 30,
+        "startedRuns": 60,
+        "passedRuns": 60,
+        "statusCounts": {
+          "passed": 60
+        },
+        "checksPassedOverAllScheduled": {
+          "modelCompleted": {
+            "passed": 60,
+            "denominator": 60
+          },
+          "threeCandidates": {
+            "passed": 60,
+            "denominator": 60
+          },
+          "threeUniqueIds": {
+            "passed": 60,
+            "denominator": 60
+          },
+          "threeDistinctVersions": {
+            "passed": 60,
+            "denominator": 60
+          },
+          "outsideSelectionPreserved": {
+            "passed": 60,
+            "denominator": 60
+          },
+          "changeBoundsRespected": {
+            "passed": 60,
+            "denominator": 60
+          },
+          "addressesValid": {
+            "passed": 60,
+            "denominator": 60
+          },
+          "beforeValuesMatch": {
+            "passed": 60,
+            "denominator": 60
+          },
+          "inputUnchanged": {
+            "passed": 60,
+            "denominator": 60
+          },
+          "finishedWithOffer": {
+            "passed": 60,
+            "denominator": 60
+          }
+        },
+        "bothRepeatsPassed": 30,
+        "latencySecondsAllStarted": {
+          "n": 60,
+          "p50": 5.429528,
+          "p95": 8.764595
+        },
+        "accountedCostUsd": 0.459074,
+        "httpAttempts": 173,
+        "extraAttemptsWithinToolTurns": 0,
+        "within100SecondsOverAllScheduled": {
+          "passed": 60,
+          "denominator": 60
+        },
+        "returnedUsageCostUsd": 0.459074,
+        "unknownUsageReservationUsd": 0
+      },
+      "simple": {
+        "scheduledRuns": 60,
+        "distinctPassages": 30,
+        "startedRuns": 60,
+        "passedRuns": 60,
+        "statusCounts": {
+          "passed": 60
+        },
+        "checksPassedOverAllScheduled": {
+          "modelCompleted": {
+            "passed": 60,
+            "denominator": 60
+          },
+          "threeCandidates": {
+            "passed": 60,
+            "denominator": 60
+          },
+          "threeUniqueIds": {
+            "passed": 60,
+            "denominator": 60
+          },
+          "threeDistinctVersions": {
+            "passed": 60,
+            "denominator": 60
+          },
+          "outsideSelectionPreserved": {
+            "passed": 60,
+            "denominator": 60
+          },
+          "changeBoundsRespected": {
+            "passed": 60,
+            "denominator": 60
+          },
+          "addressesValid": {
+            "passed": 60,
+            "denominator": 60
+          },
+          "beforeValuesMatch": {
+            "passed": 60,
+            "denominator": 60
+          },
+          "inputUnchanged": {
+            "passed": 60,
+            "denominator": 60
+          },
+          "finishedWithOffer": {
+            "passed": 60,
+            "denominator": 60
+          }
+        },
+        "bothRepeatsPassed": 30,
+        "latencySecondsAllStarted": {
+          "n": 60,
+          "p50": 5.396319,
+          "p95": 9.332652
+        },
+        "accountedCostUsd": 0.460466,
+        "httpAttempts": 179,
+        "extraAttemptsWithinToolTurns": 0,
+        "within100SecondsOverAllScheduled": {
+          "passed": 60,
+          "denominator": 60
+        },
+        "returnedUsageCostUsd": 0.460466,
+        "unknownUsageReservationUsd": 0
+      }
+    },
+    "changeLimit": {
+      "1": {
+        "scheduledRuns": 30,
+        "distinctPassages": 15,
+        "startedRuns": 30,
+        "passedRuns": 30,
+        "statusCounts": {
+          "passed": 30
+        },
+        "checksPassedOverAllScheduled": {
+          "modelCompleted": {
+            "passed": 30,
+            "denominator": 30
+          },
+          "threeCandidates": {
+            "passed": 30,
+            "denominator": 30
+          },
+          "threeUniqueIds": {
+            "passed": 30,
+            "denominator": 30
+          },
+          "threeDistinctVersions": {
+            "passed": 30,
+            "denominator": 30
+          },
+          "outsideSelectionPreserved": {
+            "passed": 30,
+            "denominator": 30
+          },
+          "changeBoundsRespected": {
+            "passed": 30,
+            "denominator": 30
+          },
+          "addressesValid": {
+            "passed": 30,
+            "denominator": 30
+          },
+          "beforeValuesMatch": {
+            "passed": 30,
+            "denominator": 30
+          },
+          "inputUnchanged": {
+            "passed": 30,
+            "denominator": 30
+          },
+          "finishedWithOffer": {
+            "passed": 30,
+            "denominator": 30
+          }
+        },
+        "bothRepeatsPassed": 15,
+        "latencySecondsAllStarted": {
+          "n": 30,
+          "p50": 5.429528,
+          "p95": 10.665556
+        },
+        "accountedCostUsd": 0.2233839,
+        "httpAttempts": 88,
+        "extraAttemptsWithinToolTurns": 0,
+        "within100SecondsOverAllScheduled": {
+          "passed": 30,
+          "denominator": 30
+        },
+        "returnedUsageCostUsd": 0.2233839,
+        "unknownUsageReservationUsd": 0
+      },
+      "2": {
+        "scheduledRuns": 30,
+        "distinctPassages": 15,
+        "startedRuns": 30,
+        "passedRuns": 30,
+        "statusCounts": {
+          "passed": 30
+        },
+        "checksPassedOverAllScheduled": {
+          "modelCompleted": {
+            "passed": 30,
+            "denominator": 30
+          },
+          "threeCandidates": {
+            "passed": 30,
+            "denominator": 30
+          },
+          "threeUniqueIds": {
+            "passed": 30,
+            "denominator": 30
+          },
+          "threeDistinctVersions": {
+            "passed": 30,
+            "denominator": 30
+          },
+          "outsideSelectionPreserved": {
+            "passed": 30,
+            "denominator": 30
+          },
+          "changeBoundsRespected": {
+            "passed": 30,
+            "denominator": 30
+          },
+          "addressesValid": {
+            "passed": 30,
+            "denominator": 30
+          },
+          "beforeValuesMatch": {
+            "passed": 30,
+            "denominator": 30
+          },
+          "inputUnchanged": {
+            "passed": 30,
+            "denominator": 30
+          },
+          "finishedWithOffer": {
+            "passed": 30,
+            "denominator": 30
+          }
+        },
+        "bothRepeatsPassed": 15,
+        "latencySecondsAllStarted": {
+          "n": 30,
+          "p50": 5.56833,
+          "p95": 8.096617
+        },
+        "accountedCostUsd": 0.2291802,
+        "httpAttempts": 88,
+        "extraAttemptsWithinToolTurns": 0,
+        "within100SecondsOverAllScheduled": {
+          "passed": 30,
+          "denominator": 30
+        },
+        "returnedUsageCostUsd": 0.2291802,
+        "unknownUsageReservationUsd": 0
+      },
+      "3": {
+        "scheduledRuns": 30,
+        "distinctPassages": 15,
+        "startedRuns": 30,
+        "passedRuns": 30,
+        "statusCounts": {
+          "passed": 30
+        },
+        "checksPassedOverAllScheduled": {
+          "modelCompleted": {
+            "passed": 30,
+            "denominator": 30
+          },
+          "threeCandidates": {
+            "passed": 30,
+            "denominator": 30
+          },
+          "threeUniqueIds": {
+            "passed": 30,
+            "denominator": 30
+          },
+          "threeDistinctVersions": {
+            "passed": 30,
+            "denominator": 30
+          },
+          "outsideSelectionPreserved": {
+            "passed": 30,
+            "denominator": 30
+          },
+          "changeBoundsRespected": {
+            "passed": 30,
+            "denominator": 30
+          },
+          "addressesValid": {
+            "passed": 30,
+            "denominator": 30
+          },
+          "beforeValuesMatch": {
+            "passed": 30,
+            "denominator": 30
+          },
+          "inputUnchanged": {
+            "passed": 30,
+            "denominator": 30
+          },
+          "finishedWithOffer": {
+            "passed": 30,
+            "denominator": 30
+          }
+        },
+        "bothRepeatsPassed": 15,
+        "latencySecondsAllStarted": {
+          "n": 30,
+          "p50": 5.23209,
+          "p95": 8.304852
+        },
+        "accountedCostUsd": 0.22280515,
+        "httpAttempts": 89,
+        "extraAttemptsWithinToolTurns": 0,
+        "within100SecondsOverAllScheduled": {
+          "passed": 30,
+          "denominator": 30
+        },
+        "returnedUsageCostUsd": 0.22280515,
+        "unknownUsageReservationUsd": 0
+      },
+      "4": {
+        "scheduledRuns": 30,
+        "distinctPassages": 15,
+        "startedRuns": 30,
+        "passedRuns": 30,
+        "statusCounts": {
+          "passed": 30
+        },
+        "checksPassedOverAllScheduled": {
+          "modelCompleted": {
+            "passed": 30,
+            "denominator": 30
+          },
+          "threeCandidates": {
+            "passed": 30,
+            "denominator": 30
+          },
+          "threeUniqueIds": {
+            "passed": 30,
+            "denominator": 30
+          },
+          "threeDistinctVersions": {
+            "passed": 30,
+            "denominator": 30
+          },
+          "outsideSelectionPreserved": {
+            "passed": 30,
+            "denominator": 30
+          },
+          "changeBoundsRespected": {
+            "passed": 30,
+            "denominator": 30
+          },
+          "addressesValid": {
+            "passed": 30,
+            "denominator": 30
+          },
+          "beforeValuesMatch": {
+            "passed": 30,
+            "denominator": 30
+          },
+          "inputUnchanged": {
+            "passed": 30,
+            "denominator": 30
+          },
+          "finishedWithOffer": {
+            "passed": 30,
+            "denominator": 30
+          }
+        },
+        "bothRepeatsPassed": 15,
+        "latencySecondsAllStarted": {
+          "n": 30,
+          "p50": 5.488552,
+          "p95": 9.041614
+        },
+        "accountedCostUsd": 0.24417075,
+        "httpAttempts": 87,
+        "extraAttemptsWithinToolTurns": 0,
+        "within100SecondsOverAllScheduled": {
+          "passed": 30,
+          "denominator": 30
+        },
+        "returnedUsageCostUsd": 0.24417075,
+        "unknownUsageReservationUsd": 0
+      }
+    },
+    "meter": {
+      "2/4": {
+        "scheduledRuns": 8,
+        "distinctPassages": 4,
+        "startedRuns": 8,
+        "passedRuns": 8,
+        "statusCounts": {
+          "passed": 8
+        },
+        "checksPassedOverAllScheduled": {
+          "modelCompleted": {
+            "passed": 8,
+            "denominator": 8
+          },
+          "threeCandidates": {
+            "passed": 8,
+            "denominator": 8
+          },
+          "threeUniqueIds": {
+            "passed": 8,
+            "denominator": 8
+          },
+          "threeDistinctVersions": {
+            "passed": 8,
+            "denominator": 8
+          },
+          "outsideSelectionPreserved": {
+            "passed": 8,
+            "denominator": 8
+          },
+          "changeBoundsRespected": {
+            "passed": 8,
+            "denominator": 8
+          },
+          "addressesValid": {
+            "passed": 8,
+            "denominator": 8
+          },
+          "beforeValuesMatch": {
+            "passed": 8,
+            "denominator": 8
+          },
+          "inputUnchanged": {
+            "passed": 8,
+            "denominator": 8
+          },
+          "finishedWithOffer": {
+            "passed": 8,
+            "denominator": 8
+          }
+        },
+        "bothRepeatsPassed": 4,
+        "latencySecondsAllStarted": {
+          "n": 8,
+          "p50": 5.357275,
+          "p95": 8.388811
+        },
+        "accountedCostUsd": 0.0610686,
+        "httpAttempts": 24,
+        "extraAttemptsWithinToolTurns": 0,
+        "within100SecondsOverAllScheduled": {
+          "passed": 8,
+          "denominator": 8
+        },
+        "returnedUsageCostUsd": 0.0610686,
+        "unknownUsageReservationUsd": 0
+      },
+      "3/4": {
+        "scheduledRuns": 24,
+        "distinctPassages": 12,
+        "startedRuns": 24,
+        "passedRuns": 24,
+        "statusCounts": {
+          "passed": 24
+        },
+        "checksPassedOverAllScheduled": {
+          "modelCompleted": {
+            "passed": 24,
+            "denominator": 24
+          },
+          "threeCandidates": {
+            "passed": 24,
+            "denominator": 24
+          },
+          "threeUniqueIds": {
+            "passed": 24,
+            "denominator": 24
+          },
+          "threeDistinctVersions": {
+            "passed": 24,
+            "denominator": 24
+          },
+          "outsideSelectionPreserved": {
+            "passed": 24,
+            "denominator": 24
+          },
+          "changeBoundsRespected": {
+            "passed": 24,
+            "denominator": 24
+          },
+          "addressesValid": {
+            "passed": 24,
+            "denominator": 24
+          },
+          "beforeValuesMatch": {
+            "passed": 24,
+            "denominator": 24
+          },
+          "inputUnchanged": {
+            "passed": 24,
+            "denominator": 24
+          },
+          "finishedWithOffer": {
+            "passed": 24,
+            "denominator": 24
+          }
+        },
+        "bothRepeatsPassed": 12,
+        "latencySecondsAllStarted": {
+          "n": 24,
+          "p50": 5.112184,
+          "p95": 7.809277
+        },
+        "accountedCostUsd": 0.1700138,
+        "httpAttempts": 71,
+        "extraAttemptsWithinToolTurns": 0,
+        "within100SecondsOverAllScheduled": {
+          "passed": 24,
+          "denominator": 24
+        },
+        "returnedUsageCostUsd": 0.1700138,
+        "unknownUsageReservationUsd": 0
+      },
+      "4/4": {
+        "scheduledRuns": 52,
+        "distinctPassages": 26,
+        "startedRuns": 52,
+        "passedRuns": 52,
+        "statusCounts": {
+          "passed": 52
+        },
+        "checksPassedOverAllScheduled": {
+          "modelCompleted": {
+            "passed": 52,
+            "denominator": 52
+          },
+          "threeCandidates": {
+            "passed": 52,
+            "denominator": 52
+          },
+          "threeUniqueIds": {
+            "passed": 52,
+            "denominator": 52
+          },
+          "threeDistinctVersions": {
+            "passed": 52,
+            "denominator": 52
+          },
+          "outsideSelectionPreserved": {
+            "passed": 52,
+            "denominator": 52
+          },
+          "changeBoundsRespected": {
+            "passed": 52,
+            "denominator": 52
+          },
+          "addressesValid": {
+            "passed": 52,
+            "denominator": 52
+          },
+          "beforeValuesMatch": {
+            "passed": 52,
+            "denominator": 52
+          },
+          "inputUnchanged": {
+            "passed": 52,
+            "denominator": 52
+          },
+          "finishedWithOffer": {
+            "passed": 52,
+            "denominator": 52
+          }
+        },
+        "bothRepeatsPassed": 26,
+        "latencySecondsAllStarted": {
+          "n": 52,
+          "p50": 5.375044,
+          "p95": 10.21145
+        },
+        "accountedCostUsd": 0.4094062,
+        "httpAttempts": 152,
+        "extraAttemptsWithinToolTurns": 0,
+        "within100SecondsOverAllScheduled": {
+          "passed": 52,
+          "denominator": 52
+        },
+        "returnedUsageCostUsd": 0.4094062,
+        "unknownUsageReservationUsd": 0
+      },
+      "5/4": {
+        "scheduledRuns": 16,
+        "distinctPassages": 8,
+        "startedRuns": 16,
+        "passedRuns": 16,
+        "statusCounts": {
+          "passed": 16
+        },
+        "checksPassedOverAllScheduled": {
+          "modelCompleted": {
+            "passed": 16,
+            "denominator": 16
+          },
+          "threeCandidates": {
+            "passed": 16,
+            "denominator": 16
+          },
+          "threeUniqueIds": {
+            "passed": 16,
+            "denominator": 16
+          },
+          "threeDistinctVersions": {
+            "passed": 16,
+            "denominator": 16
+          },
+          "outsideSelectionPreserved": {
+            "passed": 16,
+            "denominator": 16
+          },
+          "changeBoundsRespected": {
+            "passed": 16,
+            "denominator": 16
+          },
+          "addressesValid": {
+            "passed": 16,
+            "denominator": 16
+          },
+          "beforeValuesMatch": {
+            "passed": 16,
+            "denominator": 16
+          },
+          "inputUnchanged": {
+            "passed": 16,
+            "denominator": 16
+          },
+          "finishedWithOffer": {
+            "passed": 16,
+            "denominator": 16
+          }
+        },
+        "bothRepeatsPassed": 8,
+        "latencySecondsAllStarted": {
+          "n": 16,
+          "p50": 6.335493,
+          "p95": 10.109657
+        },
+        "accountedCostUsd": 0.1316058,
+        "httpAttempts": 47,
+        "extraAttemptsWithinToolTurns": 0,
+        "within100SecondsOverAllScheduled": {
+          "passed": 16,
+          "denominator": 16
+        },
+        "returnedUsageCostUsd": 0.1316058,
+        "unknownUsageReservationUsd": 0
+      },
+      "6/8": {
+        "scheduledRuns": 20,
+        "distinctPassages": 10,
+        "startedRuns": 20,
+        "passedRuns": 20,
+        "statusCounts": {
+          "passed": 20
+        },
+        "checksPassedOverAllScheduled": {
+          "modelCompleted": {
+            "passed": 20,
+            "denominator": 20
+          },
+          "threeCandidates": {
+            "passed": 20,
+            "denominator": 20
+          },
+          "threeUniqueIds": {
+            "passed": 20,
+            "denominator": 20
+          },
+          "threeDistinctVersions": {
+            "passed": 20,
+            "denominator": 20
+          },
+          "outsideSelectionPreserved": {
+            "passed": 20,
+            "denominator": 20
+          },
+          "changeBoundsRespected": {
+            "passed": 20,
+            "denominator": 20
+          },
+          "addressesValid": {
+            "passed": 20,
+            "denominator": 20
+          },
+          "beforeValuesMatch": {
+            "passed": 20,
+            "denominator": 20
+          },
+          "inputUnchanged": {
+            "passed": 20,
+            "denominator": 20
+          },
+          "finishedWithOffer": {
+            "passed": 20,
+            "denominator": 20
+          }
+        },
+        "bothRepeatsPassed": 10,
+        "latencySecondsAllStarted": {
+          "n": 20,
+          "p50": 5.396319,
+          "p95": 8.05785
+        },
+        "accountedCostUsd": 0.1474456,
+        "httpAttempts": 58,
+        "extraAttemptsWithinToolTurns": 0,
+        "within100SecondsOverAllScheduled": {
+          "passed": 20,
+          "denominator": 20
+        },
+        "returnedUsageCostUsd": 0.1474456,
+        "unknownUsageReservationUsd": 0
+      }
+    },
+    "contextBars": {
+      "4": {
+        "scheduledRuns": 32,
+        "distinctPassages": 16,
+        "startedRuns": 32,
+        "passedRuns": 32,
+        "statusCounts": {
+          "passed": 32
+        },
+        "checksPassedOverAllScheduled": {
+          "modelCompleted": {
+            "passed": 32,
+            "denominator": 32
+          },
+          "threeCandidates": {
+            "passed": 32,
+            "denominator": 32
+          },
+          "threeUniqueIds": {
+            "passed": 32,
+            "denominator": 32
+          },
+          "threeDistinctVersions": {
+            "passed": 32,
+            "denominator": 32
+          },
+          "outsideSelectionPreserved": {
+            "passed": 32,
+            "denominator": 32
+          },
+          "changeBoundsRespected": {
+            "passed": 32,
+            "denominator": 32
+          },
+          "addressesValid": {
+            "passed": 32,
+            "denominator": 32
+          },
+          "beforeValuesMatch": {
+            "passed": 32,
+            "denominator": 32
+          },
+          "inputUnchanged": {
+            "passed": 32,
+            "denominator": 32
+          },
+          "finishedWithOffer": {
+            "passed": 32,
+            "denominator": 32
+          }
+        },
+        "bothRepeatsPassed": 16,
+        "latencySecondsAllStarted": {
+          "n": 32,
+          "p50": 5.429528,
+          "p95": 9.332652
+        },
+        "accountedCostUsd": 0.2295939,
+        "httpAttempts": 93,
+        "extraAttemptsWithinToolTurns": 0,
+        "within100SecondsOverAllScheduled": {
+          "passed": 32,
+          "denominator": 32
+        },
+        "returnedUsageCostUsd": 0.2295939,
+        "unknownUsageReservationUsd": 0
+      },
+      "5": {
+        "scheduledRuns": 22,
+        "distinctPassages": 11,
+        "startedRuns": 22,
+        "passedRuns": 22,
+        "statusCounts": {
+          "passed": 22
+        },
+        "checksPassedOverAllScheduled": {
+          "modelCompleted": {
+            "passed": 22,
+            "denominator": 22
+          },
+          "threeCandidates": {
+            "passed": 22,
+            "denominator": 22
+          },
+          "threeUniqueIds": {
+            "passed": 22,
+            "denominator": 22
+          },
+          "threeDistinctVersions": {
+            "passed": 22,
+            "denominator": 22
+          },
+          "outsideSelectionPreserved": {
+            "passed": 22,
+            "denominator": 22
+          },
+          "changeBoundsRespected": {
+            "passed": 22,
+            "denominator": 22
+          },
+          "addressesValid": {
+            "passed": 22,
+            "denominator": 22
+          },
+          "beforeValuesMatch": {
+            "passed": 22,
+            "denominator": 22
+          },
+          "inputUnchanged": {
+            "passed": 22,
+            "denominator": 22
+          },
+          "finishedWithOffer": {
+            "passed": 22,
+            "denominator": 22
+          }
+        },
+        "bothRepeatsPassed": 11,
+        "latencySecondsAllStarted": {
+          "n": 22,
+          "p50": 4.776722,
+          "p95": 7.438327
+        },
+        "accountedCostUsd": 0.16122965,
+        "httpAttempts": 65,
+        "extraAttemptsWithinToolTurns": 0,
+        "within100SecondsOverAllScheduled": {
+          "passed": 22,
+          "denominator": 22
+        },
+        "returnedUsageCostUsd": 0.16122965,
+        "unknownUsageReservationUsd": 0
+      },
+      "6": {
+        "scheduledRuns": 52,
+        "distinctPassages": 26,
+        "startedRuns": 52,
+        "passedRuns": 52,
+        "statusCounts": {
+          "passed": 52
+        },
+        "checksPassedOverAllScheduled": {
+          "modelCompleted": {
+            "passed": 52,
+            "denominator": 52
+          },
+          "threeCandidates": {
+            "passed": 52,
+            "denominator": 52
+          },
+          "threeUniqueIds": {
+            "passed": 52,
+            "denominator": 52
+          },
+          "threeDistinctVersions": {
+            "passed": 52,
+            "denominator": 52
+          },
+          "outsideSelectionPreserved": {
+            "passed": 52,
+            "denominator": 52
+          },
+          "changeBoundsRespected": {
+            "passed": 52,
+            "denominator": 52
+          },
+          "addressesValid": {
+            "passed": 52,
+            "denominator": 52
+          },
+          "beforeValuesMatch": {
+            "passed": 52,
+            "denominator": 52
+          },
+          "inputUnchanged": {
+            "passed": 52,
+            "denominator": 52
+          },
+          "finishedWithOffer": {
+            "passed": 52,
+            "denominator": 52
+          }
+        },
+        "bothRepeatsPassed": 26,
+        "latencySecondsAllStarted": {
+          "n": 52,
+          "p50": 5.56833,
+          "p95": 10.109657
+        },
+        "accountedCostUsd": 0.41246145,
+        "httpAttempts": 153,
+        "extraAttemptsWithinToolTurns": 0,
+        "within100SecondsOverAllScheduled": {
+          "passed": 52,
+          "denominator": 52
+        },
+        "returnedUsageCostUsd": 0.41246145,
+        "unknownUsageReservationUsd": 0
+      },
+      "7": {
+        "scheduledRuns": 2,
+        "distinctPassages": 1,
+        "startedRuns": 2,
+        "passedRuns": 2,
+        "statusCounts": {
+          "passed": 2
+        },
+        "checksPassedOverAllScheduled": {
+          "modelCompleted": {
+            "passed": 2,
+            "denominator": 2
+          },
+          "threeCandidates": {
+            "passed": 2,
+            "denominator": 2
+          },
+          "threeUniqueIds": {
+            "passed": 2,
+            "denominator": 2
+          },
+          "threeDistinctVersions": {
+            "passed": 2,
+            "denominator": 2
+          },
+          "outsideSelectionPreserved": {
+            "passed": 2,
+            "denominator": 2
+          },
+          "changeBoundsRespected": {
+            "passed": 2,
+            "denominator": 2
+          },
+          "addressesValid": {
+            "passed": 2,
+            "denominator": 2
+          },
+          "beforeValuesMatch": {
+            "passed": 2,
+            "denominator": 2
+          },
+          "inputUnchanged": {
+            "passed": 2,
+            "denominator": 2
+          },
+          "finishedWithOffer": {
+            "passed": 2,
+            "denominator": 2
+          }
+        },
+        "bothRepeatsPassed": 1,
+        "latencySecondsAllStarted": {
+          "n": 2,
+          "p50": 5.329682,
+          "p95": 8.096617
+        },
+        "accountedCostUsd": 0.0165881,
+        "httpAttempts": 6,
+        "extraAttemptsWithinToolTurns": 0,
+        "within100SecondsOverAllScheduled": {
+          "passed": 2,
+          "denominator": 2
+        },
+        "returnedUsageCostUsd": 0.0165881,
+        "unknownUsageReservationUsd": 0
+      },
+      "8": {
+        "scheduledRuns": 12,
+        "distinctPassages": 6,
+        "startedRuns": 12,
+        "passedRuns": 12,
+        "statusCounts": {
+          "passed": 12
+        },
+        "checksPassedOverAllScheduled": {
+          "modelCompleted": {
+            "passed": 12,
+            "denominator": 12
+          },
+          "threeCandidates": {
+            "passed": 12,
+            "denominator": 12
+          },
+          "threeUniqueIds": {
+            "passed": 12,
+            "denominator": 12
+          },
+          "threeDistinctVersions": {
+            "passed": 12,
+            "denominator": 12
+          },
+          "outsideSelectionPreserved": {
+            "passed": 12,
+            "denominator": 12
+          },
+          "changeBoundsRespected": {
+            "passed": 12,
+            "denominator": 12
+          },
+          "addressesValid": {
+            "passed": 12,
+            "denominator": 12
+          },
+          "beforeValuesMatch": {
+            "passed": 12,
+            "denominator": 12
+          },
+          "inputUnchanged": {
+            "passed": 12,
+            "denominator": 12
+          },
+          "finishedWithOffer": {
+            "passed": 12,
+            "denominator": 12
+          }
+        },
+        "bothRepeatsPassed": 6,
+        "latencySecondsAllStarted": {
+          "n": 12,
+          "p50": 5.753812,
+          "p95": 8.388811
+        },
+        "accountedCostUsd": 0.0996669,
+        "httpAttempts": 35,
+        "extraAttemptsWithinToolTurns": 0,
+        "within100SecondsOverAllScheduled": {
+          "passed": 12,
+          "denominator": 12
+        },
+        "returnedUsageCostUsd": 0.0996669,
+        "unknownUsageReservationUsd": 0
+      }
+    }
+  },
+  "verification": {
+    "frozenInputsMatched": true,
+    "unchangedProductAndWeightsMatched": true,
+    "unchangedEvaluatorMatched": true,
+    "liveInputImmutabilityObservationsRetained": true,
+    "savedResponseChecksRecomputed": true,
+    "ledgersReconciledWithRecordedAttempts": true,
+    "usageCostsRecomputed": true,
+    "credentialsAbsent": true,
+    "independentSongCountClaim": false
+  },
+  "comparison": "Muse Spark 1.3 arm not executed.",
+  "limitations": [
+    "60 authored passages with two dependent repeats each; not 120 independent songs.",
+    "Execution and constraint reliability only; not listening preference or musical superiority.",
+    "In-process evaluation excludes browser UX, hosted HTTP admission, server availability, MIDI export and DAW playback.",
+    "Costs are calculated from returned usage at configured list prices, not a reconciled provider invoice."
+  ]
+}
