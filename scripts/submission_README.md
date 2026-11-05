@@ -11,6 +11,37 @@ editor and Music Transformer.
 [Development repository — TheArtist-DAW](https://github.com/PearlLeeStudio/TheArtist-DAW) ·
 [129 recorded contributions](HACKATHON.md)
 
+## Read this first: what to evaluate, and where each claim is recorded
+
+Everything in this table is expanded later in this README and in the linked files; the
+table is the map. Every number comes from a recorded run whose calls, costs and failures
+are kept in this repository.
+
+| Evaluate | What this submission does | Recorded where |
+|---|---|---|
+| **Real-world utility** | A musician brings a printed lead sheet or a chord sketch, selects the bars that feel flat, auditions **Origin / Alter 1–3** in context and leaves with editable **Harmony / Bass / Drums MIDI**, a score PDF or a Logic Pro handoff; the harmony is never typed twice between the score and the DAW. The song form stays visible, imported from the score or planned by Muse Spark, and Reharmonize changes only the selected bars. | [Live app](https://artist-daw.pearlleestudio.co) · [workflow](docs/arrangement-workflow.md) · [editor reference](docs/editor-reference.md) · [Why I built it](#why-i-built-it) |
+| **Use of Meta models** | Two Meta models in three roles. **Muse Spark 1.3** (Standard Meta Model API) reads whole score PDFs and images and plans the song form as strict JSON in a plan → validate → revise loop (at most two revisions). **Muse Spark Open** (Meta open weights, served on Baseten) is the Second-ear judge, the hybrid form reviewer and, since 2026-11-04, the **Reharmonize agent**: through native tool calls it chooses which substitution families to search, reads my Music Transformer's context score for every candidate the tool returns, and ends with `offer_candidates`. Every call carries a timeout, a turn limit and a worst-case cost reservation, and lands in a ledger with its request id; a failed call is shown as a failure. | [Two bounded agents](docs/agents.md) · [open weights, one recorded decision traced from input to offer](docs/open-weights.md#follow-one-recorded-reharmonize-decision) · [client with per-role provider, ledger and cap](backend/app/services/llm.py) · [agent](backend/app/services/reharmonize_agent.py) |
+| **Technical depth and execution** | My own 25M-parameter Music Transformer (18 released model choices) scores every candidate against the surrounding bars on CPU; an attention cache makes it 1.73–3.89× faster with identical outputs. Each passing Reharmonize execution returns three distinct applied versions, preserves the unselected chords and respects the change limit. The same services run over REST and an MCP server with 11 tools. Docker → Caddy HTTPS → Cloudflare Pages with health-checked automatic deployment and rollback; 687 backend and 320 frontend tests. This package rebuilds the app from the public `baseline` plus `changes.patch` and the ordinary files here, verified in GitHub Actions. | [architecture](docs/architecture.md) · [speed report](experiments/speed/runtime-performance.md) · [MCP](docs/mcp.md) · [deployment](docs/web-projects.md) · [Actions run](https://github.com/PearlLeeStudio/TheArtist-Meta-Hackathon/actions/runs/41678059725) · [manifest](manifest.json) |
+| **Measured evidence (N, pass rates, cost)** | Reharmonize product agent, 880 executions on 220 frozen passages: **440/440 Muse Spark Open, 439/440 Muse Spark 1.3** pass every constraint check (one retained API timeout, no retries). Expanded schedule, 8,480 rows over 128 condition cells: **Open 4,186/4,240, Spark 1.3 4,144/4,240**, every failure retained. Notes → chords, 640 slots: exact chords **77.8% → 89.5%** with Muse Spark. Blinded selector judge, 40 passages: Meta − local **+0.208**, 95% CI +0.042 to +0.379. Second ear: **115/115** and **112/112** reasons confirmed by the analyzer, the same pick in 52/60 reviews. Planner, 60 fixed-seed pairs: structure 60/60, section variety 2.75 → 3.48. | [880-execution report](experiments/reharmonize_agent_eval/extended-summary.md) · [completed 8,480-row results](experiments/reharmonize_agent_stress/completion-summary.md) · [notes → chords](experiments/harmony_eval) · [blinded judge](experiments/reharmonization/results.md) · [Second ear](experiments/review_eval/summary.md) · [planner](experiments/agent_eval/fixed-seed/comparison.md) · [Measured so far](#measured-so-far) |
+| **Demo** | The 3-minute video shows the hosted app end to end: score import, Reharmonize, song-form planning, PDF/MIDI export and the Safari–Logic Pro workflow. The hosted app is live, and every evaluation above is reproducible from this repository. | [YouTube](https://youtu.be/wC-dkLfot-c) · [X](https://x.com/pearlmedicilee/status/2117606784819249170) · [screenshots](docs/walkthrough.md) · [Reproduce](#reproduce) |
+
+**Five-minute check.** Open the live app, type or import a few chords, select one to four
+of them and press Reharmonize; **Run details** names the provider and model, the request
+ids and the cost of the actual calls. Then follow
+[one recorded decision](docs/open-weights.md#follow-one-recorded-reharmonize-decision) and
+open the [contribution record](HACKATHON.md).
+
+**Event work and pre-existing work.** Built October 27 – November 4, 2026: Import, the two
+agents, Second ear, the Play panel, PDF/MIDI/Logic export, REST + MCP, the hosting
+pipeline and every evaluation above; the [129 contributions](HACKATHON.md) are each
+linked to their commits, tests and limits. Pre-existing and not claimed: the score editor,
+the 31 sounds and genre rhythms, and the Music Transformer with its 11 genre adapters.
+
+**Not claimed.** Listener preference or musical superiority (no listening study yet; a
+proper one is planned and will be reported in a paper), Import accuracy on arbitrary
+PDFs, and time saved for a musician. The limits of every measurement are stated next to
+it under [Measured so far](#measured-so-far).
+
 **Open weights direct the Reharmonize search.** Muse Spark Open requests substitution
 families, receives the Music Transformer's context scores through the tools, and
 selects three validated alternatives. The musician auditions and applies the edits;
